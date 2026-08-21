@@ -1,28 +1,31 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
-import ClaimStatusChip from '../components/ClaimStatusChip'
+import Badge from '../components/Badge'
+import ClaimTabs from '../components/ClaimTabs'
 import ItemDrawer from '../components/ItemDrawer'
+import { I, Icon } from '../components/Icon'
 import { ApiError, api } from '../lib/api'
-import { extCost, fmtAge, fmtInt, fmtPct, fmtUSD } from '../lib/format'
+import { extCost, fmtAge, fmtDate, fmtInt, fmtPct, fmtUSD } from '../lib/format'
 import { CAPACITY_REASONS } from '../lib/types'
 import type { ClaimItem, ClaimItemListResponse, ClaimSummary } from '../lib/types'
 
 const PAGE_SIZE = 100
 
 /** Server-side filter -- the API takes ?status=, so this is not a client sieve. */
-const STATUS_FILTERS = [
-  ['', 'All'],
+const STATUS_FILTERS: [string, string][] = [
+  ['', 'All rows'],
   ['needs_manual', 'Unpriced'],
   ['completed', 'Completed'],
   ['overridden', 'Overridden'],
   ['processing', 'Processing'],
   ['failed', 'Failed'],
-] as const
+]
 
-/** Column order and labels, mirroring the prototype's HEADERS table exactly. */
+/** Column order and labels, mirroring HEADERS in worksheet.jsx exactly. */
 const HEADERS: [string, string][] = [
+  ['k-c--check', ''],
   ['k-c--idx', '#'],
   ['k-c--room', 'Room / Area'],
   ['k-c--qty', 'Qty'],
@@ -41,12 +44,10 @@ const HEADERS: [string, string][] = [
   ['k-c--src', 'Link'],
 ]
 
-/**
- * The prototype's grid template minus the leading checkbox column, which
- * belongs to multi-select (a mutation) and is not part of the read-state.
- */
+/** The prototype's grid template, checkbox column included. */
 const ROW_COLS = [
-  '52px', // idx
+  '36px', // check
+  '46px', // idx
   '130px', // room
   '46px', // qty
   'minmax(200px, 2.4fr)', // desc
@@ -61,12 +62,12 @@ const ROW_COLS = [
   '84px', // % depr
   '100px', // $ depr
   '100px', // ACV
-  '48px', // src
+  '36px', // src
 ].join(' ')
 
 const GRID_STYLE = {
   ['--row-cols' as string]: ROW_COLS,
-  ['--k-gridw' as string]: '1548px',
+  ['--k-gridw' as string]: '1584px',
 } as React.CSSProperties
 
 export default function WorksheetPage() {
@@ -74,6 +75,20 @@ export default function WorksheetPage() {
   const [offset, setOffset] = useState(0)
   const [openRow, setOpenRow] = useState<number | null>(null)
   const [status, setStatus] = useState('')
+  const [search, setSearch] = useState('')
+  const [groupBy, setGroupBy] = useState(false)
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [selected, setSelected] = useState<Set<number>>(new Set())
+  const filterRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!filterOpen) return
+    const close = (e: MouseEvent) => {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) setFilterOpen(false)
+    }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [filterOpen])
 
   const claim = useQuery({
     queryKey: ['claim', claimId],
@@ -90,130 +105,307 @@ export default function WorksheetPage() {
     placeholderData: keepPreviousData,
   })
 
+  const items = rows.data?.items ?? []
+
+  const visible = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    if (!term) return items
+    return items.filter((item) =>
+      [item.description, item.make_mfr, item.category, item.model_number, item.room_area]
+        .filter(Boolean)
+        .some((field) => String(field).toLowerCase().includes(term)),
+    )
+  }, [items, search])
+
+  /** Group headers aggregate the rows' own flags -- never re-derived from cat. */
+  const groups = useMemo(() => {
+    if (!groupBy) return null
+    const map = new Map<string, ClaimItem[]>()
+    for (const item of visible) {
+      const key = item.category ?? 'Unclassified'
+      const bucket = map.get(key)
+      if (bucket) bucket.push(item)
+      else map.set(key, [item])
+    }
+    return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]))
+  }, [groupBy, visible])
+
   const total = rows.data?.count ?? 0
-  const shown = rows.data?.items.length ?? 0
-  const pageEnd = offset + shown
+  const pageEnd = offset + items.length
+  const filterCount = status ? 1 : 0
+
+  const toggle = (id: number) =>
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+
+  const allShown = visible.length > 0 && visible.every((item) => selected.has(item.id))
+  const toggleAll = () =>
+    setSelected(allShown ? new Set() : new Set(visible.map((item) => item.id)))
+
+  let counter = offset
 
   return (
     <div className="k-shell">
       <AppHeader />
 
-      <div className="k-ws-page">
-        <div className="k-ws-head">
-          <div>
-            <Link to="/claims" className="k-back">
-              ← Claims
-            </Link>
-            <h1 className="k-claims-title">{claim.data?.name ?? claimId}</h1>
-            <p className="k-claim-sub">
-              {[claim.data?.insured_name, claim.data?.carrier, claim.data?.loss_type]
-                .filter(Boolean)
-                .join(' · ') || claimId}
-            </p>
-          </div>
-          {claim.data ? (
-            <div className="k-claims-stats">
-              <div>
-                <div className="k-tot-l">Items</div>
-                <div className="k-tot-v">{fmtInt(claim.data.item_count)}</div>
-              </div>
-              <div>
-                <div className="k-tot-l">RCV</div>
-                <div className="k-tot-v">{fmtUSD(claim.data.total_rcv)}</div>
-              </div>
-              <div>
-                <div className="k-tot-l">ACV</div>
-                <div className="k-tot-v">{fmtUSD(claim.data.total_acv)}</div>
-              </div>
-            </div>
-          ) : null}
-        </div>
+      <ClaimTabs active="Worksheet" claimId={claimId} itemCount={claim.data?.item_count} />
 
-        {claim.data ? (
-          <div className="k-ws-meta">
-            <ClaimStatusChip status={claim.data.status} />
-            {claim.data.tax_rate !== null ? (
-              <span className="k-claim-sub">Tax {fmtPct(claim.data.tax_rate)}</span>
+      <section className="k-claim-hd">
+        <div>
+          <Link to="/claims" className="k-crumb">
+            <Icon d={I.chevleft} size={12} /> Claims
+          </Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <h1 className="k-claim-h1">{claim.data?.name ?? claimId}</h1>
+            {claim.data ? <Badge tone="quiet">{claim.data.status.replace('_', ' ')}</Badge> : null}
+          </div>
+          <div className="k-claim-facts">
+            <span>
+              <strong>Claim</strong> · <span className="k-mono">{claimId}</span>
+            </span>
+            {claim.data?.date_of_loss ? (
+              <span>
+                <strong>Date of loss</strong> · {fmtDate(claim.data.date_of_loss)}
+              </span>
+            ) : null}
+            {claim.data?.loss_address ? (
+              <span>
+                <strong>Loss address</strong> · {claim.data.loss_address}
+              </span>
+            ) : null}
+            {claim.data?.tax_rate != null ? (
+              <span>
+                <strong>Tax</strong> · {fmtPct(claim.data.tax_rate)}
+              </span>
+            ) : null}
+            {claim.data?.carrier ? (
+              <span>
+                <strong>Carrier</strong> · {claim.data.carrier}
+              </span>
             ) : null}
           </div>
-        ) : null}
+        </div>
 
-        <section className="k-claims-toolbar">
-          <div className="k-segwrap">
-            {STATUS_FILTERS.map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                className={`k-seg ${value === status ? 'k-seg--on' : ''}`}
-                onClick={() => {
-                  setStatus(value)
-                  setOffset(0)
-                }}
-              >
-                {label}
-              </button>
-            ))}
+        {/* Claim-level totals are the server's rollups, read verbatim. */}
+        <div className="k-totals">
+          <div>
+            <div className="k-tot-l">Items</div>
+            <div className="k-tot-v">{fmtInt(claim.data?.item_count)}</div>
           </div>
-        </section>
+          <div>
+            <div className="k-tot-l">RCV</div>
+            <div className="k-tot-v">{fmtUSD(claim.data?.total_rcv)}</div>
+          </div>
+          <div>
+            <div className="k-tot-l" style={{ color: 'var(--k-accent)' }}>
+              ACV total
+            </div>
+            <div className="k-tot-v" style={{ color: 'var(--k-accent)' }}>
+              {fmtUSD(claim.data?.total_acv)}
+            </div>
+          </div>
+        </div>
+      </section>
 
-        {rows.isPending ? <p className="k-note">Loading items…</p> : null}
+      <section className="k-toolbar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div className="k-search">
+            <Icon d={I.search} size={12} />
+            <input
+              placeholder={`Search ${fmtInt(total)} items…`}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
 
-        {rows.error ? (
-          <p className="k-error">
-            Could not load items
-            {rows.error instanceof ApiError ? ` (HTTP ${rows.error.status})` : ''}.
-          </p>
-        ) : null}
+          <div ref={filterRef} style={{ position: 'relative' }}>
+            <button
+              type="button"
+              className={`k-btn k-btn--ghost ${filterCount > 0 ? 'k-btn--active' : ''}`}
+              onClick={() => setFilterOpen((o) => !o)}
+            >
+              <Icon d={I.filter} size={12} /> Filter
+              {filterCount > 0 ? <span className="k-filter-count">{filterCount}</span> : null}
+            </button>
 
-        {rows.data ? (
-          <>
-            <div className="k-grid k-grid--ws" style={GRID_STYLE}>
-              <div className="k-row k-row--head">
-                {HEADERS.map(([cls, label]) => (
+            {filterOpen ? (
+              <div
+                className="k-pop"
+                style={{ position: 'absolute', top: 'calc(100% + 4px)', left: 0, width: 220, zIndex: 30 }}
+              >
+                <div className="k-pop-hd">
+                  <span>Row status</span>
+                  {filterCount > 0 ? (
+                    <button
+                      type="button"
+                      className="k-link"
+                      style={{ fontSize: 11 }}
+                      onClick={() => {
+                        setStatus('')
+                        setOffset(0)
+                      }}
+                    >
+                      Clear
+                    </button>
+                  ) : null}
+                </div>
+                <div style={{ padding: 6 }}>
+                  {STATUS_FILTERS.map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      className={`k-menu-item ${value === status ? 'k-menu-item--on' : ''}`}
+                      onClick={() => {
+                        setStatus(value)
+                        setOffset(0)
+                        setFilterOpen(false)
+                      }}
+                    >
+                      {label}
+                      {value === status ? <Icon d={I.check} size={12} stroke={2.5} /> : null}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          <button
+            type="button"
+            className={`k-btn k-btn--ghost ${groupBy ? 'k-btn--active' : ''}`}
+            onClick={() => setGroupBy((g) => !g)}
+          >
+            {groupBy ? (
+              <>
+                <Icon d={I.check} size={12} stroke={2.5} /> Grouped by class
+              </>
+            ) : (
+              'Group by class'
+            )}
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {selected.size > 0 ? (
+            <span className="k-claim-sub">{selected.size} selected</span>
+          ) : null}
+          <button
+            type="button"
+            className="k-btn"
+            disabled
+            title="Adding an item is a mutation — not built yet"
+          >
+            <Icon d={I.plus} size={12} /> Add item
+          </button>
+        </div>
+      </section>
+
+      {rows.isPending ? <p className="k-note k-ws-note">Loading items…</p> : null}
+
+      {rows.error ? (
+        <p className="k-error k-ws-note">
+          Could not load items
+          {rows.error instanceof ApiError ? ` (HTTP ${rows.error.status})` : ''}.
+        </p>
+      ) : null}
+
+      {rows.data ? (
+        <>
+          <section className="k-grid k-grid--ws" style={GRID_STYLE}>
+            <div className="k-row k-row--head">
+              {HEADERS.map(([cls, label]) =>
+                cls === 'k-c--check' ? (
+                  <div key={cls} className={`k-c ${cls}`}>
+                    <button
+                      type="button"
+                      className={`k-check ${allShown ? 'k-check--on' : ''}`}
+                      onClick={toggleAll}
+                      aria-label="Select all rows"
+                    >
+                      {allShown ? <Icon d={I.check} size={10} stroke={2} /> : null}
+                    </button>
+                  </div>
+                ) : (
                   <div key={cls} className={`k-c ${cls}`}>
                     {label}
                   </div>
-                ))}
-              </div>
+                ),
+              )}
+            </div>
 
-              {rows.data.items.map((item, index) => (
+            {visible.length === 0 ? (
+              <div className="k-ws-empty">
+                <div className="k-empty-art k-empty-art--accent">
+                  <Icon d={items.length ? I.search : I.camera} size={24} />
+                </div>
+                <div className="k-ws-empty-t">
+                  {items.length ? 'No rows match your search' : 'No items on this claim yet'}
+                </div>
+              </div>
+            ) : groups ? (
+              groups.map(([category, groupItems]) => (
+                <div key={category}>
+                  <div className="k-grp">
+                    <span>
+                      {category}
+                      <span className="k-grp-n">{groupItems.length}</span>
+                    </span>
+                  </div>
+                  {groupItems.map((item) => (
+                    <Row
+                      key={item.id}
+                      item={item}
+                      n={++counter}
+                      selected={selected.has(item.id)}
+                      onSelect={() => toggle(item.id)}
+                      onOpen={() => setOpenRow(item.id)}
+                    />
+                  ))}
+                </div>
+              ))
+            ) : (
+              visible.map((item) => (
                 <Row
                   key={item.id}
                   item={item}
-                  n={offset + index + 1}
+                  n={++counter}
+                  selected={selected.has(item.id)}
+                  onSelect={() => toggle(item.id)}
                   onOpen={() => setOpenRow(item.id)}
                 />
-              ))}
-            </div>
+              ))
+            )}
+          </section>
 
-            <div className="k-ws-foot">
-              <span className="k-claim-sub">
-                {total === 0
-                  ? 'No items'
-                  : `${fmtInt(offset + 1)}–${fmtInt(pageEnd)} of ${fmtInt(total)}`}
-              </span>
-              <div className="k-ws-pager">
-                <button
-                  type="button"
-                  className="k-btn k-btn--ghost"
-                  disabled={offset === 0}
-                  onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
-                >
-                  Previous
-                </button>
-                <button
-                  type="button"
-                  className="k-btn k-btn--ghost"
-                  disabled={pageEnd >= total}
-                  onClick={() => setOffset(offset + PAGE_SIZE)}
-                >
-                  Next
-                </button>
-              </div>
+          <div className="k-ws-foot">
+            <span className="k-claim-sub">
+              {total === 0 ? 'No items' : `${fmtInt(offset + 1)}–${fmtInt(pageEnd)} of ${fmtInt(total)}`}
+            </span>
+            <div className="k-ws-pager">
+              <button
+                type="button"
+                className="k-btn k-btn--ghost"
+                disabled={offset === 0}
+                onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                className="k-btn k-btn--ghost"
+                disabled={pageEnd >= total}
+                onClick={() => setOffset(offset + PAGE_SIZE)}
+              >
+                Next
+              </button>
             </div>
-          </>
-        ) : null}
-      </div>
+          </div>
+        </>
+      ) : null}
 
       {openRow !== null ? <ItemDrawer rowId={openRow} onClose={() => setOpenRow(null)} /> : null}
     </div>
@@ -229,7 +421,19 @@ function Money({ value }: { value: number | null | undefined }) {
   return value === null || value === undefined ? <Dash /> : <>{fmtUSD(value)}</>
 }
 
-function Row({ item, n, onOpen }: { item: ClaimItem; n: number; onOpen: () => void }) {
+function Row({
+  item,
+  n,
+  selected,
+  onSelect,
+  onOpen,
+}: {
+  item: ClaimItem
+  n: number
+  selected: boolean
+  onSelect: () => void
+  onOpen: () => void
+}) {
   const unpriced = item.status === 'needs_manual'
   // Capacity waits are NOT adjuster work -- quiet pending state, never amber.
   const waiting = Boolean(unpriced && item.manual_reason && CAPACITY_REASONS.has(item.manual_reason))
@@ -237,7 +441,18 @@ function Row({ item, n, onOpen }: { item: ClaimItem; n: number; onOpen: () => vo
   const depAmount = item.depreciation_amount
 
   return (
-    <div className={`k-row${unpriced && !waiting ? ' k-row--manual' : ''}`}>
+    <div className={`k-row${unpriced && !waiting ? ' k-row--manual' : ''}${selected ? ' k-row--sel' : ''}`}>
+      <div className="k-c k-c--check">
+        <button
+          type="button"
+          className={`k-check ${selected ? 'k-check--on' : ''}`}
+          onClick={onSelect}
+          aria-label="Select row"
+        >
+          {selected ? <Icon d={I.check} size={10} stroke={2} /> : null}
+        </button>
+      </div>
+
       <div className="k-c k-c--idx">
         <button type="button" className="k-idx-btn" onClick={onOpen} title="Open item">
           {String(n).padStart(4, '0')}
@@ -255,9 +470,13 @@ function Row({ item, n, onOpen }: { item: ClaimItem; n: number; onOpen: () => vo
       <div className="k-c k-c--mfr">{item.make_mfr || <Dash />}</div>
       <div className="k-c k-c--model k-mono">{item.model_number || <Dash />}</div>
 
+      {/* Content class is a picker in the design; read-state keeps the caret
+          affordance so the column reads the same, without opening a menu. */}
       <div className="k-c k-c--cat">
-        <span>{item.category || <Dash />}</span>
-        {item.pcs_code ? <span className="k-pcs">{item.pcs_code}</span> : null}
+        <span className="k-cell k-cell--button k-cell--static">
+          <span className="k-cat-text">{item.category || '—'}</span>
+          <Icon d={I.chevdown} size={11} />
+        </span>
       </div>
 
       {/* Every money cell below is the server's figure, read verbatim. */}
@@ -294,14 +513,20 @@ function Row({ item, n, onOpen }: { item: ClaimItem; n: number; onOpen: () => vo
       </div>
 
       <div className="k-c k-c--src">
-        {/* Only alternative_sources[0] resolves to a merchant listing. */}
-        {comp?.link ? (
-          <a className="k-src-link" href={comp.link} target="_blank" rel="noreferrer noopener">
+        {/* Only alternative_sources[0] resolves to a merchant listing. The
+            prototype offers "+ Add" when there is none -- that is a mutation,
+            so read-state shows nothing rather than a control that cannot act. */}
+        {unpriced ? null : comp?.link ? (
+          <a
+            className="k-src-link"
+            href={comp.link}
+            target="_blank"
+            rel="noreferrer noopener"
+            title={`${comp.source ?? 'Comp'} — ${comp.title ?? ''}`}
+          >
             Link
           </a>
-        ) : (
-          <Dash />
-        )}
+        ) : null}
       </div>
     </div>
   )
