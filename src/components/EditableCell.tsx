@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { fmtUSD } from '../lib/format'
 
 /**
  * A worksheet cell you can type in.
@@ -15,6 +16,7 @@ export default function EditableCell({
   value,
   onCommit,
   numeric = false,
+  money = false,
   align = 'left',
   placeholder,
   disabled = false,
@@ -24,6 +26,8 @@ export default function EditableCell({
   value: string
   onCommit: (next: string) => void
   numeric?: boolean
+  /** Display-format as currency while unfocused; editing stays raw. */
+  money?: boolean
   align?: 'left' | 'right'
   placeholder?: string
   disabled?: boolean
@@ -69,13 +73,19 @@ export default function EditableCell({
     if (target) target.focus()
   }
 
+  // Unfocused money cells read as $100.00; the draft stays raw for typing.
+  const shown =
+    money && !editing && draft !== '' && Number.isFinite(Number(draft))
+      ? fmtUSD(Number(draft))
+      : draft
+
   return (
     <input
       ref={ref}
       data-ws-cell=""
       className={`k-cell k-cell--input${numeric ? ' k-mono' : ''}${pending ? ' k-cell--pending' : ''}`}
       style={{ textAlign: align }}
-      value={pending ? '' : draft}
+      value={pending ? '' : shown}
       placeholder={pending ? '' : placeholder}
       disabled={disabled || pending}
       title={title}

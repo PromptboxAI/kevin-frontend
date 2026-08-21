@@ -122,3 +122,31 @@ export const portal = {
       retryOnRateLimit: true,
     }),
 }
+
+/**
+ * Exports are server-generated binaries (xlsx | pdf) with a
+ * Content-Disposition filename -- not JSON, so they bypass request().
+ */
+export async function downloadExport(claimId: string, format: 'xlsx' | 'pdf' = 'xlsx') {
+  const { data } = await (await import('./supabase')).getSupabase().auth.getSession()
+  const token = data.session?.access_token
+  const response = await fetch(
+    `${API_BASE_URL}/v1/claims/${encodeURIComponent(claimId)}/export?format=${format}`,
+    { headers: token ? { Authorization: `Bearer ${token}` } : {} },
+  )
+  if (!response.ok) {
+    throw new ApiError(response.status, await response.text(), response.headers.get('X-Request-ID'))
+  }
+
+  const disposition = response.headers.get('Content-Disposition') ?? ''
+  const match = /filename="?([^"]+)"?/.exec(disposition)
+  const blob = await response.blob()
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = match?.[1] ?? `${claimId}-inventory.${format}`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
