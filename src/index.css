@@ -170,6 +170,23 @@
   white-space: nowrap;
 }
 
+/* The design uses two different sub-line treatments, not one: the DOL line
+   under the claim id is --k-fg-3 at 11.5px, while the photo count under the
+   item count is --k-fg-4 at 11px. One shared class flattened both. */
+.k-claim-dol {
+  font-size: 11.5px;
+  color: var(--k-fg-3);
+  margin-top: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.k-claim-photos {
+  font-size: 11px;
+  color: var(--k-fg-4);
+}
+
 .k-claim-sub {
   font-size: 11.5px;
   color: var(--k-fg-4);

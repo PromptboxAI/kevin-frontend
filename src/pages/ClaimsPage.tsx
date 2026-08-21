@@ -136,6 +136,14 @@ export default function ClaimsPage() {
               </button>
             ))}
           </div>
+          <div style={{ flex: 1 }} />
+          <button
+            type="button"
+            className="k-btn k-btn--ghost"
+            title="Newest first — the order GET /v1/claims returns"
+          >
+            <Icon d={I.filter} size={12} /> Sort: Most recent
+          </button>
         </section>
 
         {notice ? (
@@ -197,7 +205,7 @@ function Row({ claim, onNotice }: { claim: ClaimSummary; onNotice: (m: string) =
           {claim.claim_id}
         </Link>
         {/* Keep the dash when the record has no date rather than omitting it. */}
-        <div className="k-claim-sub">DOL {fmtDate(claim.date_of_loss)}</div>
+        <div className="k-claim-dol">DOL {fmtDate(claim.date_of_loss)}</div>
       </div>
 
       <div>
@@ -213,7 +221,7 @@ function Row({ claim, onNotice }: { claim: ClaimSummary; onNotice: (m: string) =
 
       <div className="k-claim-num">
         <div>{fmtInt(claim.item_count)}</div>
-        <div className="k-claim-sub">{fmtInt(claim.photo_count)} photos</div>
+        <div className="k-claim-photos">{fmtInt(claim.photo_count)} photos</div>
       </div>
 
       {/* Tax-inclusive server total, rendered verbatim. */}
@@ -227,9 +235,7 @@ function Row({ claim, onNotice }: { claim: ClaimSummary; onNotice: (m: string) =
         ) : null}
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <ClaimRowMenu claim={claim} onNotice={onNotice} />
-      </div>
+      <ClaimRowMenu claim={claim} onNotice={onNotice} />
     </div>
   )
 }

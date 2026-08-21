@@ -72,7 +72,17 @@ export default function ClaimRowMenu({
   }
 
   return (
-    <div ref={ref} style={{ position: 'relative' }}>
+    <div
+      ref={ref}
+      style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end', position: 'relative' }}
+    >
+      <button
+        type="button"
+        className="k-btn k-btn--ghost"
+        onClick={() => navigate(`/claims/${claim.claim_id}`)}
+      >
+        Open →
+      </button>
       <button
         type="button"
         className="k-icon-btn"
