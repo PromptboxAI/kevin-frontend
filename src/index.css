@@ -118,14 +118,6 @@
 
 
 
-/* The grid itself is .k-grid from kevin.css; this only bounds and frames it. */
-.k-grid--ws {
-  border: 1px solid var(--k-line);
-  border-radius: 10px;
-  overflow: auto;
-  max-height: calc(100dvh - 260px);
-}
-
 .k-grid--ws .k-row--head {
   position: sticky;
   top: 0;
