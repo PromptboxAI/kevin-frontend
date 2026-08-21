@@ -796,9 +796,16 @@ button.k-avatar-menu-item {
 }
 
 /* Same specificity as kevin.css's dock rule, declared later, so the grid keeps
-   its own vertical scrollbar. Without this overflow-y stays hidden and the
-   virtual window has nothing to scroll. */
+   BOTH scrollbars. kevin.css sets overflow-y:hidden here for the prototype's
+   inner scroller; ours scrolls the grid itself, and a widened column must be
+   reachable horizontally rather than clipped. */
 .k-grid-dock > .k-grid--ws {
   overflow-x: auto;
   overflow-y: auto;
+}
+
+/* The dock clips by default; the grid inside it is the scroller, so it must be
+   allowed to present its own scrollbars. */
+.k-grid-dock {
+  overflow: visible;
 }

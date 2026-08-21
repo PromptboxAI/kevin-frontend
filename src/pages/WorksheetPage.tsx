@@ -56,6 +56,12 @@ const COL_DEFAULTS = [
   36, 46, 130, 46, 280, 130, 140, 175, 118, 96, 78, 100, 58, 84, 100, 100, 36,
 ]
 const COL_MIN = 36
+/**
+ * Description is the flexible track, as in the design (minmax(200px, 2.4fr)).
+ * With every track a fixed px the grid stopped filling the container, leaving
+ * dead space right of the Link column that reads as a phantom column.
+ */
+const FLEX_COL = 4
 
 /** Fixed row heights let the window be computed without measuring. */
 const ROW_H = { comfortable: 38, compact: 30 }
@@ -80,7 +86,11 @@ export default function WorksheetPage() {
   const drag = useRef<{ index: number; startX: number; startW: number } | null>(null)
 
   const gridStyle = {
-    ['--row-cols' as string]: cols.map((c) => `${c}px`).join(' '),
+    ['--row-cols' as string]: cols
+      .map((c, i) => (i === FLEX_COL ? `minmax(${c}px, 1fr)` : `${c}px`))
+      .join(' '),
+    // Sum of the tracks: rows carry this as min-width, so widening a column
+    // past the container forces the horizontal scrollbar instead of clipping.
     ['--k-gridw' as string]: `${cols.reduce((a, b) => a + b, 0)}px`,
   } as React.CSSProperties
 
