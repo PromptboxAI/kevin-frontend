@@ -846,6 +846,17 @@ button.k-avatar-menu-item {
   flex: 0 0 auto;
 }
 
+/* The design fixes row height rather than letting content drive it, and the
+   virtual window's arithmetic depends on the two agreeing exactly (ROW_H in
+   WorksheetPage.tsx). Selection only tints -- it must never change height. */
+.k-scroll .k-row {
+  height: 42px;
+}
+
+.k-grid--compact .k-scroll .k-row {
+  height: 34px;
+}
+
 /* --- Grid: kevin.css owns the scroll chain (.k-grid scrolls X, .k-scroll
        scrolls Y, .k-row--head is a sticky sibling). Nothing here may touch
        overflow, height or flex on those elements. --- */

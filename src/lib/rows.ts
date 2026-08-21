@@ -43,3 +43,45 @@ export function rowInvariant(items: NumberedItem[], apiCount: number) {
     contiguous,
   }
 }
+
+/**
+ * The virtual window, as a pure function so it can be stress-tested.
+ *
+ * Every input is clamped. A fast flick can hand us a scrollTop past the end of
+ * the content (momentum, rubber-banding, a resize mid-scroll), and an
+ * unclamped slice returns an EMPTY window -- which unmounts every row and
+ * paints the page white. NaN can arrive the same way if a height is measured
+ * before layout.
+ *
+ * `rowH` must equal the row's ACTUAL rendered height. If the two disagree the
+ * spacers mis-size, scroll offset maps to the wrong index, and the number of
+ * rows on screen drifts from the number in the array.
+ */
+export function windowRange(
+  scrollTop: number,
+  viewportH: number,
+  rowH: number,
+  count: number,
+  overscan = 8,
+) {
+  const rows = Math.max(0, Math.floor(count) || 0)
+  const height = Number.isFinite(rowH) && rowH > 0 ? rowH : 1
+  const view = Number.isFinite(viewportH) && viewportH > 0 ? viewportH : 0
+  const top = Number.isFinite(scrollTop) && scrollTop > 0 ? scrollTop : 0
+
+  // Clamp the START to the last row, not to the count: clamping both to `rows`
+  // makes slice(count, count) return NOTHING, which unmounts every row and
+  // paints the page white. A non-empty list must always render at least one row.
+  const first = rows === 0 ? 0 : Math.max(0, Math.min(rows - 1, Math.floor(top / height) - overscan))
+  const last =
+    rows === 0
+      ? 0
+      : Math.max(first + 1, Math.min(rows, Math.ceil((top + view) / height) + overscan))
+
+  return {
+    startIdx: first,
+    endIdx: last,
+    padTop: first * height,
+    padBottom: Math.max(0, (rows - last) * height),
+  }
+}

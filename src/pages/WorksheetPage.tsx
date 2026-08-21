@@ -12,7 +12,7 @@ import { ApiError, api, downloadExport } from '../lib/api'
 import { extCost, fmtDate, fmtInt, fmtPct, fmtUSD } from '../lib/format'
 import { createBlankItem, deleteItems, editDisplayLine, overrideItem } from '../lib/mutations'
 import type { OverrideBody } from '../lib/mutations'
-import { numberRows, rowInvariant } from '../lib/rows'
+import { numberRows, rowInvariant, windowRange } from '../lib/rows'
 import type { NumberedItem } from '../lib/rows'
 import { CAPACITY_REASONS } from '../lib/types'
 import type { ClaimItemListResponse, ClaimSummary } from '../lib/types'
@@ -66,7 +66,12 @@ const COL_MIN = 36
 const FLEX_COL = 4
 
 /** Fixed row heights let the window be computed without measuring. */
-const ROW_H = { comfortable: 38, compact: 30 }
+/**
+ * MUST equal the rendered height set in CSS. The design fixes rows at 42px
+ * (comfortable) / 34px (compact); guessing 38 against content-height rows made
+ * the spacers mis-size and the on-screen row count drift.
+ */
+const ROW_H = { comfortable: 42, compact: 34 }
 const OVERSCAN = 8
 
 export default function WorksheetPage() {
@@ -360,6 +365,12 @@ export default function WorksheetPage() {
 
   const countCheck = rowInvariant(items, total)
 
+  useEffect(() => {
+    if (!rows.hasNextPage && !countCheck.ok) {
+      console.warn('[worksheet] row count invariant failed', countCheck)
+    }
+  }, [countCheck, rows.hasNextPage])
+
   const rowH = ROW_H[density]
 
   useEffect(() => {
@@ -390,12 +401,11 @@ export default function WorksheetPage() {
 
   // Grouped view is a review mode over a filtered set, so it renders whole.
   const windowed = groups === null
-  const startIdx = windowed ? Math.max(0, Math.floor(scrollTop / rowH) - OVERSCAN) : 0
-  const endIdx = windowed
-    ? Math.min(visible.length, Math.ceil((scrollTop + viewportH) / rowH) + OVERSCAN)
-    : visible.length
-  const padTop = windowed ? startIdx * rowH : 0
-  const padBottom = windowed ? Math.max(0, (visible.length - endIdx) * rowH) : 0
+  const win = windowRange(scrollTop, viewportH, rowH, visible.length, OVERSCAN)
+  const startIdx = windowed ? win.startIdx : 0
+  const endIdx = windowed ? win.endIdx : visible.length
+  const padTop = windowed ? win.padTop : 0
+  const padBottom = windowed ? win.padBottom : 0
 
 
   return (
@@ -830,7 +840,7 @@ export default function WorksheetPage() {
             {/* The count comes from the rows actually rendered, never from the
                 API total alone -- a disagreement means rows are counted that
                 are not lines, and it is surfaced rather than papered over. */}
-            {!rows.hasNextPage && !countCheck.ok ? (
+            {!countCheck.ok && !rows.hasNextPage ? (
               <span className="k-error">
                 Count mismatch: API reports {fmtInt(countCheck.apiCount)}, grid holds{' '}
                 {fmtInt(countCheck.rendered)} (highest line {fmtInt(countCheck.maxLineNo)}).
