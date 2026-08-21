@@ -30,7 +30,24 @@ Retry action is **disabled** pending that route. Looping per-row
 200+ deferred rows that is several minutes and multiple passes for a worse
 result.
 
-## 3. Smaller notes
+## 3. `items/bulk` should accept an empty description with `price: false`
+
+Adding a line item without a photo is a one-row `POST /v1/claims/{id}/items/bulk`
+call, which is right. But `description` is required at **2–300 chars**, so a
+deliberately blank template line cannot be created in one call.
+
+That conflicts with the contract's own `placeholder_row` concept — a line that
+means *the adjuster fills this in*. The frontend currently works around it:
+
+1. create the row with a throwaway description, then
+2. immediately `PATCH /v1/claim_items/{id}` with `description: null` to clear it.
+
+Two round-trips, and a transient "New item" flashes in the grid before the PATCH
+lands (it also matches searches for that moment). **Allowing an empty-string
+description when `price: false`** would make this one call with no flash — the
+row is deliberately unpriced anyway, so there is nothing to search against.
+
+## 4. Smaller notes
 
 - `ClaimItemSummary` has no `ext_cost`. The worksheet's **Ext. Cost** column is
   restated from `rcv_total_incl − tax` (the contract guarantees

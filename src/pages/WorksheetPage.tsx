@@ -70,7 +70,8 @@ export default function WorksheetPage() {
   const [filterOpen, setFilterOpen] = useState(false)
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [docked, setDocked] = useState(false)
-  const [density, setDensity] = useState<'comfortable' | 'compact'>('comfortable')
+  /** Fixed internal setting: the design exposes no density control. */
+  const density = 'comfortable' as 'comfortable' | 'compact'
   const [cols, setCols] = useState<number[]>(COL_DEFAULTS)
   const filterRef = useRef<HTMLDivElement>(null)
   const gridRef = useRef<HTMLElement>(null)
@@ -545,17 +546,6 @@ export default function WorksheetPage() {
               {selected.size} selected
             </span>
           ) : null}
-
-          <button
-            type="button"
-            className={`k-btn k-btn--ghost ${density === 'compact' ? 'k-btn--active' : ''}`}
-            onClick={() => setDensity((d) => (d === 'comfortable' ? 'compact' : 'comfortable'))}
-            title={density === 'comfortable' ? 'Comfortable rows — switch to compact' : 'Compact rows — switch to comfortable'}
-            aria-label="Row density"
-          >
-            <Icon d={density === 'compact' ? I.rowsCompact : I.rowsComfy} size={13} />
-            {density === 'compact' ? 'Compact' : 'Comfortable'}
-          </button>
 
           <button
             type="button"

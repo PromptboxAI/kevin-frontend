@@ -38,16 +38,6 @@ export const I = {
   check: <path d="m5 12 5 5 9-11" />,
   chevleft: <path d="m15 18-6-6 6-6" />,
   chevdown: <path d="m6 9 6 6 6-6" />,
-  rowsComfy: (
-    <>
-      <path d="M4 6h16M4 12h16M4 18h16" />
-    </>
-  ),
-  rowsCompact: (
-    <>
-      <path d="M4 5h16M4 9h16M4 13h16M4 17h16M4 21h16" />
-    </>
-  ),
   camera: (
     <>
       <path d="M3 7h3l2-3h8l2 3h3v12H3z" />
