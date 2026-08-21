@@ -7,3 +7,16 @@ design/20*_*.jpg
 # OS cruft
 .DS_Store
 Thumbs.db
+
+# --- Vite / Node app (scaffolded at repo root) ---
+node_modules
+dist
+dist-ssr
+*.local
+logs
+*.log
+npm-debug.log*
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.sw?
