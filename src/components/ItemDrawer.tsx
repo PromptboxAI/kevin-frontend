@@ -4,7 +4,8 @@ import Badge from './Badge'
 import EditableCell from './EditableCell'
 import { ApiError, api } from '../lib/api'
 import { extCost, fmtCompPrice, fmtConfidence, fmtPct, fmtUSD } from '../lib/format'
-import { editDisplayLine, overrideItem } from '../lib/mutations'
+import { editDisplayLine, overrideItem, repriceItem } from '../lib/mutations'
+import { QUERY_MAX, composeQuery, isQueryValid, trimQuery } from '../lib/query'
 import { CAPACITY_REASONS } from '../lib/types'
 import type { ClaimItemDetail, Comp, ThumbnailsResponse } from '../lib/types'
 
@@ -43,8 +44,13 @@ export default function ItemDrawer({
   docked?: boolean
 }) {
   const [photoIndex, setPhotoIndex] = useState(0)
+  const [editingQuery, setEditingQuery] = useState(false)
+  const [draftQuery, setDraftQuery] = useState('')
 
-  useEffect(() => setPhotoIndex(0), [rowId])
+  useEffect(() => {
+    setPhotoIndex(0)
+    setEditingQuery(false)
+  }, [rowId])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -66,6 +72,10 @@ export default function ItemDrawer({
     queryFn: () => api.get<ClaimItemDetail>(`/v1/claim_items/${rowId}`),
     // image_url is signed for ~5 minutes, so this response genuinely goes stale.
     staleTime: 4 * 60 * 1000,
+    // Reprice returns 202 and the engine works asynchronously: poll while the
+    // row sits in `processing`, then stop. Never poll a terminal row.
+    refetchInterval: (q) =>
+      (q.state.data as ClaimItemDetail | undefined)?.status === 'processing' ? 2000 : false,
   })
 
   const photos = data?.photos ?? []
@@ -87,6 +97,7 @@ export default function ItemDrawer({
   const imageSrc = current ? (thumbFor(current.photo_id) ?? data?.image_url) : data?.image_url
 
   const queryClient = useQueryClient()
+  const [notice, setNotice] = useState<string | null>(null)
 
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ['claim-item', rowId] })
@@ -127,6 +138,29 @@ export default function ItemDrawer({
       return Number.isFinite(price) && Math.abs(price - (data.rcv as number)) < 0.005
     })
   })()
+
+  /**
+   * One atomic call: the identity corrections ride WITH the query, because the
+   * pipeline reads make_mfr and description to decide whether a line was priced
+   * off other manufacturers' listings. A PATCH-then-reprice is a race, and
+   * losing it is silent -- the line prices fine but its provenance is wrong.
+   */
+  const reprice = useMutation({
+    mutationFn: (body: {
+      query: string
+      category?: string
+      make_mfr?: string
+      model_number?: string
+      description?: string
+    }) => repriceItem(rowId, body),
+    onSuccess: () => {
+      setEditingQuery(false)
+      refresh()
+    },
+    onError: (e) => setNotice(e instanceof Error ? e.message : 'Reprice failed.'),
+  })
+
+  const repricing = data?.status === 'processing' || reprice.isPending
 
   const unpriced = data?.status === 'needs_manual'
   const waiting = Boolean(
@@ -295,14 +329,92 @@ export default function ItemDrawer({
 
                 <div className="k-insp-field">
                   <label>Search query</label>
-                  <div className="k-insp-static">{data.query || '—'}</div>
-                  <span className="k-insp-hint">
-                    {data.confidence !== null
-                      ? `Confidence ${fmtConfidence(data.confidence)}`
-                      : 'No confidence recorded'}
-                    {data.is_manually_queried ? ' · refined by an adjuster' : ''}
-                  </span>
+
+                  {editingQuery ? (
+                    <>
+                      <input
+                        className="k-insp-input"
+                        value={draftQuery}
+                        autoFocus
+                        disabled={repricing}
+                        maxLength={QUERY_MAX}
+                        onChange={(e) => setDraftQuery(e.target.value)}
+                      />
+                      <span className="k-insp-hint">
+                        Kevin re-searches live comps from this exact text — nothing inferred.{' '}
+                        {draftQuery.trim().length}/{QUERY_MAX}
+                      </span>
+                      <div className="k-insp-actions">
+                        <button
+                          type="button"
+                          className="k-btn k-btn--ghost k-btn--sm"
+                          disabled={repricing}
+                          onClick={() => setEditingQuery(false)}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          className="k-btn k-btn--sm"
+                          disabled={repricing || !isQueryValid(draftQuery)}
+                          onClick={() =>
+                            reprice.mutate({
+                              query: trimQuery(draftQuery),
+                              make_mfr: data.make_mfr ?? undefined,
+                              model_number: data.model_number ?? undefined,
+                              description: data.description ?? undefined,
+                              category: data.category ?? undefined,
+                            })
+                          }
+                        >
+                          {repricing ? 'Re-pricing…' : 'Re-price'}
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="k-insp-static">{data.query || '—'}</div>
+                      <span className="k-insp-hint">
+                        {data.confidence !== null
+                          ? `Confidence ${fmtConfidence(data.confidence)}`
+                          : 'No confidence recorded'}
+                        {data.is_manually_queried ? ' · manually refined' : ''}
+                      </span>
+                      <div className="k-insp-actions">
+                        <button
+                          type="button"
+                          className="k-btn k-btn--ghost k-btn--sm"
+                          disabled={repricing}
+                          onClick={() => {
+                            // Seed from the identity fields, trimmed at a word
+                            // boundary, and show the adjuster the exact text
+                            // that will be searched.
+                            setDraftQuery(
+                              data.query?.trim() ||
+                                composeQuery({
+                                  make_mfr: data.make_mfr,
+                                  model_number: data.model_number,
+                                  description: data.description,
+                                }),
+                            )
+                            setEditingQuery(true)
+                          }}
+                        >
+                          Edit &amp; re-price
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
+
+                {repricing ? (
+                  <div className="k-reprice-status">
+                    <span className="k-spinner" />
+                    Re-running the pricing engine — price and comps update when it lands.
+                  </div>
+                ) : null}
+
+                {notice ? <p className="k-error">{notice}</p> : null}
 
                 {/* Internal pricing provenance. Quiet, never a warning, never exported. */}
                 {data.substitution_note ? (
@@ -312,7 +424,7 @@ export default function ItemDrawer({
                   </div>
                 ) : null}
 
-                <div className="k-insp-field">
+                <div className={`k-insp-field${repricing ? ' k-cell--pending' : ''}`}>
                   <label>Comparable listings</label>
                   {data.alternative_sources?.length ? (
                     <div className="k-insp-alts">
@@ -335,7 +447,7 @@ export default function ItemDrawer({
                 </div>
 
                 {/* Every figure below is the server's, read verbatim. */}
-                <div className="k-insp-totals">
+                <div className={`k-insp-totals${repricing ? ' k-cell--pending' : ''}`}>
                   <div>
                     <span>Unit cost (pre-tax)</span>
                     <span className="k-mono">{fmtUSD(data.rcv)}</span>

@@ -394,6 +394,13 @@
   white-space: nowrap;
 }
 
+.k-insp-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 6px;
+}
+
 .k-insp-alt--flat {
   cursor: default;
 }

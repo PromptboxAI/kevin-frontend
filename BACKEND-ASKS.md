@@ -59,24 +59,29 @@ them (silent omission is what the design forbids). Nothing is needed from the
 API — but the **intake flow must send this metadata on create**, or the header
 stays dashed in production too.
 
-## 5. No field to store a proof / source URL on an item
+## 5. Adjuster-entered proof URL on manually priced lines
 
-The design's worksheet Link column offers a dashed **+ add** chip on rows with
-no comp: click, paste a URL, and the line carries its own substantiation. That
-is the natural companion to the rule that a hand-typed price DROPS the comps —
-the adjuster is expected to supply a new source.
+**When Kevin prices a line, `alternative_sources[0].link` is the
+substantiation. When an adjuster overrides or manually prices a line, the comps
+drop and there is no field to carry their own proof** — a receipt page, a
+retailer listing they found, an appraisal URL. The export's Source Link column
+then prints blank for exactly the lines a carrier questions hardest.
 
-There is nowhere to put it. `ClaimItemSummary` / `ClaimItemDetail` have no
-`source_link`, and `OverrideRequest` accepts only `rcv · acv · category ·
-reason · valuation_basis · market_comp · dep_manual · age_years ·
-depreciation_method · substitution_note · room_area · make_mfr ·
-model_number · description · quantity`.
+This blocks a locked product rule: CLAUDE.md rule 12 says entering a manual
+value "exposes the `+` affordance to attach a proof URL". It is a backend gap,
+not a design cut.
 
-**The affordance is deliberately NOT built** — a control that accepts a URL and
-discards it is worse than no control, because the adjuster believes the line is
-substantiated. Requesting a nullable `source_link` (string URL) on the item,
-settable through `override`, and emitted in the export's Source Link column
-when no comp URL exists.
+**Request:** a `manual_source_url` (or accept a single-element
+`alternative_sources` write) on `PATCH /v1/claim_items/{row_id}` — descriptive
+edit semantics, so no valuation change and no `overridden` flag — validated as
+a URL, rendered in the Link column and emitted in exports the same way an
+engine comp link is.
+
+**Frontend behavior is already designed and waiting:** a dashed `+ add` chip on
+link-less rows (`k-src-add`) → inline URL input (`k-src-input`) → saves on
+commit. Until the field exists the Link cell stays **empty** — not a chip —
+because a control that accepts a URL and discards it leaves the adjuster
+believing the line is substantiated.
 
 ## 6. Smaller notes
 
