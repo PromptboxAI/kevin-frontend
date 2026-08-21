@@ -80,7 +80,8 @@ export default function WorksheetPage() {
   const density = 'comfortable' as 'comfortable' | 'compact'
   const [cols, setCols] = useState<number[]>(COL_DEFAULTS)
   const filterRef = useRef<HTMLDivElement>(null)
-  const gridRef = useRef<HTMLElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [sbw, setSbw] = useState(0)
   const [scrollTop, setScrollTop] = useState(0)
   const [viewportH, setViewportH] = useState(600)
   const drag = useRef<{ index: number; startX: number; startW: number } | null>(null)
@@ -89,9 +90,12 @@ export default function WorksheetPage() {
     ['--row-cols' as string]: cols
       .map((c, i) => (i === FLEX_COL ? `minmax(${c}px, 1fr)` : `${c}px`))
       .join(' '),
-    // Sum of the tracks: rows carry this as min-width, so widening a column
-    // past the container forces the horizontal scrollbar instead of clipping.
+    // Sum of the tracks. .k-row, .k-row--head and .k-scroll all carry this as
+    // min-width, so widening a column overflows .k-grid horizontally.
     ['--k-gridw' as string]: `${cols.reduce((a, b) => a + b, 0)}px`,
+    // Reserve the vertical scrollbar on the header, which is a SIBLING of the
+    // scrolling body -- otherwise ACV and Link drift out of alignment.
+    ['--k-sbw' as string]: `${sbw}px`,
   } as React.CSSProperties
 
   // Google-Sheets style: drag a header boundary, double-click to reset.
@@ -340,16 +344,19 @@ export default function WorksheetPage() {
   const rowH = ROW_H[density]
 
   useEffect(() => {
-    const el = gridRef.current
+    const el = scrollRef.current
     if (!el) return
-    const measure = () => setViewportH(el.clientHeight)
+    const measure = () => {
+      setViewportH(el.clientHeight)
+      setSbw(el.offsetWidth - el.clientWidth)
+    }
     measure()
     const observer = new ResizeObserver(measure)
     observer.observe(el)
     return () => observer.disconnect()
-  }, [])
+  }, [rows.data])
 
-  const onGridScroll = (e: React.UIEvent<HTMLElement>) => {
+  const onScroll = (e: React.UIEvent<HTMLElement>) => {
     const el = e.currentTarget
     setScrollTop(el.scrollTop)
     // Pull the next page well before the adjuster reaches the bottom.
@@ -684,12 +691,7 @@ export default function WorksheetPage() {
 
       {rows.data ? (
         <div className={docked && openRow !== null ? 'k-grid-dock' : 'k-grid-dock k-grid-dock--off'}>
-          <section
-            ref={gridRef}
-            onScroll={onGridScroll}
-            className={`k-grid k-grid--ws${density === 'compact' ? ' k-grid--compact' : ''}`}
-            style={gridStyle}
-          >
+          <section className="k-grid" style={gridStyle}>
             <div className="k-row k-row--head">
               {HEADERS.map(([cls, label]) =>
                 cls === 'k-c--check' ? (
@@ -723,6 +725,7 @@ export default function WorksheetPage() {
               )}
             </div>
 
+            <div ref={scrollRef} className="k-scroll" onScroll={onScroll}>
             {visible.length === 0 ? (
               <div className="k-ws-empty">
                 <div className="k-empty-art k-empty-art--accent">
@@ -786,6 +789,7 @@ export default function WorksheetPage() {
                 {padBottom > 0 ? <div style={{ height: padBottom }} /> : null}
               </>
             )}
+            </div>
           </section>
 
           {docked && openRow !== null ? (

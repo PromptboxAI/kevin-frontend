@@ -54,6 +54,13 @@ export default function ItemDrawer({
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
+  /** The live 24-class taxonomy -- never a retyped list. */
+  const rules = useQuery({
+    queryKey: ['depreciation-rules'],
+    queryFn: () => api.get<{ categories: string[] }>('/v1/depreciation-rules'),
+    staleTime: Infinity,
+  })
+
   const { data, error, isPending } = useQuery({
     queryKey: ['claim-item', rowId],
     queryFn: () => api.get<ClaimItemDetail>(`/v1/claim_items/${rowId}`),
@@ -97,8 +104,12 @@ export default function ItemDrawer({
     onSuccess: refresh,
   })
   const override = useMutation({
-    mutationFn: (body: { quantity?: number; rcv?: number; age_years?: number }) =>
-      overrideItem(rowId, body),
+    mutationFn: (body: {
+      quantity?: number
+      rcv?: number
+      age_years?: number
+      category?: string
+    }) => overrideItem(rowId, body),
     onSuccess: refresh,
   })
 
@@ -215,7 +226,21 @@ export default function ItemDrawer({
                     placeholder="Room / area…"
                     onCommit={(next) => editLine.mutate({ room_area: next || null })}
                   />
-                  <Field label="Content class" value={data.category} />
+                  <div className="k-insp-field">
+                    <label>Content class</label>
+                    <select
+                      className="k-insp-input"
+                      value={data.category ?? ''}
+                      onChange={(e) => override.mutate({ category: e.target.value })}
+                    >
+                      {data.category ? null : <option value="">—</option>}
+                      {(rules.data?.categories ?? []).map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <EditField
                     label="Make / Mfr"
                     value={data.make_mfr ?? ''}
@@ -393,15 +418,6 @@ function EditField({
         placeholder={placeholder}
         onCommit={onCommit}
       />
-    </div>
-  )
-}
-
-function Field({ label, value, mono }: { label: string; value: string | null; mono?: boolean }) {
-  return (
-    <div className="k-insp-field">
-      <label>{label}</label>
-      <div className={mono ? 'k-insp-static k-mono' : 'k-insp-static'}>{value || '—'}</div>
     </div>
   )
 }

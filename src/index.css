@@ -224,31 +224,6 @@
 
 
 
-.k-grid--ws .k-row--head {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background: var(--k-bg-3);
-  font-size: 10.5px;
-  color: var(--k-fg-3);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-weight: 600;
-}
-
-.k-grid--ws .k-row--head .k-c {
-  padding-top: 8px;
-  padding-bottom: 8px;
-}
-
-.k-grid--ws .k-row:not(.k-row--head) {
-  min-height: 34px;
-}
-
-.k-grid--ws .k-row:not(.k-row--head):hover {
-  background: var(--k-bg-2);
-}
-
 /* Amber = adjuster-actionable unpriced. Never for a capacity wait. */
 .k-row--manual {
   background: var(--k-warn-soft);
@@ -535,29 +510,6 @@
   padding: 0 16px;
 }
 
-.k-grid--ws {
-  margin: 0 16px;
-  border: 1px solid var(--k-line);
-  border-radius: 10px;
-  /* The single scroll container. Sticky header lives inside it. */
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
-}
-
-
-.k-grid--ws .k-row--head .k-c {
-  padding-top: 8px;
-  padding-bottom: 8px;
-}
-
-.k-grid--ws .k-row:not(.k-row--head) {
-  min-height: 38px;
-}
-
-.k-grid--ws .k-row:not(.k-row--head):hover {
-  background: var(--k-bg-2);
-}
 
 /* Amber = adjuster-actionable unpriced. Never for a capacity wait. */
 .k-row--manual {
@@ -674,45 +626,6 @@
 .k-ws-pager {
   display: flex;
   gap: 8px;
-}
-
-/* Docked item panel shares height with the grid (kevin.css owns .k-grid-dock). */
-.k-grid-dock {
-  margin: 0 16px;
-}
-
-.k-grid-dock--off {
-  display: block;
-}
-
-.k-grid-dock .k-grid--ws {
-  margin: 0;
-}
-
-.k-dock {
-  /* Width comes from .k-grid-dock's 440px track in kevin.css -- never set it
-     here, or the panel drifts off spec. */
-  border: 1px solid var(--k-line);
-  border-left: 0;
-  border-radius: 0 10px 10px 0;
-}
-
-.k-grid-dock .k-grid--ws {
-  border-radius: 10px 0 0 10px;
-}
-
-.k-grid--compact .k-row:not(.k-row--head) {
-  min-height: 30px;
-}
-
-.k-grid--compact .k-c {
-  padding-top: 0;
-  padding-bottom: 0;
-}
-
-/* While the panel is docked the whole row is the target. */
-.k-grid-dock:not(.k-grid-dock--off) .k-row:not(.k-row--head) {
-  cursor: pointer;
 }
 
 /* --- Editable worksheet cells --- */
@@ -877,10 +790,6 @@ button.k-avatar-menu-item {
 
 /* Toolbar and claim header stay put while the grid scrolls; .k-grid owns the
    one scroll container, so the header row sticks inside it. */
-.k-toolbar {
-  flex: 0 0 auto;
-}
-
 /* Non-scrolling chrome above the grid. */
 .k-claim-hd,
 .k-ws-bar,
@@ -889,29 +798,13 @@ button.k-avatar-menu-item {
   flex: 0 0 auto;
 }
 
-/* Keep kevin.css's grid layout: it is what makes the dock exactly 440px
-   (grid-template-columns: minmax(0,1fr) 440px). Overriding it to flex left the
-   panel unconstrained. */
-.k-grid-dock {
-  flex: 1;
-  min-height: 0;
+/* --- Grid: kevin.css owns the scroll chain (.k-grid scrolls X, .k-scroll
+       scrolls Y, .k-row--head is a sticky sibling). Nothing here may touch
+       overflow, height or flex on those elements. --- */
+.k-scroll .k-row:hover {
+  background: var(--k-bg-2);
 }
 
-.k-grid-dock--off {
-  display: block;
-}
-
-/* Same specificity as kevin.css's dock rule, declared later, so the grid keeps
-   BOTH scrollbars. kevin.css sets overflow-y:hidden here for the prototype's
-   inner scroller; ours scrolls the grid itself, and a widened column must be
-   reachable horizontally rather than clipped. */
-.k-grid-dock > .k-grid--ws {
-  overflow-x: auto;
-  overflow-y: auto;
-}
-
-/* The dock clips by default; the grid inside it is the scroller, so it must be
-   allowed to present its own scrollbars. */
-.k-grid-dock {
-  overflow: visible;
+.k-grid-dock:not(.k-grid-dock--off) .k-scroll .k-row {
+  cursor: pointer;
 }
