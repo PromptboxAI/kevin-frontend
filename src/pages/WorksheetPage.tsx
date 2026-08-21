@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
-import Badge from '../components/Badge'
 import ClaimStatusChip from '../components/ClaimStatusChip'
 import ItemDrawer from '../components/ItemDrawer'
 import { ApiError, api } from '../lib/api'
@@ -12,10 +11,69 @@ import type { ClaimItem, ClaimItemListResponse, ClaimSummary } from '../lib/type
 
 const PAGE_SIZE = 100
 
+/** Server-side filter -- the API takes ?status=, so this is not a client sieve. */
+const STATUS_FILTERS = [
+  ['', 'All'],
+  ['needs_manual', 'Unpriced'],
+  ['completed', 'Completed'],
+  ['overridden', 'Overridden'],
+  ['processing', 'Processing'],
+  ['failed', 'Failed'],
+] as const
+
+/** Column order and labels, mirroring the prototype's HEADERS table exactly. */
+const HEADERS: [string, string][] = [
+  ['k-c--idx', '#'],
+  ['k-c--room', 'Room / Area'],
+  ['k-c--qty', 'Qty'],
+  ['k-c--desc', 'Description'],
+  ['k-c--mfr', 'Make / Mfr'],
+  ['k-c--model', 'Model #'],
+  ['k-c--cat', 'Content class'],
+  ['k-c--rcv', 'Unit Cost'],
+  ['k-c--ext', 'Ext. Cost'],
+  ['k-c--tax', 'Sales Tax'],
+  ['k-c--rcvtax', 'RCV + Tax'],
+  ['k-c--age', 'Age'],
+  ['k-c--dep', '% Depr.'],
+  ['k-c--depamt', '$ Depr.'],
+  ['k-c--acv', 'ACV'],
+  ['k-c--src', 'Link'],
+]
+
+/**
+ * The prototype's grid template minus the leading checkbox column, which
+ * belongs to multi-select (a mutation) and is not part of the read-state.
+ */
+const ROW_COLS = [
+  '52px', // idx
+  '130px', // room
+  '46px', // qty
+  'minmax(200px, 2.4fr)', // desc
+  'minmax(110px, 1.1fr)', // mfr
+  'minmax(120px, 1.2fr)', // model
+  'minmax(150px, 1.6fr)', // category
+  '118px', // unit cost
+  '96px', // ext cost
+  '78px', // sales tax
+  '100px', // rcv + tax
+  '58px', // age
+  '84px', // % depr
+  '100px', // $ depr
+  '100px', // ACV
+  '48px', // src
+].join(' ')
+
+const GRID_STYLE = {
+  ['--row-cols' as string]: ROW_COLS,
+  ['--k-gridw' as string]: '1548px',
+} as React.CSSProperties
+
 export default function WorksheetPage() {
   const { claimId = '' } = useParams()
   const [offset, setOffset] = useState(0)
   const [openRow, setOpenRow] = useState<number | null>(null)
+  const [status, setStatus] = useState('')
 
   const claim = useQuery({
     queryKey: ['claim', claimId],
@@ -23,12 +81,12 @@ export default function WorksheetPage() {
   })
 
   const rows = useQuery({
-    queryKey: ['claim-items', claimId, offset],
+    queryKey: ['claim-items', claimId, offset, status],
     queryFn: () =>
       api.get<ClaimItemListResponse>(
-        `/v1/claim_items?claim_id=${encodeURIComponent(claimId)}&limit=${PAGE_SIZE}&offset=${offset}`,
+        `/v1/claim_items?claim_id=${encodeURIComponent(claimId)}&limit=${PAGE_SIZE}&offset=${offset}` +
+          (status ? `&status=${status}` : ''),
       ),
-    // Keep the grid on screen while paging instead of flashing empty.
     placeholderData: keepPreviousData,
   })
 
@@ -40,7 +98,7 @@ export default function WorksheetPage() {
     <div className="k-shell">
       <AppHeader />
 
-      <div className="k-claims-body">
+      <div className="k-ws-page">
         <div className="k-ws-head">
           <div>
             <Link to="/claims" className="k-back">
@@ -80,50 +138,52 @@ export default function WorksheetPage() {
           </div>
         ) : null}
 
+        <section className="k-claims-toolbar">
+          <div className="k-segwrap">
+            {STATUS_FILTERS.map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                className={`k-seg ${value === status ? 'k-seg--on' : ''}`}
+                onClick={() => {
+                  setStatus(value)
+                  setOffset(0)
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </section>
+
         {rows.isPending ? <p className="k-note">Loading items…</p> : null}
 
         {rows.error ? (
           <p className="k-error">
-            Couldn't load items
+            Could not load items
             {rows.error instanceof ApiError ? ` (HTTP ${rows.error.status})` : ''}.
           </p>
         ) : null}
 
         {rows.data ? (
           <>
-            <div className="k-ws-wrap">
-              <table className="k-ws">
-                <thead>
-                  <tr>
-                    <th className="k-ws-n">#</th>
-                    <th>Room/Area</th>
-                    <th className="k-ws-n">Qty</th>
-                    <th>Description</th>
-                    <th>Make/Mfr</th>
-                    <th>Model #</th>
-                    <th>Content class</th>
-                    <th className="k-ws-n">Unit Cost</th>
-                    <th className="k-ws-n">Ext. Cost</th>
-                    <th className="k-ws-n">Sales Tax</th>
-                    <th className="k-ws-n">RCV + Tax</th>
-                    <th className="k-ws-n">Age</th>
-                    <th className="k-ws-n">% Depr.</th>
-                    <th className="k-ws-n">$ Depr.</th>
-                    <th className="k-ws-n">ACV</th>
-                    <th>Source</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.data.items.map((item, index) => (
-                    <Row
-                      key={item.id}
-                      item={item}
-                      n={offset + index + 1}
-                      onOpen={() => setOpenRow(item.id)}
-                    />
-                  ))}
-                </tbody>
-              </table>
+            <div className="k-grid k-grid--ws" style={GRID_STYLE}>
+              <div className="k-row k-row--head">
+                {HEADERS.map(([cls, label]) => (
+                  <div key={cls} className={`k-c ${cls}`}>
+                    {label}
+                  </div>
+                ))}
+              </div>
+
+              {rows.data.items.map((item, index) => (
+                <Row
+                  key={item.id}
+                  item={item}
+                  n={offset + index + 1}
+                  onOpen={() => setOpenRow(item.id)}
+                />
+              ))}
             </div>
 
             <div className="k-ws-foot">
@@ -155,57 +215,94 @@ export default function WorksheetPage() {
         ) : null}
       </div>
 
-      {openRow !== null ? (
-        <ItemDrawer rowId={openRow} onClose={() => setOpenRow(null)} />
-      ) : null}
+      {openRow !== null ? <ItemDrawer rowId={openRow} onClose={() => setOpenRow(null)} /> : null}
     </div>
   )
+}
+
+/** A derived cell with no value reads as a muted dash, as in the prototype. */
+function Dash() {
+  return <span className="k-dash">—</span>
+}
+
+function Money({ value }: { value: number | null | undefined }) {
+  return value === null || value === undefined ? <Dash /> : <>{fmtUSD(value)}</>
 }
 
 function Row({ item, n, onOpen }: { item: ClaimItem; n: number; onOpen: () => void }) {
   const unpriced = item.status === 'needs_manual'
   // Capacity waits are NOT adjuster work -- quiet pending state, never amber.
-  const waiting = unpriced && item.manual_reason !== null && CAPACITY_REASONS.has(item.manual_reason)
+  const waiting = Boolean(unpriced && item.manual_reason && CAPACITY_REASONS.has(item.manual_reason))
   const comp = item.alternative_sources?.[0]
+  const depAmount = item.depreciation_amount
 
   return (
-    <tr className={unpriced && !waiting ? 'k-ws-row k-ws-row--manual' : 'k-ws-row'}>
-      <td className="k-ws-n k-ws-idx">
-        <button type="button" className="k-ws-open" onClick={onOpen} title="Open item">
-          {n}
+    <div className={`k-row${unpriced && !waiting ? ' k-row--manual' : ''}`}>
+      <div className="k-c k-c--idx">
+        <button type="button" className="k-idx-btn" onClick={onOpen} title="Open item">
+          {String(n).padStart(4, '0')}
         </button>
-      </td>
-      <td>{item.room_area ?? '—'}</td>
-      <td className="k-ws-n">{item.quantity}</td>
-      <td className="k-ws-desc">
-        {item.description || <span className="k-ws-blank">—</span>}
-        {waiting ? <Badge tone="quiet">Pricing</Badge> : null}
-        {item.is_manually_queried ? <Badge tone="quiet">Repriced</Badge> : null}
-        {item.valuation_basis === 'manual' ? <Badge tone="quiet">Manual</Badge> : null}
-      </td>
-      <td>{item.make_mfr || '—'}</td>
-      <td className="k-ws-mono">{item.model_number || '—'}</td>
-      <td>{item.category ?? '—'}</td>
+      </div>
+
+      <div className="k-c k-c--room">{item.room_area || <Dash />}</div>
+      <div className="k-c k-c--qty k-mono">{item.quantity}</div>
+
+      <div className="k-c k-c--desc">
+        <span className="k-desc-text">{item.description || <Dash />}</span>
+        {waiting ? <span className="k-pricing-chip">Pricing</span> : null}
+      </div>
+
+      <div className="k-c k-c--mfr">{item.make_mfr || <Dash />}</div>
+      <div className="k-c k-c--model k-mono">{item.model_number || <Dash />}</div>
+
+      <div className="k-c k-c--cat">
+        <span>{item.category || <Dash />}</span>
+        {item.pcs_code ? <span className="k-pcs">{item.pcs_code}</span> : null}
+      </div>
+
       {/* Every money cell below is the server's figure, read verbatim. */}
-      <td className="k-ws-n k-ws-mono">{fmtUSD(item.rcv)}</td>
-      <td className="k-ws-n k-ws-mono">{fmtUSD(extCost(item.rcv_total_incl, item.tax))}</td>
-      <td className="k-ws-n k-ws-mono">{fmtUSD(item.tax)}</td>
-      <td className="k-ws-n k-ws-mono">{fmtUSD(item.rcv_total_incl)}</td>
-      <td className="k-ws-n k-ws-mono">{fmtAge(item.age_years)}</td>
-      <td className="k-ws-n k-ws-mono">{fmtPct(item.depreciation_pct)}</td>
-      <td className="k-ws-n k-ws-mono">{fmtUSD(item.depreciation_amount)}</td>
-      <td className="k-ws-n k-ws-mono">{fmtUSD(item.acv_total_incl)}</td>
-      <td>
-        {/* Only alternative_sources[0] has a direct merchant link; runners-up
-            carry a Google Shopping search url and must render as plain text. */}
+      <div className="k-c k-c--rcv k-mono">
+        <Money value={item.rcv} />
+      </div>
+      <div className="k-c k-c--ext k-mono">
+        <Money value={extCost(item.rcv_total_incl, item.tax)} />
+      </div>
+      <div className="k-c k-c--tax k-mono">
+        <Money value={item.tax} />
+      </div>
+      <div className="k-c k-c--rcvtax k-mono">
+        <Money value={item.rcv_total_incl} />
+      </div>
+      <div className="k-c k-c--age k-mono">
+        {item.age_years === null ? <Dash /> : fmtAge(item.age_years)}
+      </div>
+      <div className="k-c k-c--dep k-mono">
+        {item.depreciation_pct === null ? <Dash /> : fmtPct(item.depreciation_pct)}
+      </div>
+      <div className="k-c k-c--depamt k-mono">
+        {/* Depreciation is always >= 0, so a signed zero is a formatting artifact. */}
+        {depAmount === null || depAmount === undefined ? (
+          <Dash />
+        ) : depAmount > 0 ? (
+          `−${fmtUSD(depAmount)}`
+        ) : (
+          fmtUSD(0)
+        )}
+      </div>
+      <div className="k-c k-c--acv k-mono k-acv">
+        <Money value={item.acv_total_incl} />
+      </div>
+
+      <div className="k-c k-c--src">
+        {/* Only alternative_sources[0] resolves to a merchant listing. */}
         {comp?.link ? (
-          <a className="k-link" href={comp.link} target="_blank" rel="noreferrer noopener">
+          <a className="k-src-link" href={comp.link} target="_blank" rel="noreferrer noopener">
             Link
           </a>
         ) : (
-          '—'
+          <Dash />
         )}
-      </td>
-    </tr>
+      </div>
+    </div>
   )
 }

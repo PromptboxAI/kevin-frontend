@@ -1,48 +1,37 @@
-/* App-only styles. Everything else comes from styles/kevin.css, which IS the
-   design system -- do not redefine its classes here. */
+/* App-only styles.
+   styles/kevin.css IS the design system -- never redefine its classes here.
+   Everything below is either a shell primitive the prototype expressed with
+   inline styles, or a read-state affordance the prototype does not have. */
 
 .k-shell {
   min-height: 100dvh;
   background: var(--k-bg-3);
-}
-
-/* --- App bar --- */
-.k-appbar {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 22px;
-  background: var(--k-bg);
-  border-bottom: 1px solid var(--k-line);
+  flex-direction: column;
 }
 
-.k-appbar-brand {
+/* The prototype renders this through its <KevinWordmark> component. */
+.k-wordmark {
   font-family: var(--k-font-display);
   font-weight: 700;
-  font-size: 17px;
-  margin: 0;
+  font-size: 16px;
+  color: var(--k-fg);
 }
 
-.k-appbar-brand span {
+.k-wordmark span {
   color: var(--k-accent);
 }
 
-.k-appbar-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.k-appbar-user {
+.k-topbar-user {
   font-size: 12.5px;
   color: var(--k-fg-3);
 }
 
-/* --- Claims header --- */
+/* --- Claims dashboard --- */
 .k-claims-head {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: flex-end;
   gap: 16px;
   flex-wrap: wrap;
 }
@@ -61,8 +50,8 @@
   border-radius: 6px;
 }
 
-/* --- Claim row cells --- */
 .k-claim-id {
+  display: block;
   font-family: var(--k-font-mono);
   font-size: 11px;
   color: var(--k-fg-4);
@@ -74,13 +63,14 @@
 .k-claim-sub {
   font-size: 11.5px;
   color: var(--k-fg-4);
-  margin-top: 1px;
+  margin: 1px 0 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .k-claim-name {
+  display: block;
   font-size: 13px;
   font-weight: 500;
 }
@@ -90,7 +80,6 @@
   color: var(--k-fg-2);
 }
 
-/* Numbers use the mono face with tabular figures, as in the worksheet. */
 .k-claim-num,
 .k-claim-rcv {
   text-align: right;
@@ -115,8 +104,251 @@
 }
 
 .k-error {
-  color: oklch(0.55 0.19 25);
-  font-size: 13.5px;
+  color: var(--k-danger, oklch(0.55 0.19 25));
+  font-size: 13px;
+}
+
+/* --- Worksheet page chrome --- */
+.k-ws-page {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 16px 24px;
+}
+
+.k-ws-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.k-back {
+  display: inline-block;
+  font-size: 12px;
+  color: var(--k-fg-3);
+  margin-bottom: 2px;
+}
+
+.k-back:hover {
+  color: var(--k-accent);
+}
+
+.k-ws-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* The grid itself is .k-grid from kevin.css; this only bounds and frames it. */
+.k-grid--ws {
+  border: 1px solid var(--k-line);
+  border-radius: 10px;
+  overflow: auto;
+  max-height: calc(100dvh - 260px);
+}
+
+.k-grid--ws .k-row--head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--k-bg-3);
+  font-size: 10.5px;
+  color: var(--k-fg-3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.k-grid--ws .k-row--head .k-c {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.k-grid--ws .k-row:not(.k-row--head) {
+  min-height: 34px;
+}
+
+.k-grid--ws .k-row:not(.k-row--head):hover {
+  background: var(--k-bg-2);
+}
+
+/* Amber = adjuster-actionable unpriced. Never for a capacity wait. */
+.k-row--manual {
+  background: var(--k-warn-soft);
+}
+
+.k-idx-btn {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-family: var(--k-font-mono);
+  font-size: 10.5px;
+  color: var(--k-fg-4);
+  cursor: pointer;
+}
+
+.k-idx-btn:hover {
+  color: var(--k-accent);
+  text-decoration: underline;
+}
+
+/* A derived cell with no value. Muted, never 0.00. */
+.k-dash {
+  color: var(--k-fg-4);
+}
+
+.k-desc-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.k-acv {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+/* Capacity wait: quiet and pulsing, never amber, never an error. */
+.k-pricing-chip {
+  flex-shrink: 0;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--k-bg-2);
+  color: var(--k-fg-3);
+  font-size: 10px;
+  font-weight: 600;
+  animation: k-pricing-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes k-pricing-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.k-pcs {
+  font-family: var(--k-font-mono);
+  font-size: 10px;
+  color: var(--k-fg-4);
+}
+
+.k-ws-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.k-ws-pager {
+  display: flex;
+  gap: 8px;
+}
+
+/* --- Item drawer --- */
+.k-drawer-scrim {
+  position: fixed;
+  inset: 0;
+  background: oklch(0.2 0.02 250 / 0.32);
+  z-index: 40;
+}
+
+.k-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 440px;
+  max-width: 100vw;
+  z-index: 41;
+  display: flex;
+  border-left: 1px solid var(--k-line);
+  box-shadow: -8px 0 24px oklch(0.2 0.02 250 / 0.12);
+}
+
+.k-insp-img {
+  display: block;
+  width: 100%;
+  max-height: 232px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: var(--k-bg);
+}
+
+.k-insp-img--empty {
+  display: grid;
+  place-items: center;
+  height: 140px;
+  color: var(--k-fg-4);
+  font-size: 12px;
+  border: 1px dashed var(--k-line);
+}
+
+.k-insp-photonav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Read-only mirror of .k-insp-input: the drawer keeps the form shape without
+   implying the fields accept typing yet. */
+.k-insp-static {
+  padding: 7px 10px;
+  border: 1px solid var(--k-line);
+  border-radius: 5px;
+  background: var(--k-bg);
+  font-size: 12.5px;
+  color: var(--k-fg);
+  min-height: 31px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.k-insp-alt--flat {
+  cursor: default;
+}
+
+.k-insp-alt--flat:hover {
+  border-color: var(--k-line);
+}
+
+.k-comp-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.k-comp-src {
+  font-size: 11px;
+  color: var(--k-fg-3);
+  flex-shrink: 0;
+}
+
+.k-comp-price {
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.k-lkq-note--warn {
+  background: var(--k-warn-soft);
+  border-color: var(--k-warn);
 }
 
 /* --- Auth form --- */
@@ -195,231 +427,4 @@
   font-family: var(--k-font-mono);
   font-size: 12px;
   color: var(--k-fg-4);
-}
-
-/* --- Worksheet --- */
-.k-ws-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.k-back {
-  display: inline-block;
-  font-size: 12.5px;
-  color: var(--k-fg-3);
-  margin-bottom: 4px;
-}
-
-.k-back:hover {
-  color: var(--k-accent);
-}
-
-.k-ws-meta {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 2px 0 4px;
-}
-
-.k-ws-wrap {
-  border: 1px solid var(--k-line);
-  border-radius: 10px;
-  background: var(--k-bg);
-  overflow-x: auto;
-}
-
-.k-ws {
-  width: 100%;
-  min-width: 1500px;
-  border-collapse: collapse;
-  font-size: 12.5px;
-}
-
-.k-ws th,
-.k-ws td {
-  text-align: left;
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--k-line);
-  white-space: nowrap;
-}
-
-.k-ws thead th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: var(--k-bg-3);
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-weight: 600;
-  color: var(--k-fg-3);
-}
-
-.k-ws tbody tr:last-child td {
-  border-bottom: 0;
-}
-
-.k-ws-row:hover td {
-  background: var(--k-bg-2);
-}
-
-/* Amber = special-limits / adjuster-actionable unpriced. Never for capacity waits. */
-.k-ws-row--manual td {
-  background: var(--k-warn-soft);
-}
-
-.k-ws-n {
-  text-align: right !important;
-}
-
-.k-ws-mono {
-  font-family: var(--k-font-mono);
-  font-feature-settings: 'tnum';
-}
-
-.k-ws-idx {
-  color: var(--k-fg-4);
-  font-family: var(--k-font-mono);
-}
-
-.k-ws-desc {
-  max-width: 320px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-/* An unpriced row is simply BLANK and editable -- no badge, no error. */
-.k-ws-blank {
-  color: var(--k-fg-4);
-}
-
-.k-ws-foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding-top: 12px;
-  flex-wrap: wrap;
-}
-
-.k-ws-pager {
-  display: flex;
-  gap: 8px;
-}
-
-/* --- Item drawer --- */
-.k-drawer-scrim {
-  position: fixed;
-  inset: 0;
-  background: oklch(0.2 0.02 250 / 0.32);
-  z-index: 40;
-}
-
-.k-drawer {
-  position: fixed;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 440px;
-  max-width: 100vw;
-  z-index: 41;
-  display: flex;
-  border-left: 1px solid var(--k-line);
-  box-shadow: -8px 0 24px oklch(0.2 0.02 250 / 0.12);
-}
-
-.k-ws-open {
-  border: 0;
-  background: none;
-  padding: 0;
-  font: inherit;
-  font-family: var(--k-font-mono);
-  color: var(--k-accent);
-  cursor: pointer;
-}
-
-.k-ws-open:hover {
-  text-decoration: underline;
-}
-
-.k-insp-img {
-  display: block;
-  width: 100%;
-  max-height: 232px;
-  object-fit: contain;
-  border-radius: 6px;
-  background: var(--k-bg);
-}
-
-.k-insp-img--empty {
-  display: grid;
-  place-items: center;
-  height: 140px;
-  color: var(--k-fg-4);
-  font-size: 12px;
-  border: 1px dashed var(--k-line);
-}
-
-.k-insp-photonav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-/* Read-only mirror of .k-insp-input, so the drawer reads as a form
-   without implying the fields are editable yet. */
-.k-insp-static {
-  padding: 7px 10px;
-  border: 1px solid var(--k-line);
-  border-radius: 5px;
-  background: var(--k-bg);
-  font-size: 12.5px;
-  color: var(--k-fg);
-  min-height: 31px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.k-insp-alt--flat {
-  cursor: default;
-}
-
-.k-insp-alt--flat:hover {
-  border-color: var(--k-line);
-}
-
-.k-comp-title {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 12px;
-}
-
-.k-comp-src {
-  font-size: 11px;
-  color: var(--k-fg-3);
-  flex-shrink: 0;
-}
-
-.k-comp-price {
-  font-size: 12px;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
-/* Amber only for adjuster-actionable states, never for capacity waits. */
-.k-lkq-note--warn {
-  background: var(--k-warn-soft);
-  border-color: var(--k-warn);
 }
