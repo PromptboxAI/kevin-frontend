@@ -1,16 +1,34 @@
-import { Route, Routes } from 'react-router-dom'
-import HomePage from './pages/HomePage'
+import { Navigate, Route, Routes } from 'react-router-dom'
+import RequireAuth from './components/RequireAuth'
+import { AuthProvider } from './lib/auth'
+import ClaimsPage from './pages/ClaimsPage'
 import NotFoundPage from './pages/NotFoundPage'
 import PortalPage from './pages/PortalPage'
+import SignInPage from './pages/SignInPage'
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      {/* Public, token-scoped. The backend mints these links as
-          <SHARE_BASE_URL>/p/<token> -- this route is why they resolve. */}
-      <Route path="/p/:token" element={<PortalPage />} />
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+    <AuthProvider>
+      <Routes>
+        <Route path="/" element={<Navigate to="/claims" replace />} />
+        <Route path="/sign-in" element={<SignInPage />} />
+
+        {/* Public, token-scoped. The backend mints these links as
+            <SHARE_BASE_URL>/p/<token> -- this route is why they resolve.
+            Deliberately outside RequireAuth: the insured has no account. */}
+        <Route path="/p/:token" element={<PortalPage />} />
+
+        <Route
+          path="/claims"
+          element={
+            <RequireAuth>
+              <ClaimsPage />
+            </RequireAuth>
+          }
+        />
+
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </AuthProvider>
   )
 }

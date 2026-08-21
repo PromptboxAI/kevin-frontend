@@ -75,3 +75,77 @@ code {
   font-family: var(--k-font-mono);
   font-size: 0.9em;
 }
+
+.k-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.k-field {
+  display: grid;
+  gap: 5px;
+}
+
+.k-field span {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.k-field input {
+  font: inherit;
+  font-size: 14px;
+  padding: 9px 11px;
+  border: 1px solid var(--k-line);
+  border-radius: 7px;
+  background: var(--k-bg);
+}
+
+.k-field input:focus-visible {
+  outline: 2px solid var(--k-accent);
+  outline-offset: 1px;
+}
+
+.k-btn {
+  font: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 10px 16px;
+  border: 1px solid var(--k-accent);
+  border-radius: 7px;
+  background: var(--k-accent);
+  color: oklch(1 0 0);
+  cursor: pointer;
+}
+
+.k-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.k-btn--ghost {
+  background: transparent;
+  color: var(--k-accent);
+  margin-top: 20px;
+}
+
+.k-error {
+  color: oklch(0.55 0.19 25);
+  font-size: 14px;
+}
+
+.k-meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 16px;
+  margin: 18px 0 0;
+  font-size: 14px;
+}
+
+.k-meta dt {
+  font-weight: 700;
+}
+
+.k-meta dd {
+  margin: 0;
+}
