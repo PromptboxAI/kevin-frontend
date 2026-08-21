@@ -1,166 +1,17 @@
-/* Design tokens ported from design/kevin.css. Kept to the subset the scaffold
-   uses; the full token set lands with the design-system port. */
-:root {
-  --k-font-ui: 'Lato', 'Helvetica Neue', Arial, sans-serif;
-  --k-font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-  --k-font-display: 'Merriweather', Georgia, serif;
+/* App-only styles. Everything else comes from styles/kevin.css, which IS the
+   design system -- do not redefine its classes here. */
 
-  --k-bg: oklch(1 0 0);
-  --k-bg-3: oklch(0.972 0.006 250);
-  --k-line: oklch(0.9 0.01 250);
-  --k-accent: oklch(0.38 0.085 252);
-
-  color-scheme: light;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  font-family: var(--k-font-ui);
-  background: var(--k-bg-3);
-  color: oklch(0.25 0.015 250);
-  -webkit-font-smoothing: antialiased;
-}
-
-.k-portal {
-  min-height: 100dvh;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-}
-
-.k-portal-card {
-  background: var(--k-bg);
-  border: 1px solid var(--k-line);
-  border-radius: 10px;
-  padding: 40px;
-  max-width: 520px;
-  width: 100%;
-}
-
-.k-portal-brand {
-  font-family: var(--k-font-display);
-  font-weight: 700;
-  font-size: 20px;
-  margin: 0 0 24px;
-}
-
-/* The wordmark is "Kevin." with an accent-colored period. */
-.k-portal-brand span {
-  color: var(--k-accent);
-}
-
-.k-portal-card h1 {
-  font-family: var(--k-font-display);
-  font-size: 22px;
-  line-height: 1.3;
-  margin: 0 0 12px;
-}
-
-.k-portal-card p {
-  margin: 0 0 10px;
-  line-height: 1.55;
-}
-
-.k-portal-ref {
-  font-family: var(--k-font-mono);
-  font-size: 12px;
-  color: oklch(0.55 0.015 250);
-}
-
-code {
-  font-family: var(--k-font-mono);
-  font-size: 0.9em;
-}
-
-.k-form {
-  display: grid;
-  gap: 14px;
-  margin-top: 20px;
-}
-
-.k-field {
-  display: grid;
-  gap: 5px;
-}
-
-.k-field span {
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.k-field input {
-  font: inherit;
-  font-size: 14px;
-  padding: 9px 11px;
-  border: 1px solid var(--k-line);
-  border-radius: 7px;
-  background: var(--k-bg);
-}
-
-.k-field input:focus-visible {
-  outline: 2px solid var(--k-accent);
-  outline-offset: 1px;
-}
-
-.k-btn {
-  font: inherit;
-  font-weight: 700;
-  font-size: 14px;
-  padding: 10px 16px;
-  border: 1px solid var(--k-accent);
-  border-radius: 7px;
-  background: var(--k-accent);
-  color: oklch(1 0 0);
-  cursor: pointer;
-}
-
-.k-btn:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-
-.k-btn--ghost {
-  background: transparent;
-  color: var(--k-accent);
-  margin-top: 20px;
-}
-
-.k-error {
-  color: oklch(0.55 0.19 25);
-  font-size: 14px;
-}
-
-.k-meta {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 6px 16px;
-  margin: 18px 0 0;
-  font-size: 14px;
-}
-
-.k-meta dt {
-  font-weight: 700;
-}
-
-.k-meta dd {
-  margin: 0;
-}
-
-/* --- App shell --- */
-.k-app {
+.k-shell {
   min-height: 100dvh;
   background: var(--k-bg-3);
 }
 
+/* --- App bar --- */
 .k-appbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 24px;
+  padding: 10px 22px;
   background: var(--k-bg);
   border-bottom: 1px solid var(--k-line);
 }
@@ -179,142 +30,169 @@ code {
 .k-appbar-right {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
 }
 
 .k-appbar-user {
-  font-size: 13px;
-  color: oklch(0.5 0.015 250);
+  font-size: 12.5px;
+  color: var(--k-fg-3);
 }
 
-.k-btn--sm {
-  padding: 6px 12px;
-  font-size: 13px;
-  margin-top: 0;
-}
-
-.k-main {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 28px 24px 64px;
-}
-
-.k-head {
+/* --- Claims header --- */
+.k-claims-head {
   display: flex;
-  align-items: baseline;
-  gap: 12px;
-  margin-bottom: 18px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
-.k-head h1 {
+.k-claims-title {
   font-family: var(--k-font-display);
-  font-size: 24px;
+  font-size: 22px;
   margin: 0;
 }
 
-.k-count,
-.k-note {
-  font-size: 13px;
-  color: oklch(0.5 0.015 250);
-  margin: 0;
+.k-segwrap {
+  display: flex;
+  gap: 4px;
+  padding: 2px;
+  background: var(--k-bg-2);
+  border-radius: 6px;
 }
 
-/* --- Table --- */
-.k-tablewrap {
-  overflow-x: auto;
-  background: var(--k-bg);
-  border: 1px solid var(--k-line);
-  border-radius: 10px;
-}
-
-.k-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-
-.k-table th,
-.k-table td {
-  text-align: left;
-  padding: 11px 14px;
-  border-bottom: 1px solid var(--k-line);
+/* --- Claim row cells --- */
+.k-claim-id {
+  font-family: var(--k-font-mono);
+  font-size: 11px;
+  color: var(--k-fg-4);
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.k-table thead th {
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: oklch(0.5 0.015 250);
+.k-claim-sub {
+  font-size: 11.5px;
+  color: var(--k-fg-4);
+  margin-top: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.k-claim-name {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.k-claim-carrier {
+  font-size: 12.5px;
+  color: var(--k-fg-2);
+}
+
+/* Numbers use the mono face with tabular figures, as in the worksheet. */
+.k-claim-num,
+.k-claim-rcv {
+  text-align: right;
+  font-family: var(--k-font-mono);
+  font-feature-settings: 'tnum';
+}
+
+.k-claim-num {
+  font-size: 12.5px;
+}
+
+.k-claim-rcv {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.k-claim-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.k-error {
+  color: oklch(0.55 0.19 25);
+  font-size: 13.5px;
+}
+
+/* --- Auth form --- */
+.k-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.k-field {
+  display: grid;
+  gap: 5px;
+}
+
+.k-field span {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.k-field input {
+  font: inherit;
+  font-size: 14px;
+  padding: 9px 11px;
+  border: 1px solid var(--k-line);
+  border-radius: 7px;
+  background: var(--k-bg);
+}
+
+.k-field input:focus-visible {
+  outline: 2px solid var(--k-accent);
+  outline-offset: 1px;
+}
+
+/* --- Centred single-card surfaces (portal, sign-in, 404) --- */
+.k-portal {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
   background: var(--k-bg-3);
 }
 
-.k-table tbody tr:last-child td {
-  border-bottom: 0;
-}
-
-/* Numbers align right and use the mono face, as in the worksheet. */
-.k-num {
-  text-align: right !important;
-  font-family: var(--k-font-mono);
-  font-variant-numeric: tabular-nums;
-}
-
-.k-strong {
-  display: block;
-  font-weight: 700;
-}
-
-.k-sub {
-  display: block;
-  font-family: var(--k-font-mono);
-  font-size: 12px;
-  color: oklch(0.55 0.015 250);
-}
-
-/* --- Status chips --- */
-.k-chip {
-  display: inline-block;
-  padding: 3px 9px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-  background: oklch(0.94 0.006 250);
-  color: oklch(0.4 0.015 250);
-}
-
-.k-chip--processing {
-  background: var(--k-accent-soft, oklch(0.38 0.085 252 / 0.1));
-  color: var(--k-accent);
-}
-
-.k-chip--in_review {
-  background: oklch(0.66 0.13 175 / 0.16);
-  color: oklch(0.42 0.09 175);
-}
-
-.k-chip--exported {
-  background: oklch(0.38 0.085 252);
-  color: oklch(1 0 0);
-}
-
-.k-empty {
+.k-portal-card {
   background: var(--k-bg);
   border: 1px solid var(--k-line);
   border-radius: 10px;
-  padding: 44px;
-  text-align: center;
+  padding: 40px;
+  max-width: 520px;
+  width: 100%;
 }
 
-.k-empty h2 {
+.k-portal-brand {
   font-family: var(--k-font-display);
-  font-size: 18px;
-  margin: 0 0 8px;
+  font-weight: 700;
+  font-size: 19px;
+  margin: 0 0 22px;
 }
 
-.k-empty p {
-  margin: 0 auto;
-  max-width: 460px;
-  color: oklch(0.45 0.015 250);
+.k-portal-brand span {
+  color: var(--k-accent);
+}
+
+.k-portal-card h1 {
+  font-family: var(--k-font-display);
+  font-size: 21px;
+  line-height: 1.3;
+  margin: 0 0 12px;
+}
+
+.k-portal-card p {
+  margin: 0 0 10px;
   line-height: 1.55;
+}
+
+.k-portal-ref {
+  font-family: var(--k-font-mono);
+  font-size: 12px;
+  color: var(--k-fg-4);
 }

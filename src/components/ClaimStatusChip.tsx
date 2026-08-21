@@ -1,13 +1,19 @@
+import Badge from './Badge'
 import type { ClaimStatus } from '../lib/types'
 
-/** Status is derived server-side; this only labels it. */
-const LABEL: Record<ClaimStatus, string> = {
-  draft: 'Draft',
-  processing: 'Processing',
-  in_review: 'In review',
-  exported: 'Exported',
+/** Status is DERIVED by the backend from item states -- never set by hand. */
+const STATUS: Record<ClaimStatus, { label: string; tone: 'ok' | 'warn' | 'quiet' | 'accent' }> = {
+  draft: { label: 'Draft', tone: 'quiet' },
+  processing: { label: 'Processing', tone: 'accent' },
+  in_review: { label: 'In review', tone: 'ok' },
+  exported: { label: 'Exported', tone: 'quiet' },
 }
 
 export default function ClaimStatusChip({ status }: { status: ClaimStatus }) {
-  return <span className={`k-chip k-chip--${status}`}>{LABEL[status] ?? status}</span>
+  const meta = STATUS[status] ?? { label: status, tone: 'quiet' as const }
+  return (
+    <Badge tone={meta.tone} dot title="Derived from the claim's items — not set by hand">
+      {meta.label}
+    </Badge>
+  )
 }
