@@ -149,3 +149,172 @@ code {
 .k-meta dd {
   margin: 0;
 }
+
+/* --- App shell --- */
+.k-app {
+  min-height: 100dvh;
+  background: var(--k-bg-3);
+}
+
+.k-appbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--k-bg);
+  border-bottom: 1px solid var(--k-line);
+}
+
+.k-appbar-brand {
+  font-family: var(--k-font-display);
+  font-weight: 700;
+  font-size: 17px;
+  margin: 0;
+}
+
+.k-appbar-brand span {
+  color: var(--k-accent);
+}
+
+.k-appbar-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.k-appbar-user {
+  font-size: 13px;
+  color: oklch(0.5 0.015 250);
+}
+
+.k-btn--sm {
+  padding: 6px 12px;
+  font-size: 13px;
+  margin-top: 0;
+}
+
+.k-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 24px 64px;
+}
+
+.k-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.k-head h1 {
+  font-family: var(--k-font-display);
+  font-size: 24px;
+  margin: 0;
+}
+
+.k-count,
+.k-note {
+  font-size: 13px;
+  color: oklch(0.5 0.015 250);
+  margin: 0;
+}
+
+/* --- Table --- */
+.k-tablewrap {
+  overflow-x: auto;
+  background: var(--k-bg);
+  border: 1px solid var(--k-line);
+  border-radius: 10px;
+}
+
+.k-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.k-table th,
+.k-table td {
+  text-align: left;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--k-line);
+  white-space: nowrap;
+}
+
+.k-table thead th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: oklch(0.5 0.015 250);
+  background: var(--k-bg-3);
+}
+
+.k-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Numbers align right and use the mono face, as in the worksheet. */
+.k-num {
+  text-align: right !important;
+  font-family: var(--k-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.k-strong {
+  display: block;
+  font-weight: 700;
+}
+
+.k-sub {
+  display: block;
+  font-family: var(--k-font-mono);
+  font-size: 12px;
+  color: oklch(0.55 0.015 250);
+}
+
+/* --- Status chips --- */
+.k-chip {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: oklch(0.94 0.006 250);
+  color: oklch(0.4 0.015 250);
+}
+
+.k-chip--processing {
+  background: var(--k-accent-soft, oklch(0.38 0.085 252 / 0.1));
+  color: var(--k-accent);
+}
+
+.k-chip--in_review {
+  background: oklch(0.66 0.13 175 / 0.16);
+  color: oklch(0.42 0.09 175);
+}
+
+.k-chip--exported {
+  background: oklch(0.38 0.085 252);
+  color: oklch(1 0 0);
+}
+
+.k-empty {
+  background: var(--k-bg);
+  border: 1px solid var(--k-line);
+  border-radius: 10px;
+  padding: 44px;
+  text-align: center;
+}
+
+.k-empty h2 {
+  font-family: var(--k-font-display);
+  font-size: 18px;
+  margin: 0 0 8px;
+}
+
+.k-empty p {
+  margin: 0 auto;
+  max-width: 460px;
+  color: oklch(0.45 0.015 250);
+  line-height: 1.55;
+}
