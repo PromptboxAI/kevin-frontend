@@ -50,3 +50,19 @@ export function fmtAge(years: number | null | undefined): string {
   if (years === null || years === undefined) return '—'
   return String(years)
 }
+
+/**
+ * A comp price is normally a number, but a legacy row can carry a display
+ * string ("$369.00"). Format defensively rather than trusting the type.
+ */
+export function fmtCompPrice(price: number | string | null | undefined): string {
+  if (price === null || price === undefined || price === '') return '—'
+  if (typeof price === 'number') return fmtUSD(price)
+  const parsed = Number(String(price).replace(/[^0-9.-]/g, ''))
+  return Number.isFinite(parsed) ? fmtUSD(parsed) : String(price)
+}
+
+export function fmtConfidence(value: number | null | undefined): string {
+  if (value === null || value === undefined) return '—'
+  return `${Math.round(value * 100)}%`
+}

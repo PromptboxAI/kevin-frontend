@@ -104,3 +104,32 @@ export type ClaimItemListResponse = {
   limit: number
   offset: number
 }
+
+/** One capture backing a line item. Carries NO image_url by design. */
+export type ItemPhoto = {
+  photo_id: number
+  is_primary: boolean
+  note: string | null
+  room: string | null
+}
+
+export type ClaimItemDetail = ClaimItem & {
+  depreciation_rule_version: string | null
+  market_comp: number | null
+  ceiling_used: number | null
+  dep_manual: number | null
+  /** ADJUSTER-FACING ONLY. Never export it, never present it as a warning. */
+  substitution_note: string | null
+  valuation_engine_version: string | null
+  overridden_by: string | null
+  overridden_at: string | null
+  override_reason: string | null
+  /** Short-lived (~5 min) signed URL. Do not persist. */
+  image_url: string | null
+  /** Empty is NORMAL -- single-photo and written-import items never stage. */
+  photos: ItemPhoto[]
+}
+
+export type ThumbnailsResponse = {
+  thumbnails: { id: number; image_url: string | null }[]
+}

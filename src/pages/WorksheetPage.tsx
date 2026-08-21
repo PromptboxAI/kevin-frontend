@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import Badge from '../components/Badge'
 import ClaimStatusChip from '../components/ClaimStatusChip'
+import ItemDrawer from '../components/ItemDrawer'
 import { ApiError, api } from '../lib/api'
 import { extCost, fmtAge, fmtInt, fmtPct, fmtUSD } from '../lib/format'
 import { CAPACITY_REASONS } from '../lib/types'
@@ -14,6 +15,7 @@ const PAGE_SIZE = 100
 export default function WorksheetPage() {
   const { claimId = '' } = useParams()
   const [offset, setOffset] = useState(0)
+  const [openRow, setOpenRow] = useState<number | null>(null)
 
   const claim = useQuery({
     queryKey: ['claim', claimId],
@@ -113,7 +115,12 @@ export default function WorksheetPage() {
                 </thead>
                 <tbody>
                   {rows.data.items.map((item, index) => (
-                    <Row key={item.id} item={item} n={offset + index + 1} />
+                    <Row
+                      key={item.id}
+                      item={item}
+                      n={offset + index + 1}
+                      onOpen={() => setOpenRow(item.id)}
+                    />
                   ))}
                 </tbody>
               </table>
@@ -147,11 +154,15 @@ export default function WorksheetPage() {
           </>
         ) : null}
       </div>
+
+      {openRow !== null ? (
+        <ItemDrawer rowId={openRow} onClose={() => setOpenRow(null)} />
+      ) : null}
     </div>
   )
 }
 
-function Row({ item, n }: { item: ClaimItem; n: number }) {
+function Row({ item, n, onOpen }: { item: ClaimItem; n: number; onOpen: () => void }) {
   const unpriced = item.status === 'needs_manual'
   // Capacity waits are NOT adjuster work -- quiet pending state, never amber.
   const waiting = unpriced && item.manual_reason !== null && CAPACITY_REASONS.has(item.manual_reason)
@@ -159,7 +170,11 @@ function Row({ item, n }: { item: ClaimItem; n: number }) {
 
   return (
     <tr className={unpriced && !waiting ? 'k-ws-row k-ws-row--manual' : 'k-ws-row'}>
-      <td className="k-ws-n k-ws-idx">{n}</td>
+      <td className="k-ws-n k-ws-idx">
+        <button type="button" className="k-ws-open" onClick={onOpen} title="Open item">
+          {n}
+        </button>
+      </td>
       <td>{item.room_area ?? '—'}</td>
       <td className="k-ws-n">{item.quantity}</td>
       <td className="k-ws-desc">
