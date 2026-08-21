@@ -623,3 +623,101 @@
 .k-grid-dock:not(.k-grid-dock--off) .k-row:not(.k-row--head) {
   cursor: pointer;
 }
+
+/* --- Editable worksheet cells --- */
+.k-cell--input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--k-fg);
+  padding: 3px 5px;
+  outline: 0;
+}
+
+.k-cell--input:hover:not(:disabled) {
+  border-color: var(--k-line);
+  background: var(--k-bg);
+}
+
+.k-cell--input:focus {
+  border-color: var(--k-accent);
+  background: var(--k-bg);
+  box-shadow: 0 0 0 3px var(--k-accent-soft);
+}
+
+.k-cell--input::placeholder {
+  color: var(--k-fg-4);
+}
+
+.k-cell--select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--k-fg);
+  padding: 3px 4px;
+  cursor: pointer;
+}
+
+.k-cell--select:hover:not(:disabled) {
+  border-color: var(--k-line);
+  background: var(--k-bg);
+}
+
+/* Count of comps behind a price; opens the popover. */
+.k-comps-btn {
+  flex-shrink: 0;
+  margin-left: 4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--k-accent-soft);
+  color: var(--k-accent);
+  font-family: var(--k-font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.k-comps-pop {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  width: 320px;
+  z-index: 30;
+  text-align: left;
+}
+
+/* --- Worksheet bars (notice, deferred, bulk selection) --- */
+.k-ws-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 16px;
+  padding: 8px 12px;
+  border: 1px solid var(--k-line);
+  border-radius: 8px;
+  background: var(--k-bg);
+  font-size: 12.5px;
+}
+
+/* Capacity waits are not errors -- this bar stays quiet, never amber. */
+.k-ws-bar--quiet {
+  background: var(--k-bg-2);
+  color: var(--k-fg-2);
+}
+
+.k-ws-bar--sel {
+  border-color: var(--k-accent);
+  background: var(--k-accent-soft);
+}

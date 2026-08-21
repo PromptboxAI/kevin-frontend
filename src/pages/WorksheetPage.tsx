@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useQuery, keepPreviousData } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import ClaimStatusChip from '../components/ClaimStatusChip'
 import ClaimTabs from '../components/ClaimTabs'
+import CompsPopover from '../components/CompsPopover'
+import EditableCell from '../components/EditableCell'
 import ItemDrawer from '../components/ItemDrawer'
 import { I, Icon } from '../components/Icon'
 import { ApiError, api } from '../lib/api'
-import { extCost, fmtAge, fmtDate, fmtInt, fmtPct, fmtUSD } from '../lib/format'
+import { extCost, fmtDate, fmtInt, fmtPct, fmtUSD } from '../lib/format'
+import { deleteItems, editDisplayLine, overrideItem, repriceItem } from '../lib/mutations'
+import type { OverrideBody } from '../lib/mutations'
 import { CAPACITY_REASONS } from '../lib/types'
 import type { ClaimItem, ClaimItemListResponse, ClaimSummary } from '../lib/types'
 
@@ -109,6 +113,13 @@ export default function WorksheetPage() {
     return () => document.removeEventListener('mousedown', close)
   }, [filterOpen])
 
+  /** GET /v1/depreciation-rules is the live taxonomy; do not retype the classes. */
+  const rules = useQuery({
+    queryKey: ['depreciation-rules'],
+    queryFn: () => api.get<{ categories: string[] }>('/v1/depreciation-rules'),
+    staleTime: Infinity,
+  })
+
   const claim = useQuery({
     queryKey: ['claim', claimId],
     queryFn: () => api.get<ClaimSummary>(`/v1/claims/${encodeURIComponent(claimId)}`),
@@ -122,6 +133,65 @@ export default function WorksheetPage() {
           (status ? `&status=${status}` : ''),
       ),
     placeholderData: keepPreviousData,
+  })
+
+  const queryClient = useQueryClient()
+  const [pending, setPending] = useState<Set<number>>(new Set())
+  const [notice, setNotice] = useState<string | null>(null)
+  const [retrying, setRetrying] = useState<{ done: number; total: number } | null>(null)
+
+  const markPending = (id: number, on: boolean) =>
+    setPending((prev) => {
+      const next = new Set(prev)
+      if (on) next.add(id)
+      else next.delete(id)
+      return next
+    })
+
+  const refresh = () => {
+    void queryClient.invalidateQueries({ queryKey: ['claim-items', claimId] })
+    void queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
+  }
+
+  /**
+   * Money and depreciation are server-owned: we send the edit, then re-read.
+   * The four returned totals are applied verbatim -- no client arithmetic.
+   */
+  const override = useMutation({
+    mutationFn: ({ id, body }: { id: number; body: OverrideBody }) => overrideItem(id, body),
+    onMutate: ({ id }) => markPending(id, true),
+    onError: (error, { id }) => {
+      markPending(id, false)
+      setNotice(error instanceof Error ? error.message : 'That edit was rejected.')
+    },
+    onSuccess: (_data, { id }) => {
+      markPending(id, false)
+      refresh()
+    },
+  })
+
+  /** Descriptive edits do not touch valuation and do not mark the row overridden. */
+  const editLine = useMutation({
+    mutationFn: ({ id, body }: { id: number; body: Record<string, string | null> }) =>
+      editDisplayLine(id, body),
+    onSuccess: refresh,
+    onError: (error) =>
+      setNotice(error instanceof Error ? error.message : 'That edit was rejected.'),
+  })
+
+  const removeRows = useMutation({
+    mutationFn: (ids: number[]) => deleteItems(ids),
+    onSuccess: (result) => {
+      setSelected(new Set())
+      // No photo is ever deleted -- say so rather than leaving them to guess.
+      setNotice(
+        `Deleted ${result.deleted} row${result.deleted === 1 ? '' : 's'}` +
+          (result.photos_detached ? ` · ${result.photos_detached} photos kept` : ''),
+      )
+      refresh()
+    },
+    onError: (error) =>
+      setNotice(error instanceof Error ? error.message : 'Delete failed.'),
   })
 
   const items = rows.data?.items ?? []
@@ -171,10 +241,46 @@ export default function WorksheetPage() {
    * server sums both. Restating the difference is the same move as Ext. Cost:
    * a server identity, not a second implementation of the math.
    */
+  // TODO: read total_depreciation verbatim once ClaimSummary carries it.
   const claimDepreciation =
     claim.data?.total_rcv != null && claim.data?.total_acv != null
       ? Math.round((claim.data.total_rcv - claim.data.total_acv) * 100) / 100
       : null
+
+  /**
+   * Capacity-deferred rows. The prototype spec names a bulk
+   * POST /v1/claim_items/retry-deferred, but the live API has no such route --
+   * the documented retry path is per-row reprice, which shares the /process
+   * 30/min limit. So this sequences, and stops cleanly on a 429.
+   */
+  const deferred = items.filter(
+    (item) =>
+      item.status === 'needs_manual' &&
+      item.manual_reason &&
+      CAPACITY_REASONS.has(item.manual_reason) &&
+      (item.query ?? '').length >= 3,
+  )
+
+  const retryDeferred = async () => {
+    setRetrying({ done: 0, total: deferred.length })
+    for (const [index, item] of deferred.entries()) {
+      try {
+        await repriceItem(item.id, { query: item.query as string })
+        setRetrying({ done: index + 1, total: deferred.length })
+      } catch (error) {
+        if (error instanceof ApiError && error.isRateLimited) {
+          setNotice(
+            `Rate limit reached after ${index} of ${deferred.length}. Retry the rest shortly.`,
+          )
+          break
+        }
+        setNotice(error instanceof Error ? error.message : 'Retry failed.')
+        break
+      }
+    }
+    setRetrying(null)
+    refresh()
+  }
 
   let counter = offset
 
@@ -375,6 +481,76 @@ export default function WorksheetPage() {
         </div>
       </section>
 
+      {notice ? (
+        <div className="k-ws-bar">
+          <span>{notice}</span>
+          <button type="button" className="k-link" onClick={() => setNotice(null)}>
+            Dismiss
+          </button>
+        </div>
+      ) : null}
+
+      {deferred.length > 0 ? (
+        <div className="k-ws-bar k-ws-bar--quiet">
+          <span>
+            {deferred.length} row{deferred.length === 1 ? '' : 's'} deferred — the pricing service
+            was at capacity, not a problem with these items.
+          </span>
+          <button
+            type="button"
+            className="k-btn k-btn--sm"
+            onClick={() => void retryDeferred()}
+            disabled={retrying !== null}
+          >
+            {retrying ? `Retrying ${retrying.done}/${retrying.total}…` : `Retry ${deferred.length} deferred`}
+          </button>
+        </div>
+      ) : null}
+
+      {selected.size > 0 ? (
+        <div className="k-ws-bar k-ws-bar--sel">
+          <span>{selected.size} selected</span>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <select
+              className="k-insp-input"
+              style={{ width: 190 }}
+              defaultValue=""
+              onChange={(e) => {
+                const category = e.target.value
+                if (!category) return
+                // No bulk category endpoint -- override each row. Comps survive
+                // a category-only edit, so this does not strip substantiation.
+                for (const id of selected) override.mutate({ id, body: { category } })
+                e.target.value = ''
+                setSelected(new Set())
+              }}
+            >
+              <option value="">Re-categorize…</option>
+              {(rules.data?.categories ?? []).map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              className="k-btn k-btn--ghost k-btn--danger"
+              disabled={removeRows.isPending}
+              onClick={() => {
+                if (
+                  window.confirm(
+                    `Delete ${selected.size} row${selected.size === 1 ? '' : 's'}? Photos stay on the claim.`,
+                  )
+                )
+                  removeRows.mutate([...selected])
+              }}
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {rows.isPending ? <p className="k-note k-ws-note">Loading items…</p> : null}
 
       {rows.error ? (
@@ -451,6 +627,10 @@ export default function WorksheetPage() {
                       onSelect={() => toggle(item.id)}
                       onOpen={() => setOpenRow(item.id)}
                       onRowClick={docked ? () => setOpenRow(item.id) : undefined}
+                      pending={pending.has(item.id)}
+                      categories={rules.data?.categories ?? []}
+                      onOverride={(body) => override.mutate({ id: item.id, body })}
+                      onEditLine={(body) => editLine.mutate({ id: item.id, body })}
                     />
                   ))}
                 </div>
@@ -466,6 +646,10 @@ export default function WorksheetPage() {
                   onSelect={() => toggle(item.id)}
                   onOpen={() => setOpenRow(item.id)}
                   onRowClick={docked ? () => setOpenRow(item.id) : undefined}
+                      pending={pending.has(item.id)}
+                      categories={rules.data?.categories ?? []}
+                      onOverride={(body) => override.mutate({ id: item.id, body })}
+                      onEditLine={(body) => editLine.mutate({ id: item.id, body })}
                 />
               ))
             )}
@@ -527,19 +711,29 @@ function Row({
   n,
   selected,
   active,
+  pending,
+  categories,
   onSelect,
   onOpen,
   onRowClick,
+  onOverride,
+  onEditLine,
 }: {
   item: ClaimItem
   n: number
   selected: boolean
   active: boolean
+  /** The server is recomputing this row -- derived cells lock until it answers. */
+  pending: boolean
+  categories: string[]
   onSelect: () => void
   onOpen: () => void
   /** Set only while the panel is docked: the whole row becomes the target. */
   onRowClick?: () => void
+  onOverride: (body: OverrideBody) => void
+  onEditLine: (body: Record<string, string | null>) => void
 }) {
+  const [compsOpen, setCompsOpen] = useState(false)
   const unpriced = item.status === 'needs_manual'
   // Capacity waits are NOT adjuster work -- quiet pending state, never amber.
   const waiting = Boolean(unpriced && item.manual_reason && CAPACITY_REASONS.has(item.manual_reason))
@@ -568,8 +762,26 @@ function Row({
         </button>
       </div>
 
-      <div className="k-c k-c--room">{item.room_area || <Dash />}</div>
-      <div className="k-c k-c--qty k-mono">{item.quantity}</div>
+      <div className="k-c k-c--room">
+        <EditableCell
+          value={item.room_area ?? ''}
+          placeholder="Room / area…"
+          onCommit={(next) => onEditLine({ room_area: next || null })}
+        />
+      </div>
+
+      <div className="k-c k-c--qty">
+        <EditableCell
+          value={String(item.quantity)}
+          numeric
+          align="right"
+          onCommit={(next) => {
+            const quantity = parseInt(next, 10)
+            if (Number.isFinite(quantity) && quantity >= 1 && quantity !== item.quantity)
+              onOverride({ quantity })
+          }}
+        />
+      </div>
 
       <div className="k-c k-c--desc">
         <span className="k-desc-text">{item.description || <Dash />}</span>
@@ -582,15 +794,65 @@ function Row({
       {/* Content class is a picker in the design; read-state keeps the caret
           affordance so the column reads the same, without opening a menu. */}
       <div className="k-c k-c--cat">
-        <span className="k-cell k-cell--button k-cell--static">
-          <span className="k-cat-text">{item.category || '—'}</span>
-          <Icon d={I.chevdown} size={11} />
-        </span>
+        {/* A category-only edit KEEPS the comps -- the replacement cost is
+            unchanged and still comp-supported. It does re-run depreciation. */}
+        <select
+          className="k-cell k-cell--select"
+          value={item.category ?? ''}
+          disabled={pending}
+          onChange={(e) => onOverride({ category: e.target.value })}
+        >
+          {item.category ? null : <option value="">—</option>}
+          {categories.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Every money cell below is the server's figure, read verbatim. */}
-      <div className="k-c k-c--rcv k-mono">
-        <Money value={item.rcv} />
+      <div className="k-c k-c--rcv" style={{ position: 'relative' }}>
+        <EditableCell
+          value={item.rcv === null ? '' : String(item.rcv)}
+          numeric
+          align="right"
+          pending={pending}
+          placeholder={item.status === 'needs_manual' ? '' : undefined}
+          title="Per-unit, pre-tax. Editing this clears the comparable sources."
+          onCommit={(next) => {
+            if (next === '') return
+            const rcv = Number(next)
+            if (!Number.isFinite(rcv) || rcv < 0 || rcv === item.rcv) return
+            // Editing a price DROPS the comps and flips the basis to manual.
+            // Confirm, so an empty Source column later is not a surprise.
+            const hadComps = (item.alternative_sources?.length ?? 0) > 0
+            if (
+              hadComps &&
+              !window.confirm(
+                'Setting a price by hand clears this line’s comparable sources and its Source link. Continue?',
+              )
+            )
+              return
+            onOverride({ rcv })
+          }}
+        />
+        {item.alternative_sources?.length ? (
+          <button
+            type="button"
+            className="k-comps-btn"
+            onClick={(e) => {
+              e.stopPropagation()
+              setCompsOpen((o) => !o)
+            }}
+            title="Comparable listings behind this price"
+          >
+            {item.alternative_sources.length}
+          </button>
+        ) : null}
+        {compsOpen ? (
+          <CompsPopover comps={item.alternative_sources} onClose={() => setCompsOpen(false)} />
+        ) : null}
       </div>
       <div className="k-c k-c--ext k-mono">
         <Money value={extCost(item.rcv_total_incl, item.tax)} />
@@ -601,11 +863,40 @@ function Row({
       <div className="k-c k-c--rcvtax k-mono">
         <Money value={item.rcv_total_incl} />
       </div>
-      <div className="k-c k-c--age k-mono">
-        {item.age_years === null ? <Dash /> : fmtAge(item.age_years)}
+      <div className="k-c k-c--age">
+        {/* Items land at age 0 -> ACV = RCV. Entering age is the core loop:
+            the server re-runs the engine and returns the four line totals. */}
+        <EditableCell
+          value={item.age_years === null || item.age_years === 0 ? '' : String(item.age_years)}
+          numeric
+          align="right"
+          pending={pending}
+          disabled={item.status === 'needs_manual'}
+          title={
+            item.status === 'needs_manual'
+              ? 'Unpriced — set a price before entering age'
+              : 'Age in years; depreciation is recomputed by the server'
+          }
+          onCommit={(next) => {
+            if (next === '') return
+            const age = Number(next)
+            if (!Number.isFinite(age) || age < 0 || age === item.age_years) return
+            onOverride({ age_years: age })
+          }}
+        />
       </div>
-      <div className="k-c k-c--dep k-mono">
-        {item.depreciation_pct === null ? <Dash /> : fmtPct(item.depreciation_pct)}
+
+      {/* Depreciation is NEVER computed here -- spinner until the server answers. */}
+      <div className={`k-c k-c--dep k-mono${pending ? ' k-cell--pending' : ''}`}>
+        {pending ? (
+          <span className="k-dep-spin" />
+        ) : item.depreciation_pct === null ? (
+          <Dash />
+        ) : (
+          <span title={item.depreciation_method ? `Method: ${item.depreciation_method.replace('_', ' ')}` : undefined}>
+            {fmtPct(item.depreciation_pct)}
+          </span>
+        )}
       </div>
       <div className="k-c k-c--depamt k-mono">
         {/* Depreciation is always >= 0, so a signed zero is a formatting artifact. */}
