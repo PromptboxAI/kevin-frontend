@@ -102,6 +102,21 @@ export default function ItemDrawer({
     onSuccess: refresh,
   })
 
+  /**
+   * Which comp actually backs the published price. alternative_sources[0] is
+   * the preferred SOURCE, and rcv is the median of the comps, so index 0 often
+   * is not the number on the line -- labelling it "Primary" there implied a
+   * substantiation that was not true. Match on value until the backend
+   * resolves the open question.
+   */
+  const backingIndex = (() => {
+    if (!data || data.rcv === null) return -1
+    return data.alternative_sources.findIndex((comp) => {
+      const price = typeof comp.price === 'number' ? comp.price : Number(String(comp.price ?? '').replace(/[^0-9.-]/g, ''))
+      return Number.isFinite(price) && Math.abs(price - (data.rcv as number)) < 0.005
+    })
+  })()
+
   const unpriced = data?.status === 'needs_manual'
   const waiting = Boolean(
     unpriced && data?.manual_reason && CAPACITY_REASONS.has(data.manual_reason),
@@ -186,6 +201,7 @@ export default function ItemDrawer({
                 <div className="k-insp-field">
                   <label>Description</label>
                   <EditableCell
+                    variant="panel"
                     value={data.description ?? ''}
                     placeholder="Describe the item…"
                     onCommit={(next) => editLine.mutate({ description: next || null })}
@@ -196,23 +212,27 @@ export default function ItemDrawer({
                   <EditField
                     label="Room / Area"
                     value={data.room_area ?? ''}
+                    placeholder="Room / area…"
                     onCommit={(next) => editLine.mutate({ room_area: next || null })}
                   />
                   <Field label="Content class" value={data.category} />
                   <EditField
                     label="Make / Mfr"
                     value={data.make_mfr ?? ''}
+                    placeholder="Make…"
                     onCommit={(next) => editLine.mutate({ make_mfr: next || null })}
                   />
                   <EditField
                     label="Model #"
                     value={data.model_number ?? ''}
+                    placeholder="Model #"
                     mono
                     onCommit={(next) => editLine.mutate({ model_number: next || null })}
                   />
                   <EditField
                     label="Quantity"
                     value={String(data.quantity)}
+                    placeholder="1"
                     numeric
                     onCommit={(next) => {
                       const quantity = parseInt(next, 10)
@@ -222,6 +242,7 @@ export default function ItemDrawer({
                   <EditField
                     label="Unit cost"
                     value={data.rcv === null ? '' : String(data.rcv)}
+                    placeholder="Enter a price…"
                     numeric
                     money
                     onCommit={(next) => {
@@ -234,7 +255,9 @@ export default function ItemDrawer({
                 <div className="k-insp-field">
                   <label>Age (yrs)</label>
                   <EditableCell
+                    variant="panel"
                     value={data.age_years === null || data.age_years === 0 ? '' : String(data.age_years)}
+                    placeholder={unpriced ? '' : 'Years'}
                     numeric
                     disabled={unpriced}
                     title={unpriced ? 'Unpriced — set a price before entering age' : undefined}
@@ -269,7 +292,14 @@ export default function ItemDrawer({
                   {data.alternative_sources?.length ? (
                     <div className="k-insp-alts">
                       {data.alternative_sources.map((comp, index) => (
-                        <CompRow key={index} comp={comp} primary={index === 0} />
+                        <CompRow
+                          key={index}
+                          comp={comp}
+                          /* Order stays as the payload gives it; only the tag
+                             moves to whichever comp matches rcv. */
+                          backsPrice={backingIndex === index}
+                          linkable={index === 0}
+                        />
                       ))}
                     </div>
                   ) : (
@@ -340,6 +370,7 @@ function EditField({
   mono,
   numeric,
   money,
+  placeholder,
   onCommit,
 }: {
   label: string
@@ -347,12 +378,21 @@ function EditField({
   mono?: boolean
   numeric?: boolean
   money?: boolean
+  placeholder?: string
   onCommit: (next: string) => void
 }) {
   return (
     <div className="k-insp-field">
       <label>{label}</label>
-      <EditableCell value={value} mono={mono} numeric={numeric} money={money} onCommit={onCommit} />
+      <EditableCell
+        variant="panel"
+        value={value}
+        mono={mono}
+        numeric={numeric}
+        money={money}
+        placeholder={placeholder}
+        onCommit={onCommit}
+      />
     </div>
   )
 }
@@ -374,17 +414,26 @@ function Field({ label, value, mono }: { label: string; value: string | null; mo
  * Always show `title`: a like-kind comp is often a different brand, which is
  * correct methodology but misleading if we print only merchant + price.
  */
-function CompRow({ comp, primary }: { comp: Comp; primary: boolean }) {
+function CompRow({
+  comp,
+  backsPrice,
+  linkable,
+}: {
+  comp: Comp
+  backsPrice: boolean
+  /** Only alternative_sources[0] carries a resolved merchant URL. */
+  linkable: boolean
+}) {
   const body = (
     <>
       <span className="k-comp-title">{comp.title || 'Untitled listing'}</span>
       <span className="k-comp-src">{comp.source || '—'}</span>
       <span className="k-comp-price k-mono">{fmtCompPrice(comp.price)}</span>
-      {primary ? <Badge tone="accent">Primary</Badge> : null}
+      {backsPrice ? <Badge tone="accent">Backs this price</Badge> : null}
     </>
   )
 
-  if (primary && comp.link) {
+  if (linkable && comp.link) {
     return (
       <a className="k-insp-alt" href={comp.link} target="_blank" rel="noreferrer noopener">
         {body}

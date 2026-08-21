@@ -18,6 +18,7 @@ export default function EditableCell({
   numeric = false,
   money = false,
   mono = false,
+  variant = 'grid',
   onEnterPastEnd,
   align = 'left',
   placeholder,
@@ -32,6 +33,12 @@ export default function EditableCell({
   money?: boolean
   /** Mono face for codes (Model #) without implying the value is numeric. */
   mono?: boolean
+  /**
+   * 'grid' is the flat worksheet cell (transparent until hover). 'panel' is
+   * kevin.css's .k-insp-input -- a visible bordered box at rest, which is what
+   * the item panel uses so an adjuster can see what is editable.
+   */
+  variant?: 'grid' | 'panel'
   /** Enter with nowhere further to go -- the design appends a new line. */
   onEnterPastEnd?: () => void
   align?: 'left' | 'right'
@@ -91,7 +98,11 @@ export default function EditableCell({
     <input
       ref={ref}
       data-ws-cell=""
-      className={`k-cell k-cell--input${numeric || mono ? ' k-mono' : ''}${pending ? ' k-cell--pending' : ''}`}
+      className={
+        (variant === 'panel' ? 'k-insp-input' : 'k-cell k-cell--input') +
+        (numeric || mono ? ' k-mono' : '') +
+        (pending ? ' k-cell--pending' : '')
+      }
       style={{ textAlign: align }}
       value={pending ? '' : shown}
       placeholder={pending ? '' : placeholder}
