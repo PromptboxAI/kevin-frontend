@@ -47,3 +47,60 @@ export type ClaimListResponse = {
   limit: number
   offset: number
 }
+
+/** status on a worksheet row. */
+export type ItemStatus = 'processing' | 'completed' | 'failed' | 'overridden' | 'needs_manual'
+
+/** Why a row is unpriced. quota_/budget_exhausted are CAPACITY waits, not adjuster work. */
+export type ManualReason =
+  | 'manual_class' | 'luxury_brand' | 'low_sample' | 'no_comps' | 'no_query'
+  | 'no_description' | 'vision_unavailable' | 'low_confidence_high_value'
+  | 'valuation_error' | 'quota_exhausted' | 'budget_exhausted'
+  | 'placeholder_row' | 'not_priced' | 'enqueue_failed'
+
+/** The two reasons that mean "the pricing service is throttled", not "act on this". */
+export const CAPACITY_REASONS: ReadonlySet<string> = new Set(['quota_exhausted', 'budget_exhausted'])
+
+export type Comp = { title?: string; source?: string; price?: number | string; link?: string }
+
+export type ClaimItem = {
+  id: number
+  claim_id: string
+  room_id: number | null
+  status: ItemStatus
+  manual_reason: ManualReason | null
+  valuation_basis: 'retail' | 'like_kind_new' | 'comparable_sale' | 'manual' | null
+  is_manually_queried: boolean
+  category: string | null
+  query: string | null
+  room_area: string | null
+  make_mfr: string | null
+  model_number: string | null
+  description: string | null
+  quantity: number
+  /** PER-UNIT, PRE-TAX. The worksheet money columns are the *_incl fields. */
+  rcv: number | null
+  acv: number | null
+  tax: number | null
+  rcv_total_incl: number | null
+  depreciation_amount: number | null
+  acv_total_incl: number | null
+  /** A FRACTION: 0.30 = 30%. */
+  depreciation_pct: number | null
+  depreciation_method: 'straight_line' | 'bracketed' | 'custom' | null
+  pcs_code: string | null
+  confidence: number | null
+  age_years: number | null
+  alternative_sources: Comp[]
+  error: string | null
+  created_at: string | null
+  updated_at: string | null
+}
+
+export type ClaimItemListResponse = {
+  items: ClaimItem[]
+  /** TOTAL matching rows, not just this page. */
+  count: number
+  limit: number
+  offset: number
+}

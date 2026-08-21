@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import Badge from '../components/Badge'
 import ClaimStatusChip from '../components/ClaimStatusChip'
@@ -128,14 +129,16 @@ export default function ClaimsPage() {
             {claims.map((claim) => (
               <div key={claim.claim_id} className="k-claim-row">
                 <div>
-                  <div className="k-claim-id" title={claim.claim_id}>
+                  <Link className="k-claim-id" to={`/claims/${claim.claim_id}`} title={claim.claim_id}>
                     {claim.claim_id}
-                  </div>
+                  </Link>
                   <div className="k-claim-sub">DOL {fmtDate(claim.date_of_loss)}</div>
                 </div>
 
                 <div>
-                  <div className="k-claim-name">{claim.name}</div>
+                  <Link className="k-claim-name k-link" to={`/claims/${claim.claim_id}`}>
+                    {claim.name}
+                  </Link>
                   <div className="k-claim-sub">
                     {[claim.insured_name, claim.loss_type].filter(Boolean).join(' · ') || '—'}
                   </div>

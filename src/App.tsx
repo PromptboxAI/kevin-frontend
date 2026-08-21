@@ -5,6 +5,7 @@ import ClaimsPage from './pages/ClaimsPage'
 import NotFoundPage from './pages/NotFoundPage'
 import PortalPage from './pages/PortalPage'
 import SignInPage from './pages/SignInPage'
+import WorksheetPage from './pages/WorksheetPage'
 
 export default function App() {
   return (
@@ -23,6 +24,15 @@ export default function App() {
           element={
             <RequireAuth>
               <ClaimsPage />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/claims/:claimId"
+          element={
+            <RequireAuth>
+              <WorksheetPage />
             </RequireAuth>
           }
         />
