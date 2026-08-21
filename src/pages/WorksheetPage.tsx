@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
-import Badge from '../components/Badge'
+import ClaimStatusChip from '../components/ClaimStatusChip'
 import ClaimTabs from '../components/ClaimTabs'
 import ItemDrawer from '../components/ItemDrawer'
 import { I, Icon } from '../components/Icon'
@@ -44,31 +44,14 @@ const HEADERS: [string, string][] = [
   ['k-c--src', 'Link'],
 ]
 
-/** The prototype's grid template, checkbox column included. */
-const ROW_COLS = [
-  '36px', // check
-  '46px', // idx
-  '130px', // room
-  '46px', // qty
-  'minmax(200px, 2.4fr)', // desc
-  'minmax(110px, 1.1fr)', // mfr
-  'minmax(120px, 1.2fr)', // model
-  'minmax(150px, 1.6fr)', // category
-  '118px', // unit cost
-  '96px', // ext cost
-  '78px', // sales tax
-  '100px', // rcv + tax
-  '58px', // age
-  '84px', // % depr
-  '100px', // $ depr
-  '100px', // ACV
-  '36px', // src
-].join(' ')
-
-const GRID_STYLE = {
-  ['--row-cols' as string]: ROW_COLS,
-  ['--k-gridw' as string]: '1584px',
-} as React.CSSProperties
+/**
+ * Column widths in px, matching the prototype's track order. Kept numeric so a
+ * header drag has a concrete value to move; --row-cols is rebuilt from these.
+ */
+const COL_DEFAULTS = [
+  36, 46, 130, 46, 280, 130, 140, 175, 118, 96, 78, 100, 58, 84, 100, 100, 36,
+]
+const COL_MIN = 36
 
 export default function WorksheetPage() {
   const { claimId = '' } = useParams()
@@ -79,7 +62,43 @@ export default function WorksheetPage() {
   const [groupBy, setGroupBy] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
   const [selected, setSelected] = useState<Set<number>>(new Set())
+  const [docked, setDocked] = useState(false)
+  const [density, setDensity] = useState<'comfortable' | 'compact'>('comfortable')
+  const [cols, setCols] = useState<number[]>(COL_DEFAULTS)
   const filterRef = useRef<HTMLDivElement>(null)
+  const drag = useRef<{ index: number; startX: number; startW: number } | null>(null)
+
+  const gridStyle = {
+    ['--row-cols' as string]: cols.map((c) => `${c}px`).join(' '),
+    ['--k-gridw' as string]: `${cols.reduce((a, b) => a + b, 0)}px`,
+  } as React.CSSProperties
+
+  // Google-Sheets style: drag a header boundary, double-click to reset.
+  useEffect(() => {
+    const move = (e: MouseEvent) => {
+      if (!drag.current) return
+      const { index, startX, startW } = drag.current
+      const next = Math.max(COL_MIN, startW + (e.clientX - startX))
+      setCols((prev) => prev.map((c, i) => (i === index ? next : c)))
+    }
+    const up = () => {
+      drag.current = null
+      document.body.style.cursor = ''
+    }
+    document.addEventListener('mousemove', move)
+    document.addEventListener('mouseup', up)
+    return () => {
+      document.removeEventListener('mousemove', move)
+      document.removeEventListener('mouseup', up)
+    }
+  }, [])
+
+  const startResize = (index: number, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    drag.current = { index, startX: e.clientX, startW: cols[index] }
+    document.body.style.cursor = 'col-resize'
+  }
 
   useEffect(() => {
     if (!filterOpen) return
@@ -146,13 +165,29 @@ export default function WorksheetPage() {
   const toggleAll = () =>
     setSelected(allShown ? new Set() : new Set(visible.map((item) => item.id)))
 
+  /**
+   * The claim rollup carries no total_depreciation, but the money contract
+   * guarantees acv_total_incl = rcv_total_incl - depreciation_amount, and the
+   * server sums both. Restating the difference is the same move as Ext. Cost:
+   * a server identity, not a second implementation of the math.
+   */
+  const claimDepreciation =
+    claim.data?.total_rcv != null && claim.data?.total_acv != null
+      ? Math.round((claim.data.total_rcv - claim.data.total_acv) * 100) / 100
+      : null
+
   let counter = offset
 
   return (
     <div className="k-shell">
       <AppHeader />
 
-      <ClaimTabs active="Worksheet" claimId={claimId} itemCount={claim.data?.item_count} />
+      <ClaimTabs
+        active="Worksheet"
+        claimId={claimId}
+        itemCount={claim.data?.item_count}
+        photoCount={claim.data?.photo_count}
+      />
 
       <section className="k-claim-hd">
         <div>
@@ -161,7 +196,7 @@ export default function WorksheetPage() {
           </Link>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <h1 className="k-claim-h1">{claim.data?.name ?? claimId}</h1>
-            {claim.data ? <Badge tone="quiet">{claim.data.status.replace('_', ' ')}</Badge> : null}
+            {claim.data ? <ClaimStatusChip status={claim.data.status} /> : null}
           </div>
           <div className="k-claim-facts">
             <span>
@@ -199,6 +234,22 @@ export default function WorksheetPage() {
           <div>
             <div className="k-tot-l">RCV</div>
             <div className="k-tot-v">{fmtUSD(claim.data?.total_rcv)}</div>
+          </div>
+          <div>
+            <div className="k-tot-l">Depreciation</div>
+            <div className="k-tot-v" style={{ color: 'var(--k-fg-3)' }}>
+              {claimDepreciation === null
+                ? '—'
+                : claimDepreciation > 0
+                  ? `−${fmtUSD(claimDepreciation)}`
+                  : fmtUSD(0)}
+            </div>
+          </div>
+          <div title="ClaimSummary carries no total_tax — needs a backend field">
+            <div className="k-tot-l">Tax</div>
+            <div className="k-tot-v" style={{ color: 'var(--k-fg-3)' }}>
+              —
+            </div>
           </div>
           <div>
             <div className="k-tot-l" style={{ color: 'var(--k-accent)' }}>
@@ -291,8 +342,28 @@ export default function WorksheetPage() {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {selected.size > 0 ? (
-            <span className="k-claim-sub">{selected.size} selected</span>
+            <span className="k-claim-sub" title="Bulk delete and re-categorize are mutations — not built yet">
+              {selected.size} selected
+            </span>
           ) : null}
+
+          <button
+            type="button"
+            className="k-btn k-btn--ghost"
+            onClick={() => setDensity((d) => (d === 'comfortable' ? 'compact' : 'comfortable'))}
+            title="Row density"
+          >
+            {density === 'comfortable' ? 'Comfortable' : 'Compact'}
+          </button>
+
+          <button
+            type="button"
+            className={`k-btn k-btn--ghost ${docked ? 'k-btn--on' : ''}`}
+            onClick={() => setDocked((d) => !d)}
+            title="Dock the item panel beside the grid — it re-syncs to whichever row you click"
+          >
+            Item panel
+          </button>
           <button
             type="button"
             className="k-btn"
@@ -314,8 +385,11 @@ export default function WorksheetPage() {
       ) : null}
 
       {rows.data ? (
-        <>
-          <section className="k-grid k-grid--ws" style={GRID_STYLE}>
+        <div className={docked && openRow !== null ? 'k-grid-dock' : 'k-grid-dock k-grid-dock--off'}>
+          <section
+              className={`k-grid k-grid--ws${density === 'compact' ? ' k-grid--compact' : ''}`}
+              style={gridStyle}
+            >
             <div className="k-row k-row--head">
               {HEADERS.map(([cls, label]) =>
                 cls === 'k-c--check' ? (
@@ -332,6 +406,18 @@ export default function WorksheetPage() {
                 ) : (
                   <div key={cls} className={`k-c ${cls}`}>
                     {label}
+                    <span
+                      className="k-col-resize"
+                      onMouseDown={(e) => startResize(HEADERS.findIndex(([c]) => c === cls), e)}
+                      onDoubleClick={() =>
+                        setCols((prev) =>
+                          prev.map((c, j) =>
+                            j === HEADERS.findIndex(([hc]) => hc === cls) ? COL_DEFAULTS[j] : c,
+                          ),
+                        )
+                      }
+                      title="Drag to resize · double-click to reset"
+                    />
                   </div>
                 ),
               )}
@@ -361,8 +447,10 @@ export default function WorksheetPage() {
                       item={item}
                       n={++counter}
                       selected={selected.has(item.id)}
+                      active={openRow === item.id}
                       onSelect={() => toggle(item.id)}
                       onOpen={() => setOpenRow(item.id)}
+                      onRowClick={docked ? () => setOpenRow(item.id) : undefined}
                     />
                   ))}
                 </div>
@@ -374,13 +462,23 @@ export default function WorksheetPage() {
                   item={item}
                   n={++counter}
                   selected={selected.has(item.id)}
+                  active={openRow === item.id}
                   onSelect={() => toggle(item.id)}
                   onOpen={() => setOpenRow(item.id)}
+                  onRowClick={docked ? () => setOpenRow(item.id) : undefined}
                 />
               ))
             )}
           </section>
 
+          {docked && openRow !== null ? (
+            <ItemDrawer rowId={openRow} onClose={() => setOpenRow(null)} docked />
+          ) : null}
+        </div>
+      ) : null}
+
+      {rows.data ? (
+        <>
           <div className="k-ws-foot">
             <span className="k-claim-sub">
               {total === 0 ? 'No items' : `${fmtInt(offset + 1)}–${fmtInt(pageEnd)} of ${fmtInt(total)}`}
@@ -407,7 +505,10 @@ export default function WorksheetPage() {
         </>
       ) : null}
 
-      {openRow !== null ? <ItemDrawer rowId={openRow} onClose={() => setOpenRow(null)} /> : null}
+      {/* Undocked, the panel is a modal over the grid. */}
+      {!docked && openRow !== null ? (
+        <ItemDrawer rowId={openRow} onClose={() => setOpenRow(null)} />
+      ) : null}
     </div>
   )
 }
@@ -425,14 +526,19 @@ function Row({
   item,
   n,
   selected,
+  active,
   onSelect,
   onOpen,
+  onRowClick,
 }: {
   item: ClaimItem
   n: number
   selected: boolean
+  active: boolean
   onSelect: () => void
   onOpen: () => void
+  /** Set only while the panel is docked: the whole row becomes the target. */
+  onRowClick?: () => void
 }) {
   const unpriced = item.status === 'needs_manual'
   // Capacity waits are NOT adjuster work -- quiet pending state, never amber.
@@ -441,7 +547,10 @@ function Row({
   const depAmount = item.depreciation_amount
 
   return (
-    <div className={`k-row${unpriced && !waiting ? ' k-row--manual' : ''}${selected ? ' k-row--sel' : ''}`}>
+    <div
+      className={`k-row${unpriced && !waiting ? ' k-row--manual' : ''}${selected ? ' k-row--sel' : ''}${active ? ' k-row--active' : ''}`}
+      onClick={onRowClick}
+    >
       <div className="k-c k-c--check">
         <button
           type="button"

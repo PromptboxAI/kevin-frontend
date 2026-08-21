@@ -583,3 +583,43 @@
   display: flex;
   gap: 8px;
 }
+
+/* Docked item panel shares height with the grid (kevin.css owns .k-grid-dock). */
+.k-grid-dock {
+  margin: 0 16px;
+  min-height: 0;
+}
+
+.k-grid-dock--off {
+  display: block;
+}
+
+.k-grid-dock .k-grid--ws {
+  margin: 0;
+}
+
+.k-dock {
+  display: flex;
+  border: 1px solid var(--k-line);
+  border-left: 0;
+  border-radius: 0 10px 10px 0;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.k-grid-dock .k-grid--ws {
+  border-radius: 10px 0 0 10px;
+}
+
+.k-grid--compact .k-row:not(.k-row--head) {
+  min-height: 30px;
+}
+
+.k-grid--compact .k-c {
+  font-size: 12px;
+}
+
+/* While the panel is docked the whole row is the target. */
+.k-grid-dock:not(.k-grid-dock--off) .k-row:not(.k-row--head) {
+  cursor: pointer;
+}

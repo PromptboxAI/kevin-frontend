@@ -33,6 +33,11 @@ export type ClaimSummary = {
   tax_rate: number | null
   exported_at: string | null
   item_count: number
+  /** Every photo on the claim -- staged AND directly attached. */
+  photo_count: number
+  archived_at: string | null
+  closed_at: string | null
+  staging_status: string | null
   /** Tax-inclusive sums of the per-line worksheet totals. Read verbatim. */
   total_rcv: number | null
   total_acv: number | null

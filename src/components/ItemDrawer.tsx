@@ -31,7 +31,15 @@ const BASIS_LABEL: Record<string, string> = {
   manual: 'Manual / appraisal',
 }
 
-export default function ItemDrawer({ rowId, onClose }: { rowId: number; onClose: () => void }) {
+export default function ItemDrawer({
+  rowId,
+  onClose,
+  docked = false,
+}: {
+  rowId: number
+  onClose: () => void
+  docked?: boolean
+}) {
   const [photoIndex, setPhotoIndex] = useState(0)
 
   useEffect(() => setPhotoIndex(0), [rowId])
@@ -76,8 +84,13 @@ export default function ItemDrawer({ rowId, onClose }: { rowId: number; onClose:
 
   return (
     <>
-      <div className="k-drawer-scrim" onClick={onClose} />
-      <aside className="k-drawer" role="dialog" aria-label="Item detail">
+      {/* Docked, the panel is a column of the grid layout -- no scrim to dismiss. */}
+      {docked ? null : <div className="k-drawer-scrim" onClick={onClose} />}
+      <aside
+        className={docked ? 'k-dock' : 'k-drawer'}
+        role={docked ? 'complementary' : 'dialog'}
+        aria-label="Item detail"
+      >
         <div className="k-insp">
           <div className="k-insp-hd">
             <strong>{data?.description || `Item ${rowId}`}</strong>

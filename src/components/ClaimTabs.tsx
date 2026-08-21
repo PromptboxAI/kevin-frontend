@@ -18,15 +18,18 @@ export default function ClaimTabs({
   active,
   claimId,
   itemCount,
+  photoCount,
 }: {
   active: Tab
   claimId: string
   itemCount?: number | null
+  photoCount?: number | null
 }) {
   return (
     <div className="k-claim-tabs">
       {TABS.map(([label, slug]) => {
-        const count = label === 'Worksheet' ? itemCount : null
+        const count =
+          label === 'Worksheet' ? itemCount : label === 'Photos' ? photoCount : null
         const inner = (
           <>
             {label}
