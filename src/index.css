@@ -246,6 +246,13 @@
 }
 
 /* A derived cell with no value. Muted, never 0.00. */
+/* Spreadsheet accounting format: the symbol sits left, the number right. */
+.k-money-sym {
+  flex: 0 0 auto;
+  color: var(--k-fg-4);
+  font-family: var(--k-font-mono);
+}
+
 .k-dash {
   color: var(--k-fg-4);
 }
@@ -530,6 +537,13 @@
 .k-idx-btn:hover {
   color: var(--k-accent);
   text-decoration: underline;
+}
+
+/* Spreadsheet accounting format: the symbol sits left, the number right. */
+.k-money-sym {
+  flex: 0 0 auto;
+  color: var(--k-fg-4);
+  font-family: var(--k-font-mono);
 }
 
 .k-dash {

@@ -17,6 +17,7 @@ export default function EditableCell({
   onCommit,
   numeric = false,
   money = false,
+  decimals = false,
   mono = false,
   variant = 'grid',
   onEnterPastEnd,
@@ -31,6 +32,12 @@ export default function EditableCell({
   numeric?: boolean
   /** Display-format as currency while unfocused; editing stays raw. */
   money?: boolean
+  /**
+   * Two decimals with NO symbol at rest. The worksheet's Unit Cost puts the $
+   * in its own left-aligned span, spreadsheet accounting style, so the number
+   * must not carry one.
+   */
+  decimals?: boolean
   /** Mono face for codes (Model #) without implying the value is numeric. */
   mono?: boolean
   /**
@@ -88,11 +95,15 @@ export default function EditableCell({
     return true
   }
 
-  // Unfocused money cells read as $100.00; the draft stays raw for typing.
-  const shown =
-    money && !editing && draft !== '' && Number.isFinite(Number(draft))
+  // Unfocused money cells display-format; the draft stays raw for typing.
+  const numeric_ok = draft !== '' && Number.isFinite(Number(draft))
+  const shown = editing
+    ? draft
+    : money && numeric_ok
       ? fmtUSD(Number(draft))
-      : draft
+      : decimals && numeric_ok
+        ? Number(draft).toFixed(2)
+        : draft
 
   return (
     <input

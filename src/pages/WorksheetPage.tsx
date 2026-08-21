@@ -12,8 +12,10 @@ import { ApiError, api, downloadExport } from '../lib/api'
 import { extCost, fmtDate, fmtInt, fmtPct, fmtUSD } from '../lib/format'
 import { createBlankItem, deleteItems, editDisplayLine, overrideItem } from '../lib/mutations'
 import type { OverrideBody } from '../lib/mutations'
+import { numberRows } from '../lib/rows'
+import type { NumberedItem } from '../lib/rows'
 import { CAPACITY_REASONS } from '../lib/types'
-import type { ClaimItem, ClaimItemListResponse, ClaimSummary } from '../lib/types'
+import type { ClaimItemListResponse, ClaimSummary } from '../lib/types'
 
 const PAGE_SIZE = 100
 
@@ -269,13 +271,13 @@ export default function WorksheetPage() {
       setNotice(error instanceof Error ? error.message : 'Delete failed.'),
   })
 
-  const items = useMemo(() => {
-    const all = rows.data?.pages.flatMap((page) => page.items) ?? []
-    // GET /v1/claim_items is newest-first. The worksheet is a numbered
-    // document: a new row must APPEND at the end, and existing line numbers
-    // must never shift, because an export already sent to a carrier cites them.
-    return [...all].sort((a, b) => a.id - b.id)
-  }, [rows.data])
+  /**
+   * Numbered ONCE here, over the complete set, before filtering, grouping or
+   * windowing. Every downstream view slices rows that already carry lineNo, so
+   * a row's number can never depend on scroll position or on which filter is
+   * active. See lib/rows.ts.
+   */
+  const items = useMemo(() => numberRows(rows.data?.pages.flatMap((p) => p.items) ?? []), [rows.data])
 
   const visible = useMemo(() => {
     const term = search.trim().toLowerCase()
@@ -290,7 +292,7 @@ export default function WorksheetPage() {
   /** Group headers aggregate the rows' own flags -- never re-derived from cat. */
   const groups = useMemo(() => {
     if (!groupBy) return null
-    const map = new Map<string, ClaimItem[]>()
+    const map = new Map<string, NumberedItem[]>()
     for (const item of visible) {
       const key = item.category ?? 'Unclassified'
       const bucket = map.get(key)
@@ -378,7 +380,6 @@ export default function WorksheetPage() {
   const padTop = windowed ? startIdx * rowH : 0
   const padBottom = windowed ? Math.max(0, (visible.length - endIdx) * rowH) : 0
 
-  let counter = 0
 
   return (
     <div className="k-shell">
@@ -748,7 +749,7 @@ export default function WorksheetPage() {
                     <Row
                       key={item.id}
                       item={item}
-                      n={++counter}
+                      n={item.lineNo}
                       selected={selected.has(item.id)}
                       active={openRow === item.id}
                       onSelect={() => toggle(item.id)}
@@ -769,7 +770,7 @@ export default function WorksheetPage() {
                   <Row
                   key={item.id}
                   item={item}
-                  n={++counter}
+                  n={item.lineNo}
                   selected={selected.has(item.id)}
                   active={openRow === item.id}
                   onSelect={() => toggle(item.id)}
@@ -842,7 +843,7 @@ function Row({
   onEditLine,
   onAppend,
 }: {
-  item: ClaimItem
+  item: NumberedItem
   n: number
   selected: boolean
   active: boolean
@@ -925,7 +926,7 @@ function Row({
       <div className="k-c k-c--mfr">
         <EditableCell
           value={item.make_mfr ?? ''}
-          placeholder="Make…"
+          placeholder="—"
           onCommit={(next) => onEditLine({ make_mfr: next || null })}
         />
       </div>
@@ -933,7 +934,7 @@ function Row({
       <div className="k-c k-c--model">
         <EditableCell
           value={item.model_number ?? ''}
-          placeholder="Model #"
+          placeholder="—"
           mono
           onCommit={(next) => onEditLine({ model_number: next || null })}
         />
@@ -961,13 +962,14 @@ function Row({
 
       {/* Every money cell below is the server's figure, read verbatim. */}
       <div className="k-c k-c--rcv">
+        <span className="k-money-sym">$</span>
         <EditableCell
           value={item.rcv === null ? '' : String(item.rcv)}
           numeric
-          money
+          decimals
           align="right"
           pending={pending}
-          placeholder={item.status === 'needs_manual' ? '' : undefined}
+          placeholder="0.00"
           title="Per-unit, pre-tax. Editing this clears the comparable sources."
           onCommit={(next) => {
             if (next === '') return
@@ -1005,7 +1007,7 @@ function Row({
         {/* Items land at age 0 -> ACV = RCV. Entering age is the core loop:
             the server re-runs the engine and returns the four line totals. */}
         <EditableCell
-          value={item.age_years === null || item.age_years === 0 ? '' : String(item.age_years)}
+          value={String(item.age_years ?? 0)}
           numeric
           align="right"
           pending={pending}
