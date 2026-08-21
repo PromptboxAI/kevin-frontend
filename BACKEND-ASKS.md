@@ -47,7 +47,19 @@ lands (it also matches searches for that moment). **Allowing an empty-string
 description when `price: false`** would make this one call with no flash — the
 row is deliberately unpriced anyway, so there is nothing to search against.
 
-## 4. Smaller notes
+## 4. Claim intake metadata is null on every existing claim
+
+`ClaimSummary` *does* carry `date_of_loss`, `loss_address`, `carrier`,
+`policy_number` and `claim_number` — the fields exist. But every claim in the
+demo account has them null, because claims auto-materialise from
+`POST /v1/process` / staging uploads, which capture no intake metadata.
+
+The worksheet header now renders the labels with a dash rather than omitting
+them (silent omission is what the design forbids). Nothing is needed from the
+API — but the **intake flow must send this metadata on create**, or the header
+stays dashed in production too.
+
+## 5. Smaller notes
 
 - `ClaimItemSummary` has no `ext_cost`. The worksheet's **Ext. Cost** column is
   restated from `rcv_total_incl − tax` (the contract guarantees

@@ -223,8 +223,18 @@ export default function WorksheetPage() {
       if (id !== undefined) await editDisplayLine(id, { description: null })
       return created
     },
-    onSuccess: () => {
-      refresh()
+    onSuccess: async (created) => {
+      const id = created.item_ids?.[0]
+      await queryClient.invalidateQueries({ queryKey: ['claim-items', claimId] })
+      void queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
+      if (id === undefined) return
+      // Rows sort by id, so the new line is last: scroll it in and focus its
+      // Description cell so the adjuster can just start typing.
+      requestAnimationFrame(() => {
+        const el = document.querySelector<HTMLElement>(`[data-row-id="${id}"]`)
+        el?.scrollIntoView({ block: 'center' })
+        el?.querySelector<HTMLInputElement>('input[data-ws-cell]')?.focus()
+      })
     },
     onError: (error) =>
       setNotice(error instanceof Error ? error.message : 'Could not add a row.'),
@@ -361,8 +371,8 @@ export default function WorksheetPage() {
             <button
               type="button"
               className="k-btn k-btn--ghost"
-              disabled
-              title="Appends a new ingest session — the staging screens are not built yet, so there is nowhere for this to land"
+              onClick={() => setNotice('Photo staging is the next build — this will open the intake flow.')}
+              title="Photo staging — coming in this build"
             >
               <Icon d={I.plus} size={12} /> Add photos
             </button>
@@ -405,26 +415,19 @@ export default function WorksheetPage() {
             <span>
               <strong>Claim</strong> · <span className="k-mono">{claimId}</span>
             </span>
-            {claim.data?.date_of_loss ? (
-              <span>
-                <strong>DOL</strong> · {fmtDate(claim.data.date_of_loss)}
-              </span>
-            ) : null}
-            {claim.data?.loss_address ? (
-              <span>
-                <strong>Loss address</strong> · {claim.data.loss_address}
-              </span>
-            ) : null}
-            {claim.data?.tax_rate != null ? (
-              <span>
-                <strong>Tax</strong> · {fmtPct(claim.data.tax_rate)}
-              </span>
-            ) : null}
-            {claim.data?.carrier ? (
-              <span>
-                <strong>Carrier</strong> · {claim.data.carrier}
-              </span>
-            ) : null}
+            <span>
+              <strong>DOL</strong> · {fmtDate(claim.data?.date_of_loss)}
+            </span>
+            <span>
+              <strong>Loss address</strong> · {claim.data?.loss_address || '—'}
+            </span>
+            <span>
+              <strong>Tax</strong> ·{' '}
+              {claim.data?.tax_rate == null ? '—' : fmtPct(claim.data.tax_rate)}
+            </span>
+            <span>
+              <strong>Carrier</strong> · {claim.data?.carrier || '—'}
+            </span>
           </div>
         </div>
 
@@ -473,7 +476,7 @@ export default function WorksheetPage() {
           </div>
 
           {/* Scaffolded at a single state until the staging session model lands. */}
-          <select className="k-btn k-btn--ghost k-batch" disabled title="Multi-session claims — pending the staging model">
+          <select className="k-btn k-btn--ghost k-batch" title="Multi-session claims — one session until the staging model lands">
             <option>All batches</option>
           </select>
 
@@ -550,7 +553,11 @@ export default function WorksheetPage() {
           <button
             type="button"
             className={`k-btn k-btn--ghost ${docked ? 'k-btn--on' : ''}`}
-            onClick={() => setDocked((d) => !d)}
+            onClick={() => {
+              const next = !docked
+              setDocked(next)
+              if (next && openRow === null && visible.length > 0) setOpenRow(visible[0].id)
+            }}
             title="Dock the item panel beside the grid — it re-syncs to whichever row you click"
           >
             Item panel
@@ -846,6 +853,7 @@ function Row({
 
   return (
     <div
+      data-row-id={item.id}
       className={`k-row${unpriced && !waiting ? ' k-row--manual' : ''}${selected ? ' k-row--sel' : ''}${active ? ' k-row--active' : ''}`}
       onClick={onRowClick}
     >

@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Badge from './Badge'
+import EditableCell from './EditableCell'
 import { ApiError, api } from '../lib/api'
-import { extCost, fmtAge, fmtCompPrice, fmtConfidence, fmtPct, fmtUSD } from '../lib/format'
+import { extCost, fmtCompPrice, fmtConfidence, fmtPct, fmtUSD } from '../lib/format'
+import { editDisplayLine, overrideItem } from '../lib/mutations'
 import { CAPACITY_REASONS } from '../lib/types'
 import type { ClaimItemDetail, Comp, ThumbnailsResponse } from '../lib/types'
 
@@ -76,6 +78,29 @@ export default function ItemDrawer({
   const current = photos[photoIndex]
   // photos[0] is always the same frame as image_url, so fall back to it.
   const imageSrc = current ? (thumbFor(current.photo_id) ?? data?.image_url) : data?.image_url
+
+  const queryClient = useQueryClient()
+
+  const refresh = () => {
+    void queryClient.invalidateQueries({ queryKey: ['claim-item', rowId] })
+    void queryClient.invalidateQueries({ queryKey: ['claim-items'] })
+    void queryClient.invalidateQueries({ queryKey: ['claim'] })
+  }
+
+  /**
+   * The panel is the PRIMARY editing surface for needs_manual rows, so every
+   * identity field is editable here. Same routing as the grid: descriptive
+   * fields through PATCH /v1/claim_items, money through …/override.
+   */
+  const editLine = useMutation({
+    mutationFn: (body: Record<string, string | null>) => editDisplayLine(rowId, body),
+    onSuccess: refresh,
+  })
+  const override = useMutation({
+    mutationFn: (body: { quantity?: number; rcv?: number; age_years?: number }) =>
+      overrideItem(rowId, body),
+    onSuccess: refresh,
+  })
 
   const unpriced = data?.status === 'needs_manual'
   const waiting = Boolean(
@@ -158,13 +183,66 @@ export default function ItemDrawer({
                   </div>
                 ) : null}
 
+                <div className="k-insp-field">
+                  <label>Description</label>
+                  <EditableCell
+                    value={data.description ?? ''}
+                    placeholder="Describe the item…"
+                    onCommit={(next) => editLine.mutate({ description: next || null })}
+                  />
+                </div>
+
                 <div className="k-insp-grid2">
-                  <Field label="Room / Area" value={data.room_area} />
+                  <EditField
+                    label="Room / Area"
+                    value={data.room_area ?? ''}
+                    onCommit={(next) => editLine.mutate({ room_area: next || null })}
+                  />
                   <Field label="Content class" value={data.category} />
-                  <Field label="Make / Mfr" value={data.make_mfr} />
-                  <Field label="Model #" value={data.model_number} mono />
-                  <Field label="Quantity" value={String(data.quantity)} mono />
-                  <Field label="Age (yrs)" value={fmtAge(data.age_years)} mono />
+                  <EditField
+                    label="Make / Mfr"
+                    value={data.make_mfr ?? ''}
+                    onCommit={(next) => editLine.mutate({ make_mfr: next || null })}
+                  />
+                  <EditField
+                    label="Model #"
+                    value={data.model_number ?? ''}
+                    mono
+                    onCommit={(next) => editLine.mutate({ model_number: next || null })}
+                  />
+                  <EditField
+                    label="Quantity"
+                    value={String(data.quantity)}
+                    numeric
+                    onCommit={(next) => {
+                      const quantity = parseInt(next, 10)
+                      if (Number.isFinite(quantity) && quantity >= 1) override.mutate({ quantity })
+                    }}
+                  />
+                  <EditField
+                    label="Unit cost"
+                    value={data.rcv === null ? '' : String(data.rcv)}
+                    numeric
+                    money
+                    onCommit={(next) => {
+                      const rcv = Number(next)
+                      if (Number.isFinite(rcv) && rcv >= 0) override.mutate({ rcv })
+                    }}
+                  />
+                </div>
+
+                <div className="k-insp-field">
+                  <label>Age (yrs)</label>
+                  <EditableCell
+                    value={data.age_years === null || data.age_years === 0 ? '' : String(data.age_years)}
+                    numeric
+                    disabled={unpriced}
+                    title={unpriced ? 'Unpriced — set a price before entering age' : undefined}
+                    onCommit={(next) => {
+                      const age = Number(next)
+                      if (Number.isFinite(age) && age >= 0) override.mutate({ age_years: age })
+                    }}
+                  />
                 </div>
 
                 <div className="k-insp-field">
@@ -253,6 +331,29 @@ export default function ItemDrawer({
         </div>
       </aside>
     </>
+  )
+}
+
+function EditField({
+  label,
+  value,
+  mono,
+  numeric,
+  money,
+  onCommit,
+}: {
+  label: string
+  value: string
+  mono?: boolean
+  numeric?: boolean
+  money?: boolean
+  onCommit: (next: string) => void
+}) {
+  return (
+    <div className="k-insp-field">
+      <label>{label}</label>
+      <EditableCell value={value} mono={mono} numeric={numeric} money={money} onCommit={onCommit} />
+    </div>
   )
 }
 

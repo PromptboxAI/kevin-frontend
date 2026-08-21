@@ -4,6 +4,29 @@ Persistent project context for Claude. Read this first.
 
 ---
 
+## Porting rule — read before touching any screen
+
+For any screen, open the matching `design/components/*.jsx` and `kevin.css`
+**first**, and lift markup, class names, and behavior **verbatim**. Never
+restyle a `k-` class, never invent a control, never approximate a color — if a
+class or token doesn't exist in `kevin.css`, that's a signal you've drifted.
+Deviations require an explicit note in the PR/commit message.
+
+Corollaries learned the hard way:
+
+- **Backgrounds come from the stylesheet, not from eye.** Page chrome
+  (`.k-topbar`, `.k-toolbar`, `.k-grid`, `.k-totals`) is `--k-bg`. Only
+  `.k-row--head`, the active-tab pill and the active-row highlight use
+  `--k-bg-3`; `--k-bg-2` is row hover, the search field and inputs. A visible
+  grey panel means a background was assigned where `kevin.css` sets none.
+- **Check specificity before overriding.** `kevin.css` carries two-class rules
+  (e.g. `.k-grid-dock > .k-grid`) that silently beat a one-class rule of yours.
+- **Widths that live in a grid track stay there** — e.g. the docked item panel
+  is the 440px column of `.k-grid-dock`, not a width on the panel.
+- **Verify against the deployed URL, not localhost**, before reporting a fix.
+
+---
+
 ## Related folders
 
 - `C:\Users\Godfr\kevin-backend` — the live backend (FastAPI). **Reference only — never edit files there.** Read it to confirm endpoint shapes, payloads, and money math (`FRONTEND.md`, `schemas.py`, `main.py`) rather than guessing; changes to the backend are made by the backend team in their own repo.
