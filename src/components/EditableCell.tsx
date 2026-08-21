@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from 'react'
  * A worksheet cell you can type in.
  *
  * Two behaviours the design calls for and a plain <input> does not give you:
- *  - numeric cells SELECT their contents on focus, so typing 15 replaces 150
- *    instead of appending to it
+ *  - numeric cells CLEAR on focus and restore the old value if you leave
+ *    without typing. Select-on-focus was tried and dropped: it was unreliable
+ *    and left the caret sitting in front of the digits.
  *  - Enter commits and moves down, Tab commits and moves right, Escape reverts
  *    (Excel muscle memory -- an adjuster tabs across a row without reaching
  *    for the mouse)
@@ -32,6 +33,8 @@ export default function EditableCell({
 }) {
   const [draft, setDraft] = useState(value)
   const [editing, setEditing] = useState(false)
+  /** True until the adjuster types something into a cleared numeric cell. */
+  const untouched = useRef(false)
   const ref = useRef<HTMLInputElement>(null)
 
   // Adopt server values whenever we are not mid-edit, so a recalc lands cleanly.
@@ -41,6 +44,13 @@ export default function EditableCell({
 
   const commit = () => {
     setEditing(false)
+    // Cleared on focus and never typed into: put the old value back, do not
+    // report an edit the adjuster did not make.
+    if (untouched.current) {
+      untouched.current = false
+      setDraft(value)
+      return
+    }
     const next = draft.trim()
     if (next === value.trim()) return
     onCommit(next)
@@ -56,10 +66,7 @@ export default function EditableCell({
     // Enter walks a column: the row stride is the number of editable cells per row.
     const stride = sameColumn ? Number(ref.current?.dataset.wsStride ?? 1) : 1
     const target = all[index + direction * stride]
-    if (target) {
-      target.focus()
-      target.select()
-    }
+    if (target) target.focus()
   }
 
   return (
@@ -73,11 +80,16 @@ export default function EditableCell({
       disabled={disabled || pending}
       title={title}
       inputMode={numeric ? 'decimal' : undefined}
-      onChange={(e) => setDraft(e.target.value)}
-      onFocus={(e) => {
+      onChange={(e) => {
+        untouched.current = false
+        setDraft(e.target.value)
+      }}
+      onFocus={() => {
         setEditing(true)
-        // Numeric cells replace rather than append.
-        if (numeric) e.target.select()
+        if (numeric) {
+          untouched.current = true
+          setDraft('')
+        }
       }}
       onBlur={commit}
       onKeyDown={(e) => {

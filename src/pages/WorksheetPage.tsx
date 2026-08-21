@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import ClaimStatusChip from '../components/ClaimStatusChip'
@@ -9,8 +9,8 @@ import EditableCell from '../components/EditableCell'
 import ItemDrawer from '../components/ItemDrawer'
 import { I, Icon } from '../components/Icon'
 import { ApiError, api } from '../lib/api'
-import { extCost, fmtDate, fmtInt, fmtPct, fmtUSD } from '../lib/format'
-import { deleteItems, editDisplayLine, overrideItem, repriceItem } from '../lib/mutations'
+import { extCost, fmtInt, fmtPct, fmtUSD } from '../lib/format'
+import { createBlankItem, deleteItems, editDisplayLine, overrideItem } from '../lib/mutations'
 import type { OverrideBody } from '../lib/mutations'
 import { CAPACITY_REASONS } from '../lib/types'
 import type { ClaimItem, ClaimItemListResponse, ClaimSummary } from '../lib/types'
@@ -57,9 +57,12 @@ const COL_DEFAULTS = [
 ]
 const COL_MIN = 36
 
+/** Fixed row heights let the window be computed without measuring. */
+const ROW_H = { comfortable: 38, compact: 30 }
+const OVERSCAN = 8
+
 export default function WorksheetPage() {
   const { claimId = '' } = useParams()
-  const [offset, setOffset] = useState(0)
   const [openRow, setOpenRow] = useState<number | null>(null)
   const [status, setStatus] = useState('')
   const [search, setSearch] = useState('')
@@ -70,6 +73,9 @@ export default function WorksheetPage() {
   const [density, setDensity] = useState<'comfortable' | 'compact'>('comfortable')
   const [cols, setCols] = useState<number[]>(COL_DEFAULTS)
   const filterRef = useRef<HTMLDivElement>(null)
+  const gridRef = useRef<HTMLElement>(null)
+  const [scrollTop, setScrollTop] = useState(0)
+  const [viewportH, setViewportH] = useState(600)
   const drag = useRef<{ index: number; startX: number; startW: number } | null>(null)
 
   const gridStyle = {
@@ -125,20 +131,28 @@ export default function WorksheetPage() {
     queryFn: () => api.get<ClaimSummary>(`/v1/claims/${encodeURIComponent(claimId)}`),
   })
 
-  const rows = useQuery({
-    queryKey: ['claim-items', claimId, offset, status],
-    queryFn: () =>
+  /**
+   * One continuous grid, as the design specifies -- no Previous/Next. Pages are
+   * pulled behind the scroll (the API caps limit at 100) and the DOM is
+   * windowed, so a 2,400-row claim renders ~40 rows at a time.
+   */
+  const rows = useInfiniteQuery({
+    queryKey: ['claim-items', claimId, status],
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
       api.get<ClaimItemListResponse>(
-        `/v1/claim_items?claim_id=${encodeURIComponent(claimId)}&limit=${PAGE_SIZE}&offset=${offset}` +
+        `/v1/claim_items?claim_id=${encodeURIComponent(claimId)}&limit=${PAGE_SIZE}&offset=${pageParam}` +
           (status ? `&status=${status}` : ''),
       ),
-    placeholderData: keepPreviousData,
+    getNextPageParam: (last) => {
+      const next = last.offset + last.items.length
+      return next < last.count ? next : undefined
+    },
   })
 
   const queryClient = useQueryClient()
   const [pending, setPending] = useState<Set<number>>(new Set())
   const [notice, setNotice] = useState<string | null>(null)
-  const [retrying, setRetrying] = useState<{ done: number; total: number } | null>(null)
 
   const markPending = (id: number, on: boolean) =>
     setPending((prev) => {
@@ -179,6 +193,16 @@ export default function WorksheetPage() {
       setNotice(error instanceof Error ? error.message : 'That edit was rejected.'),
   })
 
+  const addItem = useMutation({
+    mutationFn: () => createBlankItem(claimId),
+    onSuccess: (result) => {
+      setNotice(`Added ${result.items_created} unpriced line — fill in the description, then reprice.`)
+      refresh()
+    },
+    onError: (error) =>
+      setNotice(error instanceof Error ? error.message : 'Could not add a row.'),
+  })
+
   const removeRows = useMutation({
     mutationFn: (ids: number[]) => deleteItems(ids),
     onSuccess: (result) => {
@@ -194,7 +218,7 @@ export default function WorksheetPage() {
       setNotice(error instanceof Error ? error.message : 'Delete failed.'),
   })
 
-  const items = rows.data?.items ?? []
+  const items = useMemo(() => rows.data?.pages.flatMap((page) => page.items) ?? [], [rows.data])
 
   const visible = useMemo(() => {
     const term = search.trim().toLowerCase()
@@ -219,8 +243,7 @@ export default function WorksheetPage() {
     return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]))
   }, [groupBy, visible])
 
-  const total = rows.data?.count ?? 0
-  const pageEnd = offset + items.length
+  const total = rows.data?.pages[0]?.count ?? 0
   const filterCount = status ? 1 : 0
 
   const toggle = (id: number) =>
@@ -261,32 +284,56 @@ export default function WorksheetPage() {
       (item.query ?? '').length >= 3,
   )
 
-  const retryDeferred = async () => {
-    setRetrying({ done: 0, total: deferred.length })
-    for (const [index, item] of deferred.entries()) {
-      try {
-        await repriceItem(item.id, { query: item.query as string })
-        setRetrying({ done: index + 1, total: deferred.length })
-      } catch (error) {
-        if (error instanceof ApiError && error.isRateLimited) {
-          setNotice(
-            `Rate limit reached after ${index} of ${deferred.length}. Retry the rest shortly.`,
-          )
-          break
-        }
-        setNotice(error instanceof Error ? error.message : 'Retry failed.')
-        break
-      }
+  const rowH = ROW_H[density]
+
+  useEffect(() => {
+    const el = gridRef.current
+    if (!el) return
+    const measure = () => setViewportH(el.clientHeight)
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  const onGridScroll = (e: React.UIEvent<HTMLElement>) => {
+    const el = e.currentTarget
+    setScrollTop(el.scrollTop)
+    // Pull the next page well before the adjuster reaches the bottom.
+    if (
+      el.scrollHeight - el.scrollTop - el.clientHeight < rowH * 20 &&
+      rows.hasNextPage &&
+      !rows.isFetchingNextPage
+    ) {
+      void rows.fetchNextPage()
     }
-    setRetrying(null)
-    refresh()
   }
 
-  let counter = offset
+  // Grouped view is a review mode over a filtered set, so it renders whole.
+  const windowed = groups === null
+  const startIdx = windowed ? Math.max(0, Math.floor(scrollTop / rowH) - OVERSCAN) : 0
+  const endIdx = windowed
+    ? Math.min(visible.length, Math.ceil((scrollTop + viewportH) / rowH) + OVERSCAN)
+    : visible.length
+  const padTop = windowed ? startIdx * rowH : 0
+  const padBottom = windowed ? Math.max(0, (visible.length - endIdx) * rowH) : 0
+
+  let counter = 0
 
   return (
     <div className="k-shell">
-      <AppHeader />
+      <AppHeader
+        actions={
+          <>
+            <button type="button" className="k-btn k-btn--ghost" disabled title="Append a new ingest session — staging flow not built yet">
+              <Icon d={I.plus} size={12} /> Add photos
+            </button>
+            <button type="button" className="k-btn" disabled title="Export modal (screen 06) not built yet">
+              <Icon d={I.download} size={12} /> Export claim
+            </button>
+          </>
+        }
+      />
 
       <ClaimTabs
         active="Worksheet"
@@ -308,16 +355,6 @@ export default function WorksheetPage() {
             <span>
               <strong>Claim</strong> · <span className="k-mono">{claimId}</span>
             </span>
-            {claim.data?.date_of_loss ? (
-              <span>
-                <strong>Date of loss</strong> · {fmtDate(claim.data.date_of_loss)}
-              </span>
-            ) : null}
-            {claim.data?.loss_address ? (
-              <span>
-                <strong>Loss address</strong> · {claim.data.loss_address}
-              </span>
-            ) : null}
             {claim.data?.tax_rate != null ? (
               <span>
                 <strong>Tax</strong> · {fmtPct(claim.data.tax_rate)}
@@ -379,6 +416,11 @@ export default function WorksheetPage() {
             />
           </div>
 
+          {/* Scaffolded at a single state until the staging session model lands. */}
+          <select className="k-btn k-btn--ghost k-batch" disabled title="Multi-session claims — pending the staging model">
+            <option>All batches</option>
+          </select>
+
           <div ref={filterRef} style={{ position: 'relative' }}>
             <button
               type="button"
@@ -401,10 +443,7 @@ export default function WorksheetPage() {
                       type="button"
                       className="k-link"
                       style={{ fontSize: 11 }}
-                      onClick={() => {
-                        setStatus('')
-                        setOffset(0)
-                      }}
+                      onClick={() => setStatus('')}
                     >
                       Clear
                     </button>
@@ -418,7 +457,6 @@ export default function WorksheetPage() {
                       className={`k-menu-item ${value === status ? 'k-menu-item--on' : ''}`}
                       onClick={() => {
                         setStatus(value)
-                        setOffset(0)
                         setFilterOpen(false)
                       }}
                     >
@@ -455,11 +493,12 @@ export default function WorksheetPage() {
 
           <button
             type="button"
-            className="k-btn k-btn--ghost"
+            className={`k-btn k-btn--ghost k-btn--icon ${density === 'compact' ? 'k-btn--active' : ''}`}
             onClick={() => setDensity((d) => (d === 'comfortable' ? 'compact' : 'comfortable'))}
-            title="Row density"
+            title={density === 'comfortable' ? 'Comfortable rows — switch to compact' : 'Compact rows — switch to comfortable'}
+            aria-label="Row density"
           >
-            {density === 'comfortable' ? 'Comfortable' : 'Compact'}
+            <Icon d={density === 'compact' ? I.rowsCompact : I.rowsComfy} size={13} />
           </button>
 
           <button
@@ -473,8 +512,9 @@ export default function WorksheetPage() {
           <button
             type="button"
             className="k-btn"
-            disabled
-            title="Adding an item is a mutation — not built yet"
+            disabled={addItem.isPending}
+            onClick={() => addItem.mutate()}
+            title="Add a line item without a photo"
           >
             <Icon d={I.plus} size={12} /> Add item
           </button>
@@ -496,13 +536,16 @@ export default function WorksheetPage() {
             {deferred.length} row{deferred.length === 1 ? '' : 's'} deferred — the pricing service
             was at capacity, not a problem with these items.
           </span>
+          {/* Paused: the backend is building POST /v1/claims/{id}/retry-deferred.
+              Looping per-row reprice would burn the shared 30/min limit for a
+              worse result, so the action waits for the batch route. */}
           <button
             type="button"
             className="k-btn k-btn--sm"
-            onClick={() => void retryDeferred()}
-            disabled={retrying !== null}
+            disabled
+            title="Waiting on POST /v1/claims/{claim_id}/retry-deferred"
           >
-            {retrying ? `Retrying ${retrying.done}/${retrying.total}…` : `Retry ${deferred.length} deferred`}
+            Retry {deferred.length} deferred
           </button>
         </div>
       ) : null}
@@ -563,9 +606,11 @@ export default function WorksheetPage() {
       {rows.data ? (
         <div className={docked && openRow !== null ? 'k-grid-dock' : 'k-grid-dock k-grid-dock--off'}>
           <section
-              className={`k-grid k-grid--ws${density === 'compact' ? ' k-grid--compact' : ''}`}
-              style={gridStyle}
-            >
+            ref={gridRef}
+            onScroll={onGridScroll}
+            className={`k-grid k-grid--ws${density === 'compact' ? ' k-grid--compact' : ''}`}
+            style={gridStyle}
+          >
             <div className="k-row k-row--head">
               {HEADERS.map(([cls, label]) =>
                 cls === 'k-c--check' ? (
@@ -636,8 +681,10 @@ export default function WorksheetPage() {
                 </div>
               ))
             ) : (
-              visible.map((item) => (
-                <Row
+              <>
+                {padTop > 0 ? <div style={{ height: padTop }} /> : null}
+                {visible.slice(startIdx, endIdx).map((item) => (
+                  <Row
                   key={item.id}
                   item={item}
                   n={++counter}
@@ -645,13 +692,15 @@ export default function WorksheetPage() {
                   active={openRow === item.id}
                   onSelect={() => toggle(item.id)}
                   onOpen={() => setOpenRow(item.id)}
-                  onRowClick={docked ? () => setOpenRow(item.id) : undefined}
-                      pending={pending.has(item.id)}
-                      categories={rules.data?.categories ?? []}
-                      onOverride={(body) => override.mutate({ id: item.id, body })}
-                      onEditLine={(body) => editLine.mutate({ id: item.id, body })}
-                />
-              ))
+                    onRowClick={docked ? () => setOpenRow(item.id) : undefined}
+                    pending={pending.has(item.id)}
+                    categories={rules.data?.categories ?? []}
+                    onOverride={(body) => override.mutate({ id: item.id, body })}
+                    onEditLine={(body) => editLine.mutate({ id: item.id, body })}
+                  />
+                ))}
+                {padBottom > 0 ? <div style={{ height: padBottom }} /> : null}
+              </>
             )}
           </section>
 
@@ -665,26 +714,11 @@ export default function WorksheetPage() {
         <>
           <div className="k-ws-foot">
             <span className="k-claim-sub">
-              {total === 0 ? 'No items' : `${fmtInt(offset + 1)}–${fmtInt(pageEnd)} of ${fmtInt(total)}`}
+              {total === 0
+                ? 'No items'
+                : `Showing ${fmtInt(items.length)} of ${fmtInt(total)}` +
+                  (rows.isFetchingNextPage ? ' · loading more…' : '')}
             </span>
-            <div className="k-ws-pager">
-              <button
-                type="button"
-                className="k-btn k-btn--ghost"
-                disabled={offset === 0}
-                onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
-              >
-                Previous
-              </button>
-              <button
-                type="button"
-                className="k-btn k-btn--ghost"
-                disabled={pageEnd >= total}
-                onClick={() => setOffset(offset + PAGE_SIZE)}
-              >
-                Next
-              </button>
-            </div>
           </div>
         </>
       ) : null}

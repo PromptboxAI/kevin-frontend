@@ -76,3 +76,24 @@ export function repriceItem(
 ) {
   return api.post<RepriceResponse>(`/v1/claim_items/${rowId}/reprice`, { json: body })
 }
+
+export type BulkCreateResponse = {
+  claim_id: string
+  items_created: number
+  item_ids: number[]
+  priced: number
+  needs_manual: number[]
+}
+
+/**
+ * A one-row bulk call is the ONLY row-creation route that does not require an
+ * uploaded image -- the contract says so explicitly. price:false creates the
+ * line without spending vendor budget, so it lands unpriced for the adjuster
+ * to fill in.
+ */
+export function createBlankItem(claimId: string, description = 'New item') {
+  return api.post<BulkCreateResponse>(
+    `/v1/claims/${encodeURIComponent(claimId)}/items/bulk`,
+    { json: { items: [{ description, quantity: 1 }], price: false } },
+  )
+}

@@ -721,3 +721,85 @@
   border-color: var(--k-accent);
   background: var(--k-accent-soft);
 }
+
+/* Nav / menu items whose surface is not built yet: visible, inert, labelled. */
+.k-tab--todo {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* --- Avatar menu --- */
+.k-avatar-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 99px;
+  border: 0;
+  background: var(--k-fg-2);
+  color: var(--k-bg);
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.k-avatar-chip {
+  width: 32px;
+  height: 32px;
+  border-radius: 99px;
+  background: var(--k-fg-2);
+  color: var(--k-bg);
+  display: grid;
+  place-items: center;
+  font-weight: 600;
+  font-size: 11px;
+  flex: 0 0 auto;
+}
+
+.k-avatar-name {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.k-avatar-mail {
+  font-size: 11px;
+  color: var(--k-fg-4);
+  font-family: var(--k-font-mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 1px;
+}
+
+button.k-avatar-menu-item {
+  width: 100%;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* Batch/session picker sits with the toolbar buttons. */
+.k-batch {
+  appearance: none;
+  padding-right: 22px;
+}
+
+.k-btn--icon {
+  padding: 6px 8px;
+}
+
+/* Toolbar and claim header stay put while the grid scrolls; .k-grid owns the
+   one scroll container, so the header row sticks inside it. */
+.k-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  background: var(--k-bg-3);
+  padding: 8px 16px;
+}

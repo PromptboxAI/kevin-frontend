@@ -1,15 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
+import AvatarMenu from './AvatarMenu'
+import TopNavTabs from './TopNavTabs'
 import { api } from '../lib/api'
-import { useAuth } from '../lib/auth'
 import type { MeResponse } from '../lib/types'
 
-/**
- * Mirrors the prototype's <header className="k-topbar">: wordmark, a hairline
- * divider, then nav on the left and account actions on the right.
- */
-export default function AppHeader() {
-  const { signOut } = useAuth()
+/** Mirrors <header className="k-topbar"> in every prototype screen. */
+export default function AppHeader({ actions }: { actions?: React.ReactNode }) {
   const { data: me } = useQuery({
     queryKey: ['me'],
     queryFn: () => api.get<MeResponse>('/v1/me'),
@@ -23,18 +20,12 @@ export default function AppHeader() {
           Kevin<span>.</span>
         </Link>
         <div style={{ width: 1, height: 16, background: 'var(--k-line)' }} />
-        <nav style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <Link to="/claims" className="k-tab k-tab--on">
-            My claims
-          </Link>
-        </nav>
+        <TopNavTabs />
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        {me ? <span className="k-topbar-user">{me.email ?? me.id}</span> : null}
-        <button type="button" className="k-btn k-btn--ghost" onClick={() => void signOut()}>
-          Sign out
-        </button>
+        {actions}
+        {me ? <AvatarMenu email={me.email} id={me.id} /> : null}
       </div>
     </header>
   )
