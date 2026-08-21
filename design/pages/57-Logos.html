@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kevin.co — logo explorations</title>
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Fraunces:ital,wght@0,400;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../kevin.css" />
+  <style>
+    body { margin: 0; padding: 48px 56px 80px; max-width: 1280px; font-family: var(--k-font-ui); }
+    .hd { margin-bottom: 48px; }
+    .eyebrow { font-family: var(--k-font-mono); font-size: 11px; color: var(--k-accent); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
+    h1 { font-family: var(--k-font-display); font-weight: 400; font-size: 52px; letter-spacing: -0.028em; margin: 8px 0 12px; }
+    .lede { font-size: 14.5px; color: var(--k-fg-3); margin: 0; max-width: 620px; line-height: 1.55; }
+
+    h2 { font-family: var(--k-font-mono); font-size: 11px; font-weight: 700; color: var(--k-fg-4); text-transform: uppercase; letter-spacing: 0.08em; margin: 48px 0 14px; }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+    .card {
+      background: var(--k-bg); border: 1px solid var(--k-line); border-radius: 14px;
+      overflow: hidden; display: flex; flex-direction: column;
+    }
+    .stage {
+      flex: 1; min-height: 220px;
+      display: grid; place-items: center;
+      background: var(--k-bg);
+      padding: 32px 24px;
+    }
+    .stage--dark { background: oklch(0.18 0.04 252); color: #fff; }
+    .stage--accent { background: var(--k-accent); color: var(--k-bg); }
+    .stage--soft { background: var(--k-bg-2); }
+    .stage--mint { background: oklch(0.94 0.04 175); }
+    .meta {
+      padding: 14px 18px; border-top: 1px solid var(--k-line);
+      display: flex; justify-content: space-between; align-items: center;
+      background: var(--k-bg);
+    }
+    .meta-l { font-size: 13px; font-weight: 600; letter-spacing: -0.01em; }
+    .meta-r { font-family: var(--k-font-mono); font-size: 11px; color: var(--k-fg-4); }
+
+    /* — Wordmark variants — */
+    .wm-geist {
+      font-family: 'Geist', sans-serif; font-weight: 600; font-size: 56px;
+      letter-spacing: -0.03em;
+    }
+    .wm-geist-bold { font-weight: 700; }
+    .wm-geist-lc { text-transform: lowercase; }
+    .wm-mono {
+      font-family: 'Geist Mono', monospace; font-weight: 500;
+      font-size: 42px; letter-spacing: -0.02em;
+    }
+    .wm-serif {
+      font-family: 'Instrument Serif', serif; font-style: italic;
+      font-size: 64px; letter-spacing: -0.025em;
+    }
+    .wm-fraunces {
+      font-family: 'Fraunces', serif; font-weight: 400;
+      font-size: 56px; letter-spacing: -0.025em;
+    }
+    .wm-dot {
+      display: inline-block; transform: translateY(-0.05em);
+      color: var(--k-accent);
+    }
+    .wm-co { opacity: 0.45; font-weight: 400; }
+
+    /* — Monogram K marks — */
+    .mono-box {
+      width: 100px; height: 100px; border-radius: 22px;
+      background: var(--k-fg); color: var(--k-bg);
+      display: grid; place-items: center;
+      font-family: 'Geist', sans-serif; font-weight: 700;
+      font-size: 56px; letter-spacing: -0.04em;
+      line-height: 1;
+    }
+    .mono-circle {
+      width: 100px; height: 100px; border-radius: 99px;
+      background: var(--k-accent); color: var(--k-bg);
+      display: grid; place-items: center;
+      font-family: 'Instrument Serif', serif; font-style: italic;
+      font-size: 64px; letter-spacing: -0.04em;
+      line-height: 1;
+    }
+    .mono-outline {
+      width: 100px; height: 100px; border-radius: 22px;
+      border: 3px solid var(--k-fg); color: var(--k-fg);
+      display: grid; place-items: center;
+      font-family: 'Geist', sans-serif; font-weight: 700;
+      font-size: 52px; letter-spacing: -0.04em;
+      background: transparent;
+    }
+
+    /* — Wordmark + mark — */
+    .lockup { display: flex; align-items: center; gap: 16px; }
+    .lockup-mark {
+      width: 56px; height: 56px; border-radius: 12px;
+      background: var(--k-fg); color: var(--k-bg);
+      display: grid; place-items: center;
+      font-family: 'Geist', sans-serif; font-weight: 700; font-size: 30px;
+      letter-spacing: -0.04em;
+    }
+    .lockup-mark--accent { background: var(--k-accent); }
+    .lockup-mark--circle { border-radius: 99px; }
+    .lockup-text {
+      font-family: 'Geist', sans-serif; font-weight: 600;
+      font-size: 36px; letter-spacing: -0.025em;
+    }
+    .lockup-text--serif {
+      font-family: 'Instrument Serif', serif; font-style: italic;
+      font-size: 44px;
+    }
+
+    /* — Camera-lens K — */
+    .lens-mark {
+      width: 100px; height: 100px; position: relative;
+      display: grid; place-items: center;
+    }
+    .lens-ring {
+      position: absolute; inset: 0;
+      border: 3.5px solid var(--k-fg);
+      border-radius: 99px;
+    }
+    .lens-inner {
+      width: 56px; height: 56px; border-radius: 99px;
+      background: var(--k-fg); color: var(--k-bg);
+      display: grid; place-items: center;
+      font-family: 'Geist', sans-serif; font-weight: 700; font-size: 30px;
+      letter-spacing: -0.04em;
+    }
+
+    /* — Grid mark — riffs on the worksheet grid — */
+    .grid-mark {
+      width: 100px; height: 100px;
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: 1fr 1fr 1fr;
+      gap: 3px; padding: 8px; box-sizing: border-box;
+      background: var(--k-bg);
+      border: 2px solid var(--k-fg); border-radius: 14px;
+    }
+    .grid-mark > span {
+      background: var(--k-fg); border-radius: 2px;
+    }
+    .grid-mark > span:nth-child(5) { background: var(--k-accent); }
+    .grid-mark--inv { background: var(--k-fg); border-color: var(--k-fg); }
+    .grid-mark--inv > span { background: rgba(255,255,255,0.85); }
+    .grid-mark--inv > span:nth-child(5) { background: var(--k-accent); }
+
+    /* — Tag / receipt mark — */
+    .tag-mark {
+      width: 100px; height: 100px;
+      background: var(--k-accent);
+      border-radius: 14px 14px 14px 28px;
+      display: grid; place-items: center;
+      color: var(--k-bg);
+      font-family: 'Geist', sans-serif; font-weight: 700; font-size: 52px;
+      letter-spacing: -0.04em;
+      position: relative;
+    }
+    .tag-mark::before {
+      content: ''; position: absolute; left: 16px; bottom: 16px;
+      width: 10px; height: 10px; border-radius: 99px;
+      background: var(--k-bg);
+    }
+
+    /* — Stamp / seal — */
+    .stamp-mark {
+      width: 100px; height: 100px; border-radius: 99px;
+      background: var(--k-bg); border: 2.5px solid var(--k-fg);
+      position: relative; display: grid; place-items: center;
+      font-family: 'Instrument Serif', serif; font-style: italic;
+      font-size: 48px; color: var(--k-fg); letter-spacing: -0.04em;
+    }
+    .stamp-mark::after {
+      content: ''; position: absolute; inset: 6px;
+      border: 1px solid var(--k-fg); border-radius: 99px;
+      opacity: 0.45;
+    }
+
+    /* — Stacked initials block — */
+    .stack-mark {
+      width: 100px; height: 100px;
+      background: var(--k-fg); color: var(--k-bg);
+      border-radius: 14px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      font-family: 'Geist', sans-serif; font-weight: 600;
+      letter-spacing: 0.06em; line-height: 1.05;
+    }
+    .stack-mark > span:first-child { font-size: 32px; font-weight: 700; }
+    .stack-mark > span:last-child {
+      font-size: 9px; opacity: 0.7;
+      font-family: 'Geist Mono', monospace; margin-top: 4px;
+    }
+
+    /* — Bracket / mark riff — */
+    .bracket {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-family: 'Geist', sans-serif; font-weight: 600;
+      font-size: 48px; letter-spacing: -0.025em;
+    }
+    .bracket-l, .bracket-r {
+      color: var(--k-accent); font-weight: 400;
+      font-family: 'Instrument Serif', serif;
+    }
+
+    /* — Check K — */
+    .check-mark {
+      width: 100px; height: 100px; border-radius: 22px;
+      background: oklch(0.66 0.13 175);
+      display: grid; place-items: center;
+      position: relative;
+    }
+    .check-mark svg { width: 56px; height: 56px; }
+
+    /* — Pin mark — */
+    .pin-mark {
+      width: 80px; height: 110px;
+      background: var(--k-fg); color: var(--k-bg);
+      border-radius: 40px 40px 40px 4px;
+      display: grid; place-items: center;
+      transform: rotate(-8deg);
+      font-family: 'Geist', sans-serif; font-weight: 700; font-size: 44px;
+      letter-spacing: -0.04em;
+      position: relative;
+    }
+
+    .footer {
+      margin-top: 64px; padding-top: 28px; border-top: 1px solid var(--k-line);
+      display: flex; gap: 18px; font-size: 11.5px; color: var(--k-fg-4);
+      font-family: var(--k-font-mono);
+    }
+  </style>
+<script>/* reset scroll on page entry — cross-page links otherwise inherit the previous page's scroll position */
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+window.addEventListener('load', function(){ window.scrollTo(0,0); document.documentElement.scrollTop = 0; document.body.scrollTop = 0; });
+</script>
+</head>
+<body>
+  <div class="hd">
+    <div class="eyebrow">Brand exploration</div>
+    <h1>Logo directions for Kevin.</h1>
+    <p class="lede">
+      Twelve marks across three approaches: typography-only wordmarks, abstract monograms, and lockups
+      that pair a symbol with the wordmark. Each is shown at large scale on a light card; some include a
+      dark or accent-color variant so you can see how it holds up across surfaces.
+    </p>
+  </div>
+
+  <h2>Wordmarks · type only<span style="margin-left:8px;color:var(--k-fg-4);font-weight:500">5 directions</span></h2>
+  <div class="grid">
+
+    <div class="card">
+      <div class="stage">
+        <span class="wm-geist">Kevin<span class="wm-co">.co</span></span>
+      </div>
+      <div class="meta">
+        <span class="meta-l">Geist · current</span>
+        <span class="meta-r">01 · sans-serif</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="stage">
+        <span class="wm-geist">Kevin<span class="wm-dot">.</span></span>
+      </div>
+      <div class="meta">
+        <span class="meta-l">Capital K · period accent</span>
+        <span class="meta-r">02 · sans-serif</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="stage stage--soft">
+        <span class="wm-serif">Kevin<span class="wm-co">.co</span></span>
+      </div>
+      <div class="meta">
+        <span class="meta-l">Instrument Serif · editorial</span>
+        <span class="meta-r">03 · serif italic</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="stage">
+        <span class="wm-fraunces">Kevin</span>
+      </div>
+      <div class="meta">
+        <span class="meta-l">Fraunces · warmer serif</span>
+        <span class="meta-r">04 · serif</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="stage stage--dark">
+        <span class="wm-mono" style="color:#fff">kevin<span style="color:var(--k-accent)">.co</span></span>
+      </div>
+      <div class="meta">
+        <span class="meta-l">Mono · developer-feel</span>
+        <span class="meta-r">05 · monospace</span>
+      </div>
+    </div>
+  </div>
+
+  <h2>Monogram marks · K alone<span style="margin-left:8px;color:var(--k-fg-4);font-weight:500">4 directions</span></h2>
+  <div class="grid">
+
+    <div class="card">
+      <div class="stage">
+        <div class="mono-box">K</div>
+      </div>
+      <div class="meta">
+        <span class="meta-l">Filled square · solid</span>
+        <span class="meta-r">06 · monogram</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="stage stage--mint">
+        <div class="mono-circle" style="background:oklch(0.36 0.08 175)">K</div>
+      </div>
+      <div class="meta">
+        <span class="meta-l">Serif K · circle</span>
+        <span class="meta-r">07 · monogram</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="stage">
+        <div class="mono-outline">K</div>
+      </div>
+      <div class="meta">
+        <span class="meta-l">Outlined · understated</span>
+        <span class="meta-r">08 · monogram</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="stage stage--accent">
+        <div class="stack-mark" style="background:transparent;color:var(--k-bg)">
+          <span>K.</span>
+          <span>CONTENT INVENTORY</span>
+        </div>
+      </div>
+      <div class="meta">
+        <span class="meta-l">K. + tagline stack</span>
+        <span class="meta-r">09 · monogram</span>
+      </div>
+    </div>
+  </div>
+
+  <h2>Symbol + wordmark lockups<span style="margin-left:8px;color:var(--k-fg-4);font-weight:500">5 directions</span></h2>
+  <div class="grid">
+
+    <div class="card">
+      <div class="stage">
+        <div class="lockup">
+          <div class="grid-mark">
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+          </div>
+          <span class="lockup-text">Kevin</span>
+        </div>
+      </div>
+      <div class="meta">
+        <span class="meta-l">Worksheet grid · the product</span>
+        <span class="meta-r">10 · lockup</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="stage stage--dark">
+        <div class="lockup">
+          <div class="lens-mark">
+            <div class="lens-ring" style="border-color:#fff"></div>
+            <div class="lens-inner" style="background:#fff;color:oklch(0.18 0.04 252)">K</div>
+          </div>
+          <span class="lockup-text" style="color:#fff">Kevin</span>
+        </div>
+      </div>
+      <div class="meta">
+        <span class="meta-l">Camera lens · photo-first</span>
+        <span class="meta-r">11 · lockup</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="stage">
+        <div class="lockup">
+          <div class="tag-mark">K</div>
+          <span class="lockup-text">Kevin</span>
+        </div>
+      </div>
+      <div class="meta">
+        <span class="meta-l">Price tag · valuation</span>
+        <span class="meta-r">12 · lockup</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="stage stage--soft">
+        <div class="lockup">
+          <div class="check-mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m5 12 5 5 9-11"/>
+            </svg>
+          </div>
+          <span class="lockup-text-serif" style="font-family:'Instrument Serif',serif;font-style:italic;font-size:44px;letter-spacing:-0.025em">Kevin</span>
+        </div>
+      </div>
+      <div class="meta">
+        <span class="meta-l">Checkmark · defensible</span>
+        <span class="meta-r">13 · lockup</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="stage">
+        <div class="lockup">
+          <div class="stamp-mark">K</div>
+          <span class="lockup-text-serif" style="font-family:'Instrument Serif',serif;font-style:italic;font-size:44px;letter-spacing:-0.025em">Kevin</span>
+        </div>
+      </div>
+      <div class="meta">
+        <span class="meta-l">Stamp / seal · authoritative</span>
+        <span class="meta-r">14 · lockup</span>
+      </div>
+    </div>
+
+  </div>
+
+  <h2>Bonus · typographic plays<span style="margin-left:8px;color:var(--k-fg-4);font-weight:500">3 directions</span></h2>
+  <div class="grid">
+
+    <div class="card">
+      <div class="stage">
+        <span class="bracket"><span class="bracket-l">[</span>Kevin<span class="bracket-r">]</span></span>
+      </div>
+      <div class="meta">
+        <span class="meta-l">Brackets · technical</span>
+        <span class="meta-r">15 · typographic</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="stage stage--accent">
+        <span class="wm-geist" style="color:var(--k-bg)">Kevin<span style="opacity:0.65">_</span></span>
+      </div>
+      <div class="meta">
+        <span class="meta-l">Cursor underscore · live</span>
+        <span class="meta-r">16 · typographic</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="stage stage--dark">
+        <div style="text-align:center">
+          <div style="font-family:'Geist Mono',monospace;font-size:11px;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.18em;margin-bottom:14px">A content inventory adjuster</div>
+          <div style="font-family:'Instrument Serif',serif;font-style:italic;font-size:56px;color:#fff;letter-spacing:-0.025em">Kevin</div>
+        </div>
+      </div>
+      <div class="meta">
+        <span class="meta-l">Tagline + serif · packaging</span>
+        <span class="meta-r">17 · typographic</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <span>17 logo directions · 4 approaches</span>
+    <span>·</span>
+    <span>Geist · Instrument Serif · Fraunces · Geist Mono</span>
+  </div>
+</body>
+</html>

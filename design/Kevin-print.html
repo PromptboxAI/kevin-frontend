@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kevin.co — design book</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,400;0,700;0,900;1,400&family=Lato:ital,wght@0,400;0,700;0,900;1,400&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- Shared kevin.co styles -->
+  <link rel="stylesheet" href="kevin.css" />
+
+  <style>
+    /* ── Print-book layout ─────────────────────────────────────── */
+    html, body { background: var(--k-bg); }
+    body { margin: 0; padding: 0; }
+
+    /* Page sizes — wide landscape default, taller for long marketing pages */
+    @page          { size: 1600px 1000px; margin: 0; }
+    @page tall     { size: 1280px 1500px; margin: 0; }
+    @page coverpg  { size: 1600px 1000px; margin: 0; }
+
+    .k-print-page {
+      width:  var(--p-w, 1600px);
+      height: var(--p-h, 1000px);
+      page-break-after: always;
+      break-after: page;
+      position: relative;
+      background: var(--k-bg);
+      overflow: hidden;
+      display: block;
+    }
+    .k-print-page:last-child { page-break-after: auto; break-after: auto; }
+    .k-print-page--tall { page: tall; --p-w: 1280px; --p-h: 1500px; }
+    .k-print-cover { page: coverpg; }
+
+    .k-print-page__hd {
+      position: absolute; top: 0; left: 0; right: 0; z-index: 5;
+      display: flex; align-items: center; gap: 14px;
+      padding: 18px 32px 14px;
+      background: linear-gradient(to bottom, var(--k-bg) 75%, transparent);
+    }
+    .k-print-page__hd-section {
+      font-family: var(--k-font-mono); font-size: 10.5px;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--k-fg-4); font-weight: 700;
+    }
+    .k-print-page__hd-label {
+      font-family: var(--k-font-display); font-size: 16px;
+      letter-spacing: -0.012em; color: var(--k-fg); margin-left: 4px;
+    }
+    .k-print-page__hd-num {
+      margin-left: auto;
+      font-family: var(--k-font-mono); font-size: 11px;
+      color: var(--k-fg-4); letter-spacing: 0.04em;
+    }
+    .k-print-page__hd-brand {
+      font-family: var(--k-font-ui); font-weight: 600; font-size: 12.5px;
+      color: var(--k-fg-3); letter-spacing: -0.015em;
+    }
+
+    .k-print-page__stage {
+      position: absolute; inset: 70px 36px 36px 36px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .k-print-page__art {
+      width: var(--a-w, 1280px);
+      height: var(--a-h, 820px);
+      transform: scale(var(--a-s, 1));
+      transform-origin: center center;
+      flex: 0 0 auto;
+      background: var(--k-bg);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05), 0 18px 50px rgba(20,30,60,0.10);
+    }
+    .k-print-page__art > * {
+      width: 100%; height: 100%;
+    }
+
+    /* ── Cover page ────────────────────────────────────────────── */
+    .k-cover {
+      position: absolute; inset: 0;
+      padding: 72px 88px;
+      display: flex; flex-direction: column;
+      background:
+        radial-gradient(circle at 85% 15%, oklch(0.66 0.13 175 / 0.10) 0%, transparent 40%),
+        radial-gradient(circle at 12% 88%, oklch(0.72 0.14 75 / 0.08) 0%, transparent 40%),
+        var(--k-bg);
+    }
+    .k-cover-hd {
+      display: flex; justify-content: space-between; align-items: baseline;
+      font-family: var(--k-font-mono); font-size: 11px;
+      color: var(--k-fg-4); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;
+    }
+    .k-cover-title {
+      font-family: var(--k-font-display); font-weight: 400;
+      font-size: 156px; letter-spacing: -0.04em; line-height: 0.98;
+      color: var(--k-fg); margin: 64px 0 32px;
+    }
+    .k-cover-title em { font-style: italic; color: var(--k-accent); font-weight: 400; }
+    .k-cover-sub {
+      font-size: 19px; color: var(--k-fg-2); max-width: 760px;
+      line-height: 1.5; margin: 0 0 56px; text-wrap: pretty;
+    }
+    .k-cover-grid {
+      margin-top: auto;
+      display: grid; grid-template-columns: 1.4fr 1fr; gap: 56px;
+      padding-top: 32px; border-top: 1px solid var(--k-line);
+    }
+    .k-cover-toc {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4px 32px;
+      font-size: 12.5px; color: var(--k-fg-2);
+    }
+    .k-cover-toc-item {
+      display: flex; gap: 12px; padding: 6px 0;
+      border-bottom: 1px dotted var(--k-line);
+    }
+    .k-cover-toc-n {
+      font-family: var(--k-font-mono); color: var(--k-accent); font-weight: 700;
+      font-size: 10.5px; width: 28px; padding-top: 2px;
+    }
+    .k-cover-stats {
+      display: flex; flex-direction: column; gap: 18px;
+    }
+    .k-cover-stat-n {
+      font-family: var(--k-font-display); font-size: 64px; line-height: 1;
+      letter-spacing: -0.03em;
+    }
+    .k-cover-stat-l { font-size: 13px; color: var(--k-fg-3); margin-top: 4px; }
+
+    /* ── Section divider mini-text inside header  ───────────────── */
+    .k-print-page__hd-divider {
+      width: 1px; height: 14px; background: var(--k-line);
+    }
+
+    /* Make sure overflow scrolls inside artboards render statically */
+    .k-print-page__art [style*="overflow-y: auto"],
+    .k-print-page__art [style*="overflow:auto"] {
+      overflow: hidden !important;
+    }
+
+    /* Print rule overrides */
+    @media print {
+      html, body { background: white !important; }
+      .k-print-page { box-shadow: none !important; }
+      .k-print-page__art {
+        box-shadow: 0 0 0 1px var(--k-line) !important;
+      }
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    @media screen {
+      body { padding: 24px; display: flex; flex-direction: column; gap: 24px; }
+      .k-print-page {
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 20px 50px rgba(20,30,60,0.08);
+        border-radius: 4px;
+      }
+    }
+  </style>
+<script>/* reset scroll on page entry — cross-page links otherwise inherit the previous page's scroll position */
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+window.addEventListener('load', function(){ window.scrollTo(0,0); document.documentElement.scrollTop = 0; document.body.scrollTop = 0; });
+</script>
+</head>
+<body>
+  <!-- Tell the Processing component to render a static mid-cycle frame -->
+  <script>window.__KEVIN_PRINT__ = true;</script>
+
+  <!-- React + Babel -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <!-- All design components -->
+  <script type="text/babel" src="components/data.jsx"></script>
+  <script type="text/babel" src="components/shared.jsx"></script>
+  <script type="text/babel" src="components/top-nav.jsx"></script>
+  <script type="text/babel" src="components/landing.jsx"></script>
+  <script type="text/babel" src="components/intake.jsx"></script>
+  <script type="text/babel" src="components/processing.jsx"></script>
+  <script type="text/babel" src="components/worksheet.jsx"></script>
+  <script type="text/babel" src="components/export.jsx"></script>
+  <script type="text/babel" src="components/claims-dashboard.jsx"></script>
+  <script type="text/babel" src="components/carrier-settings.jsx"></script>
+  <script type="text/babel" src="components/mobile-capture.jsx"></script>
+  <script type="text/babel" src="components/exports-history.jsx"></script>
+  <script type="text/babel" src="components/claim-overview.jsx"></script>
+  <script type="text/babel" src="components/settings-pricing.jsx"></script>
+  <script type="text/babel" src="components/request-access.jsx"></script>
+  <script type="text/babel" src="components/claim-photos.jsx"></script>
+  <script type="text/babel" src="components/audit-log.jsx"></script>
+  <script type="text/babel" src="components/notifications.jsx"></script>
+  <script type="text/babel" src="components/team-management.jsx"></script>
+  <script type="text/babel" src="components/edge-states.jsx"></script>
+  <script type="text/babel" src="components/pricing.jsx"></script>
+  <script type="text/babel" src="components/segment-pages.jsx"></script>
+  <script type="text/babel" src="components/docs.jsx"></script>
+  <script type="text/babel" src="components/legal-hub.jsx"></script>
+  <script type="text/babel" src="components/mobile-auth.jsx"></script>
+  <script type="text/babel" src="components/mobile-review.jsx"></script>
+  <script type="text/babel" src="components/share-claim.jsx"></script>
+
+  <div id="root"></div>
+
+  <script type="text/babel">
+    // ── Artboard manifest — matches Kevin.html canvas, in display order ──
+    const BOOK_SECTIONS = [
+      { name: 'Returning user', pages: [
+        ['Sign in',                          'SignIn',          1280, 820],
+        ['My claims dashboard',              'Claims',          1320, 920],
+      ]},
+      { name: 'Core loop', pages: [
+        ['Public landing',                   'Landing',         1280, 1000],
+        ['New claim intake',                 'Intake',          1280, 1100],
+        ['Kevin is processing',              'Processing',      1320, 920],
+        ['Review worksheet · v1 Flat',       'Worksheet',       1480, 920],
+        ['Export modal — final review',      'ExportFlow',      1480, 920],
+      ]},
+      { name: 'Configuration & companion', pages: [
+        ['Settings · Carrier profiles',      'CarrierSettings', 1320, 980],
+        ['Mobile capture (PWA)',             'MobileCapture',    390, 844],
+      ]},
+      { name: 'Tier 1 — gap fills', pages: [
+        ['Single-claim overview',            'ClaimOverview',   1480, 1140],
+        ['Exports & history',                'Exports',         1480, 920],
+        ['Settings · Pricing sources',       'SettingsPricing', 1320, 1100],
+        ['Request access',                   'RequestAccess',   1280, 1180],
+      ]},
+      { name: 'Tier 2 — workflow polish', pages: [
+        ['Claim · Photos tab',               'ClaimPhotos',     1480, 920],
+        ['Claim · Notes & audit log',        'AuditLog',        1480, 920],
+        ['Notifications inbox + popover',    'Notifications',   1320, 920],
+        ['Settings · Team management',       'TeamManagement',  1320, 1080],
+        ['Edge states gallery',              'EdgeStates',      1480, 1500],
+      ]},
+      { name: 'Tier 3 — marketing & legal', pages: [
+        ['Pricing',                          'Pricing',         1280, 1500],
+        ['For Adjusters',                    'ForAdjusters',    1280, 1700],
+        ['For Estate Liquidators',           'ForLiquidators',  1280, 1700],
+        ['Docs · help center',               'Docs',            1480, 1300],
+        ['Privacy & Terms hub',              'LegalHub',        1280, 1500],
+      ]},
+      { name: 'Tier 4 — mobile & collaboration', pages: [
+        ['Mobile · Sign in',                 'MobileSignIn',     390, 844],
+        ['Mobile · Pair with desktop',       'MobilePair',       390, 844],
+        ['Mobile · Review captures',         'MobileReview',     390, 844],
+        ['Share a claim — handoff modal',    'ShareClaim',      1480, 920],
+      ]},
+    ];
+
+    // Flatten so we can give each page a global number
+    const FLAT = [];
+    BOOK_SECTIONS.forEach(sec => sec.pages.forEach(p => FLAT.push({ section: sec.name, label: p[0], comp: p[1], w: p[2], h: p[3] })));
+
+    function PrintPage({ entry, idx, total }) {
+      const Comp = window[entry.comp];
+      const tall = entry.h > 1200;
+      const pageW = tall ? 1280 : 1600;
+      const pageH = tall ? 1500 : 1000;
+      const contentW = pageW - 72;   // 36px L+R padding
+      const contentH = pageH - 106;  // header ~70 + bottom ~36
+      const scale = Math.min(contentW / entry.w, contentH / entry.h, 1);
+
+      return (
+        <article className={`k-print-page ${tall ? 'k-print-page--tall' : ''}`}>
+          <header className="k-print-page__hd">
+            <span className="k-print-page__hd-brand">Kevin.co</span>
+            <span className="k-print-page__hd-divider" />
+            <span className="k-print-page__hd-section">{entry.section}</span>
+            <span className="k-print-page__hd-label">{entry.label}</span>
+            <span className="k-print-page__hd-num">{String(idx).padStart(2, '0')} / {total}</span>
+          </header>
+          <div className="k-print-page__stage">
+            <div className="k-print-page__art" style={{ '--a-w': entry.w + 'px', '--a-h': entry.h + 'px', '--a-s': scale, width: entry.w, height: entry.h, transform: `scale(${scale})` }}>
+              {Comp ? <Comp /> : <div style={{ padding: 40, color: 'var(--k-fg-4)' }}>Missing component: {entry.comp}</div>}
+            </div>
+          </div>
+        </article>
+      );
+    }
+
+    function Cover() {
+      return (
+        <article className="k-print-page k-print-cover">
+          <div className="k-cover">
+            <div className="k-cover-hd">
+              <span>Design book · v2026.05</span>
+              <span>{FLAT.length} artboards · {BOOK_SECTIONS.length} sections</span>
+            </div>
+            <h1 className="k-cover-title">
+              Kevin<em>.co</em>
+            </h1>
+            <p className="k-cover-sub">
+              The only content inventory adjuster you'll ever need. From cold landing through carrier-side settlement — every screen, every state, every edge case.
+            </p>
+            <div className="k-cover-grid">
+              <div className="k-cover-toc">
+                {BOOK_SECTIONS.map((s, i) => (
+                  <div key={i} className="k-cover-toc-item">
+                    <span className="k-cover-toc-n">{String(i + 1).padStart(2, '0')}</span>
+                    <span style={{ flex: 1 }}>{s.name}</span>
+                    <span style={{ fontFamily: 'var(--k-font-mono)', fontSize: 10.5, color: 'var(--k-fg-4)' }}>{s.pages.length}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="k-cover-stats">
+                <div>
+                  <div className="k-cover-stat-n">{FLAT.length}</div>
+                  <div className="k-cover-stat-l">artboards · one screen per page</div>
+                </div>
+                <div>
+                  <div className="k-cover-stat-n">540</div>
+                  <div className="k-cover-stat-l">items in the live worksheet</div>
+                </div>
+                <div>
+                  <div className="k-cover-stat-n">8</div>
+                  <div className="k-cover-stat-l">sections from sign-in to settlement</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+      );
+    }
+
+    function Book() {
+      return (
+        <>
+          <Cover />
+          {FLAT.map((entry, i) => (
+            <PrintPage key={i} entry={entry} idx={i + 1} total={FLAT.length} />
+          ))}
+        </>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<Book />);
+
+    // ── Auto-print after fonts + components mount ──
+    (async () => {
+      try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (e) {}
+      await new Promise(r => setTimeout(r, 1200));  // let React finish + animations settle
+      window.print();
+    })();
+  </script>
+</body>
+</html>

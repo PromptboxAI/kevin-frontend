@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Depreciation Recovery Request — PDF preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Lato:wght@400;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../kevin.css" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    :root{--pdf-ink:#1a1d21;--pdf-muted:#6b7280;--pdf-line:#e3e6ea;--pdf-bg:#f4f5f7}
+    body{margin:0;background:var(--pdf-bg);font-family:'Lato','Helvetica Neue',Arial,sans-serif;color:var(--pdf-ink)}
+    .rpdf-bar{display:flex;align-items:center;gap:10px;padding:10px 18px;font-size:12px;color:var(--pdf-muted);background:#fff;border-bottom:1px solid var(--pdf-line)}
+    .rpdf-page{width:980px;margin:22px auto 40px;background:#fff;border:1px solid var(--pdf-line);border-radius:4px;box-shadow:0 2px 14px rgba(20,24,30,0.07);padding:44px 48px}
+    .rpdf-hd{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid var(--pdf-ink);padding-bottom:14px}
+    .rpdf-t{font-family:'Merriweather',Georgia,serif;font-size:22px;margin:0 0 3px}
+    .rpdf-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 22px;margin:16px 0 20px;font-size:11.5px}
+    .rpdf-meta b{display:block;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--pdf-muted);font-weight:600;margin-bottom:1px}
+    table.rpdf{width:100%;border-collapse:collapse;font-size:11.5px}
+    .rpdf th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:var(--pdf-muted);border-bottom:1.5px solid var(--pdf-ink);padding:6px 7px;white-space:nowrap}
+    .rpdf td{border-bottom:1px solid var(--pdf-line);padding:6px 7px;vertical-align:top}
+    .rpdf .n{text-align:right;font-family:'Geist Mono',ui-monospace,monospace;white-space:nowrap}
+    .rpdf .tot td{border-bottom:none;border-top:2px solid var(--pdf-ink);font-weight:700;padding-top:8px}
+    .rpdf-miss{color:#a16207;font-weight:600}
+    .rpdf-note{font-size:10.5px;color:var(--pdf-muted);line-height:1.55;margin-top:18px;border-top:1px solid var(--pdf-line);padding-top:12px}
+    .rpdf-app{margin-top:26px}
+    .rpdf-app h3{font-family:'Merriweather',Georgia,serif;font-size:13.5px;margin:0 0 8px}
+    .rpdf-app li{font-size:11.5px;margin:3px 0;font-family:'Geist Mono',ui-monospace,monospace}
+  </style>
+</head>
+<body>
+  <div class="rpdf-bar">Preview of <span style="font-family:'Geist Mono',monospace">GET /v1/claims/{id}/holdback-export?format=pdf</span> — only lines with an actual cost print; the same document leads the "Worksheet + receipts" .zip <span style="flex:1"></span><a href="77-Holdback-recovery.html" style="color:inherit">← Back to holdback recovery</a></div>
+  <div id="root"></div>
+  <script type="text/babel" src="../components/shared.jsx"></script>
+  <script type="text/babel" src="../components/data.jsx"></script>
+  <script type="text/babel">
+    const rows = window.buildSettledRows(57);
+    const multi = rows.filter(r => (r.qty || 1) > 1 && (r.depreciation_amount || 0) > 5);
+    // Mirrors the sample-tour prefill: full replacement · claimed-no-receipt · partial
+    const picks = [
+      { r: rows.find(r => (r.depreciation_amount || 0) > 40), receipt: true,  frac: 1 },
+      { r: rows.filter(r => (r.depreciation_amount || 0) > 25)[2], receipt: false, frac: 1 },
+      { r: multi[0], receipt: true, partial: true },
+    ].filter(p => p.r);
+    const fmt2 = (n) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const lines = picks.map(({ r, receipt, partial }) => {
+      const qty = r.qty || 1;
+      const rep = partial ? 1 : qty;
+      const unit = (r.rcv_total_incl || 0) / qty;
+      const claimed = Math.round(unit * rep * 100) / 100;
+      const sched = Math.round((r.depreciation_amount || 0) * (rep / qty) * 100) / 100;
+      const acvShare = Math.round((r.acv_total_incl || 0) * (rep / qty) * 100) / 100;
+      const recoverable = Math.max(0, Math.min(sched, Math.round((claimed - acvShare) * 100) / 100));
+      return { r, qty, rep, claimed, sched, acvShare, recoverable, receipt };
+    });
+    const T = (k) => lines.reduce((t, l) => t + l[k], 0);
+    const Pdf = () => (
+      <div className="rpdf-page">
+        <div className="rpdf-hd">
+          <div>
+            <h1 className="rpdf-t">Depreciation Recovery Request</h1>
+            <div style={{ fontSize: 11.5, color: 'var(--pdf-muted)' }}>Recoverable depreciation on replaced items · receipts attached</div>
+          </div>
+          <window.KevinWordmark size={17} suffix={true} />
+        </div>
+        <div className="rpdf-meta">
+          <div><b>Claim</b>CLM-2026-04412</div>
+          <div><b>Insured</b>Kevin Godfrey</div>
+          <div><b>Carrier</b>Allstate</div>
+          <div><b>Date of request</b>May 25, 2026</div>
+          <div><b>Loss location</b>123 Main St., Smithtown, NY 11787</div>
+          <div><b>Prepared by</b>Mariana Reyes · Reyes Adjusting</div>
+          <div><b>Settled inventory</b>57 items · exported v1</div>
+          <div><b>This request</b>{lines.length} replaced line{lines.length === 1 ? '' : 's'}</div>
+        </div>
+        <table className="rpdf">
+          <thead><tr>
+            <th>#</th><th>Description</th><th>Qty</th><th>Replaced</th>
+            <th style={{ textAlign: 'right' }}>Scheduled</th><th style={{ textAlign: 'right' }}>ACV Paid</th>
+            <th style={{ textAlign: 'right' }}>Actual Cost</th><th style={{ textAlign: 'right' }}>Recoverable</th><th>Receipt</th>
+          </tr></thead>
+          <tbody>
+            {lines.map((l, i) => (
+              <tr key={i}>
+                <td className="n">{String(i + 1).padStart(3, '0')}</td>
+                <td>{l.r.desc}{l.r.mfr ? <span style={{ color: 'var(--pdf-muted)' }}> — {l.r.mfr}{l.r.model ? ' ' + l.r.model : ''}</span> : null}</td>
+                <td className="n">{l.qty}</td>
+                <td className="n">{l.rep === l.qty ? 'All' : l.rep}</td>
+                <td className="n">{fmt2(l.sched)}</td>
+                <td className="n">{fmt2(l.acvShare)}</td>
+                <td className="n">{fmt2(l.claimed)}</td>
+                <td className="n">{fmt2(l.recoverable)}</td>
+                <td>{l.receipt ? <span style={{ fontFamily: "'Geist Mono',monospace", fontSize: 10.5 }}>receipt_{l.r.id}.pdf</span> : <span className="rpdf-miss">MISSING</span>}</td>
+              </tr>
+            ))}
+            <tr className="tot">
+              <td colSpan={4}>TOTAL — {lines.length} replaced</td>
+              <td className="n">{fmt2(T('sched'))}</td>
+              <td className="n">{fmt2(T('acvShare'))}</td>
+              <td className="n">{fmt2(T('claimed'))}</td>
+              <td className="n">{fmt2(T('recoverable'))}</td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+        <div className="rpdf-app">
+          <h3>Appendix — attached receipts</h3>
+          <ol style={{ listStyle: 'none', paddingLeft: 0, margin: 0 }}>
+            {lines.map((l, i) => l.receipt ? <li key={i}><span style={{ fontWeight: 600 }}>{String(i + 1).padStart(3, '0')}</span> — receipt_{l.r.id}.pdf — {l.r.desc} · ${fmt2(l.claimed)}</li> : null)}
+          </ol>
+        </div>
+        <div className="rpdf-note">
+          Scheduled amounts are the depreciation withheld at settlement and do not restate the settled inventory — RCV, ACV and the depreciation schedule are unchanged from the exported worksheet (v1). Recovery per line is the lesser of the withheld amount for the replaced units and the amount actually spent above those units' ACV. Lines marked MISSING have a claimed cost but no receipt on file and are included for completeness. Requests may be submitted in batches as receipts arrive.
+        </div>
+      </div>
+    );
+    ReactDOM.createRoot(document.getElementById('root')).render(<Pdf />);
+  </script>
+</body>
+</html>

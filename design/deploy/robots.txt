@@ -1,0 +1,15 @@
+User-agent: *
+Disallow: /claims
+Disallow: /claim/
+Disallow: /settings/
+Disallow: /exports
+Disallow: /notifications
+Disallow: /m/
+Disallow: /admin/
+Disallow: /onboarding
+Disallow: /signout
+Disallow: /forgot
+Disallow: /reset
+Allow: /
+
+Sitemap: https://kevin.co/sitemap.xml

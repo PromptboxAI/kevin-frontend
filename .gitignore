@@ -1,0 +1,9 @@
+# Repo snapshot archives — never commit (GitHub hard-limits any file at 100 MB)
+*.zip
+
+# Loose camera dumps at the design/ root — unreferenced duplicates of assets/claim/
+design/20*_*.jpg
+
+# OS cruft
+.DS_Store
+Thumbs.db

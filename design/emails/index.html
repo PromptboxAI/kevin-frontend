@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Kevin — Email templates</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Lato:wght@400;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root{--ink:#1a1d21;--muted:#6b7280;--line:#e3e6ea;--bg:#f4f5f7;--accent:#2E4B6F}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);font-family:Lato,system-ui,sans-serif;color:var(--ink)}
+  header{padding:40px 40px 8px;max-width:1400px;margin:0 auto}
+  .eyebrow{font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  h1{font-family:Merriweather,Georgia,serif;font-weight:400;font-size:34px;letter-spacing:-.02em;margin:8px 0 10px}
+  .lede{font-size:15px;color:#4b5563;line-height:1.55;max-width:640px;margin:0}
+  main{max-width:1400px;margin:0 auto;padding:22px 40px 60px}
+  h2{font-family:Merriweather,Georgia,serif;font-weight:400;font-size:22px;letter-spacing:-.015em;margin:34px 0 4px;padding-top:22px;border-top:1px solid var(--line)}
+  h2:first-of-type{border-top:0;padding-top:0;margin-top:14px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:22px;margin-top:18px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+  .card-hd{padding:14px 16px;border-bottom:1px solid var(--line)}
+  .subj{font-size:14px;font-weight:700;line-height:1.35}
+  .trig{font-family:'Geist Mono',monospace;font-size:11px;color:var(--muted);margin-top:5px}
+  .frame{background:var(--bg);height:420px;overflow:hidden;position:relative}
+  iframe{width:600px;height:840px;border:0;transform:scale(.5);transform-origin:top left;position:absolute;top:0;left:calc(50% - 150px)}
+  .card-ft{padding:10px 16px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .file{font-family:'Geist Mono',monospace;font-size:10.5px;color:var(--muted)}
+  a.open{font-size:12px;font-weight:600;color:var(--accent);text-decoration:none}
+  a.open:hover{text-decoration:underline}
+  a{color:var(--accent)}
+  .note{margin-top:26px;padding:14px 16px;border:1px dashed var(--line);border-radius:10px;background:#fff;font-size:12.5px;color:#4b5563;line-height:1.55;max-width:900px}
+</style>
+</head>
+<body>
+<header>
+  <div class="eyebrow">Kevin · handoff</div>
+  <h1>Email templates</h1>
+  <p class="lede">Sixteen send-ready emails — one for every notification the product promises, plus the auth and billing messages every account needs. Each is one self-contained HTML file — table layout, fully inlined styles, no images and no web fonts — so it survives Gmail, Outlook and Apple Mail. Previews below are scaled to half size; open any one to see it at 600px.</p>
+</header>
+<main>
+  <h2>Auth & account</h2>
+  <div class="grid">
+    <div class="card">
+      <div class="card-hd"><div class="subj">Confirm your email — Kevin</div><div class="trig">Account created</div></div>
+      <div class="frame"><iframe src="01-verify-email.html" title="Confirm your email — Kevin" loading="lazy"></iframe></div>
+      <div class="card-ft"><span class="file">01-verify-email.html</span><a class="open" href="01-verify-email.html" target="_blank">Open full size →</a></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="subj">Reset your Kevin password</div><div class="trig">Forgot-password requested</div></div>
+      <div class="frame"><iframe src="02-password-reset.html" title="Reset your Kevin password" loading="lazy"></iframe></div>
+      <div class="card-ft"><span class="file">02-password-reset.html</span><a class="open" href="02-password-reset.html" target="_blank">Open full size →</a></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="subj">Your Kevin password was changed</div><div class="trig">Password changed</div></div>
+      <div class="frame"><iframe src="03-password-changed.html" title="Your Kevin password was changed" loading="lazy"></iframe></div>
+      <div class="card-ft"><span class="file">03-password-changed.html</span><a class="open" href="03-password-changed.html" target="_blank">Open full size →</a></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="subj">New sign-in to your Kevin account</div><div class="trig">Sign-in from an unknown device</div></div>
+      <div class="frame"><iframe src="04-new-sign-in.html" title="New sign-in to your Kevin account" loading="lazy"></iframe></div>
+      <div class="card-ft"><span class="file">04-new-sign-in.html</span><a class="open" href="04-new-sign-in.html" target="_blank">Open full size →</a></div>
+    </div>
+  </div>
+  <h2>Claim lifecycle</h2>
+  <div class="grid">
+    <div class="card">
+      <div class="card-hd"><div class="subj">Godfrey — Kitchen fire: 57 items ready to review</div><div class="trig">claim.processing.complete</div></div>
+      <div class="frame"><iframe src="05-processing-complete.html" title="Godfrey — Kitchen fire: 57 items ready to review" loading="lazy"></iframe></div>
+      <div class="card-ft"><span class="file">05-processing-complete.html</span><a class="open" href="05-processing-complete.html" target="_blank">Open full size →</a></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="subj">Your export is ready — Godfrey Kitchen fire</div><div class="trig">export.generated</div></div>
+      <div class="frame"><iframe src="06-export-ready.html" title="Your export is ready — Godfrey Kitchen fire" loading="lazy"></iframe></div>
+      <div class="card-ft"><span class="file">06-export-ready.html</span><a class="open" href="06-export-ready.html" target="_blank">Open full size →</a></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="subj">Export did not finish — Godfrey Kitchen fire</div><div class="trig">export.failed</div></div>
+      <div class="frame"><iframe src="07-export-failed.html" title="Export did not finish — Godfrey Kitchen fire" loading="lazy"></iframe></div>
+      <div class="card-ft"><span class="file">07-export-failed.html</span><a class="open" href="07-export-failed.html" target="_blank">Open full size →</a></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="subj">Your share link was opened</div><div class="trig">export.link.viewed</div></div>
+      <div class="frame"><iframe src="08-share-link-viewed.html" title="Your share link was opened" loading="lazy"></iframe></div>
+      <div class="card-ft"><span class="file">08-share-link-viewed.html</span><a class="open" href="08-share-link-viewed.html" target="_blank">Open full size →</a></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="subj">Special-limits items flagged — Godfrey Kitchen fire</div><div class="trig">claim.item.special_limits</div></div>
+      <div class="frame"><iframe src="14-special-limits-flagged.html" title="Special-limits items flagged" loading="lazy"></iframe></div>
+      <div class="card-ft"><span class="file">14-special-limits-flagged.html</span><a class="open" href="14-special-limits-flagged.html" target="_blank">Open full size →</a></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="subj">Your Kevin trial has started</div><div class="trig">signup complete (EMAIL 1)</div></div>
+      <div class="frame"><iframe src="15-trial-started.html" title="Your Kevin trial has started" loading="lazy"></iframe></div>
+      <div class="card-ft"><span class="file">15-trial-started.html</span><a class="open" href="15-trial-started.html" target="_blank">Open full size →</a></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="subj">Your trial ends in 3 days</div><div class="trig">trial day 4 (EMAIL 2)</div></div>
+      <div class="frame"><iframe src="16-trial-reminder.html" title="Your trial ends in 3 days" loading="lazy"></iframe></div>
+      <div class="card-ft"><span class="file">16-trial-reminder.html</span><a class="open" href="16-trial-reminder.html" target="_blank">Open full size →</a></div>
+    </div>
+  </div>
+  <h2>Billing & account</h2>
+  <div class="grid">
+    <div class="card">
+      <div class="card-hd"><div class="subj">We could not process your payment</div><div class="trig">Payment declined</div></div>
+      <div class="frame"><iframe src="09-payment-failed.html" title="We could not process your payment" loading="lazy"></iframe></div>
+      <div class="card-ft"><span class="file">09-payment-failed.html</span><a class="open" href="09-payment-failed.html" target="_blank">Open full size →</a></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="subj">Receipt from Kevin — $249.00</div><div class="trig">Payment succeeded</div></div>
+      <div class="frame"><iframe src="10-payment-receipt.html" title="Receipt from Kevin — $249.00" loading="lazy"></iframe></div>
+      <div class="card-ft"><span class="file">10-payment-receipt.html</span><a class="open" href="10-payment-receipt.html" target="_blank">Open full size →</a></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="subj">You are approaching your storage pool</div><div class="trig">Storage above 85% of pool</div></div>
+      <div class="frame"><iframe src="11-storage-nearing.html" title="You are approaching your storage pool" loading="lazy"></iframe></div>
+      <div class="card-ft"><span class="file">11-storage-nearing.html</span><a class="open" href="11-storage-nearing.html" target="_blank">Open full size →</a></div>
+    </div>
+  </div>
+  <h2>Team</h2>
+  <div class="grid">
+    <div class="card">
+      <div class="card-hd"><div class="subj">Mariana invited you to Kevin</div><div class="trig">Team invite sent (Enterprise)</div></div>
+      <div class="frame"><iframe src="12-team-invite.html" title="Mariana invited you to Kevin" loading="lazy"></iframe></div>
+      <div class="card-ft"><span class="file">12-team-invite.html</span><a class="open" href="12-team-invite.html" target="_blank">Open full size →</a></div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><div class="subj">A claim was assigned to you — Godfrey Kitchen fire</div><div class="trig">Claim reassigned (Enterprise)</div></div>
+      <div class="frame"><iframe src="13-claim-assigned.html" title="A claim was assigned to you — Godfrey Kitchen fire" loading="lazy"></iframe></div>
+      <div class="card-ft"><span class="file">13-claim-assigned.html</span><a class="open" href="13-claim-assigned.html" target="_blank">Open full size →</a></div>
+    </div>
+  </div>
+  <div class="note">
+    <strong>Before sending:</strong> every merge value is a placeholder from the demo claim — swap <code>TOKEN</code>, claim numbers, names, amounts and dates for real merge fields in your sending tool. Links point at <code>kevin.co</code> paths that match <code>ROUTES.md</code>. There are no images by design; if you add a logo later it needs a hosted https URL, not a project file.
+  </div>
+</main>
+</body>
+</html>

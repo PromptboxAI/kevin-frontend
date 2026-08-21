@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kevin.co — design</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,400;0,700;0,900;1,400&family=Lato:ital,wght@0,400;0,700;0,900;1,400&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="kevin.css" />
+<script>/* reset scroll on page entry — cross-page links otherwise inherit the previous page's scroll position */
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+window.addEventListener('load', function(){ window.scrollTo(0,0); document.documentElement.scrollTop = 0; document.body.scrollTop = 0; });
+</script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="design-canvas.jsx"></script>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+
+  <script type="text/babel" src="components/data.jsx"></script>
+  <script type="text/babel" src="components/shared.jsx"></script>
+  <script type="text/babel" src="components/landing.jsx"></script>
+  <script type="text/babel" src="components/intake.jsx"></script>
+  <script type="text/babel" src="components/photo-staging.jsx"></script>
+  <script type="text/babel" src="components/processing.jsx"></script>
+  <script type="text/babel" src="components/worksheet.jsx"></script>
+  <script type="text/babel" src="components/export.jsx"></script>
+  <script type="text/babel" src="components/claims-dashboard.jsx"></script>
+  <script type="text/babel" src="components/carrier-settings.jsx"></script>
+  <script type="text/babel" src="components/mobile-capture.jsx"></script>
+  <script type="text/babel" src="components/exports-history.jsx"></script>
+  <script type="text/babel" src="components/claim-overview.jsx"></script>
+  <script type="text/babel" src="components/settings-pricing.jsx"></script>
+  <script type="text/babel" src="components/request-access.jsx"></script>
+  <script type="text/babel" src="components/claim-photos.jsx"></script>
+  <script type="text/babel" src="components/audit-log.jsx"></script>
+  <script type="text/babel" src="components/notifications.jsx"></script>
+  <script type="text/babel" src="components/team-management.jsx"></script>
+  <script type="text/babel" src="components/edge-states.jsx"></script>
+  <script type="text/babel" src="components/pricing.jsx"></script>
+  <script type="text/babel" src="components/segment-pages.jsx"></script>
+  <script type="text/babel" src="components/docs-articles.jsx"></script>
+  <script type="text/babel" src="components/docs-articles-2.jsx"></script>
+  <script type="text/babel" src="components/docs-articles-3.jsx"></script>
+  <script type="text/babel" src="components/docs.jsx"></script>
+  <script type="text/babel" src="components/legal-hub.jsx"></script>
+  <script type="text/babel" src="components/mobile-auth.jsx"></script>
+  <script type="text/babel" src="components/mobile-review.jsx"></script>
+  <script type="text/babel" src="components/share-claim.jsx"></script>
+  <script type="text/babel" src="components/settings-pages.jsx"></script>
+  <script type="text/babel" src="components/marketing-pages.jsx"></script>
+  <script type="text/babel" src="components/security-pages.jsx"></script>
+  <script type="text/babel" src="components/auth-flow.jsx"></script>
+  <script type="text/babel" src="components/sample-claim.jsx"></script>
+  <script type="text/babel" src="components/utility-pages.jsx"></script>
+  <script type="text/babel" src="components/avatar-menu.jsx"></script>
+  <script type="text/babel" src="components/system-pages.jsx"></script>
+  <script type="text/babel" src="components/top-nav.jsx"></script>
+
+  <script type="text/babel">
+    // ── Error boundary — one crashed artboard shouldn't blank the canvas ──
+    class Boundary extends React.Component {
+      constructor(p) { super(p); this.state = { err: null }; }
+      static getDerivedStateFromError(err) { return { err }; }
+      componentDidCatch(err, info) { console.error('[Kevin artboard crashed]', this.props.label, err, info); }
+      render() {
+        if (this.state.err) {
+          return (
+            <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', background: 'oklch(0.97 0.012 25)', color: 'oklch(0.45 0.13 30)', fontFamily: 'var(--k-font-mono)', fontSize: 12, padding: 24, textAlign: 'center' }}>
+              <div>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>Artboard crashed</div>
+                <div style={{ fontSize: 11, opacity: 0.7, maxWidth: 420 }}>{this.props.label} · {String(this.state.err && this.state.err.message)}</div>
+              </div>
+            </div>
+          );
+        }
+        return this.props.children;
+      }
+    }
+
+    const ACCENTS = [
+      'oklch(0.38 0.085 252)',   // deep navy (default)
+      'oklch(0.30 0.060 252)',   // midnight (darker navy)
+      'oklch(0.45 0.040 250)',   // slate (cooler / less saturated)
+      'oklch(0.40 0.080 240)',   // ink blue (slightly cooler hue)
+    ];
+
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "accent": "oklch(0.38 0.085 252)",
+      "density": "comfortable"
+    }/*EDITMODE-END*/;
+
+    function App() {
+      const [tweaks, setTweak] = window.useTweaks(TWEAK_DEFAULTS);
+
+      // Apply accent to CSS var
+      React.useEffect(() => {
+        const c = tweaks.accent || ACCENTS[0];
+        document.documentElement.style.setProperty('--k-accent', c);
+        document.documentElement.style.setProperty('--k-accent-soft', c.replace(')', ' / 0.10)'));
+      }, [tweaks.accent]);
+
+      const { DesignCanvas, DCSection, DCArtboard } = window;
+      const { Landing, Intake, PhotoStaging, Processing, Worksheet,
+              ExportFlow, SignIn, Claims, CarrierSettings, MobileCapture,
+              Exports, ClaimOverview, SettingsPricing, RequestAccess,
+              ClaimPhotos, AuditLog, Notifications, TeamManagement, EdgeStates,
+              Pricing, ForAdjusters, ForLiquidators, Docs, LegalHub,
+              MobileSignIn, MobilePair, MobileReview, ShareClaim,
+              SettingsProfile, SettingsAgency, SettingsExport,
+              SettingsIntegrations, SettingsBilling, SettingsApi,
+              ProductOverview, ContactSales, About, PricingSourceDetail,
+              ChangePassword, TwoFactor, Passkeys, ActiveSessions,
+              ForgotPassword, ResetSent, ResetPassword,
+              SampleClaim,
+              SignOut, BookCall, WatchDemo, Careers, AddItemModal, SSOSignIn } = window;
+
+      // Simple cross-artboard navigation — finds the target artboard's DOM node
+      // by data-screen-label and pans/centers the canvas on it via the DC focus
+      // button if available, otherwise scrollIntoView via the parent scroll.
+      window.kevinNavigate = (targetLabel) => {
+        const target = document.querySelector(`[data-screen-label="${targetLabel}"]`);
+        if (!target) return;
+        const artboard = target.closest('[data-dc-artboard]') || target.closest('.dc-artboard') || target.parentElement;
+        // Try to click an in-page focus button if present
+        const focusBtn = artboard?.querySelector?.('[data-dc-focus]');
+        if (focusBtn) { focusBtn.click(); return; }
+        // Otherwise just center the artboard in the canvas viewport
+        const canvas = document.querySelector('.dc-canvas, .dc-canvas-bg');
+        const r = artboard?.getBoundingClientRect();
+        const cr = canvas?.getBoundingClientRect();
+        if (r && cr && canvas) {
+          const sx = (canvas.scrollLeft || 0) + r.left - cr.left - (cr.width - r.width) / 2;
+          const sy = (canvas.scrollTop || 0)  + r.top  - cr.top  - (cr.height - r.height) / 2;
+          canvas.scrollTo?.({ left: sx, top: sy, behavior: 'smooth' });
+        }
+      };
+
+      return (
+        <>
+          <DesignCanvas>
+            <DCSection id="returning" title="Returning user" subtitle="Sign-in lands here. New-claim CTA in the nav is the path into the core loop.">
+
+              <DCArtboard id="auth" label="Sign in · /signin" width={1280} height={820}>
+                <div data-screen-label="00a Sign in" style={{ width: '100%', height: '100%' }}>
+                  <SignIn />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="claims" label="My claims dashboard · /claims" width={1320} height={920}>
+                <div data-screen-label="00b My claims" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <Claims />
+                </div>
+              </DCArtboard>
+
+            </DCSection>
+
+            <DCSection id="core" title="Core loop" subtitle="Landing → Intake → Processing → Worksheet → Export. One pass, no wizards beyond the metadata form.">
+
+              <DCArtboard id="landing" label="Public landing · /" width={1280} height={1000}>
+                <div data-screen-label="01 Landing" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <Landing
+                    onStartClaim={() => window.kevinNavigate('02 Intake portal')}
+                    onSampleClaim={() => window.kevinNavigate('47 Sample claim')}
+                  />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="intake" label="New claim intake · /claim/new" width={1280} height={1100}>
+                <div data-screen-label="02 Intake portal" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <Intake onBegin={() => window.kevinNavigate('02b Group & stage photos')} />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="photo-staging" label="Group & stage photos · /claim/:id/stage" width={1280} height={1100}>
+                <div data-screen-label="02b Group & stage photos" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <PhotoStaging onBegin={() => window.kevinNavigate('03 Processing')} />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="processing" label="Kevin is processing · /claim/:id/processing" width={1320} height={920}>
+                <div data-screen-label="03 Processing" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <Processing onOpenWorksheet={() => window.kevinNavigate('04 Worksheet — Flat (baseline)')} />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="worksheet" label="Review worksheet · v1 Flat grid" width={1480} height={920}>
+                <div data-screen-label="04 Worksheet — Flat (baseline)" style={{ width: '100%', height: '100%' }}>
+                  <Worksheet density={tweaks.density} />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="export" label="Export modal · final review" width={1480} height={920}>
+                <div data-screen-label="05 Export" style={{ width: '100%', height: '100%' }}>
+                  <ExportFlow />
+                </div>
+              </DCArtboard>
+
+            </DCSection>
+
+
+            <DCSection id="aux" title="Configuration & companion" subtitle="Carrier profiles set the depreciation, special-limits caps, and exclusions Kevin applies. The mobile companion is a single capture screen — no wizard.">
+
+              <DCArtboard id="carriers" label="Settings · Carrier profiles" width={1320} height={980}>
+                <div data-screen-label="09 Carrier settings" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <CarrierSettings />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="mobile" label="Mobile capture (PWA) — field photography" width={390} height={844}>
+                <div data-screen-label="10 Mobile capture" style={{ width: '100%', height: '100%' }}>
+                  <MobileCapture />
+                </div>
+              </DCArtboard>
+
+            </DCSection>
+
+            <DCSection id="tier1" title="Tier 1 — gap fills" subtitle="Destinations for every nav item. Exports history, single-claim overview, the unique Pricing-sources settings page, and the agency request-access flow.">
+
+              <DCArtboard id="claim-overview" label="Single-claim overview · /claim/:id" width={1480} height={1140}>
+                <div data-screen-label="11 Claim overview" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <ClaimOverview />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="exports" label="Exports & history · /exports" width={1480} height={920}>
+                <div data-screen-label="12 Exports" style={{ width: '100%', height: '100%' }}>
+                  <Exports />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="settings-pricing" label="Settings · Pricing sources" width={1320} height={1100}>
+                <div data-screen-label="13 Settings — Pricing sources" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <SettingsPricing />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="request-access" label="Request access · agency sign-up" width={1280} height={1180}>
+                <div data-screen-label="14 Request access" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <RequestAccess />
+                </div>
+              </DCArtboard>
+
+            </DCSection>
+
+            <DCSection id="tier2" title="Tier 2 — workflow polish" subtitle="The deeper layer adjusters actually live in. Photos, audit, notifications, team, and how Kevin handles things going sideways.">
+
+              <DCArtboard id="claim-photos" label="Claim · Photos tab" width={1480} height={920}>
+                <div data-screen-label="15 Claim photos" style={{ width: '100%', height: '100%' }}>
+                  <ClaimPhotos />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="audit-log" label="Claim · Notes & audit log" width={1480} height={920}>
+                <div data-screen-label="16 Audit log" style={{ width: '100%', height: '100%' }}>
+                  <AuditLog />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="notifications" label="Notifications · inbox + popover" width={1320} height={920}>
+                <div data-screen-label="17 Notifications" style={{ width: '100%', height: '100%' }}>
+                  <Notifications />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="team" label="Settings · Team management" width={1320} height={1080}>
+                <div data-screen-label="18 Team management" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <TeamManagement />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="edge-states" label="Edge states — empty / error / loading" width={1480} height={1500}>
+                <div data-screen-label="19 Edge states" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <EdgeStates />
+                </div>
+              </DCArtboard>
+
+            </DCSection>
+
+            <DCSection id="tier3" title="Tier 3 — marketing & legal" subtitle="Every link in the public nav now resolves. Five pages: Pricing, two segment landings, Docs, and the legal hub.">
+
+              <DCArtboard id="pricing" label="Pricing · /pricing" width={1280} height={1500}>
+                <div data-screen-label="20 Pricing" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <Pricing />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="for-adjusters" label="For Adjusters · /for-adjusters" width={1280} height={1700}>
+                <div data-screen-label="21 For Adjusters" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <ForAdjusters />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="for-liquidators" label="For Estate Liquidators · /for-estate-liquidators" width={1280} height={1700}>
+                <div data-screen-label="22 For Estate Liquidators" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <ForLiquidators />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="docs" label="Docs · /docs" width={1480} height={1300}>
+                <div data-screen-label="23 Docs" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <Docs />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="legal" label="Privacy & Terms · /legal" width={1280} height={1500}>
+                <div data-screen-label="24 Legal hub" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <LegalHub />
+                </div>
+              </DCArtboard>
+
+            </DCSection>
+
+            <DCSection id="tier4" title="Tier 4 — mobile & collaboration" subtitle="Field-to-desk pairing, mobile session review, sharing a claim with another adjuster, and what the carrier sees on the other end of an export.">
+
+              <DCArtboard id="mobile-signin" label="Mobile · Sign in" width={390} height={844}>
+                <div data-screen-label="25 Mobile sign in" style={{ width: '100%', height: '100%' }}>
+                  <MobileSignIn />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="mobile-pair" label="Mobile · Pair with desktop" width={390} height={844}>
+                <div data-screen-label="26 Mobile pair" style={{ width: '100%', height: '100%' }}>
+                  <MobilePair />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="mobile-review" label="Mobile · Review session captures" width={390} height={844}>
+                <div data-screen-label="27 Mobile review" style={{ width: '100%', height: '100%' }}>
+                  <MobileReview />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="share-claim" label="Share a claim — handoff modal" width={1480} height={920}>
+                <div data-screen-label="28 Share claim" style={{ width: '100%', height: '100%' }}>
+                  <ShareClaim />
+                </div>
+              </DCArtboard>
+
+            </DCSection>
+
+            <DCSection id="settings-sub" title="Settings sub-pages" subtitle="Everything in the Settings sidebar — six previously-stubbed sub-pages now fully built so every nav link resolves to a destination.">
+
+              <DCArtboard id="settings-profile" label="Settings · My profile" width={1320} height={1320}>
+                <div data-screen-label="30 Settings — My profile" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <SettingsProfile />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="settings-agency" label="Settings · Agency · Team" width={1320} height={1080}>
+                <div data-screen-label="31 Settings — Agency" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <SettingsAgency />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="settings-export" label="Settings · Export defaults" width={1320} height={1200}>
+                <div data-screen-label="32 Settings — Export defaults" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <SettingsExport />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="settings-integrations" label="Settings · Integrations" width={1320} height={1080}>
+                <div data-screen-label="33 Settings — Integrations" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <SettingsIntegrations />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="settings-billing" label="Settings · Billing" width={1320} height={1280}>
+                <div data-screen-label="34 Settings — Billing" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <SettingsBilling />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="settings-api" label="Settings · API & webhooks" width={1320} height={1280}>
+                <div data-screen-label="35 Settings — API & webhooks" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <SettingsApi />
+                </div>
+              </DCArtboard>
+
+            </DCSection>
+
+            <DCSection id="marketing-missing" title="Marketing destinations" subtitle="Pages that close the loop on every linked reference site-wide — Product overview, Contact / sales, About / company, and the Pricing-source detail page.">
+
+              <DCArtboard id="product-overview" label="Product overview · /product" width={1280} height={1300}>
+                <div data-screen-label="36 Product overview" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <ProductOverview />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="contact" label="Contact · sales · /contact" width={1280} height={1100}>
+                <div data-screen-label="37 Contact" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <ContactSales />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="about" label="About · /about" width={1280} height={1500}>
+                <div data-screen-label="38 About" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <About />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="pricing-source-detail" label="Pricing source · detail" width={1280} height={1100}>
+                <div data-screen-label="39 Pricing source detail" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <PricingSourceDetail />
+                </div>
+              </DCArtboard>
+
+            </DCSection>
+
+            <DCSection id="security-sub" title="Security sub-pages" subtitle="Reachable from Settings → My profile. Each is a focused page, not a full dashboard.">
+
+              <DCArtboard id="sec-password" label="Security · Change password" width={1280} height={920}>
+                <div data-screen-label="40 Change password" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <ChangePassword />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="sec-2fa" label="Security · Two-factor authentication" width={1280} height={1100}>
+                <div data-screen-label="41 Two-factor" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <TwoFactor />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="sec-passkeys" label="Security · Passkeys" width={1280} height={920}>
+                <div data-screen-label="42 Passkeys" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <Passkeys />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="sec-sessions" label="Security · Active sessions" width={1280} height={920}>
+                <div data-screen-label="43 Active sessions" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <ActiveSessions />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="forgot-password" label="Forgot password · enter email" width={1280} height={820}>
+                <div data-screen-label="44 Forgot password" style={{ width: '100%', height: '100%' }}>
+                  <ForgotPassword />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="reset-sent" label="Reset link sent · check your inbox" width={1280} height={820}>
+                <div data-screen-label="45 Reset sent" style={{ width: '100%', height: '100%' }}>
+                  <ResetSent />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="reset-password" label="Reset password · set new" width={1280} height={820}>
+                <div data-screen-label="46 Reset password" style={{ width: '100%', height: '100%' }}>
+                  <ResetPassword />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="sample-claim" label="Sample claim · interactive demo" width={1480} height={1000}>
+                <div data-screen-label="47 Sample claim" style={{ width: '100%', height: '100%' }}>
+                  <SampleClaim onStartClaim={() => window.kevinNavigate('02 Intake portal')} density={tweaks.density} />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="sign-out" label="Signed out · confirmation" width={1280} height={820}>
+                <div data-screen-label="48 Signed out" style={{ width: '100%', height: '100%' }}>
+                  <SignOut />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="sso-signin" label="Sign in · SSO" width={1280} height={820}>
+                <div data-screen-label="49 SSO sign in" style={{ width: '100%', height: '100%' }}>
+                  <SSOSignIn />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="book-call" label="Book a 30-min call" width={1280} height={1100}>
+                <div data-screen-label="50 Book a call" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <BookCall />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="watch-demo" label="Watch demo" width={1280} height={1100}>
+                <div data-screen-label="52 Watch demo" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <WatchDemo />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="careers" label="Careers · open roles" width={1280} height={1080}>
+                <div data-screen-label="52 Careers" style={{ width: '100%', height: '100%', overflowY: 'auto' }}>
+                  <Careers />
+                </div>
+              </DCArtboard>
+
+              <DCArtboard id="add-item" label="Worksheet · Add item modal" width={1480} height={920}>
+                <div data-screen-label="53 Add item modal" style={{ width: '100%', height: '100%' }}>
+                  <AddItemModal />
+                </div>
+              </DCArtboard>
+
+            </DCSection>
+          </DesignCanvas>
+
+          {/* — Tweaks — */}
+          <window.TweaksPanel title="Tweaks">
+            <window.TweakSection label="Theme">
+              <window.TweakRadio
+                label="Density"
+                value={tweaks.density}
+                options={[
+                  { value: 'comfortable', label: 'Comfortable' },
+                  { value: 'compact',     label: 'Compact'     },
+                ]}
+                onChange={(v) => setTweak('density', v)}
+              />
+              <window.TweakColor
+                label="Accent"
+                value={tweaks.accent}
+                options={ACCENTS}
+                onChange={(v) => setTweak('accent', v)}
+              />
+            </window.TweakSection>
+          </window.TweaksPanel>
+        </>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
