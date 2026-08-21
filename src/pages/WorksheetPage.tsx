@@ -12,7 +12,7 @@ import { ApiError, api, downloadExport } from '../lib/api'
 import { extCost, fmtDate, fmtInt, fmtPct, fmtUSD } from '../lib/format'
 import { createBlankItem, deleteItems, editDisplayLine, overrideItem } from '../lib/mutations'
 import type { OverrideBody } from '../lib/mutations'
-import { numberRows } from '../lib/rows'
+import { numberRows, rowInvariant } from '../lib/rows'
 import type { NumberedItem } from '../lib/rows'
 import { CAPACITY_REASONS } from '../lib/types'
 import type { ClaimItemListResponse, ClaimSummary } from '../lib/types'
@@ -168,14 +168,16 @@ export default function WorksheetPage() {
   })
 
   const queryClient = useQueryClient()
-  const [pending, setPending] = useState<Set<number>>(new Set())
+  /** id -> the single field awaiting the server. Siblings keep their values. */
+  const [pending, setPending] = useState<Map<number, string>>(new Map())
   const [notice, setNotice] = useState<string | null>(null)
   const [confirmDel, setConfirmDel] = useState(false)
+  const [newRowId, setNewRowId] = useState<number | null>(null)
 
-  const markPending = (id: number, on: boolean) =>
+  const markPending = (id: number, field: string | null) =>
     setPending((prev) => {
-      const next = new Set(prev)
-      if (on) next.add(id)
+      const next = new Map(prev)
+      if (field) next.set(id, field)
       else next.delete(id)
       return next
     })
@@ -191,13 +193,13 @@ export default function WorksheetPage() {
    */
   const override = useMutation({
     mutationFn: ({ id, body }: { id: number; body: OverrideBody }) => overrideItem(id, body),
-    onMutate: ({ id }) => markPending(id, true),
+    onMutate: ({ id, body }) => markPending(id, Object.keys(body)[0] ?? 'rcv'),
     onError: (error, { id }) => {
-      markPending(id, false)
+      markPending(id, null)
       setNotice(error instanceof Error ? error.message : 'That edit was rejected.')
     },
     onSuccess: (_data, { id }) => {
-      markPending(id, false)
+      markPending(id, null)
       refresh()
     },
   })
@@ -236,11 +238,24 @@ export default function WorksheetPage() {
     mutationFn: async () => {
       const created = await createBlankItem(claimId)
       const id = created.item_ids?.[0]
-      if (id !== undefined) await editDisplayLine(id, { description: null })
+      if (id !== undefined) {
+        // items/bulk requires a 2-300 char description, so a genuinely blank
+        // line needs a second call. Awaited BEFORE any refetch so the grid
+        // never renders the placeholder text (BACKEND-ASKS #3 would remove
+        // this round trip). A failure here is surfaced, not left on screen.
+        try {
+          await editDisplayLine(id, { description: null })
+        } catch {
+          setNotice(
+            'The new line was created but its placeholder text could not be cleared — edit or delete row.',
+          )
+        }
+      }
       return created
     },
     onSuccess: async (created) => {
       const id = created.item_ids?.[0]
+      if (id !== undefined) setNewRowId(id)
       await queryClient.invalidateQueries({ queryKey: ['claim-items', claimId] })
       void queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
       if (id === undefined) return
@@ -342,6 +357,8 @@ export default function WorksheetPage() {
       CAPACITY_REASONS.has(item.manual_reason) &&
       (item.query ?? '').length >= 3,
   )
+
+  const countCheck = rowInvariant(items, total)
 
   const rowH = ROW_H[density]
 
@@ -755,10 +772,11 @@ export default function WorksheetPage() {
                       onSelect={() => toggle(item.id)}
                       onOpen={() => setOpenRow(item.id)}
                       onRowClick={docked ? () => setOpenRow(item.id) : undefined}
-                      pending={pending.has(item.id)}
+                      pendingField={pending.get(item.id) ?? null}
                       categories={rules.data?.categories ?? []}
                       onOverride={(body) => override.mutate({ id: item.id, body })}
                       onEditLine={(body) => editLine.mutate({ id: item.id, body })}
+                      isNew={item.id === newRowId}
                     />
                   ))}
                 </div>
@@ -776,10 +794,11 @@ export default function WorksheetPage() {
                   onSelect={() => toggle(item.id)}
                   onOpen={() => setOpenRow(item.id)}
                     onRowClick={docked ? () => setOpenRow(item.id) : undefined}
-                    pending={pending.has(item.id)}
+                    pendingField={pending.get(item.id) ?? null}
                     categories={rules.data?.categories ?? []}
                     onOverride={(body) => override.mutate({ id: item.id, body })}
                     onEditLine={(body) => editLine.mutate({ id: item.id, body })}
+                    isNew={item.id === newRowId}
                     onAppend={
                       item.id === visible[visible.length - 1]?.id
                         ? () => addItem.mutate()
@@ -805,9 +824,18 @@ export default function WorksheetPage() {
             <span className="k-claim-sub">
               {total === 0
                 ? 'No items'
-                : `Showing ${fmtInt(items.length)} of ${fmtInt(total)}` +
+                : `Showing ${fmtInt(visible.length)} of ${fmtInt(items.length)}` +
                   (rows.isFetchingNextPage ? ' · loading more…' : '')}
             </span>
+            {/* The count comes from the rows actually rendered, never from the
+                API total alone -- a disagreement means rows are counted that
+                are not lines, and it is surfaced rather than papered over. */}
+            {!rows.hasNextPage && !countCheck.ok ? (
+              <span className="k-error">
+                Count mismatch: API reports {fmtInt(countCheck.apiCount)}, grid holds{' '}
+                {fmtInt(countCheck.rendered)} (highest line {fmtInt(countCheck.maxLineNo)}).
+              </span>
+            ) : null}
           </div>
         </>
       ) : null}
@@ -834,7 +862,7 @@ function Row({
   n,
   selected,
   active,
-  pending,
+  pendingField,
   categories,
   onSelect,
   onOpen,
@@ -842,13 +870,14 @@ function Row({
   onOverride,
   onEditLine,
   onAppend,
+  isNew,
 }: {
   item: NumberedItem
   n: number
   selected: boolean
   active: boolean
-  /** The server is recomputing this row -- derived cells lock until it answers. */
-  pending: boolean
+  /** Which single field is awaiting the server, if any. */
+  pendingField: string | null
   categories: string[]
   onSelect: () => void
   onOpen: () => void
@@ -858,18 +887,31 @@ function Row({
   onEditLine: (body: Record<string, string | null>) => void
   /** Set only on the last row: Enter there appends a new line. */
   onAppend?: () => void
+  /** Just created in this session -- highlighted with the header grey. */
+  isNew?: boolean
 }) {
   const [compsOpen, setCompsOpen] = useState(false)
   const unpriced = item.status === 'needs_manual'
   // Capacity waits are NOT adjuster work -- quiet pending state, never amber.
   const waiting = Boolean(unpriced && item.manual_reason && CAPACITY_REASONS.has(item.manual_reason))
+  /**
+   * Amber is reserved for special limits -- the coverage-cap cue -- and nothing
+   * else. manual_class is the payload's signal for the appraisal classes
+   * (Jewelry, Firearms, Fine Arts, Furs); it is never derived from `cat`.
+   * Tinting every unpriced row amber falsely flagged blank new lines as
+   * Jewelry-class.
+   */
+  const specialLimits = item.manual_reason === 'manual_class'
   const comp = item.alternative_sources?.[0]
   const depAmount = item.depreciation_amount
+  // Depreciation is server-owned, so it spins only while age or class -- the
+  // two inputs that drive it -- are actually in flight.
+  const depRecalculating = pendingField === 'age_years' || pendingField === 'category'
 
   return (
     <div
       data-row-id={item.id}
-      className={`k-row${unpriced && !waiting ? ' k-row--manual' : ''}${selected ? ' k-row--sel' : ''}${active ? ' k-row--active' : ''}`}
+      className={`k-row${specialLimits ? ' k-row--manual' : ''}${isNew ? ' k-row--new' : ''}${selected ? ' k-row--sel' : ''}${active ? ' k-row--active' : ''}`}
       onClick={onRowClick}
     >
       <div className="k-c k-c--check">
@@ -948,7 +990,7 @@ function Row({
         <select
           className="k-cell k-cell--select"
           value={item.category ?? ''}
-          disabled={pending}
+          disabled={pendingField === 'category'}
           onChange={(e) => onOverride({ category: e.target.value })}
         >
           {item.category ? null : <option value="">—</option>}
@@ -968,7 +1010,7 @@ function Row({
           numeric
           decimals
           align="right"
-          pending={pending}
+          pending={pendingField === 'rcv'}
           placeholder="0.00"
           title="Per-unit, pre-tax. Editing this clears the comparable sources."
           onCommit={(next) => {
@@ -1010,7 +1052,7 @@ function Row({
           value={String(item.age_years ?? 0)}
           numeric
           align="right"
-          pending={pending}
+          pending={pendingField === 'age_years'}
           disabled={item.status === 'needs_manual'}
           title={
             item.status === 'needs_manual'
@@ -1027,8 +1069,10 @@ function Row({
       </div>
 
       {/* Depreciation is NEVER computed here -- spinner until the server answers. */}
-      <div className={`k-c k-c--dep k-mono${pending ? ' k-cell--pending' : ''}`}>
-        {pending ? (
+      <div
+        className={`k-c k-c--dep k-mono${depRecalculating ? ' k-cell--pending' : ''}`}
+      >
+        {depRecalculating ? (
           <span className="k-dep-spin" />
         ) : item.depreciation_pct === null ? (
           <Dash />

@@ -51,7 +51,11 @@ export default function EditableCell({
   align?: 'left' | 'right'
   placeholder?: string
   disabled?: boolean
-  /** Server is authoritative and still answering -- lock the cell. */
+  /**
+   * Server is authoritative and still answering: the cell locks but KEEPS its
+   * last value. Blanking it made the row flash to dashes mid-edit; the design
+   * holds prior values and swaps once, when the response lands.
+   */
   pending?: boolean
   title?: string
 }) {
@@ -115,8 +119,8 @@ export default function EditableCell({
         (pending ? ' k-cell--pending' : '')
       }
       style={{ textAlign: align }}
-      value={pending ? '' : shown}
-      placeholder={pending ? '' : placeholder}
+      value={shown}
+      placeholder={placeholder}
       disabled={disabled || pending}
       title={title}
       inputMode={numeric ? 'decimal' : undefined}

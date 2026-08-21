@@ -59,7 +59,26 @@ them (silent omission is what the design forbids). Nothing is needed from the
 API — but the **intake flow must send this metadata on create**, or the header
 stays dashed in production too.
 
-## 5. Smaller notes
+## 5. No field to store a proof / source URL on an item
+
+The design's worksheet Link column offers a dashed **+ add** chip on rows with
+no comp: click, paste a URL, and the line carries its own substantiation. That
+is the natural companion to the rule that a hand-typed price DROPS the comps —
+the adjuster is expected to supply a new source.
+
+There is nowhere to put it. `ClaimItemSummary` / `ClaimItemDetail` have no
+`source_link`, and `OverrideRequest` accepts only `rcv · acv · category ·
+reason · valuation_basis · market_comp · dep_manual · age_years ·
+depreciation_method · substitution_note · room_area · make_mfr ·
+model_number · description · quantity`.
+
+**The affordance is deliberately NOT built** — a control that accepts a URL and
+discards it is worse than no control, because the adjuster believes the line is
+substantiated. Requesting a nullable `source_link` (string URL) on the item,
+settable through `override`, and emitted in the export's Source Link column
+when no comp URL exists.
+
+## 6. Smaller notes
 
 - `ClaimItemSummary` has no `ext_cost`. The worksheet's **Ext. Cost** column is
   restated from `rcv_total_incl − tax` (the contract guarantees

@@ -21,3 +21,25 @@ export function numberRows(items: ClaimItem[]): NumberedItem[] {
     .sort((a, b) => a.id - b.id)
     .map((item, index) => ({ ...item, lineNo: index + 1 }))
 }
+
+/**
+ * The worksheet's counting invariant: when nothing is filtered, the API's
+ * `count`, the number of rows in the grid, and the highest line number must
+ * all agree. A disagreement means rows are being counted that are not being
+ * rendered as lines -- deleted rows still in the array, or an aborted create
+ * that left a row behind -- and the footer would claim more lines than exist.
+ */
+export function rowInvariant(items: NumberedItem[], apiCount: number) {
+  const maxLineNo = items.reduce((max, r) => Math.max(max, r.lineNo), 0)
+  const lineNos = items.map((r) => r.lineNo)
+  const duplicates = lineNos.length !== new Set(lineNos).size
+  const contiguous = lineNos.every((n, i) => n === i + 1)
+  return {
+    ok: items.length === apiCount && maxLineNo === items.length && !duplicates && contiguous,
+    rendered: items.length,
+    apiCount,
+    maxLineNo,
+    duplicates,
+    contiguous,
+  }
+}

@@ -241,9 +241,14 @@
 
 
 
-/* Amber = adjuster-actionable unpriced. Never for a capacity wait. */
+/* Amber is the SPECIAL-LIMITS coverage-cap cue and nothing else. */
 .k-row--manual {
   background: var(--k-warn-soft);
+}
+
+/* A line just added in this session: header grey, never the amber tint. */
+.k-row--new {
+  background: var(--k-bg-3);
 }
 
 .k-idx-btn {
@@ -535,9 +540,14 @@
 }
 
 
-/* Amber = adjuster-actionable unpriced. Never for a capacity wait. */
+/* Amber is the SPECIAL-LIMITS coverage-cap cue and nothing else. */
 .k-row--manual {
   background: var(--k-warn-soft);
+}
+
+/* A line just added in this session: header grey, never the amber tint. */
+.k-row--new {
+  background: var(--k-bg-3);
 }
 
 .k-idx-btn {
