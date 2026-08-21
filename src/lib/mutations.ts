@@ -97,3 +97,39 @@ export function createBlankItem(claimId: string, description = 'New item') {
     { json: { items: [{ description, quantity: 1 }], price: false } },
   )
 }
+
+/** close/reopen/archive/unarchive all take NO body and return the derived status. */
+export type ClaimStateResponse = {
+  status: string
+  claim_id: string
+  closed_at: string | null
+  archived_at: string | null
+}
+
+export function claimAction(
+  claimId: string,
+  action: 'close' | 'reopen' | 'archive' | 'unarchive',
+) {
+  return api.post<ClaimStateResponse>(
+    `/v1/claims/${encodeURIComponent(claimId)}/${action}`,
+  )
+}
+
+/** Deep-copies metadata, rooms and every item. A taken new_claim_id -> 409. */
+export function duplicateClaim(claimId: string, body: { new_claim_id?: string; name?: string }) {
+  return api.post<{ claim_id: string; name: string }>(
+    `/v1/claims/${encodeURIComponent(claimId)}/duplicate`,
+    { json: body },
+  )
+}
+
+export type DeleteClaimResponse = {
+  status: string
+  claim_id: string
+  deleted_items: number
+}
+
+/** Cascades to items and rooms. Evidence images are left in storage. */
+export function deleteClaim(claimId: string) {
+  return api.delete<DeleteClaimResponse>(`/v1/claims/${encodeURIComponent(claimId)}`)
+}

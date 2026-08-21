@@ -38,6 +38,42 @@ export const I = {
   check: <path d="m5 12 5 5 9-11" />,
   chevleft: <path d="m15 18-6-6 6-6" />,
   chevdown: <path d="m6 9 6 6 6-6" />,
+  more: (
+    <>
+      <circle cx="6" cy="12" r="1.5" fill="currentColor" />
+      <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+      <circle cx="18" cy="12" r="1.5" fill="currentColor" />
+    </>
+  ),
+  expand: <path d="M4 4h6M4 4v6M20 4h-6M20 4v6M4 20h6M4 20v-6M20 20h-6M20 20v-6" />,
+  eye: (
+    <>
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
+      <circle cx="12" cy="12" r="3" />
+    </>
+  ),
+  copy: (
+    <>
+      <rect x="9" y="9" width="11" height="11" rx="2" />
+      <path d="M5 15V5a2 2 0 0 1 2-2h8" />
+    </>
+  ),
+  printer: (
+    <>
+      <path d="M6 9V3h12v6" />
+      <rect x="6" y="14" width="12" height="7" />
+      <path d="M6 17H4a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2" />
+    </>
+  ),
+  box: (
+    <>
+      <path d="M3 8h18v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <path d="M3 8V5a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v3M10 13h4" />
+    </>
+  ),
+  trash: (
+    <path d="M4 7h16M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13" />
+  ),
   camera: (
     <>
       <path d="M3 7h3l2-3h8l2 3h3v12H3z" />
