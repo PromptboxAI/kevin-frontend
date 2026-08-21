@@ -17,6 +17,8 @@ export default function EditableCell({
   onCommit,
   numeric = false,
   money = false,
+  mono = false,
+  onEnterPastEnd,
   align = 'left',
   placeholder,
   disabled = false,
@@ -28,6 +30,10 @@ export default function EditableCell({
   numeric?: boolean
   /** Display-format as currency while unfocused; editing stays raw. */
   money?: boolean
+  /** Mono face for codes (Model #) without implying the value is numeric. */
+  mono?: boolean
+  /** Enter with nowhere further to go -- the design appends a new line. */
+  onEnterPastEnd?: () => void
   align?: 'left' | 'right'
   placeholder?: string
   disabled?: boolean
@@ -60,17 +66,19 @@ export default function EditableCell({
     onCommit(next)
   }
 
-  /** Move focus to the next/previous editable cell in DOM order. */
-  const step = (direction: 1 | -1, sameColumn: boolean) => {
+  /** Move focus to the next/previous editable cell; returns false at the end. */
+  const step = (direction: 1 | -1, sameColumn: boolean): boolean => {
     const all = Array.from(
       document.querySelectorAll<HTMLInputElement>('input[data-ws-cell]'),
     ).filter((el) => !el.disabled)
     const index = all.indexOf(ref.current as HTMLInputElement)
-    if (index === -1) return
+    if (index === -1) return false
     // Enter walks a column: the row stride is the number of editable cells per row.
     const stride = sameColumn ? Number(ref.current?.dataset.wsStride ?? 1) : 1
     const target = all[index + direction * stride]
-    if (target) target.focus()
+    if (!target) return false
+    target.focus()
+    return true
   }
 
   // Unfocused money cells read as $100.00; the draft stays raw for typing.
@@ -83,7 +91,7 @@ export default function EditableCell({
     <input
       ref={ref}
       data-ws-cell=""
-      className={`k-cell k-cell--input${numeric ? ' k-mono' : ''}${pending ? ' k-cell--pending' : ''}`}
+      className={`k-cell k-cell--input${numeric || mono ? ' k-mono' : ''}${pending ? ' k-cell--pending' : ''}`}
       style={{ textAlign: align }}
       value={pending ? '' : shown}
       placeholder={pending ? '' : placeholder}
@@ -106,7 +114,9 @@ export default function EditableCell({
         if (e.key === 'Enter') {
           e.preventDefault()
           commit()
-          step(e.shiftKey ? -1 : 1, true)
+          const moved = step(e.shiftKey ? -1 : 1, true)
+          // Enter on the last row appends a new line, as in the design.
+          if (!moved && !e.shiftKey) onEnterPastEnd?.()
         } else if (e.key === 'Escape') {
           e.preventDefault()
           setDraft(value)

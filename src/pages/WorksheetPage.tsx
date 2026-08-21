@@ -210,9 +210,19 @@ export default function WorksheetPage() {
   }
 
   const addItem = useMutation({
-    mutationFn: () => createBlankItem(claimId),
-    onSuccess: (result) => {
-      setNotice(`Added ${result.items_created} unpriced line — fill in the description, then reprice.`)
+    /**
+     * bulk requires a 2-300 char description, so a genuinely BLANK line takes
+     * two steps: create, then clear the placeholder through the descriptive
+     * PATCH (null clears it). Otherwise every added row reads "New item" and
+     * turns up in search.
+     */
+    mutationFn: async () => {
+      const created = await createBlankItem(claimId)
+      const id = created.item_ids?.[0]
+      if (id !== undefined) await editDisplayLine(id, { description: null })
+      return created
+    },
+    onSuccess: () => {
       refresh()
     },
     onError: (error) =>
@@ -234,7 +244,13 @@ export default function WorksheetPage() {
       setNotice(error instanceof Error ? error.message : 'Delete failed.'),
   })
 
-  const items = useMemo(() => rows.data?.pages.flatMap((page) => page.items) ?? [], [rows.data])
+  const items = useMemo(() => {
+    const all = rows.data?.pages.flatMap((page) => page.items) ?? []
+    // GET /v1/claim_items is newest-first. The worksheet is a numbered
+    // document: a new row must APPEND at the end, and existing line numbers
+    // must never shift, because an export already sent to a carrier cites them.
+    return [...all].sort((a, b) => a.id - b.id)
+  }, [rows.data])
 
   const visible = useMemo(() => {
     const term = search.trim().toLowerCase()
@@ -753,6 +769,11 @@ export default function WorksheetPage() {
                     categories={rules.data?.categories ?? []}
                     onOverride={(body) => override.mutate({ id: item.id, body })}
                     onEditLine={(body) => editLine.mutate({ id: item.id, body })}
+                    onAppend={
+                      item.id === visible[visible.length - 1]?.id
+                        ? () => addItem.mutate()
+                        : undefined
+                    }
                   />
                 ))}
                 {padBottom > 0 ? <div style={{ height: padBottom }} /> : null}
@@ -808,6 +829,7 @@ function Row({
   onRowClick,
   onOverride,
   onEditLine,
+  onAppend,
 }: {
   item: ClaimItem
   n: number
@@ -822,6 +844,8 @@ function Row({
   onRowClick?: () => void
   onOverride: (body: OverrideBody) => void
   onEditLine: (body: Record<string, string | null>) => void
+  /** Set only on the last row: Enter there appends a new line. */
+  onAppend?: () => void
 }) {
   const [compsOpen, setCompsOpen] = useState(false)
   const unpriced = item.status === 'needs_manual'
@@ -873,13 +897,35 @@ function Row({
         />
       </div>
 
+      {/* Identity is always correctable, priced or not. These route through
+          PATCH /v1/claim_items -- descriptive only: no valuation change, no
+          overridden flag, comps untouched. Only rcv goes through override. */}
       <div className="k-c k-c--desc">
-        <span className="k-desc-text">{item.description || <Dash />}</span>
+        <EditableCell
+          value={item.description ?? ''}
+          placeholder="Describe the item…"
+          onCommit={(next) => onEditLine({ description: next || null })}
+          onEnterPastEnd={onAppend}
+        />
         {waiting ? <span className="k-pricing-chip">Pricing</span> : null}
       </div>
 
-      <div className="k-c k-c--mfr">{item.make_mfr || <Dash />}</div>
-      <div className="k-c k-c--model k-mono">{item.model_number || <Dash />}</div>
+      <div className="k-c k-c--mfr">
+        <EditableCell
+          value={item.make_mfr ?? ''}
+          placeholder="Make…"
+          onCommit={(next) => onEditLine({ make_mfr: next || null })}
+        />
+      </div>
+
+      <div className="k-c k-c--model">
+        <EditableCell
+          value={item.model_number ?? ''}
+          placeholder="Model #"
+          mono
+          onCommit={(next) => onEditLine({ model_number: next || null })}
+        />
+      </div>
 
       {/* Content class is a picker in the design; read-state keeps the caret
           affordance so the column reads the same, without opening a menu. */}
