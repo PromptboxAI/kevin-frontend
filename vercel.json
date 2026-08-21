@@ -3,11 +3,5 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "rewrites": [
-    {
-      "comment": "Single-page app: every path must serve index.html so client-side routes (notably /p/:token share links) resolve on a cold hit instead of 404ing at the CDN.",
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ]
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
