@@ -41,6 +41,8 @@ export type DisplayBody = {
   make_mfr?: string | null
   model_number?: string | null
   room_area?: string | null
+  /** Adjuster-supplied proof URL (max 2000). null clears it. */
+  manual_source_url?: string | null
 }
 
 export function editDisplayLine(rowId: number, body: DisplayBody) {

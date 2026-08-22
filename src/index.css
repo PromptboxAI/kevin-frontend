@@ -301,9 +301,77 @@
   white-space: nowrap;
 }
 
+/* Derived money cells are 12px; ACV is 13px/600; the editable cells inherit
+   .k-c's 12.5px. Matching worksheet.jsx cell-for-cell. */
+.k-c--ext,
+.k-c--tax,
+.k-c--rcvtax,
+.k-c--depamt {
+  font-size: 12px;
+}
+
 .k-acv {
   font-weight: 600;
   font-size: 13px;
+}
+
+/* 2. Native select arrows are ~16px browser chrome; the design draws its own
+      chevron at 10px in cells and 12px in the toolbar. */
+.k-cell--select,
+.k-batch {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: none;
+  padding-right: 16px;
+}
+
+.k-selectwrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+}
+
+/* Depreciation explainer */
+.k-dep-info {
+  padding: 1px;
+  flex-shrink: 0;
+}
+
+.k-dep-pop {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  width: 260px;
+  z-index: 30;
+  text-align: left;
+}
+
+.k-dep-meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  margin: 0;
+  padding: 8px 10px;
+  font-size: 11.5px;
+}
+
+.k-dep-meta dt {
+  color: var(--k-fg-3);
+}
+
+.k-dep-meta dd {
+  margin: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.k-selectwrap > svg {
+  position: absolute;
+  right: 3px;
+  pointer-events: none;
+  color: var(--k-fg-4);
 }
 
 /* Capacity wait: quiet and pulsing, never amber, never an error. */
@@ -593,9 +661,77 @@
   white-space: nowrap;
 }
 
+/* Derived money cells are 12px; ACV is 13px/600; the editable cells inherit
+   .k-c's 12.5px. Matching worksheet.jsx cell-for-cell. */
+.k-c--ext,
+.k-c--tax,
+.k-c--rcvtax,
+.k-c--depamt {
+  font-size: 12px;
+}
+
 .k-acv {
   font-weight: 600;
   font-size: 13px;
+}
+
+/* 2. Native select arrows are ~16px browser chrome; the design draws its own
+      chevron at 10px in cells and 12px in the toolbar. */
+.k-cell--select,
+.k-batch {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: none;
+  padding-right: 16px;
+}
+
+.k-selectwrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+}
+
+/* Depreciation explainer */
+.k-dep-info {
+  padding: 1px;
+  flex-shrink: 0;
+}
+
+.k-dep-pop {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  width: 260px;
+  z-index: 30;
+  text-align: left;
+}
+
+.k-dep-meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  margin: 0;
+  padding: 8px 10px;
+  font-size: 11.5px;
+}
+
+.k-dep-meta dt {
+  color: var(--k-fg-3);
+}
+
+.k-dep-meta dd {
+  margin: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.k-selectwrap > svg {
+  position: absolute;
+  right: 3px;
+  pointer-events: none;
+  color: var(--k-fg-4);
 }
 
 /* Content-class picker affordance, inert until the class edit lands. */
@@ -688,6 +824,14 @@
   border-color: var(--k-accent);
   background: var(--k-bg);
   box-shadow: 0 0 0 3px var(--k-accent-soft);
+}
+
+/* font: inherit above is a shorthand and resets font-family, so it silently
+   beat .k-mono -- every number in the grid is mono, no exceptions. */
+.k-cell--input.k-mono,
+.k-insp-input.k-mono {
+  font-family: var(--k-font-mono);
+  font-feature-settings: 'tnum';
 }
 
 .k-cell--input::placeholder {

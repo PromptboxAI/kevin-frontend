@@ -97,6 +97,12 @@ export type ClaimItem = {
   confidence: number | null
   age_years: number | null
   alternative_sources: Comp[]
+  /**
+   * The adjuster's own proof URL, for lines Kevin did not price (or whose
+   * comps were dropped by a manual price). Set through the DESCRIPTIVE patch,
+   * so it never touches valuation.
+   */
+  manual_source_url: string | null
   error: string | null
   created_at: string | null
   updated_at: string | null

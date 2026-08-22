@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
@@ -144,7 +144,8 @@ export default function WorksheetPage() {
   /** GET /v1/depreciation-rules is the live taxonomy; do not retype the classes. */
   const rules = useQuery({
     queryKey: ['depreciation-rules'],
-    queryFn: () => api.get<{ categories: string[] }>('/v1/depreciation-rules'),
+    queryFn: () =>
+      api.get<{ categories: string[]; rules: Record<string, unknown> }>('/v1/depreciation-rules'),
     staleTime: Infinity,
   })
 
@@ -524,9 +525,15 @@ export default function WorksheetPage() {
           </div>
 
           {/* Scaffolded at a single state until the staging session model lands. */}
-          <select className="k-btn k-btn--ghost k-batch" title="Multi-session claims — one session until the staging model lands">
-            <option>All batches</option>
-          </select>
+          <span className="k-selectwrap" style={{ width: 'auto' }}>
+            <select
+              className="k-btn k-btn--ghost k-batch"
+              title="Multi-session claims — one session until the staging model lands"
+            >
+              <option>All batches</option>
+            </select>
+            <Icon d={I.chevdown} size={12} />
+          </span>
 
           <div ref={filterRef} style={{ position: 'relative' }}>
             <button
@@ -606,9 +613,13 @@ export default function WorksheetPage() {
               setDocked(next)
               if (next && openRow === null && visible.length > 0) setOpenRow(visible[0].id)
             }}
-            title="Dock the item panel beside the grid — it re-syncs to whichever row you click"
+            title={
+              docked
+                ? 'Close the item panel'
+                : 'Open the item panel beside the grid — click any row to inspect it'
+            }
           >
-            Item panel
+            <Icon d={I.pin} size={12} /> {docked ? 'Close panel' : 'Item panel'}
           </button>
           <button
             type="button"
@@ -787,6 +798,7 @@ export default function WorksheetPage() {
                       onRowClick={docked ? () => setOpenRow(item.id) : undefined}
                       pendingField={pending.get(item.id) ?? null}
                       categories={rules.data?.categories ?? []}
+                      depRules={rules.data?.rules}
                       onOverride={(body) => override.mutate({ id: item.id, body })}
                       onEditLine={(body) => editLine.mutate({ id: item.id, body })}
                       isNew={item.id === newRowId}
@@ -809,6 +821,7 @@ export default function WorksheetPage() {
                     onRowClick={docked ? () => setOpenRow(item.id) : undefined}
                     pendingField={pending.get(item.id) ?? null}
                     categories={rules.data?.categories ?? []}
+                    depRules={rules.data?.rules}
                     onOverride={(body) => override.mutate({ id: item.id, body })}
                     onEditLine={(body) => editLine.mutate({ id: item.id, body })}
                     isNew={item.id === newRowId}
@@ -865,6 +878,146 @@ export default function WorksheetPage() {
   )
 }
 
+/**
+ * "How this was calculated" for the % Depr. cell. Every value shown is
+ * server-authored -- the item's own method and rule version, and the class's
+ * schedule from GET /v1/depreciation-rules. Nothing here derives a rate, a
+ * useful life or a cap (rule 20).
+ */
+function DepExplainer({
+  item,
+  depRules,
+  onClose,
+}: {
+  item: NumberedItem
+  depRules?: Record<string, unknown>
+  onClose: () => void
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const close = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
+    }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [onClose])
+
+  const schedule = item.category ? (depRules?.[item.category] as Record<string, unknown>) : undefined
+
+  return (
+    <div ref={ref} className="k-pop k-dep-pop">
+      <div className="k-pop-hd">
+        <span>How this was calculated</span>
+      </div>
+      <dl className="k-dep-meta">
+        <dt>Rate</dt>
+        <dd className="k-mono">{fmtPct(item.depreciation_pct)}</dd>
+        <dt>Method</dt>
+        <dd>{item.depreciation_method?.replace('_', ' ') ?? '—'}</dd>
+        <dt>Content class</dt>
+        <dd>{item.category ?? '—'}</dd>
+        <dt>Age</dt>
+        <dd className="k-mono">{item.age_years ?? 0}</dd>
+        {schedule
+          ? Object.entries(schedule).map(([key, value]) => (
+              <React.Fragment key={key}>
+                <dt>{key.replace(/_/g, ' ')}</dt>
+                <dd className="k-mono">
+                  {value === null ? '—' : typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                </dd>
+              </React.Fragment>
+            ))
+          : null}
+      </dl>
+    </div>
+  )
+}
+
+/**
+ * The Link column. An engine comp wins; otherwise the adjuster's own proof URL;
+ * otherwise the dashed "+ add" chip that captures one. A manually priced line
+ * must be able to carry its own substantiation into the export's Source column.
+ */
+function SourceCell({
+  item,
+  onEditLine,
+}: {
+  item: NumberedItem
+  onEditLine: (body: Record<string, string | null>) => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState('')
+  const comp = item.alternative_sources?.[0]
+
+  const save = () => {
+    const url = draft.trim()
+    setEditing(false)
+    onEditLine({
+      manual_source_url: url ? (/^https?:\/\//i.test(url) ? url : `https://${url}`) : null,
+    })
+  }
+
+  if (editing) {
+    return (
+      <input
+        className="k-src-input"
+        autoFocus
+        value={draft}
+        placeholder="Paste URL"
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={save}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') save()
+          if (e.key === 'Escape') setEditing(false)
+        }}
+      />
+    )
+  }
+
+  if (comp?.link) {
+    return (
+      <a
+        className="k-src-link"
+        href={comp.link}
+        target="_blank"
+        rel="noreferrer noopener"
+        title={`${comp.source ?? 'Comp'} — ${comp.title ?? ''}`}
+      >
+        Link
+      </a>
+    )
+  }
+
+  if (item.manual_source_url) {
+    return (
+      <a
+        className="k-src-link"
+        href={item.manual_source_url}
+        target="_blank"
+        rel="noreferrer noopener"
+        title={`Preparer-supplied source · ${item.manual_source_url}`}
+      >
+        Link
+      </a>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      className="k-src-add"
+      title="Paste a source URL for this price"
+      onClick={() => {
+        setDraft('')
+        setEditing(true)
+      }}
+    >
+      + add
+    </button>
+  )
+}
+
 /** A derived cell with no value reads as a muted dash, as in the prototype. */
 function Dash() {
   return <span className="k-dash">—</span>
@@ -881,6 +1034,7 @@ function Row({
   active,
   pendingField,
   categories,
+  depRules,
   onSelect,
   onOpen,
   onRowClick,
@@ -896,6 +1050,8 @@ function Row({
   /** Which single field is awaiting the server, if any. */
   pendingField: string | null
   categories: string[]
+  /** The server's depreciation schedule, rendered verbatim in the explainer. */
+  depRules?: Record<string, unknown>
   onSelect: () => void
   onOpen: () => void
   /** Set only while the panel is docked: the whole row becomes the target. */
@@ -908,6 +1064,7 @@ function Row({
   isNew?: boolean
 }) {
   const [compsOpen, setCompsOpen] = useState(false)
+  const [depOpen, setDepOpen] = useState(false)
   const unpriced = item.status === 'needs_manual'
   // Capacity waits are NOT adjuster work -- quiet pending state, never amber.
   const waiting = Boolean(unpriced && item.manual_reason && CAPACITY_REASONS.has(item.manual_reason))
@@ -919,7 +1076,6 @@ function Row({
    * Jewelry-class.
    */
   const specialLimits = item.manual_reason === 'manual_class'
-  const comp = item.alternative_sources?.[0]
   const depAmount = item.depreciation_amount
   // Depreciation is server-owned, so it spins only while age or class -- the
   // two inputs that drive it -- are actually in flight.
@@ -1004,19 +1160,22 @@ function Row({
       <div className="k-c k-c--cat">
         {/* A category-only edit KEEPS the comps -- the replacement cost is
             unchanged and still comp-supported. It does re-run depreciation. */}
-        <select
-          className="k-cell k-cell--select"
-          value={item.category ?? ''}
-          disabled={pendingField === 'category'}
-          onChange={(e) => onOverride({ category: e.target.value })}
-        >
-          {item.category ? null : <option value="">—</option>}
-          {categories.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
+        <span className="k-selectwrap">
+          <select
+            className="k-cell k-cell--select"
+            value={item.category ?? ''}
+            disabled={pendingField === 'category'}
+            onChange={(e) => onOverride({ category: e.target.value })}
+          >
+            {item.category ? null : <option value="">—</option>}
+            {categories.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+          <Icon d={I.chevdown} size={10} />
+        </span>
       </div>
 
       {/* Every money cell below is the server's figure, read verbatim. */}
@@ -1088,16 +1247,33 @@ function Row({
       {/* Depreciation is NEVER computed here -- spinner until the server answers. */}
       <div
         className={`k-c k-c--dep k-mono${depRecalculating ? ' k-cell--pending' : ''}`}
+        style={{ position: 'relative' }}
       >
         {depRecalculating ? (
-          <span className="k-dep-spin" />
+          <span className="k-dep-spin" title="Recalculating on the server…" />
         ) : item.depreciation_pct === null ? (
           <Dash />
         ) : (
-          <span title={item.depreciation_method ? `Method: ${item.depreciation_method.replace('_', ' ')}` : undefined}>
-            {fmtPct(item.depreciation_pct)}
-          </span>
+          <span>{fmtPct(item.depreciation_pct)}</span>
         )}
+        {!depRecalculating && item.depreciation_pct !== null ? (
+          <>
+            <button
+              type="button"
+              className="k-icon-btn k-dep-info"
+              title="How this was calculated"
+              onClick={(e) => {
+                e.stopPropagation()
+                setDepOpen((o) => !o)
+              }}
+            >
+              <Icon d={I.info} size={11} />
+            </button>
+            {depOpen ? (
+              <DepExplainer item={item} depRules={depRules} onClose={() => setDepOpen(false)} />
+            ) : null}
+          </>
+        ) : null}
       </div>
       <div className="k-c k-c--depamt k-mono">
         {/* A positive amount WITHHELD -- ACV already subtracts it, so a minus
@@ -1113,20 +1289,7 @@ function Row({
       </div>
 
       <div className="k-c k-c--src">
-        {/* Only alternative_sources[0] resolves to a merchant listing. The
-            prototype offers "+ Add" when there is none -- that is a mutation,
-            so read-state shows nothing rather than a control that cannot act. */}
-        {unpriced ? null : comp?.link ? (
-          <a
-            className="k-src-link"
-            href={comp.link}
-            target="_blank"
-            rel="noreferrer noopener"
-            title={`${comp.source ?? 'Comp'} — ${comp.title ?? ''}`}
-          >
-            Link
-          </a>
-        ) : null}
+        <SourceCell item={item} onEditLine={onEditLine} />
       </div>
     </div>
   )

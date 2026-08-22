@@ -64,10 +64,22 @@ export default function EditableCell({
   /** True until the adjuster types something into a cleared numeric cell. */
   const untouched = useRef(false)
   const ref = useRef<HTMLInputElement>(null)
+  /**
+   * What we last sent, and what the prop read when we sent it. Between commit
+   * and confirmation the prop is still STALE, so adopting it would blank the
+   * cell back to its placeholder and then pulse the new value in. Hold the
+   * committed text until the server's value actually arrives.
+   */
+  const held = useRef<{ sent: string; was: string } | null>(null)
 
-  // Adopt server values whenever we are not mid-edit, so a recalc lands cleanly.
   useEffect(() => {
-    if (!editing) setDraft(value)
+    if (editing) return
+    if (held.current) {
+      const settled = value !== held.current.was || value.trim() === held.current.sent.trim()
+      if (!settled) return
+      held.current = null
+    }
+    setDraft(value)
   }, [value, editing])
 
   const commit = () => {
@@ -81,6 +93,8 @@ export default function EditableCell({
     }
     const next = draft.trim()
     if (next === value.trim()) return
+    held.current = { sent: next, was: value }
+    setDraft(next)
     onCommit(next)
   }
 
