@@ -988,6 +988,17 @@ button.k-avatar-menu-item {
   height: 34px;
 }
 
+/* Reserve the vertical scrollbar's width on the SCROLLER, not just the header.
+   kevin.css gives .k-row--head `min-width: gridw` + `padding-right: sbw` +
+   content-box -- a total of gridw + sbw -- but .k-scroll only gets gridw, so
+   its CONTENT box is gridw - sbw and the last column (Link) is clipped under
+   the scrollbar by overflow-x: hidden. Matching the header's total makes the
+   full grid width visible. sbw is MEASURED (offsetWidth - clientWidth), never
+   assumed to be 15px. Worth fixing upstream in kevin.css. */
+.k-scroll {
+  min-width: calc(var(--k-gridw, 1584px) + var(--k-sbw, 0px));
+}
+
 /* --- Grid: kevin.css owns the scroll chain (.k-grid scrolls X, .k-scroll
        scrolls Y, .k-row--head is a sticky sibling). Nothing here may touch
        overflow, height or flex on those elements. --- */

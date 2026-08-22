@@ -250,7 +250,14 @@ export default function ItemDrawer({
                     <select
                       className="k-insp-input"
                       value={data.category ?? ''}
-                      onChange={(e) => override.mutate({ category: e.target.value })}
+                      /* Age rides along so the engine re-runs on the new class;
+                         category alone is not an engine trigger. */
+                      onChange={(e) =>
+                        override.mutate({
+                          category: e.target.value,
+                          age_years: data.age_years ?? 0,
+                        })
+                      }
                     >
                       {data.category ? null : <option value="">—</option>}
                       {(rules.data?.categories ?? []).map((option) => (

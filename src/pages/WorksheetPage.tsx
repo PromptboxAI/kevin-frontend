@@ -1165,7 +1165,13 @@ function Row({
             className="k-cell k-cell--select"
             value={item.category ?? ''}
             disabled={pendingField === 'category'}
-            onChange={(e) => onOverride({ category: e.target.value })}
+            /* Category alone does NOT route through the depreciation engine --
+               only age_years / depreciation_method / dep_manual do. Resending
+               the row's own age fires the documented trigger so the new class's
+               schedule is applied. A dep_manual lock survives this server-side. */
+            onChange={(e) =>
+              onOverride({ category: e.target.value, age_years: item.age_years ?? 0 })
+            }
           >
             {item.category ? null : <option value="">—</option>}
             {categories.map((option) => (
