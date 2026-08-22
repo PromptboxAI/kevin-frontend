@@ -41,6 +41,9 @@ export type ClaimSummary = {
   /** Tax-inclusive sums of the per-line worksheet totals. Read verbatim. */
   total_rcv: number | null
   total_acv: number | null
+  /** Shipped a004e82 / migration 0037 -- no longer restated client-side. */
+  total_tax: number | null
+  total_depreciation: number | null
   status_counts: StatusCounts
   created_at: string
   updated_at: string

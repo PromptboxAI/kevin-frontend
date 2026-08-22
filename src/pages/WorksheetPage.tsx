@@ -400,18 +400,6 @@ export default function WorksheetPage() {
     setSelected(allShown ? new Set() : new Set(visible.map((item) => item.id)))
 
   /**
-   * The claim rollup carries no total_depreciation, but the money contract
-   * guarantees acv_total_incl = rcv_total_incl - depreciation_amount, and the
-   * server sums both. Restating the difference is the same move as Ext. Cost:
-   * a server identity, not a second implementation of the math.
-   */
-  // TODO: read total_depreciation verbatim once ClaimSummary carries it.
-  const claimDepreciation =
-    claim.data?.total_rcv != null && claim.data?.total_acv != null
-      ? Math.round((claim.data.total_rcv - claim.data.total_acv) * 100) / 100
-      : null
-
-  /**
    * Capacity-deferred rows. The prototype spec names a bulk
    * POST /v1/claim_items/retry-deferred, but the live API has no such route --
    * the documented retry path is per-row reprice, which shares the /process
@@ -553,14 +541,15 @@ export default function WorksheetPage() {
           </div>
           <div>
             <div className="k-tot-l">Depreciation</div>
+            {/* Read verbatim -- the last client-side money restatement is gone. */}
             <div className="k-tot-v" style={{ color: 'var(--k-fg-3)' }}>
-              {claimDepreciation === null ? '—' : fmtUSD(Math.max(0, claimDepreciation))}
+              {fmtUSD(claim.data?.total_depreciation)}
             </div>
           </div>
-          <div title="ClaimSummary carries no total_tax — needs a backend field">
+          <div>
             <div className="k-tot-l">Tax</div>
             <div className="k-tot-v" style={{ color: 'var(--k-fg-3)' }}>
-              —
+              {fmtUSD(claim.data?.total_tax)}
             </div>
           </div>
           <div>
@@ -787,8 +776,32 @@ export default function WorksheetPage() {
 
       {rows.error ? (
         <p className="k-error k-ws-note">
-          Could not load items
-          {rows.error instanceof ApiError ? ` (HTTP ${rows.error.status})` : ''}.
+          {rows.error instanceof ApiError && rows.error.status >= 500
+            ? 'The server could not return this claim’s items.'
+            : 'Could not load items.'}
+          {rows.error instanceof ApiError ? (
+            <>
+              {' '}
+              HTTP {rows.error.status}
+              {typeof rows.error.detail === 'string' ? ` — ${rows.error.detail}` : ''}
+              {/* X-Request-ID is echoed on every response; quoting it is what
+                  makes a 5xx traceable on the backend side. */}
+              {rows.error.requestId ? (
+                <>
+                  {' · '}
+                  <span className="k-portal-ref">Reference {rows.error.requestId}</span>
+                </>
+              ) : null}
+            </>
+          ) : null}{' '}
+          <button
+            type="button"
+            className="k-btn k-btn--sm k-btn--ghost"
+            onClick={() => void rows.refetch()}
+            disabled={rows.isFetching}
+          >
+            {rows.isFetching ? 'Retrying…' : 'Retry'}
+          </button>
         </p>
       ) : null}
 
@@ -1071,6 +1084,10 @@ function SourceCell({ item, onSave }: { item: NumberedItem; onSave: (url: string
       </a>
     )
   }
+
+  // A real comp always wins, so a row that HAS engine comps never offers the
+  // chip -- even when comp[0] carries no resolved merchant URL.
+  if (item.alternative_sources?.length) return <Dash />
 
   return (
     <button

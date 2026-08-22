@@ -2,7 +2,7 @@
 
 Raised while wiring the production worksheet against the live API.
 
-## 1. `ClaimSummary` needs `total_tax` (and ideally `total_depreciation`)
+## 1. ~~`ClaimSummary` needs `total_tax` / `total_depreciation`~~ — SHIPPED (a004e82, migration 0037)
 
 The design's totals bar is five boxes: **Items · RCV · Depreciation · Tax · ACV**.
 `GET /v1/claims` returns `total_rcv`, `total_acv`, `item_count`, `photo_count` —
@@ -59,7 +59,7 @@ them (silent omission is what the design forbids). Nothing is needed from the
 API — but the **intake flow must send this metadata on create**, or the header
 stays dashed in production too.
 
-## 5. Adjuster-entered proof URL on manually priced lines
+## 5. ~~Adjuster-entered proof URL on manually priced lines~~ — SHIPPED (a004e82)
 
 **When Kevin prices a line, `alternative_sources[0].link` is the
 substantiation. When an adjuster overrides or manually prices a line, the comps
