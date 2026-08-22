@@ -277,6 +277,34 @@ export default function WorksheetPage() {
       setNotice(error instanceof Error ? error.message : 'Could not add a row.'),
   })
 
+  /**
+   * The proof URL gets its own mutation so its outcome is reported. A silent
+   * save is unfalsifiable: this states plainly whether the write landed, and
+   * echoes what the server said it applied.
+   */
+  const saveSource = useMutation({
+    mutationFn: ({ id, url }: { id: number; url: string | null }) =>
+      editDisplayLine(id, { manual_source_url: url }),
+    onSuccess: (result, { url }) => {
+      const applied = (result?.applied ?? {}) as Record<string, unknown>
+      const echoed = applied.manual_source_url
+      if (url && !echoed) {
+        // The write succeeded but the server did not report the field back --
+        // that is a contract problem, not a UI one, and it must be visible.
+        setNotice(`Saved, but the server did not echo manual_source_url (applied: ${Object.keys(applied).join(', ') || 'nothing'}).`)
+      } else {
+        setNotice(url ? 'Source link saved.' : 'Source link cleared.')
+      }
+      refresh()
+    },
+    onError: (error) =>
+      setNotice(
+        error instanceof ApiError
+          ? `Could not save the source link — HTTP ${error.status}: ${String(error.detail)}`
+          : 'Could not save the source link.',
+      ),
+  })
+
   const removeRows = useMutation({
     mutationFn: (ids: number[]) => deleteItems(ids),
     onSuccess: (result) => {
@@ -801,6 +829,7 @@ export default function WorksheetPage() {
                       depRules={rules.data?.rules}
                       onOverride={(body) => override.mutate({ id: item.id, body })}
                       onEditLine={(body) => editLine.mutate({ id: item.id, body })}
+                      onSaveSource={(url) => saveSource.mutate({ id: item.id, url })}
                       isNew={item.id === newRowId}
                     />
                   ))}
@@ -824,6 +853,7 @@ export default function WorksheetPage() {
                     depRules={rules.data?.rules}
                     onOverride={(body) => override.mutate({ id: item.id, body })}
                     onEditLine={(body) => editLine.mutate({ id: item.id, body })}
+                    onSaveSource={(url) => saveSource.mutate({ id: item.id, url })}
                     isNew={item.id === newRowId}
                     onAppend={
                       item.id === visible[visible.length - 1]?.id
@@ -939,13 +969,7 @@ function DepExplainer({
  * otherwise the dashed "+ add" chip that captures one. A manually priced line
  * must be able to carry its own substantiation into the export's Source column.
  */
-function SourceCell({
-  item,
-  onEditLine,
-}: {
-  item: NumberedItem
-  onEditLine: (body: Record<string, string | null>) => void
-}) {
+function SourceCell({ item, onSave }: { item: NumberedItem; onSave: (url: string | null) => void }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
   /** Escape unmounts the input, which fires blur -- without this the cancel
@@ -961,9 +985,10 @@ function SourceCell({
     }
     const url = draft.trim()
     setEditing(false)
-    onEditLine({
-      manual_source_url: url ? (/^https?:\/\//i.test(url) ? url : `https://${url}`) : null,
-    })
+    // Nothing typed and nothing stored: a blur here must not fire a pointless
+    // clear, which would look like a failed save.
+    if (!url && !item.manual_source_url) return
+    onSave(url ? (/^https?:\/\//i.test(url) ? url : `https://${url}`) : null)
   }
 
   if (editing) {
@@ -1051,6 +1076,7 @@ function Row({
   onRowClick,
   onOverride,
   onEditLine,
+  onSaveSource,
   onAppend,
   isNew,
 }: {
@@ -1069,6 +1095,7 @@ function Row({
   onRowClick?: () => void
   onOverride: (body: OverrideBody) => void
   onEditLine: (body: Record<string, string | null>) => void
+  onSaveSource: (url: string | null) => void
   /** Set only on the last row: Enter there appends a new line. */
   onAppend?: () => void
   /** Just created in this session -- highlighted with the header grey. */
@@ -1306,7 +1333,7 @@ function Row({
       </div>
 
       <div className="k-c k-c--src">
-        <SourceCell item={item} onEditLine={onEditLine} />
+        <SourceCell item={item} onSave={onSaveSource} />
       </div>
     </div>
   )

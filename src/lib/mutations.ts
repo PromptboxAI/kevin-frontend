@@ -45,8 +45,16 @@ export type DisplayBody = {
   manual_source_url?: string | null
 }
 
+/** PATCH returns an edit RECEIPT, not the row: {status, row_id, applied, recoverable}. */
+export type ClaimItemEditResponse = {
+  status: string
+  row_id: number
+  applied: Record<string, unknown>
+  recoverable?: number
+}
+
 export function editDisplayLine(rowId: number, body: DisplayBody) {
-  return api.patch<ClaimItem>(`/v1/claim_items/${rowId}`, { json: body })
+  return api.patch<ClaimItemEditResponse>(`/v1/claim_items/${rowId}`, { json: body })
 }
 
 export type BulkDeleteResponse = {
