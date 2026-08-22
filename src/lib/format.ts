@@ -66,3 +66,22 @@ export function fmtConfidence(value: number | null | undefined): string {
   if (value === null || value === undefined) return '—'
   return `${Math.round(value * 100)}%`
 }
+
+/** "14h ago" / "3d ago" -- the design's last-sign-in phrasing. */
+export function fmtSince(iso: string | null | undefined, now: number): string | null {
+  if (!iso) return null
+  const then = Date.parse(iso)
+  if (!Number.isFinite(then)) return null
+  const mins = Math.max(0, Math.round((now - then) / 60000))
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.round(mins / 60)
+  if (hours < 24) return `${hours}h ago`
+  return `${Math.round(hours / 24)}d ago`
+}
+
+/** Time-of-day greeting from the client clock -- no backend involved. */
+export function greetingFor(hour: number): string {
+  if (hour < 12) return 'Good morning'
+  if (hour < 17) return 'Good afternoon'
+  return 'Good evening'
+}

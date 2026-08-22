@@ -40,6 +40,22 @@
   flex-wrap: wrap;
 }
 
+/* .k-shell clips to the viewport, so the claims column needs its own scroll
+   container -- same chain as the worksheet's .k-scroll. kevin.css sets no
+   overflow on .k-claims-body, so this is additive. */
+.k-claims-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Flex items shrink by default, so the list compressed to fit the column
+   instead of overflowing it -- the container scrolled nowhere because nothing
+   ever exceeded it. */
+.k-claims-body > * {
+  flex-shrink: 0;
+}
+
 .k-claims-h1 {
   font-family: var(--k-font-display);
   font-weight: 400;

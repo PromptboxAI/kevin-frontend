@@ -7,7 +7,8 @@ import ClaimRowMenu from '../components/ClaimRowMenu'
 import ClaimStatusChip from '../components/ClaimStatusChip'
 import { I, Icon } from '../components/Icon'
 import { ApiError, api } from '../lib/api'
-import { fmtDate, fmtInt, fmtUSD } from '../lib/format'
+import { fmtDate, fmtInt, fmtSince, fmtUSD, greetingFor } from '../lib/format'
+import { useAuth } from '../lib/auth'
 import type { ClaimListResponse, ClaimSummary } from '../lib/types'
 
 /**
@@ -30,6 +31,7 @@ const SERVER_STATUS: Partial<Record<Chip, string>> = {
 }
 
 export default function ClaimsPage() {
+  const { session } = useAuth()
   const [search, setSearch] = useState('')
   const [chip, setChip] = useState<Chip>('All')
   const [notice, setNotice] = useState<string | null>(null)
@@ -79,6 +81,20 @@ export default function ClaimsPage() {
     [open],
   )
 
+  /**
+   * The design's header is a greeting, not a page title. Time of day comes
+   * from the client clock, the name from the session user, and last sign-in
+   * from Supabase's own `last_sign_in_at` -- no backend field needed.
+   */
+  const user = session?.user
+  const fullName = (user?.user_metadata?.full_name ?? user?.user_metadata?.name) as
+    | string
+    | undefined
+  const firstName = (fullName?.trim().split(/\s+/)[0] ?? user?.email?.split('@')[0] ?? '')
+    .replace(/^./, (c) => c.toUpperCase())
+  const now = Date.now()
+  const lastSignIn = fmtSince(user?.last_sign_in_at, now)
+
   return (
     <div className="k-shell">
       <AppHeader
@@ -92,10 +108,14 @@ export default function ClaimsPage() {
       <div className="k-claims-body">
         <div className="k-claims-head">
           <div>
-            <h1 className="k-claims-h1">My claims</h1>
+            <h1 className="k-claims-h1">
+              {greetingFor(new Date(now).getHours())}
+              {firstName ? `, ${firstName}` : ''}.
+            </h1>
             <p className="k-claims-sub">
-              <strong>{fmtInt(kpis.review)}</strong> awaiting your review ·{' '}
+              <strong>{fmtInt(kpis.review)}</strong> claims awaiting your review ·{' '}
               {fmtInt(kpis.processing)} processing now
+              {lastSignIn ? ` · Last sign-in ${lastSignIn}` : ''}
             </p>
           </div>
 
