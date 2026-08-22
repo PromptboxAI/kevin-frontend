@@ -9,6 +9,14 @@ import { isApiConfigured } from '../lib/env'
  * Scaffold state: this renders the link's real lifecycle (loading, dead link,
  * reachable) but not yet the redacted claim itself. The server decides what
  * this audience may see -- never fetch everything and hide it client-side.
+ *
+ * CONTRACT NOTE for whoever builds the item list here (backend, 2026-08):
+ * portal item rows have exactly TWO states -- editable and resolved. Edits to
+ * an EXISTING item (age_years, claimed_rcv, replaced_qty, rcv) write directly
+ * and are live on the next read, so they never queue. The "Sent to your
+ * adjuster" pending state belongs ONLY to proposed NEW items, which are the
+ * only thing that lands in the holding queue. Do not build a third,
+ * pending-edit state.
  */
 export default function PortalPage() {
   const { token = '' } = useParams()

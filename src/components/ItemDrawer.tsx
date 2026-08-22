@@ -125,21 +125,6 @@ export default function ItemDrawer({
   })
 
   /**
-   * Which comp actually backs the published price. alternative_sources[0] is
-   * the preferred SOURCE, and rcv is the median of the comps, so index 0 often
-   * is not the number on the line -- labelling it "Primary" there implied a
-   * substantiation that was not true. Match on value until the backend
-   * resolves the open question.
-   */
-  const backingIndex = (() => {
-    if (!data || data.rcv === null) return -1
-    return data.alternative_sources.findIndex((comp) => {
-      const price = typeof comp.price === 'number' ? comp.price : Number(String(comp.price ?? '').replace(/[^0-9.-]/g, ''))
-      return Number.isFinite(price) && Math.abs(price - (data.rcv as number)) < 0.005
-    })
-  })()
-
-  /**
    * One atomic call: the identity corrections ride WITH the query, because the
    * pipeline reads make_mfr and description to decide whether a line was priced
    * off other manufacturers' listings. A PATCH-then-reprice is a race, and
@@ -429,14 +414,7 @@ export default function ItemDrawer({
                   {data.alternative_sources?.length ? (
                     <div className="k-insp-alts">
                       {data.alternative_sources.map((comp, index) => (
-                        <CompRow
-                          key={index}
-                          comp={comp}
-                          /* Order stays as the payload gives it; only the tag
-                             moves to whichever comp matches rcv. */
-                          backsPrice={backingIndex === index}
-                          linkable={index === 0}
-                        />
+                        <CompRow key={index} comp={comp} preferred={index === 0} />
                       ))}
                     </div>
                   ) : (
@@ -544,24 +522,28 @@ function EditField({
  */
 function CompRow({
   comp,
-  backsPrice,
-  linkable,
+  preferred,
 }: {
   comp: Comp
-  backsPrice: boolean
-  /** Only alternative_sources[0] carries a resolved merchant URL. */
-  linkable: boolean
+  /**
+   * alternative_sources[0] is the PREFERRED SOURCE for the item's content
+   * class -- not the source of the price. The price is the median of the
+   * trimmed comp set and frequently matches no individual comp, so this must
+   * never be labelled as backing it. Index 0 is also the only comp with a
+   * resolved merchant URL.
+   */
+  preferred: boolean
 }) {
   const body = (
     <>
       <span className="k-comp-title">{comp.title || 'Untitled listing'}</span>
       <span className="k-comp-src">{comp.source || '—'}</span>
       <span className="k-comp-price k-mono">{fmtCompPrice(comp.price)}</span>
-      {backsPrice ? <Badge tone="accent">Backs this price</Badge> : null}
+      {preferred ? <Badge tone="accent">Preferred source</Badge> : null}
     </>
   )
 
-  if (linkable && comp.link) {
+  if (preferred && comp.link) {
     return (
       <a className="k-insp-alt" href={comp.link} target="_blank" rel="noreferrer noopener">
         {body}
