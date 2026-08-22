@@ -335,19 +335,6 @@
   color: var(--k-fg-4);
 }
 
-.k-ws-foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.k-ws-pager {
-  display: flex;
-  gap: 8px;
-}
-
 /* --- Item drawer --- */
 .k-drawer-scrim {
   position: fixed;
@@ -678,20 +665,6 @@
   color: var(--k-fg-4);
 }
 
-.k-ws-foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-  padding: 12px 16px 24px;
-}
-
-.k-ws-pager {
-  display: flex;
-  gap: 8px;
-}
-
 /* --- Editable worksheet cells --- */
 .k-cell--input {
   width: 100%;
@@ -852,13 +825,11 @@ button.k-avatar-menu-item {
   cursor: pointer;
 }
 
-/* Toolbar and claim header stay put while the grid scrolls; .k-grid owns the
-   one scroll container, so the header row sticks inside it. */
-/* Non-scrolling chrome above the grid. */
+/* Chrome above and below the grid never shrinks: .k-grid-dock takes the slack. */
 .k-claim-hd,
 .k-ws-bar,
 .k-claim-tabs,
-.k-ws-foot {
+.k-footer {
   flex: 0 0 auto;
 }
 

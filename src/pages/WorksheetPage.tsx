@@ -363,6 +363,9 @@ export default function WorksheetPage() {
       (item.query ?? '').length >= 3,
   )
 
+  const saving =
+    override.isPending || editLine.isPending || addItem.isPending || removeRows.isPending
+
   const countCheck = rowInvariant(items, total)
 
   useEffect(() => {
@@ -830,23 +833,27 @@ export default function WorksheetPage() {
 
       {rows.data ? (
         <>
-          <div className="k-ws-foot">
-            <span className="k-claim-sub">
-              {total === 0
-                ? 'No items'
-                : `Showing ${fmtInt(visible.length)} of ${fmtInt(items.length)}` +
-                  (rows.isFetchingNextPage ? ' · loading more…' : '')}
+          <footer className="k-footer">
+            <span>
+              Showing <strong style={{ color: 'var(--k-fg-2)' }}>{fmtInt(visible.length)}</strong> of{' '}
+              {fmtInt(items.length)} items
+              {rows.isFetchingNextPage ? ' · loading more…' : ''}
+              {' · '}
+              {saving ? 'Saving…' : 'All changes saved'}
+              {/* The count comes from the rows actually rendered, never from the
+                  API total alone -- a disagreement means rows are counted that
+                  are not lines, and it is surfaced rather than papered over. */}
+              {!countCheck.ok && !rows.hasNextPage ? (
+                <span className="k-error">
+                  {' · '}count mismatch: API reports {fmtInt(countCheck.apiCount)}, grid holds{' '}
+                  {fmtInt(countCheck.rendered)} (highest line {fmtInt(countCheck.maxLineNo)})
+                </span>
+              ) : null}
             </span>
-            {/* The count comes from the rows actually rendered, never from the
-                API total alone -- a disagreement means rows are counted that
-                are not lines, and it is surfaced rather than papered over. */}
-            {!countCheck.ok && !rows.hasNextPage ? (
-              <span className="k-error">
-                Count mismatch: API reports {fmtInt(countCheck.apiCount)}, grid holds{' '}
-                {fmtInt(countCheck.rendered)} (highest line {fmtInt(countCheck.maxLineNo)}).
-              </span>
-            ) : null}
-          </div>
+            <span style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              <span style={{ color: 'var(--k-fg-4)' }}>↑ ↓ navigate · ⏎ edit</span>
+            </span>
+          </footer>
         </>
       ) : null}
 
