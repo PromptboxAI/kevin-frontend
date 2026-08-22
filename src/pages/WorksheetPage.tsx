@@ -181,6 +181,13 @@ export default function WorksheetPage() {
   const [confirmDel, setConfirmDel] = useState(false)
   const [newRowId, setNewRowId] = useState<number | null>(null)
 
+  // Toasts are transient: they carry failures, never confirmations.
+  useEffect(() => {
+    if (!notice) return
+    const t = setTimeout(() => setNotice(null), 6000)
+    return () => clearTimeout(t)
+  }, [notice])
+
   const markPending = (id: number, field: string | null) =>
     setPending((prev) => {
       const next = new Map(prev)
@@ -320,13 +327,12 @@ export default function WorksheetPage() {
       editDisplayLine(id, { manual_source_url: url }),
     onSuccess: (result, { id, url }) => {
       const applied = (result?.applied ?? {}) as Record<string, unknown>
-      const echoed = applied.manual_source_url
-      if (url && !echoed) {
-        // The write succeeded but the server did not report the field back --
-        // that is a contract problem, not a UI one, and it must be visible.
-        setNotice(`Saved, but the server did not echo manual_source_url (applied: ${Object.keys(applied).join(', ') || 'nothing'}).`)
-      } else {
-        setNotice(url ? 'Source link saved.' : 'Source link cleared.')
+      // A successful inline save is NOT announced -- the persisted value is the
+      // confirmation. Only the contract anomaly is worth interrupting for.
+      if (url && !applied.manual_source_url) {
+        setNotice(
+          `Saved, but the server did not echo manual_source_url (applied: ${Object.keys(applied).join(', ') || 'nothing'}).`,
+        )
       }
       void refreshRow(id)
     },
@@ -684,7 +690,7 @@ export default function WorksheetPage() {
       </section>
 
       {notice ? (
-        <div className="k-ws-bar">
+        <div className="k-toast" role="status">
           <span>{notice}</span>
           <button type="button" className="k-link" onClick={() => setNotice(null)}>
             Dismiss
@@ -875,7 +881,7 @@ export default function WorksheetPage() {
                       depRules={rules.data?.rules}
                       onOverride={(body) => override.mutate({ id: item.id, body })}
                       onEditLine={(body) => editLine.mutate({ id: item.id, body })}
-                      onSaveSource={(url) => saveSource.mutate({ id: item.id, url })}
+                      onSaveSource={(url) => saveSource.mutateAsync({ id: item.id, url })}
                       isNew={item.id === newRowId}
                     />
                   ))}
@@ -899,7 +905,7 @@ export default function WorksheetPage() {
                     depRules={rules.data?.rules}
                     onOverride={(body) => override.mutate({ id: item.id, body })}
                     onEditLine={(body) => editLine.mutate({ id: item.id, body })}
-                    onSaveSource={(url) => saveSource.mutate({ id: item.id, url })}
+                    onSaveSource={(url) => saveSource.mutateAsync({ id: item.id, url })}
                     isNew={item.id === newRowId}
                     onAppend={
                       item.id === visible[visible.length - 1]?.id
@@ -1015,13 +1021,35 @@ function DepExplainer({
  * otherwise the dashed "+ add" chip that captures one. A manually priced line
  * must be able to carry its own substantiation into the export's Source column.
  */
-function SourceCell({ item, onSave }: { item: NumberedItem; onSave: (url: string | null) => void }) {
+function SourceCell({
+  item,
+  onSave,
+}: {
+  item: NumberedItem
+  onSave: (url: string | null) => Promise<unknown>
+}) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
+  /**
+   * The committed URL, held from the moment the mutation fires until the
+   * server's value arrives. Without this the cell passes through
+   * editing=false + prop-still-stale, which renders the empty "+ add" chip --
+   * the commit -> empty -> refetch -> value flash. The in-between state must
+   * show what was committed.
+   */
+  const [committed, setCommitted] = useState<string | null>(null)
   /** Escape unmounts the input, which fires blur -- without this the cancel
       would save the very text the adjuster just abandoned. */
   const cancelled = useRef(false)
   const comp = item.alternative_sources?.[0]
+
+  // Release the hold once the server's value matches what we sent.
+  useEffect(() => {
+    if (committed !== null && (item.manual_source_url ?? '') === committed) setCommitted(null)
+  }, [item.manual_source_url, committed])
+
+  /** What the cell shows: the in-flight value first, then the stored one. */
+  const shownUrl = committed !== null ? committed || null : item.manual_source_url
 
   const save = () => {
     if (cancelled.current) {
@@ -1034,7 +1062,10 @@ function SourceCell({ item, onSave }: { item: NumberedItem; onSave: (url: string
     // Nothing typed and nothing stored: a blur here must not fire a pointless
     // clear, which would look like a failed save.
     if (!url && !item.manual_source_url) return
-    onSave(url ? (/^https?:\/\//i.test(url) ? url : `https://${url}`) : null)
+    const next = url ? (/^https?:\/\//i.test(url) ? url : `https://${url}`) : null
+    // Render it immediately; only a rejection takes it back.
+    setCommitted(next ?? '')
+    void onSave(next).catch(() => setCommitted(null))
   }
 
   if (editing) {
@@ -1071,14 +1102,14 @@ function SourceCell({ item, onSave }: { item: NumberedItem; onSave: (url: string
     )
   }
 
-  if (item.manual_source_url) {
+  if (shownUrl) {
     return (
       <a
         className="k-src-link"
-        href={item.manual_source_url}
+        href={shownUrl}
         target="_blank"
         rel="noreferrer noopener"
-        title={`Preparer-supplied source · ${item.manual_source_url}`}
+        title={`Preparer-supplied source · ${shownUrl}`}
       >
         Link
       </a>
@@ -1145,7 +1176,7 @@ function Row({
   onRowClick?: () => void
   onOverride: (body: OverrideBody) => void
   onEditLine: (body: Record<string, string | null>) => void
-  onSaveSource: (url: string | null) => void
+  onSaveSource: (url: string | null) => Promise<unknown>
   /** Set only on the last row: Enter there appends a new line. */
   onAppend?: () => void
   /** Just created in this session -- highlighted with the header grey. */
@@ -1153,6 +1184,11 @@ function Row({
 }) {
   const [compsOpen, setCompsOpen] = useState(false)
   const [depOpen, setDepOpen] = useState(false)
+  const [pickedCategory, setPickedCategory] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (pickedCategory !== null && item.category === pickedCategory) setPickedCategory(null)
+  }, [item.category, pickedCategory])
   const unpriced = item.status === 'needs_manual'
   // Capacity waits are NOT adjuster work -- quiet pending state, never amber.
   const waiting = Boolean(unpriced && item.manual_reason && CAPACITY_REASONS.has(item.manual_reason))
@@ -1251,15 +1287,19 @@ function Row({
         <span className="k-selectwrap">
           <select
             className="k-cell k-cell--select"
-            value={item.category ?? ''}
+            /* Show the picked class immediately; the prop is stale until the
+               row re-reads, and snapping back to the old value mid-flight is
+               the same commit -> empty -> value flash. */
+            value={pickedCategory ?? item.category ?? ''}
             disabled={pendingField === 'category'}
             /* Category alone does NOT route through the depreciation engine --
                only age_years / depreciation_method / dep_manual do. Resending
                the row's own age fires the documented trigger so the new class's
                schedule is applied. A dep_manual lock survives this server-side. */
-            onChange={(e) =>
+            onChange={(e) => {
+              setPickedCategory(e.target.value)
               onOverride({ category: e.target.value, age_years: item.age_years ?? 0 })
-            }
+            }}
           >
             {item.category ? null : <option value="">—</option>}
             {categories.map((option) => (

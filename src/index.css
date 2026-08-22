@@ -888,6 +888,27 @@
   font-size: 12.5px;
 }
 
+/* Toasts OVERLAY -- fixed, bottom corner, auto-dismissed. They report failures
+   only; a successful inline save is confirmed by the persisted value itself.
+   They must never occupy a layout row and push the grid. */
+.k-toast {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 60;
+  max-width: 420px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--k-line);
+  border-radius: 8px;
+  background: var(--k-bg);
+  box-shadow: 0 1px 2px rgba(20, 30, 60, 0.05), 0 12px 32px rgba(20, 30, 60, 0.16);
+  font-size: 12.5px;
+  color: var(--k-fg-2);
+}
+
 /* Capacity waits are not errors -- this bar stays quiet, never amber. */
 .k-ws-bar--quiet {
   background: var(--k-bg-2);
