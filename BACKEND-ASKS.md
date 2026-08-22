@@ -83,7 +83,27 @@ commit. Until the field exists the Link cell stays **empty** — not a chip —
 because a control that accepts a URL and discards it leaves the adjuster
 believing the line is substantiated.
 
-## 6. Smaller notes
+## 6. A category-only override should re-run the depreciation engine
+
+`PATCH …/override` documents that only **`age_years`, `depreciation_method` or
+`dep_manual`** "always route through the engine". So a **category-only**
+override changes the content class and leaves the previous rate standing: row
+at age 2 reads 66.7% as Pet Supplies (3-yr life) and still reads 66.7% after
+being reclassified to Electronics, where it should be 40%.
+
+Content class **is** a valuation input — it selects the schedule the rate comes
+from — so a class change without a recompute leaves the row internally
+inconsistent, and the export inherits it.
+
+**Frontend workaround in place:** the class picker resends the row's own
+`age_years` alongside `category`, which fires the documented trigger. That
+works, but "every client must know to resend age_years" is a trap the next
+integrator falls into.
+
+**Request:** treat `category` as an engine trigger on `override`, same as
+`age_years`. The `dep_manual` lock should keep surviving it, per 80f8831.
+
+## 7. Smaller notes
 
 - `ClaimItemSummary` has no `ext_cost`. The worksheet's **Ext. Cost** column is
   restated from `rcv_total_incl − tax` (the contract guarantees

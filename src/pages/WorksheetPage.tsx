@@ -948,9 +948,17 @@ function SourceCell({
 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
+  /** Escape unmounts the input, which fires blur -- without this the cancel
+      would save the very text the adjuster just abandoned. */
+  const cancelled = useRef(false)
   const comp = item.alternative_sources?.[0]
 
   const save = () => {
+    if (cancelled.current) {
+      cancelled.current = false
+      setEditing(false)
+      return
+    }
     const url = draft.trim()
     setEditing(false)
     onEditLine({
@@ -968,8 +976,11 @@ function SourceCell({
         onChange={(e) => setDraft(e.target.value)}
         onBlur={save}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') save()
-          if (e.key === 'Escape') setEditing(false)
+          if (e.key === 'Enter') e.currentTarget.blur()
+          if (e.key === 'Escape') {
+            cancelled.current = true
+            e.currentTarget.blur()
+          }
         }}
       />
     )
