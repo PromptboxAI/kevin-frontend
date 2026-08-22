@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import type { InfiniteData } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import ClaimStatusChip from '../components/ClaimStatusChip'
@@ -15,7 +16,7 @@ import type { OverrideBody } from '../lib/mutations'
 import { numberRows, rowInvariant, windowRange } from '../lib/rows'
 import type { NumberedItem } from '../lib/rows'
 import { CAPACITY_REASONS } from '../lib/types'
-import type { ClaimItemListResponse, ClaimSummary } from '../lib/types'
+import type { ClaimItem, ClaimItemListResponse, ClaimSummary } from '../lib/types'
 
 const PAGE_SIZE = 100
 
@@ -188,8 +189,40 @@ export default function WorksheetPage() {
       return next
     })
 
+  /**
+   * Full refetch. Only for edits that change the ROW SET (add, delete) --
+   * invalidating an infinite query refetches every page it holds, which on a
+   * 2,400-row claim is 25 requests.
+   */
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ['claim-items', claimId] })
+    void queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
+  }
+
+  /**
+   * A single-row edit re-reads ONE row and splices it into the cached pages.
+   * The contract says the tax-inclusive columns "follow on the next read", so a
+   * read is required -- but it is one request, not one per loaded page. This is
+   * what made a class change take seconds.
+   */
+  const refreshRow = async (id: number) => {
+    try {
+      const fresh = await api.get<ClaimItem>(`/v1/claim_items/${id}`)
+      queryClient.setQueryData<InfiniteData<ClaimItemListResponse>>(
+        ['claim-items', claimId, status],
+        (prev) =>
+          prev && {
+            ...prev,
+            pages: prev.pages.map((page) => ({
+              ...page,
+              items: page.items.map((row) => (row.id === id ? { ...row, ...fresh } : row)),
+            })),
+          },
+      )
+    } catch {
+      // A failed re-read must not leave the grid stale; fall back to a refetch.
+      void queryClient.invalidateQueries({ queryKey: ['claim-items', claimId] })
+    }
     void queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
   }
 
@@ -206,7 +239,7 @@ export default function WorksheetPage() {
     },
     onSuccess: (_data, { id }) => {
       markPending(id, null)
-      refresh()
+      void refreshRow(id)
     },
   })
 
@@ -214,7 +247,7 @@ export default function WorksheetPage() {
   const editLine = useMutation({
     mutationFn: ({ id, body }: { id: number; body: Record<string, string | null> }) =>
       editDisplayLine(id, body),
-    onSuccess: refresh,
+    onSuccess: (_result, { id }) => void refreshRow(id),
     onError: (error) =>
       setNotice(error instanceof Error ? error.message : 'That edit was rejected.'),
   })
@@ -285,7 +318,7 @@ export default function WorksheetPage() {
   const saveSource = useMutation({
     mutationFn: ({ id, url }: { id: number; url: string | null }) =>
       editDisplayLine(id, { manual_source_url: url }),
-    onSuccess: (result, { url }) => {
+    onSuccess: (result, { id, url }) => {
       const applied = (result?.applied ?? {}) as Record<string, unknown>
       const echoed = applied.manual_source_url
       if (url && !echoed) {
@@ -295,7 +328,7 @@ export default function WorksheetPage() {
       } else {
         setNotice(url ? 'Source link saved.' : 'Source link cleared.')
       }
-      refresh()
+      void refreshRow(id)
     },
     onError: (error) =>
       setNotice(

@@ -103,7 +103,33 @@ integrator falls into.
 **Request:** treat `category` as an engine trigger on `override`, same as
 `age_years`. The `dep_manual` lock should keep surviving it, per 80f8831.
 
-## 7. Smaller notes
+## 7. `manual_reason` is not re-evaluated when the content class changes
+
+Reclassifying a row **out of** an appraisal class leaves `manual_reason:
+"manual_class"` on it. A Jewelry line moved to Books & Media keeps the reason,
+so it keeps rendering the amber special-limits highlight and stays unpriced —
+the row now claims a coverage-cap constraint that no longer applies.
+
+Verified in `main.py`: the override handler never touches `manual_reason`; only
+`reprice` clears it (`{"status": "processing", "manual_reason": None}`).
+
+**The frontend cannot fix this.** There is no `special_limits` field on the
+item, so `manual_reason === "manual_class"` is the only payload signal for the
+amber cue — and CLAUDE.md rule 20 explicitly forbids deriving special limits
+from the category at render time (`SPECIAL_LIMITS.has(row.cat)` in a component
+is called out as a bug). Rendering the stale reason is the correct behaviour
+for a payload that is itself stale.
+
+**Request:** re-evaluate `manual_reason` when `category` changes on
+`…/override` — clear `manual_class` when the new class is not an appraisal
+class, and set it when it is. Ideally the row also becomes priceable again,
+since the reason it was withheld no longer holds. (Pairs naturally with ask #6,
+which asks the same edit to re-run the depreciation engine.)
+
+**Adjuster workaround meanwhile:** reprice the row after reclassifying — that
+clears `manual_reason` and re-runs the pipeline.
+
+## 8. Smaller notes
 
 - `ClaimItemSummary` has no `ext_cost`. The worksheet's **Ext. Cost** column is
   restated from `rcv_total_incl − tax` (the contract guarantees
