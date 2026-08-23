@@ -25,7 +25,7 @@ export default function AppHeader({ actions }: { actions?: React.ReactNode }) {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         {actions}
-        {me ? <AvatarMenu email={me.email} id={me.id} /> : null}
+        {me ? <AvatarMenu email={me.email} /> : null}
       </div>
     </header>
   )

@@ -1,17 +1,36 @@
 import { useEffect, useRef, useState } from 'react'
+import { I, Icon } from './Icon'
 import { useAuth } from '../lib/auth'
 
-function initialsOf(email: string | null, id: string): string {
-  if (!email) return id.slice(0, 2).toUpperCase()
-  const [local] = email.split('@')
-  const parts = local.split(/[._-]+/).filter(Boolean)
+/**
+ * Ported from design/components/avatar-menu.jsx.
+ *
+ * Two deliberate deviations from the prototype, both forced by real auth:
+ *  - Sign out is a button calling supabase signOut, not a link to a static page.
+ *  - The six destinations render inert until those settings screens exist, the
+ *    same treatment ClaimTabs gives unbuilt tabs -- a visible label with a
+ *    tooltip beats a link to nowhere.
+ */
+const ITEMS: ({ kind: 'div' } | { kind: 'link'; label: string })[] = [
+  { kind: 'link', label: 'My profile' },
+  { kind: 'link', label: 'Business' },
+  { kind: 'link', label: 'Billing' },
+  { kind: 'link', label: 'Security' },
+  { kind: 'div' },
+  { kind: 'link', label: 'Docs' },
+  { kind: 'link', label: 'Get help' },
+  { kind: 'div' },
+]
+
+/** Two letters from the person's NAME. Never from an id, never a UUID. */
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
   if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
-  return local.slice(0, 2).toUpperCase()
+  return (parts[0] ?? '?').slice(0, 2).toUpperCase()
 }
 
-/** Ported from avatar-menu.jsx: initials chip -> Settings / Billing / Sign out. */
-export default function AvatarMenu({ email, id }: { email: string | null; id: string }) {
-  const { signOut } = useAuth()
+export default function AvatarMenu({ email }: { email: string | null }) {
+  const { session, signOut } = useAuth()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -31,44 +50,82 @@ export default function AvatarMenu({ email, id }: { email: string | null; id: st
     }
   }, [open])
 
+  const meta = session?.user?.user_metadata as Record<string, unknown> | undefined
+  const profileName = (meta?.full_name ?? meta?.name) as string | undefined
+  /**
+   * Falls back to the email's local part, humanised -- NEVER the user id. An
+   * internal uuid must not reach the adjuster. If the session carries no
+   * profile name this reads "Test" rather than "Mariana Reyes"; the fix is a
+   * name on the profile, not a different fallback.
+   */
+  const name =
+    profileName?.trim() ||
+    (email?.split('@')[0] ?? '')
+      .split(/[._-]+/)
+      .filter(Boolean)
+      .map((part) => part.replace(/^./, (c) => c.toUpperCase()))
+      .join(' ') ||
+    'Account'
+  const initials = initialsOf(name)
+
   return (
     <div ref={ref} style={{ position: 'relative' }}>
       <button
         type="button"
         className="k-avatar-btn"
         onClick={() => setOpen((o) => !o)}
-        aria-haspopup="menu"
+        aria-label="Account menu"
         aria-expanded={open}
-        title={email ?? id}
+        title={email ?? undefined}
       >
-        {initialsOf(email, id)}
+        {initials}
       </button>
 
       {open ? (
         <div className="k-pop k-avatar-menu" role="menu">
           <div className="k-avatar-menu-hd">
-            <div className="k-avatar-chip">{initialsOf(email, id)}</div>
+            <div className="k-avatar-chip">{initials}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="k-avatar-name">{email ?? 'Signed in'}</div>
-              <div className="k-avatar-mail">{id}</div>
+              <div className="k-avatar-name">{name}</div>
+              <div className="k-avatar-mail">{email ?? '—'}</div>
             </div>
           </div>
+
           <div style={{ padding: 4 }}>
-            <span className="k-avatar-menu-item k-tab--todo" role="menuitem">
-              Settings
-            </span>
-            <span className="k-avatar-menu-item k-tab--todo" role="menuitem">
-              Billing
-            </span>
-            <div className="k-avatar-menu-div" />
+            {ITEMS.map((item, index) =>
+              item.kind === 'div' ? (
+                <div key={`d-${index}`} className="k-avatar-menu-div" />
+              ) : (
+                <span
+                  key={item.label}
+                  className="k-avatar-menu-item k-tab--todo"
+                  role="menuitem"
+                  title="Not built yet in the production app"
+                >
+                  <span style={{ display: 'inline-grid', width: 14, color: 'var(--k-fg-4)' }}>
+                    <Icon d={I.spark} size={12} />
+                  </span>
+                  <span>{item.label}</span>
+                </span>
+              ),
+            )}
+
             <button
               type="button"
               className="k-avatar-menu-item k-avatar-menu-item--danger"
               role="menuitem"
               onClick={() => void signOut()}
             >
-              Sign out
+              <span style={{ display: 'inline-grid', width: 14, color: 'var(--k-fg-4)' }}>
+                <Icon d={I.spark} size={12} />
+              </span>
+              <span>Sign out</span>
             </button>
+          </div>
+
+          <div className="k-avatar-menu-foot">
+            <span>kevin.co · v2026.05</span>
+            <span style={{ marginLeft: 'auto' }}>⌘K to search</span>
           </div>
         </div>
       ) : null}

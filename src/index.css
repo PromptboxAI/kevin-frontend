@@ -937,11 +937,13 @@
   background: var(--k-fg-2);
   color: var(--k-bg);
   font: inherit;
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 600;
+  letter-spacing: 0.5px;
   cursor: pointer;
   display: grid;
   place-items: center;
+  padding: 0;
 }
 
 .k-avatar-chip {

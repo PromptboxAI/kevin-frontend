@@ -38,6 +38,12 @@ export const I = {
   check: <path d="m5 12 5 5 9-11" />,
   chevleft: <path d="m15 18-6-6 6-6" />,
   chevdown: <path d="m6 9 6 6 6-6" />,
+  spark: (
+    <>
+      <path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6" />
+      <circle cx="12" cy="12" r="2.5" />
+    </>
+  ),
   pin: (
     <>
       <path d="M9 4h6l-1 6 3 3H7l3-3-1-6Z" />
