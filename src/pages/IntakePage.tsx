@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import IntakeField from '../components/IntakeField'
+import PhotoUpload from '../components/PhotoUpload'
 import { I, Icon } from '../components/Icon'
 import { ApiError, api } from '../lib/api'
 import { isValidClaimId, percentToFraction, slugify, toIsoDate } from '../lib/claim-id'
@@ -18,7 +19,6 @@ import type { ClaimSummary } from '../lib/types'
  * the carrier-facing export.
  */
 export default function IntakePage() {
-  const navigate = useNavigate()
   const queryClient = useQueryClient()
 
   const [name, setName] = useState('')
@@ -34,6 +34,7 @@ export default function IntakePage() {
   const [lossAddress, setLossAddress] = useState('')
   const [taxRate, setTaxRate] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [created, setCreated] = useState<string | null>(null)
 
   const id = claimIdTouched ? claimId : slugify(name)
   const idValid = id === '' || isValidClaimId(id)
@@ -63,7 +64,9 @@ export default function IntakePage() {
       }),
     onSuccess: (claim) => {
       void queryClient.invalidateQueries({ queryKey: ['claims'] })
-      navigate(`/claims/${claim.claim_id}`)
+      // Stay on the page: step 2 needs the claim to exist before photos can be
+      // staged against it.
+      setCreated(claim.claim_id)
     },
     onError: (err) =>
       setError(
@@ -206,13 +209,13 @@ export default function IntakePage() {
             <button
               type="button"
               className="k-btn"
-              disabled={!canSubmit || create.isPending}
+              disabled={!canSubmit || create.isPending || created !== null}
               onClick={() => {
                 setError(null)
                 create.mutate()
               }}
             >
-              {create.isPending ? 'Creating…' : 'Create claim'}
+              {create.isPending ? 'Creating…' : created ? 'Claim created' : 'Create claim'}
             </button>
           </div>
         </section>
@@ -223,12 +226,29 @@ export default function IntakePage() {
             <div>
               <div className="k-intake-section-t">Add photos</div>
               <div className="k-intake-section-s">
-                Drop the pack-out folder once the claim exists — staging clusters the photos into
-                item sets before anything is priced. Not built yet.
+                Select the whole pack-out folder and click once. Photos are chunked and sent
+                against one session, so a dropped connection never loses the batch — re-selecting
+                is safe.
               </div>
             </div>
           </div>
+
+          {created ? (
+            <PhotoUpload claimId={created} />
+          ) : (
+            <p className="k-ifield-hint" style={{ marginTop: 18 }}>
+              Create the claim first — photos are staged against it.
+            </p>
+          )}
         </section>
+
+        {created ? (
+          <div className="k-intake-actions" style={{ border: 0, paddingTop: 0 }}>
+            <Link to={`/claims/${created}`} className="k-btn">
+              Open worksheet →
+            </Link>
+          </div>
+        ) : null}
       </div>
     </div>
   )

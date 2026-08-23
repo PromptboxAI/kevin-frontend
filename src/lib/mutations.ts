@@ -233,3 +233,39 @@ export function moneyFrom(response: MoneyBlock): Partial<ClaimItem> {
     acv_total_incl: response.acv_total_incl,
   }
 }
+
+export type StagingSession = {
+  id: number
+  claim_id: string
+  status: 'uploading' | 'clustering' | 'review' | 'processed'
+  photo_count: number
+}
+
+/** Idempotent: an active session is returned 200, a new one 201. */
+export function startStagingSession(claimId: string) {
+  return api.post<StagingSession>(`/v1/claims/${encodeURIComponent(claimId)}/staging`)
+}
+
+export type StagingUploadAck = {
+  session_id: number
+  uploaded: number
+  photo_ids: number[]
+  max_upload_bytes: number
+  room: string | null
+  rejected?: { filename: string; reason: string; detail?: string }[]
+}
+
+/**
+ * multipart/form-data under the field name `images`, with an optional per-BATCH
+ * `room`. Never a per-photo room array: it would mis-tag the moment it fell out
+ * of step with `images` after a rejection. Two rooms = two requests.
+ */
+export function uploadStagingPhotos(claimId: string, files: File[], room?: string) {
+  const form = new FormData()
+  for (const file of files) form.append('images', file, file.name)
+  if (room?.trim()) form.append('room', room.trim())
+  return api.post<StagingUploadAck>(
+    `/v1/claims/${encodeURIComponent(claimId)}/staging/photos`,
+    { form },
+  )
+}

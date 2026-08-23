@@ -1078,3 +1078,44 @@ button.k-avatar-menu-item {
   padding-top: 20px;
   border-top: 1px solid var(--k-line);
 }
+
+/* --- Photo upload --- */
+.k-upload {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.k-upload-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.k-upload-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.k-upload-progress .k-progress {
+  flex: 1;
+  max-width: 340px;
+}
+
+.k-upload-result {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.k-upload-stored {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: oklch(0.42 0.09 175);
+}
