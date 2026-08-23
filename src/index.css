@@ -1119,3 +1119,138 @@ button.k-avatar-menu-item {
   font-weight: 600;
   color: oklch(0.42 0.09 175);
 }
+
+/* --- Photo staging (73) --- */
+.k-stage-tray {
+  border: 1px solid var(--k-warn);
+  background: var(--k-warn-soft);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.k-stage-tray-hd {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.k-stage-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+}
+
+.k-stage-card {
+  border: 1px solid var(--k-line);
+  border-radius: 10px;
+  background: var(--k-bg);
+  padding: 12px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.k-stage-card--sel {
+  border-color: var(--k-accent);
+  box-shadow: 0 0 0 3px var(--k-accent-soft);
+}
+
+.k-stage-card-hd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.k-stage-set {
+  font-family: var(--k-font-mono);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.k-stage-photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.k-stage-tile {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--k-line);
+  background: var(--k-bg-2);
+  flex: 0 0 auto;
+}
+
+.k-stage-tile--pick {
+  cursor: pointer;
+}
+
+.k-stage-tile--sel {
+  border-color: var(--k-accent);
+  box-shadow: 0 0 0 2px var(--k-accent-soft);
+}
+
+.k-stage-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.k-stage-tile-skel {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--k-bg-2) 25%, var(--k-line) 50%, var(--k-bg-2) 75%);
+  background-size: 200% 100%;
+  animation: k-skel-sweep 1.1s ease-in-out infinite;
+}
+
+.k-stage-tile-badge,
+.k-stage-tile-note {
+  position: absolute;
+  left: 0;
+  right: 0;
+  padding: 2px 4px;
+  font-size: 9.5px;
+  background: oklch(0.2 0.02 250 / 0.72);
+  color: oklch(1 0 0);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.k-stage-tile-badge {
+  top: 0;
+}
+
+.k-stage-tile-note {
+  bottom: 0;
+}
+
+.k-stage-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex-direction: column;
+}
+
+.k-stage-note-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  width: 100%;
+}
+
+.k-stage-card-ft {
+  display: flex;
+  gap: 8px;
+  border-top: 1px solid var(--k-line);
+  padding-top: 10px;
+}

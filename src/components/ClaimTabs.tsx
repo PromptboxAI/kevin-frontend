@@ -8,7 +8,7 @@ type Tab = 'Overview' | 'Photos' | 'Worksheet' | 'Notes & audit' | 'Export'
  */
 const TABS: [Tab, string | null][] = [
   ['Overview', null],
-  ['Photos', null],
+  ['Photos', 'staging'],
   ['Worksheet', 'worksheet'],
   ['Notes & audit', null],
   ['Export', null],
@@ -56,7 +56,11 @@ export default function ClaimTabs({
           )
         }
         return (
-          <Link key={label} className="k-claim-tab" to={`/claims/${claimId}`}>
+          <Link
+            key={label}
+            className="k-claim-tab"
+            to={slug === 'staging' ? `/claims/${claimId}/staging` : `/claims/${claimId}`}
+          >
             {inner}
           </Link>
         )
