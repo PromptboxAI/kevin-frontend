@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
@@ -6,9 +6,9 @@ import Badge from '../components/Badge'
 import { I, Icon } from '../components/Icon'
 import { ApiError } from '../lib/api'
 import { fmtInt } from '../lib/format'
+import { SET_LABEL, conflictCopy } from '../lib/staging-copy'
 import {
   NOTE_MAX,
-  clusterBlockedReason,
   clusterRemainder,
   getStaging,
   getThumbnails,
@@ -17,424 +17,618 @@ import {
   pendingPhotos,
   processStaging,
   reclassifyGroup,
-  remainderBlockedReason,
   runCluster,
   setGroupNote,
-  thumbnailBatches,
   ungroup,
 } from '../lib/staging'
 import type { GroupKind, StagingGroup, StagingPhoto, StagingSessionFull } from '../lib/staging'
 
-/** Loud, greppable, and states the contract rule that produced the state. */
-const log = (event: string, detail: unknown) =>
-  console.info(`[staging] ${event}`, detail)
+const log = (event: string, detail?: unknown) => console.info(`[staging] ${event}`, detail ?? '')
+
+/** Inline styles the design carries here — no k- class exists for these. */
+const EYEBROW: React.CSSProperties = {
+  fontSize: 11,
+  color: 'var(--k-fg-4)',
+  fontFamily: 'var(--k-font-mono)',
+  letterSpacing: '0.05em',
+  textTransform: 'uppercase',
+  fontWeight: 600,
+}
+const H1: React.CSSProperties = {
+  fontFamily: 'var(--k-font-display)',
+  fontWeight: 400,
+  fontSize: 38,
+  letterSpacing: '-0.025em',
+  margin: '6px 0 4px',
+  lineHeight: 1.1,
+}
+const LEDE: React.CSSProperties = {
+  fontSize: 14,
+  color: 'var(--k-fg-3)',
+  margin: 0,
+  maxWidth: 640,
+  lineHeight: 1.5,
+}
+const FOOT: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginTop: 20,
+  paddingTop: 16,
+  borderTop: '1px solid var(--k-line)',
+}
+const FOOT_NOTE: React.CSSProperties = {
+  fontSize: 12.5,
+  color: 'var(--k-fg-4)',
+  maxWidth: 560,
+  lineHeight: 1.5,
+}
+
+const FILL_IMG: React.CSSProperties = {
+  position: 'absolute',
+  inset: 0,
+  width: '100%',
+  height: '100%',
+  objectFit: 'cover',
+  display: 'block',
+}
 
 export default function StagingPage() {
   const { claimId = '' } = useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
-  const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set())
-  const [selectedPhotos, setSelectedPhotos] = useState<Set<number>>(new Set())
-  const [notice, setNotice] = useState<string | null>(null)
+  const [sel, setSel] = useState<string[]>([])
+  const [selPhotos, setSelPhotos] = useState<number[]>([])
+  const [noteFor, setNoteFor] = useState<string | null>(null)
+  const [lightbox, setLightbox] = useState<{ key: string; i: number } | null>(null)
   const [confirmProcess, setConfirmProcess] = useState(false)
-  /** Set by any hand arrangement -- it is what turns /cluster into a 409. */
-  const [manuallyEdited, setManuallyEdited] = useState(false)
-  /**
-   * A clustering run was fired and its sets have not arrived yet.
-   *
-   * Status alone is not a sufficient poll condition: the worker can leave the
-   * session reading `review` (or flip through it) before this client's next
-   * tick, and polling then stops with `groups` still null -- the screen sat on
-   * "No sets yet" while the API already held 55 sets. Keep polling until the
-   * sets actually appear.
-   */
+  const [conflict, setConflict] = useState<string | null>(null)
+  /** A clustering run is in flight and its sets have not landed yet. */
   const [awaitingSets, setAwaitingSets] = useState(false)
 
   const session = useQuery({
     queryKey: ['staging', claimId],
     queryFn: () => getStaging(claimId),
     retry: (count, error) => !(error instanceof ApiError && error.isMissing) && count < 2,
-    /**
-     * Poll only while work is in flight. `uploading` and `clustering` are
-     * transient; `review` waits on the adjuster and `processed` is terminal, so
-     * polling either would be a request every few seconds forever.
-     */
     refetchInterval: (q) => {
-      const data = q.state.data as StagingSessionFull | undefined
-      if (!data) return false
-      const waiting = data.status === 'uploading' || data.status === 'clustering'
-      const extracting = pendingPhotos(data).length > 0
-      // Keep going until the sets land, not merely until the status settles.
-      const setsPending = awaitingSets && (data.groups?.length ?? 0) === 0
-      const poll = waiting || extracting || setsPending
-      if (poll)
-        log('poll', {
-          status: data.status,
-          extracting: pendingPhotos(data).length,
-          awaitingSets: setsPending,
-        })
-      return poll ? 2500 : false
+      const d = q.state.data as StagingSessionFull | undefined
+      if (!d) return false
+      const settling = d.status === 'uploading' || d.status === 'clustering'
+      const extracting = pendingPhotos(d).length > 0
+      // Poll until the SETS arrive, not merely until the status settles --
+      // status flips to `review` a beat before the groups are readable.
+      const setsPending = awaitingSets && (d.groups?.length ?? 0) === 0
+      return settling || extracting || setsPending ? 2500 : false
     },
   })
 
   const data = session.data
-  const groups = data?.groups ?? []
+  const groups = useMemo(() => data?.groups ?? [], [data])
+  const unassigned = data?.ungrouped_photos ?? []
+  const stillExtracting = pendingPhotos(data)
+  /** A loose photo is only actionable once its extraction finishes. */
+  const loose = unassigned.filter(isActionable)
 
-  // Stand down once the sets are on screen.
   useEffect(() => {
     if (awaitingSets && groups.length > 0) {
-      log('sets arrived', { count: groups.length })
+      log('sets landed', { sets: groups.length })
       setAwaitingSets(false)
     }
   }, [awaitingSets, groups.length])
-  const unassigned = data?.ungrouped_photos ?? []
-  const pending = pendingPhotos(data)
 
-  /** Every mutation returns the refreshed session -- apply it, never re-read. */
-  const applySession = (next: StagingSessionFull) => {
-    queryClient.setQueryData(['staging', claimId], next)
-  }
-
-  const fail = (action: string) => (error: unknown) => {
-    if (error instanceof ApiError) {
-      log(`${action} FAILED`, {
-        status: error.status,
-        detail: error.detail,
-        requestId: error.requestId,
-        // 409 on a grouping path almost always means a photo is still
-        // `uploaded` -- the contract's own explanation.
-        likelyCause:
-          error.status === 409
-            ? 'a photo is still extracting (status "uploaded"), or the session was re-clustered mid-edit'
-            : undefined,
-      })
-      setNotice(
-        error.status === 409
-          ? `${action} was refused (409). ${String(error.detail)}`
-          : `${action} failed — HTTP ${error.status}: ${String(error.detail)}`,
-      )
-      return
+  /**
+   * Clustering fires on arrival. The design has no "Cluster photos" button --
+   * grouping is what the machine already did before this screen opened, so an
+   * empty state with a trigger would ask the adjuster to do its job.
+   */
+  const autoFired = useRef(false)
+  useEffect(() => {
+    if (!data || autoFired.current || awaitingSets) return
+    const none = (data.groups?.length ?? 0) === 0
+    if (none && data.photo_count > 0 && stillExtracting.length === 0 && data.status !== 'processed') {
+      autoFired.current = true
+      log('auto-clustering — upload landed, every photo read, no sets yet')
+      cluster.mutate()
     }
-    setNotice(`${action} failed.`)
-  }
+  })
 
-  const clearSelection = () => {
-    setSelectedGroups(new Set())
-    setSelectedPhotos(new Set())
-  }
+  const applySession = (next: StagingSessionFull) =>
+    queryClient.setQueryData(['staging', claimId], next)
+  const byKey = (key: string) => groups.find((g) => g.group_key === key)
+
+  const fail =
+    (action: 'merge' | 'cluster' | 'remainder' | 'other', label: string) => (error: unknown) => {
+      if (error instanceof ApiError) {
+        log(`${label} FAILED`, {
+          status: error.status,
+          detail: error.detail,
+          requestId: error.requestId,
+        })
+        // A 409 is never a failure here -- it is "not yet" or "that would undo
+        // your work", so it reads as the design's inline explanation.
+        if (error.status === 409 && action !== 'other') {
+          setConflict(conflictCopy(action, error.detail))
+          return
+        }
+        setConflict(`${label} failed — HTTP ${error.status}: ${String(error.detail)}`)
+        return
+      }
+      setConflict(`${label} failed.`)
+    }
 
   const cluster = useMutation({
     mutationFn: () => runCluster(claimId),
-    onSuccess: (r) => {
-      log('cluster started — polling until the sets arrive', r)
+    onSuccess: () => {
       setAwaitingSets(true)
       void session.refetch()
     },
-    onError: fail('Clustering'),
+    onError: fail('cluster', 'Grouping'),
   })
 
   const remainder = useMutation({
     mutationFn: () => clusterRemainder(claimId),
-    onSuccess: (r) => {
-      log('cluster remainder started (appends, never rebuilds)', r)
+    onSuccess: () => {
       setAwaitingSets(true)
       void session.refetch()
     },
-    onError: fail('Clustering the remainder'),
+    onError: fail('remainder', 'Grouping the late photos'),
   })
 
   const merge = useMutation({
     mutationFn: (kind: GroupKind) =>
       mergeGroups(claimId, {
-        group_keys: selectedGroups.size ? [...selectedGroups] : undefined,
-        photo_ids: selectedPhotos.size ? [...selectedPhotos] : undefined,
-        // Explicit: it defaults to `item`, which would silently convert a
-        // context or duplicate set.
+        group_keys: sel.length ? sel : undefined,
+        photo_ids: selPhotos.length ? selPhotos : undefined,
         kind,
       }),
     onSuccess: (next) => {
-      // The merged set has a NEW group_key and the sources are pruned, so any
-      // cached key is already stale. Drop the selection with it.
-      log('merged — new group_key minted, sources pruned', {
-        keys: next.groups?.map((g) => g.group_key),
-      })
-      setManuallyEdited(true)
-      clearSelection()
+      log('merged — a NEW group_key was minted and the sources pruned')
+      setSel([])
+      setSelPhotos([])
       applySession(next)
     },
-    onError: fail('Merge'),
+    onError: fail('merge', 'Merge'),
   })
 
   const split = useMutation({
-    mutationFn: (groupKey: string) => ungroup(claimId, groupKey),
-    onSuccess: (next) => {
-      log('ungrouped — one item set per photo; a merged note stays on the FIRST child', {})
-      setManuallyEdited(true)
-      clearSelection()
-      applySession(next)
-    },
-    onError: fail('Split'),
+    mutationFn: (key: string) => ungroup(claimId, key),
+    onSuccess: applySession,
+    onError: fail('other', 'Split'),
   })
 
   const reclassify = useMutation({
-    mutationFn: ({ groupKey, kind }: { groupKey: string; kind: GroupKind }) =>
-      reclassifyGroup(claimId, groupKey, kind),
-    onSuccess: (next, { kind }) => {
-      log('reclassified — excluding a set from the worksheet IS reclassifying it', { kind })
-      setManuallyEdited(true)
-      applySession(next)
-    },
-    onError: fail('Reclassify'),
+    mutationFn: ({ key, kind }: { key: string; kind: GroupKind }) =>
+      reclassifyGroup(claimId, key, kind),
+    onSuccess: applySession,
+    onError: fail('other', 'Exclude'),
   })
 
   const note = useMutation({
-    mutationFn: ({ groupKey, text }: { groupKey: string; text: string | null }) =>
-      setGroupNote(claimId, groupKey, text),
-    onSuccess: (next, { text }) => {
-      // A note does NOT set manually_edited -- it never blocks /cluster.
-      log(text === null ? 'note cleared — derived summary returns' : 'note set (source → adjuster)', {})
+    mutationFn: ({ key, text }: { key: string; text: string | null }) =>
+      setGroupNote(claimId, key, text),
+    onSuccess: (next) => {
+      setNoteFor(null)
       applySession(next)
     },
-    onError: fail('Saving the note'),
+    onError: fail('other', 'Saving the note'),
   })
 
   const process = useMutation({
     mutationFn: () => processStaging(claimId),
-    onSuccess: (result) => {
-      log('processed — posted NO body; the server promoted what it already held', result)
+    onSuccess: (r) => {
+      log('processed — the POST carried NO body', r)
       setConfirmProcess(false)
       void queryClient.invalidateQueries({ queryKey: ['claim-items', claimId] })
       void queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
       navigate(`/claims/${claimId}`)
     },
-    onError: fail('Processing'),
+    onError: fail('other', 'Processing'),
   })
 
-  const busy =
-    cluster.isPending || remainder.isPending || merge.isPending || split.isPending || process.isPending
-
-  const clusterBlocked = clusterBlockedReason(data, manuallyEdited)
-  const remainderBlocked = remainderBlockedReason(data)
   const itemSets = groups.filter((g) => g.kind === 'item')
-  const selectionSize = selectedGroups.size + selectedPhotos.size
+  const excluded = groups.filter((g) => g.kind === 'context')
+  const duplicates = groups.filter((g) => g.kind === 'duplicate')
+  const multi = groups.filter((g) => g.photos.length > 1)
+  const noted = groups.filter((g) => g.note)
+  const busy = merge.isPending || split.isPending || process.isPending || reclassify.isPending
+  const selCount = sel.length + selPhotos.length
+  const clustering =
+    cluster.isPending || remainder.isPending || awaitingSets || data?.status === 'clustering'
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      if (lightbox) setLightbox(null)
+      else if (noteFor) setNoteFor(null)
+      else if (selCount) {
+        setSel([])
+        setSelPhotos([])
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [lightbox, noteFor, selCount])
 
   if (session.error instanceof ApiError && session.error.isMissing) {
     return (
       <div className="k-shell">
         <AppHeader />
-        <div className="k-claims-body">
+        <div className="k-intake-body">
           <div className="k-empty">
             <h2>Nothing staged yet</h2>
-            <p>Upload photos on the claim to start a staging session.</p>
+            <p>Add photos to this claim to start a staging session.</p>
+            <Link to="/claims/new" className="k-btn">
+              Add photos
+            </Link>
           </div>
         </div>
       </div>
     )
   }
 
+  const noteTarget = noteFor ? byKey(noteFor) : null
+  const lightboxSet = lightbox ? byKey(lightbox.key) : null
+
   return (
     <div className="k-shell">
       <AppHeader />
 
-      <div className="k-claims-body">
-        <div>
-          <Link to={`/claims/${claimId}`} className="k-crumb">
-            <Icon d={I.chevleft} size={12} /> Worksheet
-          </Link>
-          <h1 className="k-claims-h1">Review photo sets</h1>
-          <p className="k-claims-sub">
-            Kevin grouped the photos by capture time and proximity. Merge, split or exclude sets
-            before anything is priced — every change saves as you make it.
-          </p>
-        </div>
+      <div className="k-intake-body">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+          <div>
+            {/* Staging's parent is the upload, not the worksheet. */}
+            <Link to="/claims/new" className="k-crumb" title="Back to upload">
+              <Icon d={I.chevleft} size={12} /> Upload
+            </Link>
+            <div style={EYEBROW}>After upload · before processing</div>
+            <h1 style={H1}>Group &amp; stage photos</h1>
 
-        {data ? (
-          <div className="k-claims-stats">
-            <div>
-              <div className="k-tot-l">Photos</div>
-              <div className="k-tot-v">{fmtInt(data.photo_count)}</div>
+            {data?.status === 'uploading' ? (
+              <div className="k-stage-bgupload">
+                <span className="k-paused-dot" />
+                <span>Photos are still landing — new sets appear as they arrive.</span>
+              </div>
+            ) : null}
+
+            {/* A second drop APPENDS: staging is scoped to THIS session only. */}
+            <div className="k-stage-scope">
+              <Icon d={I.info} size={13} />
+              <span>
+                Staging <strong>this batch only</strong> — {fmtInt(data?.photo_count ?? 0)} photos.
+                Anything already processed on this claim stays as it is.
+              </span>
             </div>
-            <div>
-              {/* Photo SETS, never line items -- the item count is not known
-                  until the sets are promoted and priced. */}
-              <div className="k-tot-l">Proposed sets</div>
-              <div className="k-tot-v">{fmtInt(itemSets.length)}</div>
-            </div>
-            <div>
-              <div className="k-tot-l">Unassigned</div>
-              <div className="k-tot-v">{fmtInt(unassigned.length)}</div>
-            </div>
+
+            <p style={LEDE}>
+              Your upload was pre-clustered by capture time into{' '}
+              <strong>proposed photo sets</strong> — one set becomes at most one line item. Nothing
+              has been identified yet. Merge sets that show the same item, split ones that don’t,
+              exclude overview shots, and add a note wherever the photo alone won’t tell Kevin what
+              it’s looking at.
+            </p>
           </div>
-        ) : null}
 
-        {notice ? (
-          <div className="k-toast" role="status">
-            <span>{notice}</span>
-            <button type="button" className="k-link" onClick={() => setNotice(null)}>
-              Dismiss
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            <Link to="/claims/new" className="k-btn k-btn--ghost">
+              <Icon d={I.plus} size={12} /> Add photos
+            </Link>
+            <button
+              type="button"
+              className="k-btn k-btn--ghost"
+              disabled={busy || clustering}
+              onClick={() => {
+                // A rebuild discards every group -- and the authored set notes
+                // with them. Photo notes survive; the sentences do not.
+                const authored = groups.filter((g) => g.note_source === 'adjuster' && g.note).length
+                if (
+                  authored &&
+                  !window.confirm(
+                    `Resetting rebuilds every set. ${authored} note${authored === 1 ? '' : 's'} you wrote on set${authored === 1 ? '' : 's'} will be discarded (the notes on individual photos are kept). Reset anyway?`,
+                  )
+                )
+                  return
+                autoFired.current = false
+                cluster.mutate()
+              }}
+            >
+              Reset to proposed sets
+            </button>
+            <button
+              type="button"
+              className="k-btn"
+              disabled={busy || itemSets.length === 0}
+              onClick={() => setConfirmProcess(true)}
+            >
+              Begin processing →
             </button>
           </div>
-        ) : null}
+        </div>
 
-        {pending.length ? (
-          <div className="k-ws-bar k-ws-bar--quiet">
-            <span>
-              {fmtInt(pending.length)} photo{pending.length === 1 ? '' : 's'} still extracting.
-              Grouping is unavailable until they finish — every grouping call returns 409 for a
-              photo in this state.
-            </span>
-          </div>
-        ) : null}
-
-        <section className="k-claims-toolbar">
-          <button
-            type="button"
-            className="k-btn k-btn--ghost"
-            disabled={busy || clusterBlocked !== null}
-            title={clusterBlocked ?? 'Group every photo by capture time and proximity'}
-            onClick={() => cluster.mutate()}
-          >
-            {cluster.isPending || awaitingSets ? 'Clustering…' : 'Cluster photos'}
-          </button>
-
-          <button
-            type="button"
-            className="k-btn k-btn--ghost"
-            disabled={busy || remainderBlocked !== null}
-            title={remainderBlocked ?? 'Group only the unassigned photos — existing sets are untouched'}
-            onClick={() => remainder.mutate()}
-          >
-            {remainder.isPending ? 'Grouping…' : `Cluster remaining${unassigned.length ? ` (${unassigned.length})` : ''}`}
-          </button>
-
-          <div style={{ flex: 1 }} />
-
-          <button
-            type="button"
-            className="k-btn"
-            disabled={busy || itemSets.length === 0}
-            title={itemSets.length === 0 ? 'No item sets to promote' : undefined}
-            onClick={() => setConfirmProcess(true)}
-          >
-            Process {fmtInt(itemSets.length)} set{itemSets.length === 1 ? '' : 's'}
-          </button>
+        {/* Sets, never line items -- the item count is unknown until Vision runs. */}
+        <section className="k-stage-tally">
+          {(
+            [
+              ['Photos', data?.photo_count ?? 0, null],
+              ['Photo sets', groups.length, 'accent'],
+              ['Multi-photo sets', multi.length, null],
+              ['You excluded', excluded.length, 'quiet'],
+              ['With a note', noted.length, noted.length ? 'accent' : 'quiet'],
+              ['Duplicates removed', duplicates.length, 'quiet'],
+            ] as [string, number, string | null][]
+          ).map(([label, value, tone]) => (
+            <div key={label} className="k-stage-tally-cell">
+              <div
+                className="k-stage-tally-v"
+                style={
+                  tone === 'accent'
+                    ? { color: 'var(--k-accent)' }
+                    : tone === 'quiet'
+                      ? { color: 'var(--k-fg-3)' }
+                      : undefined
+                }
+              >
+                {fmtInt(value)}
+              </div>
+              <div className="k-stage-tally-l">{label}</div>
+            </div>
+          ))}
         </section>
 
-        {selectionSize > 0 ? (
-          <div className="k-ws-bar k-ws-bar--sel">
-            <span>
-              {fmtInt(selectedGroups.size)} set{selectedGroups.size === 1 ? '' : 's'} ·{' '}
-              {fmtInt(selectedPhotos.size)} photo{selectedPhotos.size === 1 ? '' : 's'} selected
-            </span>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button type="button" className="k-btn k-btn--sm" disabled={busy} onClick={() => merge.mutate('item')}>
-                Merge into one item
-              </button>
+        <div className="k-stage-countline">
+          Showing <strong>{fmtInt(groups.length)}</strong> sets · {fmtInt(groups.length)} proposed by
+          Kevin
+          <span style={{ color: 'var(--k-fg-4)' }}>
+            {' '}
+            · select sets to merge, exclude, or delete them
+          </span>
+        </div>
+
+        {/* A 409 is "not yet" or "that would undo your work" — inline, never red. */}
+        {conflict ? (
+          <div className="k-tray k-tray--pending">
+            <div className="k-tray-hd">
+              <Icon d={I.info} size={14} />
+              <span className="k-tray-t">{conflict}</span>
+              <div style={{ flex: 1 }} />
               <button
                 type="button"
                 className="k-btn k-btn--sm k-btn--ghost"
-                disabled={busy}
-                onClick={() => merge.mutate('context')}
+                onClick={() => setConflict(null)}
               >
-                Merge as context
-              </button>
-              <button type="button" className="k-btn k-btn--sm k-btn--ghost" onClick={clearSelection}>
-                Clear
+                Dismiss
               </button>
             </div>
           </div>
         ) : null}
 
-        {session.isPending ? <p className="k-note">Loading the staging session…</p> : null}
-
-        {unassigned.length ? (
-          <section className="k-stage-tray">
-            <div className="k-stage-tray-hd">
-              <Badge tone="warn">Unassigned</Badge>
-              <span className="k-claim-sub">
-                {fmtInt(unassigned.length)} photo{unassigned.length === 1 ? '' : 's'} in no set.
-                Processing would drop them from the claim — cluster them or merge them into a set
-                first.
+        {loose.length > 0 || stillExtracting.length > 0 ? (
+          <div className={'k-tray' + (loose.length === 0 ? ' k-tray--pending' : '')}>
+            <div className="k-tray-hd">
+              <Icon d={loose.length ? I.warn : I.clock} size={14} />
+              <span className="k-tray-t">
+                {loose.length
+                  ? `${loose.length} ${loose.length === 1 ? 'photo' : 'photos'} arrived after grouping ran, so ${loose.length === 1 ? 'it is' : 'they are'} on ${loose.length === 1 ? 'its' : 'their'} own below — merge, note or exclude ${loose.length === 1 ? 'it' : 'them'} like any other set.`
+                  : `${stillExtracting.length} ${stillExtracting.length === 1 ? 'photo is' : 'photos are'} still processing. Nothing to do yet.`}
+                {loose.length > 0 && stillExtracting.length > 0
+                  ? ` ${stillExtracting.length} more ${stillExtracting.length === 1 ? 'is' : 'are'} still processing.`
+                  : ''}
               </span>
+              <div style={{ flex: 1 }} />
+              {loose.length > 0 ? (
+                <button
+                  type="button"
+                  className="k-btn k-btn--sm"
+                  disabled={busy || clustering}
+                  onClick={() => remainder.mutate()}
+                >
+                  {clustering ? 'Grouping…' : 'Group by capture time'}
+                </button>
+              ) : null}
             </div>
-            <div className="k-stage-photos">
-              {unassigned.map((photo) => (
-                <PhotoTile
-                  key={photo.id}
-                  photo={photo}
-                  selected={selectedPhotos.has(photo.id)}
-                  onToggle={() =>
-                    setSelectedPhotos((prev) => {
-                      const next = new Set(prev)
-                      if (next.has(photo.id)) next.delete(photo.id)
-                      else next.add(photo.id)
-                      return next
-                    })
-                  }
-                />
-              ))}
-            </div>
-          </section>
+          </div>
         ) : null}
 
-        <div className="k-stage-grid">
-          {groups.map((group, index) => (
+        <div className="k-stage-grid2">
+          {/* Skeletons, not an empty state: the sets are already on their way. */}
+          {clustering && groups.length === 0
+            ? Array.from({ length: 8 }, (_, i) => (
+                <div key={`skel-${i}`} className="k-stageset">
+                  <div className="k-stageset-media">
+                    <span className="k-stageset-skel" />
+                  </div>
+                  <div className="k-stageset-body">
+                    <div className="k-stage-rowhd">
+                      <span className="k-stage-rowt" style={{ color: 'var(--k-fg-4)' }}>
+                        Grouping…
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            : null}
+
+          {groups.map((group, si) => (
             <SetCard
               key={group.group_key}
               group={group}
-              index={index}
-              selected={selectedGroups.has(group.group_key)}
+              si={si}
+              selected={sel.includes(group.group_key)}
               busy={busy}
               onToggle={() =>
-                setSelectedGroups((prev) => {
-                  const next = new Set(prev)
-                  if (next.has(group.group_key)) next.delete(group.group_key)
-                  else next.add(group.group_key)
-                  return next
+                setSel((prev) =>
+                  prev.includes(group.group_key)
+                    ? prev.filter((k) => k !== group.group_key)
+                    : [...prev, group.group_key],
+                )
+              }
+              onOpen={(i) => setLightbox({ key: group.group_key, i })}
+              onNote={() => setNoteFor(group.group_key)}
+              onSplit={() => split.mutate(group.group_key)}
+              onToggleKind={() =>
+                reclassify.mutate({
+                  key: group.group_key,
+                  kind: group.kind === 'item' ? 'context' : 'item',
                 })
               }
-              onSplit={() => split.mutate(group.group_key)}
-              onReclassify={(kind) => reclassify.mutate({ groupKey: group.group_key, kind })}
-              onNote={(text) => note.mutate({ groupKey: group.group_key, text })}
+            />
+          ))}
+
+          {/* Loose photos render as ordinary single-photo cards (amber edge) so
+              merge, note and exclude work through controls already learned. */}
+          {loose.map((photo) => (
+            <LooseCard
+              key={photo.id}
+              photo={photo}
+              selected={selPhotos.includes(photo.id)}
+              onToggle={() =>
+                setSelPhotos((prev) =>
+                  prev.includes(photo.id)
+                    ? prev.filter((id) => id !== photo.id)
+                    : [...prev, photo.id],
+                )
+              }
             />
           ))}
         </div>
 
-        {data && groups.length === 0 && data.photo_count > 0 && !pending.length ? (
-          <div className="k-empty">
-            <h2>No sets yet</h2>
-            <p>Run “Cluster photos” to group them by capture time and proximity.</p>
+        <div style={FOOT}>
+          <div style={FOOT_NOTE}>
+            Grouping is optional — the proposed sets are usually right. Anything you miss can still
+            be merged or deleted in the worksheet once Kevin has read the photos. Nothing is
+            identified or priced until you begin processing.
           </div>
-        ) : null}
+          <button
+            type="button"
+            className="k-btn k-btn--lg"
+            disabled={busy || itemSets.length === 0}
+            onClick={() => setConfirmProcess(true)}
+          >
+            Begin processing · {fmtInt(itemSets.length)} sets →
+          </button>
+        </div>
       </div>
 
+      {/* Floating selection toolbar — in reach at any scroll position. */}
+      {selCount > 0 ? (
+        <div className="k-selbar" role="toolbar" aria-label="Selection actions">
+          <span className="k-selbar-n">{selCount}</span>
+          <span className="k-selbar-l">{selCount === 1 ? 'set selected' : 'sets selected'}</span>
+          <div className="k-selbar-div" />
+          <button
+            type="button"
+            className="k-selbar-b k-selbar-b--go"
+            disabled={busy || selCount < 2}
+            title={
+              selCount < 2
+                ? 'Select another set to merge'
+                : 'Combine into one set — becomes one line item'
+            }
+            onClick={() => merge.mutate('item')}
+          >
+            {merge.isPending ? 'Merging…' : 'Merge into one item'}
+          </button>
+          <button
+            type="button"
+            className="k-selbar-b"
+            disabled={busy || sel.length === 0}
+            onClick={() => {
+              for (const key of sel) {
+                if (byKey(key)?.kind === 'item') reclassify.mutate({ key, kind: 'context' })
+              }
+              setSel([])
+            }}
+          >
+            Exclude
+          </button>
+          <div className="k-selbar-div" />
+          <button
+            type="button"
+            className="k-selbar-x"
+            title="Clear selection (Esc)"
+            onClick={() => {
+              setSel([])
+              setSelPhotos([])
+            }}
+          >
+            <Icon d={I.close} size={13} />
+          </button>
+        </div>
+      ) : null}
+
+      {noteTarget ? (
+        <StageNoteEditor
+          group={noteTarget}
+          title={SET_LABEL(groups.findIndex((g) => g.group_key === noteTarget.group_key))}
+          saving={note.isPending}
+          onClose={() => setNoteFor(null)}
+          onSave={(text) => note.mutate({ key: noteTarget.group_key, text })}
+        />
+      ) : null}
+
+      {lightboxSet && lightbox ? (
+        <Lightbox
+          group={lightboxSet}
+          title={SET_LABEL(groups.findIndex((g) => g.group_key === lightboxSet.group_key))}
+          i={Math.min(lightbox.i, lightboxSet.photos.length - 1)}
+          onIndex={(i) => setLightbox({ key: lightboxSet.group_key, i })}
+          onClose={() => setLightbox(null)}
+        />
+      ) : null}
+
       {confirmProcess ? (
-        <div className="k-export-stage k-modal-stage">
-          <div className="k-export-scrim" onClick={() => setConfirmProcess(false)} />
-          <div className="k-export-modal" style={{ maxWidth: 470 }}>
-            <div className="k-export-hd">
+        <div className="k-stage-noteover" onClick={() => setConfirmProcess(false)}>
+          <div className="k-notemodal" onClick={(e) => e.stopPropagation()}>
+            <div className="k-notemodal-hd">
               <div>
-                <div className="k-modal-kicker">Process sets</div>
-                <div className="k-modal-title">{fmtInt(itemSets.length)} item sets</div>
-              </div>
-            </div>
-            <div className="k-modal-body">
-              <div className="k-modal-note">
-                Each item set becomes one worksheet line and is priced once. Context and duplicate
-                sets promote nothing — they stay on the claim as evidence.
-              </div>
-              {unassigned.length ? (
-                <div className="k-modal-note k-modal-note--danger">
-                  <strong>{fmtInt(unassigned.length)}</strong> unassigned photo
-                  {unassigned.length === 1 ? '' : 's'} will reach no line and come off the claim —
-                  processing is terminal. Cluster the remainder first if you want them included.
+                <div className="k-notemodal-t">Begin processing?</div>
+                <div className="k-notemodal-s">
+                  {fmtInt(itemSets.length)} sets · one line item each
                 </div>
+              </div>
+              <button
+                type="button"
+                className="k-icon-btn"
+                aria-label="Close"
+                onClick={() => setConfirmProcess(false)}
+              >
+                <Icon d={I.close} size={15} />
+              </button>
+            </div>
+
+            <div className="k-notemodal-body">
+              {/* Process is never blocked: the label states the cost, and one
+                  confirm makes it deliberate. */}
+              <p className="k-notemodal-lede">
+                Each of the {fmtInt(itemSets.length)} sets is identified and priced once. Excluded
+                and duplicate sets promote nothing — their photos stay on the claim.
+              </p>
+              {stillExtracting.length ? (
+                <p className="k-notemodal-lede">
+                  Kevin has not finished reading <strong>{fmtInt(stillExtracting.length)}</strong>{' '}
+                  {stillExtracting.length === 1 ? 'photo' : 'photos'}. Processing now leaves{' '}
+                  {stillExtracting.length === 1 ? 'it' : 'them'} off the worksheet —{' '}
+                  {stillExtracting.length === 1 ? 'it stays' : 'they stay'} on the claim. Waiting a
+                  moment lets {stillExtracting.length === 1 ? 'it' : 'them'} be grouped.
+                </p>
+              ) : null}
+              {loose.length ? (
+                <p className="k-notemodal-lede">
+                  <strong>{fmtInt(loose.length)}</strong>{' '}
+                  {loose.length === 1 ? 'photo is' : 'photos are'} in no set and will reach no line
+                  item. Group {loose.length === 1 ? 'it' : 'them'} first to include{' '}
+                  {loose.length === 1 ? 'it' : 'them'}.
+                </p>
               ) : null}
             </div>
-            <div className="k-modal-foot">
-              <button type="button" className="k-btn k-btn--ghost" onClick={() => setConfirmProcess(false)}>
-                Cancel
+
+            <div className="k-notemodal-ft" style={{ justifyContent: 'flex-end', marginTop: 0 }}>
+              <button
+                type="button"
+                className="k-btn k-btn--ghost"
+                onClick={() => setConfirmProcess(false)}
+              >
+                {stillExtracting.length ? 'Wait for them' : 'Go back'}
               </button>
               <button
                 type="button"
@@ -442,7 +636,7 @@ export default function StagingPage() {
                 disabled={process.isPending}
                 onClick={() => process.mutate()}
               >
-                {process.isPending ? 'Processing…' : 'Process'}
+                {process.isPending ? 'Processing…' : `Process ${fmtInt(itemSets.length)} sets`}
               </button>
             </div>
           </div>
@@ -452,217 +646,475 @@ export default function StagingPage() {
   )
 }
 
-const KIND_TONE: Record<GroupKind, 'accent' | 'quiet'> = {
-  item: 'accent',
-  context: 'quiet',
-  duplicate: 'quiet',
+// --------------------------------------------------------------------------
+// Thumbnails
+//
+// The staging poll carries NO signed image_url -- minting 300 of them every few
+// seconds crashed the server. Visible ids are batched into the thumbnails
+// endpoint by an IntersectionObserver and cached per id, skeleton until landed.
+// --------------------------------------------------------------------------
+
+const thumbCache = new Map<number, string | null>()
+const pendingIds = new Set<number>()
+const waiting = new Map<number, ((src: string | null) => void)[]>()
+let flushTimer: ReturnType<typeof setTimeout> | null = null
+
+function flushThumbs() {
+  flushTimer = null
+  // Capped at 100 ids per request, per the contract.
+  const ids = [...pendingIds].slice(0, 100)
+  for (const id of ids) pendingIds.delete(id)
+  if (!ids.length) return
+
+  log('thumbnails →', ids.length)
+  const settle = () => {
+    for (const id of ids) {
+      for (const cb of waiting.get(id) ?? []) cb(thumbCache.get(id) ?? null)
+      waiting.delete(id)
+    }
+    if (pendingIds.size && !flushTimer) flushTimer = setTimeout(flushThumbs, 0)
+  }
+
+  void getThumbnails(ids)
+    .then((r) => {
+      for (const t of r.thumbnails) thumbCache.set(t.id, t.image_url)
+    })
+    .catch((e) => {
+      log('thumbnails FAILED', e)
+      for (const id of ids) thumbCache.set(id, null)
+    })
+    .finally(settle)
+}
+
+function requestThumb(id: number, done: (src: string | null) => void) {
+  if (thumbCache.has(id)) {
+    done(thumbCache.get(id) ?? null)
+    return
+  }
+  pendingIds.add(id)
+  waiting.set(id, [...(waiting.get(id) ?? []), done])
+  if (!flushTimer) flushTimer = setTimeout(flushThumbs, 120)
+}
+
+function useThumb<T extends HTMLElement>(id: number) {
+  const [src, setSrc] = useState<string | null>(() => thumbCache.get(id) ?? null)
+  const ref = useRef<T | null>(null)
+
+  useEffect(() => {
+    if (thumbCache.has(id)) {
+      setSrc(thumbCache.get(id) ?? null)
+      return
+    }
+    const el = ref.current
+    if (!el) return
+    let alive = true
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return
+        observer.disconnect()
+        requestThumb(id, (next) => {
+          if (alive) setSrc(next)
+        })
+      },
+      { rootMargin: '300px' },
+    )
+    observer.observe(el)
+    return () => {
+      alive = false
+      observer.disconnect()
+    }
+  }, [id])
+
+  return { ref, src }
+}
+
+function Frame({
+  photo,
+  n,
+  showN,
+  onOpen,
+}: {
+  photo: StagingPhoto
+  n: number
+  showN: boolean
+  onOpen: () => void
+}) {
+  const { ref, src } = useThumb<HTMLButtonElement>(photo.id)
+  return (
+    <button
+      type="button"
+      className="k-stageset-frame"
+      ref={ref}
+      onClick={onOpen}
+      title={photo.note ? `${photo.note} — click to open` : 'Click to open'}
+    >
+      {src ? (
+        <img src={src} alt="" style={FILL_IMG} loading="lazy" decoding="async" />
+      ) : (
+        <span className="k-stageset-skel" aria-label="Loading thumbnail" />
+      )}
+      {showN ? <span className="k-stage-frame-n">{n}</span> : null}
+    </button>
+  )
 }
 
 function SetCard({
   group,
-  index,
+  si,
   selected,
   busy,
   onToggle,
-  onSplit,
-  onReclassify,
+  onOpen,
   onNote,
+  onSplit,
+  onToggleKind,
 }: {
   group: StagingGroup
-  index: number
+  si: number
   selected: boolean
   busy: boolean
   onToggle: () => void
+  onOpen: (i: number) => void
+  onNote: () => void
   onSplit: () => void
-  onReclassify: (kind: GroupKind) => void
-  onNote: (text: string | null) => void
+  onToggleKind: () => void
 }) {
-  const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState(group.note ?? '')
-
-  useEffect(() => setDraft(group.note ?? ''), [group.note])
+  const isCtx = group.kind !== 'item'
+  const cls = [
+    'k-stageset',
+    selected ? 'k-stageset--sel' : '',
+    isCtx ? 'k-stageset--ctx' : '',
+    group.photos.length > 2 ? 'k-stageset--wide' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   return (
-    <div className={`k-stage-card${selected ? ' k-stage-card--sel' : ''}`}>
-      <div className="k-stage-card-hd">
-        <button type="button" className={`k-check ${selected ? 'k-check--on' : ''}`} onClick={onToggle}>
-          {selected ? <Icon d={I.check} size={10} stroke={2} /> : null}
-        </button>
-        <span className="k-stage-set">Set {String(index + 1).padStart(2, '0')}</span>
-        <Badge tone={KIND_TONE[group.kind]}>{group.kind}</Badge>
-        {group.room ? <span className="k-claim-sub">{group.room}</span> : null}
-        <span style={{ flex: 1 }} />
-        <span className="k-claim-sub">
-          {group.photos.length} photo{group.photos.length === 1 ? '' : 's'}
-        </span>
-      </div>
-
-      <div className="k-stage-photos">
-        {group.photos.map((photo) => (
-          <PhotoTile key={photo.id} photo={photo} />
+    <div className={cls} data-set={group.group_key}>
+      <div className="k-stageset-media">
+        {group.photos.map((photo, i) => (
+          <Frame
+            key={photo.id}
+            photo={photo}
+            n={i + 1}
+            showN={group.photos.length > 1}
+            onOpen={() => onOpen(i)}
+          />
         ))}
-      </div>
-
-      <div className="k-stage-note">
-        {editing ? (
-          <>
-            <textarea
-              className="k-insp-input"
-              rows={2}
-              maxLength={NOTE_MAX}
-              value={draft}
-              autoFocus
-              onChange={(e) => setDraft(e.target.value)}
-            />
-            <div className="k-insp-actions">
-              <span className="k-insp-hint" style={{ marginRight: 'auto' }}>
-                {draft.trim().length}/{NOTE_MAX}
-              </span>
-              {group.note_source === 'adjuster' ? (
-                <button
-                  type="button"
-                  className="k-btn k-btn--sm k-btn--ghost"
-                  onClick={() => {
-                    setEditing(false)
-                    onNote(null)
-                  }}
-                >
-                  Revert to summary
-                </button>
-              ) : null}
-              <button type="button" className="k-btn k-btn--sm k-btn--ghost" onClick={() => setEditing(false)}>
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="k-btn k-btn--sm"
-                onClick={() => {
-                  setEditing(false)
-                  onNote(draft.trim() || null)
-                }}
-              >
-                Save note
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            {/* Branch on note_source, never on the text: a derived note is a
-                read-only fusion of capture context, an adjuster note is the one
-                editable slot -- and only the latter can become a search query. */}
-            <div className="k-stage-note-body">
-              {group.note ? (
-                <>
-                  <span className="k-lkq-note-l">
-                    {group.note_source === 'adjuster' ? 'Additional identification' : 'Capture context'}
-                  </span>
-                  <span className="k-lkq-note-b">{group.note}</span>
-                </>
-              ) : (
-                <span className="k-insp-hint">No note</span>
-              )}
-            </div>
-            <button
-              type="button"
-              className="k-btn k-btn--sm k-btn--ghost"
-              disabled={busy}
-              onClick={() => setEditing(true)}
-            >
-              {group.note_source === 'adjuster' ? 'Edit note' : 'Add identification'}
-            </button>
-          </>
-        )}
-      </div>
-
-      <div className="k-stage-card-ft">
         <button
           type="button"
-          className="k-btn k-btn--sm k-btn--ghost"
-          disabled={busy || group.photos.length < 2}
-          title={group.photos.length < 2 ? 'Nothing to split' : 'One item set per photo'}
-          onClick={onSplit}
+          className="k-stage-check k-stage-check--float"
+          data-on={selected || undefined}
+          aria-label={`Select ${SET_LABEL(si)}`}
+          onClick={onToggle}
         >
-          Split
+          {selected ? <Icon d={I.check} size={12} /> : null}
         </button>
-        {/* Excluding from the worksheet IS reclassifying -- photos stay on the
-            claim as evidence. In property claims evidence is never deleted. */}
-        {group.kind === 'item' ? (
+        {isCtx ? <span className="k-stageset-ctxtag">Excluded</span> : null}
+      </div>
+
+      <div className="k-stageset-body">
+        <div className="k-stage-rowhd">
+          <span className="k-stage-rowt">{SET_LABEL(si)}</span>
+          {group.room ? <span className="k-stage-rowtime">{group.room}</span> : null}
+          <div style={{ flex: 1 }} />
+          {group.photos.length > 1 ? (
+            <Badge tone="accent">{group.photos.length} → 1 item</Badge>
+          ) : (
+            <Badge tone="quiet">1 photo</Badge>
+          )}
+        </div>
+
+        {/* Raw capture metadata ONLY. Staging is a PRE-Vision surface, so no
+            item names, makes or models -- and `group.reason` off this backend
+            carries exactly those, so it is deliberately not rendered here. */}
+        <div className="k-stage-rowfiles">
+          {group.photos.length} {group.photos.length === 1 ? 'photo' : 'photos'}
+          {group.photos.length > 1 ? ' · grouped by capture time' : ''}
+        </div>
+
+        {group.note ? (
           <button
             type="button"
-            className="k-btn k-btn--sm k-btn--ghost"
-            disabled={busy}
-            title="Keeps the photos on the claim, promotes no line item"
-            onClick={() => onReclassify('context')}
+            className="k-stage-notechip"
+            title={group.note_source === 'derived' ? 'Written in the field — edit note' : 'Edit note'}
+            onClick={onNote}
           >
-            Exclude from worksheet
+            <Icon d={I.edit} size={10} />
+            <span>{group.note}</span>
           </button>
-        ) : (
+        ) : null}
+
+        <div className="k-stageset-acts">
+          {!group.note ? (
+            <button
+              type="button"
+              className="k-stage-act"
+              onClick={onNote}
+              title="Add identification detail sent with these photos"
+            >
+              <Icon d={I.plus} size={11} /> Note
+            </button>
+          ) : null}
+          {group.photos.length > 1 ? (
+            <button
+              type="button"
+              className="k-stage-act"
+              disabled={busy}
+              onClick={onSplit}
+              title="Split into one set per photo. They stay here, in capture order."
+            >
+              Split apart
+            </button>
+          ) : null}
           <button
             type="button"
-            className="k-btn k-btn--sm k-btn--ghost"
+            className={'k-stage-act' + (isCtx ? ' k-stage-act--on' : '')}
             disabled={busy}
-            onClick={() => onReclassify('item')}
+            onClick={onToggleKind}
+            title={
+              isCtx
+                ? 'Put this set back into the run'
+                : 'Leave out of processing. The photos stay on the claim but produce no line item.'
+            }
           >
-            Include as item
+            {isCtx ? 'Include' : 'Exclude'}
           </button>
-        )}
+        </div>
       </div>
     </div>
   )
 }
 
-/**
- * Thumbnails are fetched lazily in batches when a tile enters the viewport.
- * The staging poll deliberately carries no image_url: minting one per photo
- * made a single poll of a 300-photo session issue 300 storage round trips.
- */
-const thumbCache = new Map<number, string | null>()
-
-function PhotoTile({
+function LooseCard({
   photo,
   selected,
   onToggle,
 }: {
   photo: StagingPhoto
-  selected?: boolean
-  onToggle?: () => void
+  selected: boolean
+  onToggle: () => void
 }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const [src, setSrc] = useState<string | null>(thumbCache.get(photo.id) ?? null)
-  const actionable = isActionable(photo)
+  const { ref, src } = useThumb<HTMLDivElement>(photo.id)
+  return (
+    <div className={'k-stageset k-stageset--loose' + (selected ? ' k-stageset--sel' : '')}>
+      <div className="k-stageset-media" ref={ref}>
+        <span className="k-stageset-frame">
+          {src ? (
+            <img src={src} alt="" style={FILL_IMG} loading="lazy" decoding="async" />
+          ) : (
+            <span className="k-stageset-skel" />
+          )}
+        </span>
+        <button
+          type="button"
+          className="k-stage-check k-stage-check--float"
+          data-on={selected || undefined}
+          aria-label="Select photo"
+          onClick={onToggle}
+        >
+          {selected ? <Icon d={I.check} size={12} /> : null}
+        </button>
+      </div>
+      <div className="k-stageset-body">
+        <div className="k-stage-rowhd">
+          <span className="k-stage-rowt">Loose photo</span>
+          <div style={{ flex: 1 }} />
+          <Badge tone="warn">Not in a set</Badge>
+        </div>
+        <div className="k-stage-rowfiles">Arrived after grouping ran</div>
+        {photo.note ? <div className="k-stage-rowreason">{photo.note}</div> : null}
+      </div>
+    </div>
+  )
+}
 
+function StageNoteEditor({
+  group,
+  title,
+  saving,
+  onClose,
+  onSave,
+}: {
+  group: StagingGroup
+  title: string
+  saving: boolean
+  onClose: () => void
+  onSave: (text: string | null) => void
+}) {
+  // Branch on note_source, NEVER on the text: a derived summary is read-only
+  // context; the adjuster's own sentence is the one editable slot.
+  const derived = group.note_source === 'derived'
+  const [text, setText] = useState(derived ? '' : (group.note ?? ''))
+  const ref = useRef<HTMLTextAreaElement>(null)
   useEffect(() => {
-    if (src || thumbCache.has(photo.id)) return
-    const el = ref.current
-    if (!el) return
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (!entries.some((e) => e.isIntersecting)) return
-        observer.disconnect()
-        const batch = thumbnailBatches([photo.id])[0]
-        void getThumbnails(batch)
-          .then((r) => {
-            for (const t of r.thumbnails) thumbCache.set(t.id, t.image_url)
-            setSrc(thumbCache.get(photo.id) ?? null)
-          })
-          .catch(() => thumbCache.set(photo.id, null))
-      },
-      { rootMargin: '200px' },
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [photo.id, src])
+    ref.current?.focus()
+  }, [])
+
+  const commit = () => onSave(text.trim().slice(0, NOTE_MAX) || null)
+  const left = NOTE_MAX - text.length
 
   return (
-    <div
-      ref={ref}
-      className={`k-stage-tile${selected ? ' k-stage-tile--sel' : ''}${onToggle ? ' k-stage-tile--pick' : ''}`}
-      onClick={onToggle}
-      title={photo.note ?? undefined}
-    >
-      {src ? <img src={src} alt="" /> : <div className="k-stage-tile-skel" />}
-      {!actionable ? <span className="k-stage-tile-badge">extracting</span> : null}
-      {photo.note ? <span className="k-stage-tile-note">{photo.note}</span> : null}
+    <div className="k-stage-noteover" onClick={onClose}>
+      <div className="k-notemodal" onClick={(e) => e.stopPropagation()}>
+        <div className="k-notemodal-hd">
+          <div>
+            <div className="k-notemodal-t">Additional identification</div>
+            <div className="k-notemodal-s">
+              {title} · {group.photos.length} {group.photos.length === 1 ? 'photo' : 'photos'} · one
+              item
+            </div>
+          </div>
+          <button type="button" className="k-icon-btn" aria-label="Close" onClick={onClose}>
+            <Icon d={I.close} size={15} />
+          </button>
+        </div>
+
+        <div className="k-notemodal-body">
+          <p className="k-notemodal-lede">
+            Tell Kevin what it is looking at. On a set Kevin could not identify, this becomes the
+            search query — it helps identify the item and never affects the price.
+          </p>
+
+          {derived && group.note ? (
+            <div className="k-notemodal-derived">
+              <span className="k-notemodal-derived-l">From the field notes on these photos</span>
+              <span className="k-notemodal-derived-b">{group.note}</span>
+              {/(…|\.\.\.)$/.test(group.note) ? (
+                <span
+                  className="k-notemodal-derived-l"
+                  style={{ textTransform: 'none', letterSpacing: 0 }}
+                >
+                  Summary truncated — the full notes are on each photo.
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+
+          <div className="k-notemodal-field">
+            <textarea
+              ref={ref}
+              className="k-notemodal-area"
+              value={text}
+              maxLength={NOTE_MAX}
+              placeholder="Anything that helps identify this item"
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) commit()
+                if (e.key === 'Escape') onClose()
+              }}
+            />
+            <span className={'k-notemodal-count' + (left < 20 ? ' k-notemodal-count--near' : '')}>
+              {left}
+            </span>
+          </div>
+        </div>
+
+        <div className="k-notemodal-ft">
+          {group.note && !derived ? (
+            <button
+              type="button"
+              className="k-stage-act k-stage-act--danger"
+              title="The summary from the photo notes comes back"
+              onClick={() => onSave(null)}
+            >
+              Remove note
+            </button>
+          ) : (
+            <span />
+          )}
+          <div style={{ flex: 1 }} />
+          <span className="k-notemodal-kbd">⌘↵</span>
+          <button type="button" className="k-btn k-btn--ghost" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="button" className="k-btn" disabled={saving || !text.trim()} onClick={commit}>
+            {saving ? 'Saving…' : 'Save'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Lightbox({
+  group,
+  title,
+  i,
+  onIndex,
+  onClose,
+}: {
+  group: StagingGroup
+  title: string
+  i: number
+  onIndex: (i: number) => void
+  onClose: () => void
+}) {
+  const photo = group.photos[i]
+  const { ref, src } = useThumb<HTMLDivElement>(photo.id)
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft' && i > 0) onIndex(i - 1)
+      if (e.key === 'ArrowRight' && i < group.photos.length - 1) onIndex(i + 1)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [i, group.photos.length, onIndex])
+
+  return (
+    <div className="k-stage-noteover" onClick={onClose}>
+      <div className="k-stage-lb" onClick={(e) => e.stopPropagation()}>
+        <div className="k-stage-lb-hd">
+          <span className="k-stage-rowt">{title}</span>
+          {photo.room ? <span className="k-stage-rowtime">{photo.room}</span> : null}
+          <div style={{ flex: 1 }} />
+          <span className="k-stage-rowtime">
+            {i + 1} of {group.photos.length}
+          </span>
+          <button type="button" className="k-icon-btn" title="Close" onClick={onClose}>
+            <Icon d={I.close} size={14} />
+          </button>
+        </div>
+
+        <div className="k-stage-lb-img" ref={ref}>
+          {src ? (
+            <img src={src} alt="Raw capture" style={{ ...FILL_IMG, objectFit: 'contain' }} />
+          ) : (
+            <span className="k-stageset-skel" />
+          )}
+          {group.photos.length > 1 ? (
+            <>
+              <button
+                type="button"
+                className="k-lb-nav k-lb-nav--prev"
+                title="Previous photo"
+                disabled={i === 0}
+                onClick={() => onIndex(i - 1)}
+              >
+                <Icon d={I.chevleft} size={20} />
+              </button>
+              <button
+                type="button"
+                className="k-lb-nav k-lb-nav--next"
+                title="Next photo"
+                disabled={i >= group.photos.length - 1}
+                onClick={() => onIndex(i + 1)}
+              >
+                <Icon d={I.chevright} size={20} />
+              </button>
+            </>
+          ) : null}
+        </div>
+
+        <div className="k-stage-lb-ft">
+          Nothing has been identified yet — this is the raw capture.{' '}
+          {group.photos.length > 1
+            ? `All ${group.photos.length} frames in this set become one line item.`
+            : 'This set becomes one line item.'}
+          {photo.note ? ` · ${photo.note}` : ''}
+        </div>
+      </div>
     </div>
   )
 }

@@ -181,3 +181,38 @@ lost.
 - No bulk category endpoint — re-categorizing a selection loops
   `PATCH …/override` per row. Fine at current selection sizes; worth revisiting
   if bulk edits get large.
+
+## 14. Staging `group.reason` carries identified data — staging must not show it
+
+`GET /v1/claims/{id}/staging` returns, on the live `godfrey-kitchen-fire`
+session, `reason` strings like:
+
+- "Single Hot Wheels '70 Plymouth Road Runner die-cast car in original packaging."
+- "Single shoe sole, Madden brand, distinct item shown wet on ground."
+- "Honeywell Bissell vacuum filter package, distinct product."
+
+Staging is a **pre-Vision** surface: the clusterer is only supposed to know
+capture time and EXIF proximity, and the screen must never show item names,
+makes or models before the adjuster has agreed to spend the run. Brand names in
+`reason` mean identification has already happened, or that the field is being
+reused for something else.
+
+The frontend therefore **does not render `reason`** on the staging card, which
+loses the design's raw-metadata line ("2 photos · 4s apart"). Two asks:
+
+1. Make `reason` structural clustering metadata (span, gap, gate that fired) —
+   or add a separate field for it — and keep identified text out of this
+   response entirely.
+2. Add `filename` and `taken_at` to `StagingPhoto`. The design's card prints
+   `IMG_4417.HEIC · IMG_4418.HEIC` and `2 photos · 4s apart`; the payload
+   currently carries only `id`, `note`, `room`, `status`, so both lines
+   degrade to "N photos".
+
+## 15. `GET /v1/staging/photos/thumbnails` returns full-size originals
+
+The signed URLs resolve to the 4000×3000 originals (~3–5 MB each). The frame
+they land in is 285×186. Sixty of those is roughly 250 MB of transfer to draw a
+grid of postage stamps, and it is the single slowest thing on the screen. A
+server-side resize (long edge ~600px) on this endpoint only — the lightbox and
+the worksheet still want the original — would cut it by two orders of
+magnitude.

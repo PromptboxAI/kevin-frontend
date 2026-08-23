@@ -38,6 +38,21 @@ export const I = {
   check: <path d="m5 12 5 5 9-11" />,
   chevleft: <path d="m15 18-6-6 6-6" />,
   chevdown: <path d="m6 9 6 6 6-6" />,
+  chevright: <path d="m9 6 6 6-6 6" />,
+  close: <path d="M6 6l12 12M18 6 6 18" />,
+  edit: <path d="M4 20h4L19 9a2.5 2.5 0 0 0-3.5-3.5L4 17v3z" />,
+  warn: (
+    <>
+      <path d="M12 4 2 21h20z" />
+      <path d="M12 10v5M12 18v.5" />
+    </>
+  ),
+  clock: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3.5 2" />
+    </>
+  ),
   spark: (
     <>
       <path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6" />
