@@ -42,3 +42,16 @@ export function toIsoDate(input: string): string | null {
   if (!text) return null
   return /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : null
 }
+
+/**
+ * A money amount as typed -> the number the API stores. Tolerates the way an
+ * adjuster actually types a limit: "$175,000" or "175000.00".
+ * Null means "not provided"; the API rejects negatives (ge=0).
+ */
+export function parseMoney(input: string): number | null {
+  const text = input.trim().replace(/[$,\s]/g, '')
+  if (!text) return null
+  const value = Number(text)
+  if (!Number.isFinite(value) || value < 0) return null
+  return Math.round(value * 100) / 100
+}

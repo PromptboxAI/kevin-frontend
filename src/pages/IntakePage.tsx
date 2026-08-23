@@ -6,7 +6,7 @@ import IntakeField from '../components/IntakeField'
 import PhotoUpload from '../components/PhotoUpload'
 import { I, Icon } from '../components/Icon'
 import { ApiError, api } from '../lib/api'
-import { isValidClaimId, percentToFraction, slugify, toIsoDate } from '../lib/claim-id'
+import { isValidClaimId, parseMoney, percentToFraction, slugify, toIsoDate } from '../lib/claim-id'
 import type { ClaimSummary } from '../lib/types'
 
 /**
@@ -39,6 +39,9 @@ export default function IntakePage() {
   const [insuredLast, setInsuredLast] = useState('')
   const [lossAddress, setLossAddress] = useState('')
   const [taxRate, setTaxRate] = useState('')
+  const [policyForm, setPolicyForm] = useState('')
+  const [ppLimit, setPpLimit] = useState('')
+  const [alreadyClaimed, setAlreadyClaimed] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [created, setCreated] = useState<string | null>(null)
 
@@ -49,8 +52,13 @@ export default function IntakePage() {
   const dateInvalid = dateOfLoss.trim() !== '' && toIsoDate(dateOfLoss) === null
 
   const insuredName = [insuredFirst.trim(), insuredLast.trim()].filter(Boolean).join(' ')
+  const ppLimitValue = useMemo(() => parseMoney(ppLimit), [ppLimit])
+  const alreadyValue = useMemo(() => parseMoney(alreadyClaimed), [alreadyClaimed])
+  const ppLimitInvalid = ppLimit.trim() !== '' && ppLimitValue === null
+  const alreadyInvalid = alreadyClaimed.trim() !== '' && alreadyValue === null
 
-  const canSubmit = id !== '' && idValid && !taxInvalid && !dateInvalid
+  const canSubmit =
+    id !== '' && idValid && !taxInvalid && !dateInvalid && !ppLimitInvalid && !alreadyInvalid
 
   const create = useMutation({
     mutationFn: () =>
@@ -68,6 +76,9 @@ export default function IntakePage() {
           ...(toIsoDate(dateOfLoss) ? { date_of_loss: toIsoDate(dateOfLoss) } : {}),
           ...(lossAddress.trim() ? { loss_address: lossAddress.trim() } : {}),
           ...(taxFraction !== null ? { tax_rate: taxFraction } : {}),
+          ...(policyForm.trim() ? { policy_form: policyForm.trim() } : {}),
+          ...(ppLimitValue !== null ? { personal_property_limit: ppLimitValue } : {}),
+          ...(alreadyValue !== null ? { amount_already_claimed: alreadyValue } : {}),
         },
       }),
     onSuccess: (claim) => {
@@ -198,6 +209,37 @@ export default function IntakePage() {
               width={380}
               placeholder="123 Main St., Smithtown, NY 11787"
               onChange={setLossAddress}
+            />
+            <IntakeField
+              label="Policy form"
+              value={policyForm}
+              width={200}
+              placeholder="HO-3 · Open perils"
+              onChange={setPolicyForm}
+            />
+            <IntakeField
+              label="Personal property limit"
+              value={ppLimit}
+              mono
+              width={200}
+              placeholder="$175,000"
+              invalid={ppLimitInvalid}
+              onChange={setPpLimit}
+              hint={
+                ppLimitInvalid
+                  ? 'Enter an amount, e.g. 175000'
+                  : 'Policies name this differently — check the declarations page'
+              }
+            />
+            <IntakeField
+              label="Amount already claimed"
+              value={alreadyClaimed}
+              mono
+              width={200}
+              placeholder="$0"
+              invalid={alreadyInvalid}
+              onChange={setAlreadyClaimed}
+              hint="Prior contents payments on this loss"
             />
             <IntakeField
               label="Sales tax"
