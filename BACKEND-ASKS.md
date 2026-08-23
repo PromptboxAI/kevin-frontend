@@ -17,7 +17,7 @@ no tax or depreciation total.
   the loaded page client-side would be wrong money — only part of the claim is
   in memory, and the frontend does not do money arithmetic.
 
-## 2. Bulk retry for capacity-deferred rows
+## 2. ~~Bulk retry for capacity-deferred rows~~ — SHIPPED (09b891e)
 
 `POST /v1/claim_items/retry-deferred` appears in the prototype spec but does not
 exist on the live API. **Confirmed being built as
@@ -129,7 +129,18 @@ which asks the same edit to re-run the depreciation engine.)
 **Adjuster workaround meanwhile:** reprice the row after reclassifying — that
 clears `manual_reason` and re-runs the pipeline.
 
-## 8. Smaller notes
+## 9. 502 on `GET /v1/claim_items` for one claim
+
+`claim_id=chaos3new-1786734681` returns **502** to an authenticated caller while
+`GET /v1/claims` succeeds, so the failure is per-claim rather than endpoint-wide.
+Checked from the frontend side: `/healthz` and `/readyz` both 200, and the same
+path answers 401 unauthenticated — so it is reachable and routed, and the 502 is
+upstream (the contract's DB/storage/queue case).
+
+The worksheet now prints the server's `detail` and the `X-Request-ID` with a
+Retry, so the next occurrence carries a traceable reference.
+
+## 10. Smaller notes
 
 - `ClaimItemSummary` has no `ext_cost`. The worksheet's **Ext. Cost** column is
   restated from `rcv_total_incl − tax` (the contract guarantees
