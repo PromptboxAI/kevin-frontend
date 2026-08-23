@@ -19,7 +19,8 @@ import {
   overrideItem,
   retryDeferred,
 } from '../lib/mutations'
-import type { OverrideBody, RetryDeferredResponse } from '../lib/mutations'
+import { moneyFrom } from '../lib/mutations'
+import type { MoneyBlock, OverrideBody, RetryDeferredResponse } from '../lib/mutations'
 import { numberRows, rowInvariant, windowRange } from '../lib/rows'
 import type { NumberedItem } from '../lib/rows'
 import { CAPACITY_REASONS } from '../lib/types'
@@ -256,6 +257,15 @@ export default function WorksheetPage() {
    * read is required -- but it is one request, not one per loaded page. This is
    * what made a class change take seconds.
    */
+  const rollupTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  /** Totals bar only -- deliberately lazy, and never in the path of a cell. */
+  const scheduleRollup = () => {
+    if (rollupTimer.current) clearTimeout(rollupTimer.current)
+    rollupTimer.current = setTimeout(() => {
+      void queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
+    }, 800)
+  }
+
   /** Merge a partial row into the cached pages without a network call. */
   const patchRowInCache = (id: number, patch: Partial<ClaimItem>) => {
     queryClient.setQueryData<InfiniteData<ClaimItemListResponse>>(
@@ -272,38 +282,6 @@ export default function WorksheetPage() {
   }
 
   /**
-   * Re-read the row through the LIST endpoint, not the detail one.
-   *
-   * GET /v1/claim_items/{id} mints a fresh SIGNED IMAGE URL on every call --
-   * a storage round trip the grid never uses, and the reason the contract keeps
-   * image_url off the list at all. Paying it after every cell edit is what made
-   * Ext. Cost / Sales Tax / RCV + Tax take seconds to settle. The list page
-   * carries the same money columns with no signing.
-   */
-  const refreshRow = async (id: number) => {
-    try {
-      const cached = queryClient.getQueryData<InfiniteData<ClaimItemListResponse>>([
-        'claim-items',
-        claimId,
-        status,
-      ])
-      const page = cached?.pages.find((p) => p.items.some((row) => row.id === id))
-      const offset = page?.offset ?? 0
-      const fresh = await api.get<ClaimItemListResponse>(
-        `/v1/claim_items?claim_id=${encodeURIComponent(claimId)}&limit=${PAGE_SIZE}&offset=${offset}` +
-          (status ? `&status=${status}` : ''),
-      )
-      const updated = fresh.items.find((row) => row.id === id)
-      if (updated) patchRowInCache(id, updated)
-      else void queryClient.invalidateQueries({ queryKey: ['claim-items', claimId] })
-    } catch {
-      // A failed re-read must not leave the grid stale; fall back to a refetch.
-      void queryClient.invalidateQueries({ queryKey: ['claim-items', claimId] })
-    }
-    void queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
-  }
-
-  /**
    * Money and depreciation are server-owned: we send the edit, then re-read.
    * The four returned totals are applied verbatim -- no client arithmetic.
    */
@@ -317,13 +295,14 @@ export default function WorksheetPage() {
     onSuccess: (data, { id }) => {
       markPending(id, null)
       /**
-       * Apply what the server says it wrote BEFORE the re-read. The class, the
-       * rate and manual_reason (so the amber) all come back on the override
-       * itself, so they update on the first round trip instead of the second.
-       * Only the tax-inclusive columns wait for the read.
+       * ONE round trip. `applied` carries the stored fields (class, rate,
+       * manual_reason) and the response now carries the tax-inclusive block
+       * the worksheet renders, so there is nothing left to re-read. The
+       * backend pins the two together in a test -- if they diverged the grid
+       * would flicker between two answers.
        */
-      if (data?.applied) patchRowInCache(id, data.applied)
-      void refreshRow(id)
+      patchRowInCache(id, { ...data.applied, ...moneyFrom(data) })
+      scheduleRollup()
     },
   })
 
@@ -331,7 +310,10 @@ export default function WorksheetPage() {
   const editLine = useMutation({
     mutationFn: ({ id, body }: { id: number; body: Record<string, string | null> }) =>
       editDisplayLine(id, body),
-    onSuccess: (_result, { id }) => void refreshRow(id),
+    onSuccess: (result, { id }) => {
+      patchRowInCache(id, { ...(result.applied as Partial<ClaimItem>), ...moneyFrom(result) })
+      scheduleRollup()
+    },
     onError: (error) =>
       setNotice(error instanceof Error ? error.message : 'That edit was rejected.'),
   })
@@ -396,7 +378,11 @@ export default function WorksheetPage() {
           `Saved, but the server did not echo manual_source_url (applied: ${Object.keys(applied).join(', ') || 'nothing'}).`,
         )
       }
-      void refreshRow(id)
+      patchRowInCache(id, {
+        ...(result.applied as Partial<ClaimItem>),
+        ...moneyFrom(result as MoneyBlock),
+      })
+      scheduleRollup()
     },
     onError: (error) =>
       setNotice(

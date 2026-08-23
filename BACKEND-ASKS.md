@@ -140,7 +140,7 @@ upstream (the contract's DB/storage/queue case).
 The worksheet now prints the server's `detail` and the `X-Request-ID` with a
 Retry, so the next occurrence carries a traceable reference.
 
-## 11. `override` should return the tax-inclusive line totals
+## 11. ~~`override` should return the tax-inclusive line totals~~ — SHIPPED (b443ee5 / 091dc33)
 
 Editing a price is currently TWO sequential round trips, and the adjuster waits
 through both:
@@ -165,7 +165,14 @@ valuation math, which rule 20 forbids.
 Same applies to `PATCH /v1/claim_items` and `PATCH /v1/claim_items/category`,
 both of which can change quantity or class and therefore the totals.
 
-## 12. Smaller notes
+## 12. `access-control-max-age: 600` re-preflights all day
+
+Every write pays a ~192 ms CORS preflight because the cached preflight expires
+after ten minutes. Raising it (86400 is the Chromium cap) removes that hop from
+all but the first write of a session. Backend-side; noted here so it is not
+lost.
+
+## 13. Smaller notes
 
 - `ClaimItemSummary` has no `ext_cost`. The worksheet's **Ext. Cost** column is
   restated from `rcv_total_incl − tax` (the contract guarantees

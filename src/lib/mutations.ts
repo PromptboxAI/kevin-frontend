@@ -21,15 +21,24 @@ export type OverrideBody = {
   reason?: string
 }
 
-export type OverrideResponse = {
+/**
+ * The tax-inclusive block both write paths now return (b443ee5 / 091dc33).
+ * Pinned server-side against a subsequent GET, so applying it is not a guess:
+ * a divergence is a build failure over there, not a flicker over here.
+ */
+export type MoneyBlock = {
+  tax: number | null
+  ext_cost: number | null
+  rcv_total_incl: number | null
+  depreciation_amount: number | null
+  acv_total_incl: number | null
+  recoverable?: number
+}
+
+export type OverrideResponse = MoneyBlock & {
   status: string
   row_id: number
-  /**
-   * What the server actually wrote. Carries category, manual_reason, status,
-   * rcv/acv and depreciation_pct -- but NOT the tax-inclusive line totals,
-   * which the contract computes on read. Enough to update everything the
-   * adjuster is looking at immediately, while the money follows.
-   */
+  /** The raw stored fields: per-unit rcv/acv, category, depreciation_pct, manual_reason. */
   applied: Partial<ClaimItem> & { status?: string }
   diff?: Record<string, { from: unknown; to: unknown }>
 }
@@ -51,12 +60,11 @@ export type DisplayBody = {
   manual_source_url?: string | null
 }
 
-/** PATCH returns an edit RECEIPT, not the row: {status, row_id, applied, recoverable}. */
-export type ClaimItemEditResponse = {
+/** The edit receipt carries the same money block, so one shape covers both paths. */
+export type ClaimItemEditResponse = MoneyBlock & {
   status: string
   row_id: number
   applied: Record<string, unknown>
-  recoverable?: number
 }
 
 export function editDisplayLine(rowId: number, body: DisplayBody) {
@@ -196,4 +204,18 @@ export function createBlankRow(claimId: string) {
     `/v1/claims/${encodeURIComponent(claimId)}/items/bulk`,
     { json: { items: [{ description: '', quantity: 1 }], price: false } },
   )
+}
+
+/**
+ * Pull the six money columns off either write response. Both endpoints return
+ * the same block, so the caller never branches on which one it hit.
+ */
+export function moneyFrom(response: MoneyBlock): Partial<ClaimItem> {
+  return {
+    tax: response.tax,
+    ext_cost: response.ext_cost,
+    rcv_total_incl: response.rcv_total_incl,
+    depreciation_amount: response.depreciation_amount,
+    acv_total_incl: response.acv_total_incl,
+  }
 }
