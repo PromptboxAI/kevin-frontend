@@ -19,7 +19,19 @@ export function fmtUSD(value: number | null | undefined): string {
 
 export function fmtDate(iso: string | null | undefined): string {
   if (!iso) return '—'
-  const date = new Date(iso)
+
+  /**
+   * A date-only string MUST be read as a calendar date, not an instant.
+   * `new Date('2026-04-18')` parses as UTC midnight, and rendering that in any
+   * negative-offset timezone shows the PREVIOUS day -- a date of loss on a
+   * carrier-facing document, silently off by one. Build it from its parts so
+   * it stays the date the adjuster typed, in every timezone.
+   */
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso.trim())
+  const date = dateOnly
+    ? new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]))
+    : new Date(iso)
+
   if (Number.isNaN(date.getTime())) return '—'
   return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
 }
@@ -29,9 +41,16 @@ export function fmtInt(value: number | null | undefined): string {
 }
 
 /** depreciation_pct is a FRACTION (0.30 = 30%). */
+/**
+ * A fraction as a percentage, keeping up to three decimals and trimming
+ * trailing zeros. One decimal was enough for a depreciation rate but silently
+ * rounded a tax rate: 8.625% displayed as 8.6%, which no longer matches the
+ * jurisdiction the loss address resolves to.
+ */
 export function fmtPct(fraction: number | null | undefined): string {
   if (fraction === null || fraction === undefined) return '—'
-  return `${Math.round(fraction * 1000) / 10}%`
+  const percent = fraction * 100
+  return `${Number(percent.toFixed(3))}%`
 }
 
 export function fmtAge(years: number | null | undefined): string {
