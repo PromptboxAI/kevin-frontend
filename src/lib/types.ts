@@ -90,6 +90,8 @@ export type ClaimItem = {
   rcv: number | null
   acv: number | null
   tax: number | null
+  /** Server-computed; satisfies ext_cost + tax == rcv_total_incl exactly. */
+  ext_cost: number | null
   rcv_total_incl: number | null
   depreciation_amount: number | null
   acv_total_incl: number | null

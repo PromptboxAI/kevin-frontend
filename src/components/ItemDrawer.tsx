@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Badge from './Badge'
 import EditableCell from './EditableCell'
 import { ApiError, api } from '../lib/api'
-import { extCost, fmtCompPrice, fmtConfidence, fmtPct, fmtUSD } from '../lib/format'
+import { fmtCompPrice, fmtConfidence, fmtPct, fmtUSD } from '../lib/format'
 import { editDisplayLine, overrideItem, repriceItem } from '../lib/mutations'
 import { QUERY_MAX, composeQuery, isQueryValid, trimQuery } from '../lib/query'
 import { CAPACITY_REASONS } from '../lib/types'
@@ -439,7 +439,7 @@ export default function ItemDrawer({
                   </div>
                   <div>
                     <span>Extended cost</span>
-                    <span className="k-mono">{fmtUSD(extCost(data.rcv_total_incl, data.tax))}</span>
+                    <span className="k-mono">{fmtUSD(data.ext_cost)}</span>
                   </div>
                   <div>
                     <span>Sales tax</span>

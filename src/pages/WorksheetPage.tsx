@@ -10,9 +10,16 @@ import EditableCell from '../components/EditableCell'
 import ItemDrawer from '../components/ItemDrawer'
 import { I, Icon } from '../components/Icon'
 import { ApiError, api, downloadExport } from '../lib/api'
-import { extCost, fmtDate, fmtInt, fmtPct, fmtUSD } from '../lib/format'
-import { createBlankItem, deleteItems, editDisplayLine, overrideItem } from '../lib/mutations'
-import type { OverrideBody } from '../lib/mutations'
+import { fmtDate, fmtInt, fmtPct, fmtUSD } from '../lib/format'
+import {
+  bulkSetCategory,
+  createBlankRow,
+  deleteItems,
+  editDisplayLine,
+  overrideItem,
+  retryDeferred,
+} from '../lib/mutations'
+import type { OverrideBody, RetryDeferredResponse } from '../lib/mutations'
 import { numberRows, rowInvariant, windowRange } from '../lib/rows'
 import type { NumberedItem } from '../lib/rows'
 import { CAPACITY_REASONS } from '../lib/types'
@@ -180,6 +187,43 @@ export default function WorksheetPage() {
   const [notice, setNotice] = useState<string | null>(null)
   const [confirmDel, setConfirmDel] = useState(false)
   const [newRowId, setNewRowId] = useState<number | null>(null)
+  /** The dry-run estimate awaiting confirmation. Null = no modal. */
+  const [retryPlan, setRetryPlan] = useState<RetryDeferredResponse | null>(null)
+
+  /**
+   * Two-step by design. The blast radius is two vendor searches per deferred
+   * line -- thousands on a large import -- so the adjuster sees the bill from
+   * the server's own dry run before authorising the spend.
+   */
+  const retryPreview = useMutation({
+    mutationFn: () => retryDeferred(claimId, true),
+    onSuccess: (plan) => {
+      if (plan.eligible === 0) {
+        setNotice('Nothing to retry — no lines are waiting on capacity.')
+        return
+      }
+      setRetryPlan(plan)
+    },
+    onError: (error) =>
+      setNotice(error instanceof Error ? error.message : 'Could not check deferred lines.'),
+  })
+
+  const retryRun = useMutation({
+    mutationFn: () => retryDeferred(claimId, false),
+    onSuccess: (result) => {
+      setRetryPlan(null)
+      setNotice(
+        `Re-queued ${fmtInt(result.enqueued)} line${result.enqueued === 1 ? '' : 's'}` +
+          (result.skipped ? ` · ${fmtInt(result.skipped)} skipped` : '') +
+          '. Prices land as the engine works through them.',
+      )
+      refresh()
+    },
+    onError: (error) => {
+      setRetryPlan(null)
+      setNotice(error instanceof Error ? error.message : 'Retry failed.')
+    },
+  })
 
   // Toasts are transient: they carry failures, never confirmations.
   useEffect(() => {
@@ -212,6 +256,21 @@ export default function WorksheetPage() {
    * read is required -- but it is one request, not one per loaded page. This is
    * what made a class change take seconds.
    */
+  /** Merge a partial row into the cached pages without a network call. */
+  const patchRowInCache = (id: number, patch: Partial<ClaimItem>) => {
+    queryClient.setQueryData<InfiniteData<ClaimItemListResponse>>(
+      ['claim-items', claimId, status],
+      (prev) =>
+        prev && {
+          ...prev,
+          pages: prev.pages.map((page) => ({
+            ...page,
+            items: page.items.map((row) => (row.id === id ? { ...row, ...patch } : row)),
+          })),
+        },
+    )
+  }
+
   const refreshRow = async (id: number) => {
     try {
       const fresh = await api.get<ClaimItem>(`/v1/claim_items/${id}`)
@@ -244,8 +303,15 @@ export default function WorksheetPage() {
       markPending(id, null)
       setNotice(error instanceof Error ? error.message : 'That edit was rejected.')
     },
-    onSuccess: (_data, { id }) => {
+    onSuccess: (data, { id }) => {
       markPending(id, null)
+      /**
+       * Apply what the server says it wrote BEFORE the re-read. The class, the
+       * rate and manual_reason (so the amber) all come back on the override
+       * itself, so they update on the first round trip instead of the second.
+       * Only the tax-inclusive columns wait for the read.
+       */
+      if (data?.applied) patchRowInCache(id, data.applied)
       void refreshRow(id)
     },
   })
@@ -281,24 +347,9 @@ export default function WorksheetPage() {
      * PATCH (null clears it). Otherwise every added row reads "New item" and
      * turns up in search.
      */
-    mutationFn: async () => {
-      const created = await createBlankItem(claimId)
-      const id = created.item_ids?.[0]
-      if (id !== undefined) {
-        // items/bulk requires a 2-300 char description, so a genuinely blank
-        // line needs a second call. Awaited BEFORE any refetch so the grid
-        // never renders the placeholder text (BACKEND-ASKS #3 would remove
-        // this round trip). A failure here is surfaced, not left on screen.
-        try {
-          await editDisplayLine(id, { description: null })
-        } catch {
-          setNotice(
-            'The new line was created but its placeholder text could not be cleared — edit or delete row.',
-          )
-        }
-      }
-      return created
-    },
+    // items/bulk accepts a blank description with price:false (9dce2c1), so
+    // this is one call -- no create-then-clear, and no "New item" flash.
+    mutationFn: () => createBlankRow(claimId),
     onSuccess: async (created) => {
       const id = created.item_ids?.[0]
       if (id !== undefined) setNewRowId(id)
@@ -342,6 +393,20 @@ export default function WorksheetPage() {
           ? `Could not save the source link — HTTP ${error.status}: ${String(error.detail)}`
           : 'Could not save the source link.',
       ),
+  })
+
+  const recategorize = useMutation({
+    mutationFn: ({ ids, category }: { ids: number[]; category: string }) =>
+      bulkSetCategory(ids, category),
+    onSuccess: (result) => {
+      setSelected(new Set())
+      setNotice(
+        `Re-classified to ${result.category}${result.repriced ? ` · ${result.repriced} repriced` : ''}.`,
+      )
+      refresh()
+    },
+    onError: (error) =>
+      setNotice(error instanceof Error ? error.message : 'Re-classify failed.'),
   })
 
   const removeRows = useMutation({
@@ -704,16 +769,14 @@ export default function WorksheetPage() {
             {deferred.length} row{deferred.length === 1 ? '' : 's'} deferred — the pricing service
             was at capacity, not a problem with these items.
           </span>
-          {/* Paused: the backend is building POST /v1/claims/{id}/retry-deferred.
-              Looping per-row reprice would burn the shared 30/min limit for a
-              worse result, so the action waits for the batch route. */}
           <button
             type="button"
             className="k-btn k-btn--sm"
-            disabled
-            title="Waiting on POST /v1/claims/{claim_id}/retry-deferred"
+            disabled={retryPreview.isPending || retryRun.isPending}
+            onClick={() => retryPreview.mutate()}
+            title="Check what would re-run, then confirm"
           >
-            Retry {deferred.length} deferred
+            {retryPreview.isPending ? 'Checking…' : `Retry ${deferred.length} deferred`}
           </button>
         </div>
       ) : null}
@@ -729,11 +792,8 @@ export default function WorksheetPage() {
               onChange={(e) => {
                 const category = e.target.value
                 if (!category) return
-                // No bulk category endpoint -- override each row. Comps survive
-                // a category-only edit, so this does not strip substantiation.
-                for (const id of selected) override.mutate({ id, body: { category } })
+                recategorize.mutate({ ids: [...selected], category })
                 e.target.value = ''
-                setSelected(new Set())
               }}
             >
               <option value="">Re-categorize…</option>
@@ -950,6 +1010,55 @@ export default function WorksheetPage() {
             </span>
           </footer>
         </>
+      ) : null}
+
+      {retryPlan ? (
+        <div className="k-export-stage k-modal-stage">
+          <div className="k-export-scrim" onClick={() => setRetryPlan(null)} />
+          <div className="k-export-modal" style={{ maxWidth: 460 }}>
+            <div className="k-export-hd">
+              <div>
+                <div className="k-modal-kicker">Retry deferred</div>
+                <div className="k-modal-title">{claim.data?.name ?? claimId}</div>
+              </div>
+            </div>
+            <div className="k-modal-body">
+              <div className="k-modal-note">
+                <strong>{fmtInt(retryPlan.eligible)}</strong> line
+                {retryPlan.eligible === 1 ? '' : 's'} were deferred on capacity, not judged —
+                the engine never looked at them. Re-running costs about{' '}
+                <strong>{fmtInt(retryPlan.estimated_searches)}</strong> vendor searches.
+                {retryPlan.skipped ? (
+                  <>
+                    {' '}
+                    {fmtInt(retryPlan.skipped)} cannot be re-run (nothing to search) and are left
+                    alone.
+                  </>
+                ) : null}
+              </div>
+              <span className="k-insp-hint">
+                Reasons matched: {retryPlan.reasons.join(', ') || 'capacity defaults'}
+              </span>
+            </div>
+            <div className="k-modal-foot">
+              <button
+                type="button"
+                className="k-btn k-btn--ghost"
+                onClick={() => setRetryPlan(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="k-btn"
+                disabled={retryRun.isPending}
+                onClick={() => retryRun.mutate()}
+              >
+                {retryRun.isPending ? 'Re-queueing…' : `Retry ${fmtInt(retryPlan.eligible)}`}
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
 
       {/* Undocked, the panel is a modal over the grid. */}
@@ -1292,13 +1401,12 @@ function Row({
                the same commit -> empty -> value flash. */
             value={pickedCategory ?? item.category ?? ''}
             disabled={pendingField === 'category'}
-            /* Category alone does NOT route through the depreciation engine --
-               only age_years / depreciation_method / dep_manual do. Resending
-               the row's own age fires the documented trigger so the new class's
-               schedule is applied. A dep_manual lock survives this server-side. */
+            /* A class change IS a valuation edit server-side (4eafa04): the
+               engine recomputes the rate and re-evaluates manual_reason, so no
+               age_years tag-along is needed to trigger it. */
             onChange={(e) => {
               setPickedCategory(e.target.value)
-              onOverride({ category: e.target.value, age_years: item.age_years ?? 0 })
+              onOverride({ category: e.target.value })
             }}
           >
             {item.category ? null : <option value="">—</option>}
@@ -1335,7 +1443,7 @@ function Row({
         />
       </div>
       <div className="k-c k-c--ext k-mono">
-        <Money value={extCost(item.rcv_total_incl, item.tax)} />
+        <Money value={item.ext_cost} />
       </div>
       <div className="k-c k-c--tax k-mono">
         <Money value={item.tax} />

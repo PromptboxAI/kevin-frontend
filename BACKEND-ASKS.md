@@ -30,7 +30,7 @@ Retry action is **disabled** pending that route. Looping per-row
 200+ deferred rows that is several minutes and multiple passes for a worse
 result.
 
-## 3. `items/bulk` should accept an empty description with `price: false`
+## 3. ~~`items/bulk` should accept an empty description with `price: false`~~ — SHIPPED (9dce2c1)
 
 Adding a line item without a photo is a one-row `POST /v1/claims/{id}/items/bulk`
 call, which is right. But `description` is required at **2–300 chars**, so a
@@ -83,7 +83,7 @@ commit. Until the field exists the Link cell stays **empty** — not a chip —
 because a control that accepts a URL and discards it leaves the adjuster
 believing the line is substantiated.
 
-## 6. A category-only override should re-run the depreciation engine
+## 6. ~~A category-only override should re-run the depreciation engine~~ — SHIPPED (4eafa04)
 
 `PATCH …/override` documents that only **`age_years`, `depreciation_method` or
 `dep_manual`** "always route through the engine". So a **category-only**
@@ -103,7 +103,7 @@ integrator falls into.
 **Request:** treat `category` as an engine trigger on `override`, same as
 `age_years`. The `dep_manual` lock should keep surviving it, per 80f8831.
 
-## 7. `manual_reason` is not re-evaluated when the content class changes
+## 7. ~~`manual_reason` is not re-evaluated when the content class changes~~ — SHIPPED (4eafa04)
 
 Reclassifying a row **out of** an appraisal class leaves `manual_reason:
 "manual_class"` on it. A Jewelry line moved to Books & Media keeps the reason,
@@ -129,7 +129,7 @@ which asks the same edit to re-run the depreciation engine.)
 **Adjuster workaround meanwhile:** reprice the row after reclassifying — that
 clears `manual_reason` and re-runs the pipeline.
 
-## 9. 502 on `GET /v1/claim_items` for one claim
+## 9. ~~502 on `GET /v1/claim_items` for one claim~~ — RESOLVED (deploy/migration race)
 
 `claim_id=chaos3new-1786734681` returns **502** to an authenticated caller while
 `GET /v1/claims` succeeds, so the failure is per-claim rather than endpoint-wide.

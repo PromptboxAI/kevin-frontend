@@ -24,6 +24,12 @@ export type OverrideBody = {
 export type OverrideResponse = {
   status: string
   row_id: number
+  /**
+   * What the server actually wrote. Carries category, manual_reason, status,
+   * rcv/acv and depreciation_pct -- but NOT the tax-inclusive line totals,
+   * which the contract computes on read. Enough to update everything the
+   * adjuster is looking at immediately, while the money follows.
+   */
   applied: Partial<ClaimItem> & { status?: string }
   diff?: Record<string, { from: unknown; to: unknown }>
 }
@@ -142,4 +148,52 @@ export type DeleteClaimResponse = {
 /** Cascades to items and rooms. Evidence images are left in storage. */
 export function deleteClaim(claimId: string) {
   return api.delete<DeleteClaimResponse>(`/v1/claims/${encodeURIComponent(claimId)}`)
+}
+
+/**
+ * Re-run valuation on lines that were DEFERRED (a capacity stop) rather than
+ * judged. Omitting `reasons` uses the server's capacity-only default, which is
+ * the point: re-running "no comps" or "too thin a sample" spends two searches
+ * to reach the same nil answer.
+ */
+export type RetryDeferredResponse = {
+  claim_id: string
+  dry_run: boolean
+  reasons: string[]
+  eligible: number
+  enqueued: number
+  skipped: number
+  skipped_detail: Record<string, number>
+  estimated_searches: number
+}
+
+export function retryDeferred(claimId: string, dryRun: boolean) {
+  return api.post<RetryDeferredResponse>(
+    `/v1/claims/${encodeURIComponent(claimId)}/retry-deferred`,
+    { json: { dry_run: dryRun } },
+  )
+}
+
+export type BulkCategoryResponse = {
+  category: string
+  updated?: number
+  repriced: number
+}
+
+/**
+ * One call instead of N /override calls -- which also stamped each row as an
+ * adjuster price override it never was.
+ */
+export function bulkSetCategory(itemIds: number[], category: string) {
+  return api.patch<BulkCategoryResponse>('/v1/claim_items/category', {
+    json: { item_ids: itemIds, category },
+  })
+}
+
+/** description may now be blank when price:false -- no create-then-clear. */
+export function createBlankRow(claimId: string) {
+  return api.post<BulkCreateResponse>(
+    `/v1/claims/${encodeURIComponent(claimId)}/items/bulk`,
+    { json: { items: [{ description: '', quantity: 1 }], price: false } },
+  )
 }
