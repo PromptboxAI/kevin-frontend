@@ -30,7 +30,13 @@ export default function IntakePage() {
   const [dateOfLoss, setDateOfLoss] = useState('')
   const [lossType, setLossType] = useState('')
   const [carrier, setCarrier] = useState('')
-  const [insuredName, setInsuredName] = useState('')
+  /**
+   * Captured as two fields because that is how an adjuster reads a
+   * declarations page, but the API stores ONE `insured_name` -- so they are
+   * joined before sending, never sent as a pair.
+   */
+  const [insuredFirst, setInsuredFirst] = useState('')
+  const [insuredLast, setInsuredLast] = useState('')
   const [lossAddress, setLossAddress] = useState('')
   const [taxRate, setTaxRate] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -42,6 +48,8 @@ export default function IntakePage() {
   const taxInvalid = taxRate.trim() !== '' && taxFraction === null
   const dateInvalid = dateOfLoss.trim() !== '' && toIsoDate(dateOfLoss) === null
 
+  const insuredName = [insuredFirst.trim(), insuredLast.trim()].filter(Boolean).join(' ')
+
   const canSubmit = id !== '' && idValid && !taxInvalid && !dateInvalid
 
   const create = useMutation({
@@ -52,7 +60,7 @@ export default function IntakePage() {
           // Omit rather than send empty strings: the API treats an absent field
           // as "not provided", and a blank one would overwrite on a re-create.
           ...(name.trim() ? { name: name.trim() } : {}),
-          ...(insuredName.trim() ? { insured_name: insuredName.trim() } : {}),
+          ...(insuredName ? { insured_name: insuredName } : {}),
           ...(carrier.trim() ? { carrier: carrier.trim() } : {}),
           ...(policyNumber.trim() ? { policy_number: policyNumber.trim() } : {}),
           ...(claimNumber.trim() ? { claim_number: claimNumber.trim() } : {}),
@@ -170,11 +178,19 @@ export default function IntakePage() {
               onChange={setCarrier}
             />
             <IntakeField
-              label="Insured"
-              value={insuredName}
-              width={240}
-              placeholder="Kevin Godfrey"
-              onChange={setInsuredName}
+              label="Insured — first name"
+              value={insuredFirst}
+              width={200}
+              placeholder="Kevin"
+              onChange={setInsuredFirst}
+            />
+            <IntakeField
+              label="Insured — last name"
+              value={insuredLast}
+              width={200}
+              placeholder="Godfrey"
+              onChange={setInsuredLast}
+              hint={insuredName ? `Stored as “${insuredName}”` : undefined}
             />
             <IntakeField
               label="Loss address"
