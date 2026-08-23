@@ -283,6 +283,14 @@
   text-decoration: underline;
 }
 
+/* A server-derived cell whose write is still in flight. It keeps its value --
+   blanking it was the old commit flash -- but reads as not-yet-settled. One
+   blocking request is short enough that a spinner would strobe. */
+.k-cell--stale {
+  opacity: 0.45;
+  transition: opacity 0.12s;
+}
+
 /* A derived cell with no value. Muted, never 0.00. */
 /* Spreadsheet accounting format: the symbol sits left, the number right. */
 .k-money-sym {

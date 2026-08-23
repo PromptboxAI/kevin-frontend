@@ -47,7 +47,7 @@ lands (it also matches searches for that moment). **Allowing an empty-string
 description when `price: false`** would make this one call with no flash — the
 row is deliberately unpriced anyway, so there is nothing to search against.
 
-## 4. Claim intake metadata is null on every existing claim
+## 4. ~~Claim intake metadata is null on every existing claim~~ — FRONTEND, BUILT (59ac6be: /claims/new)
 
 `ClaimSummary` *does* carry `date_of_loss`, `loss_address`, `carrier`,
 `policy_number` and `claim_number` — the fields exist. But every claim in the
@@ -165,7 +165,7 @@ valuation math, which rule 20 forbids.
 Same applies to `PATCH /v1/claim_items` and `PATCH /v1/claim_items/category`,
 both of which can change quantity or class and therefore the totals.
 
-## 12. `access-control-max-age: 600` re-preflights all day
+## 12. ~~`access-control-max-age: 600` re-preflights all day~~ — SHIPPED (e8d7d4b, now 86400)
 
 Every write pays a ~192 ms CORS preflight because the cached preflight expires
 after ten minutes. Raising it (86400 is the Chromium cap) removes that hop from

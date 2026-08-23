@@ -20,7 +20,12 @@ import {
   retryDeferred,
 } from '../lib/mutations'
 import { moneyFrom } from '../lib/mutations'
-import type { MoneyBlock, OverrideBody, RetryDeferredResponse } from '../lib/mutations'
+import type {
+  ClaimTotals,
+  MoneyBlock,
+  OverrideBody,
+  RetryDeferredResponse,
+} from '../lib/mutations'
 import { numberRows, rowInvariant, windowRange } from '../lib/rows'
 import type { NumberedItem } from '../lib/rows'
 import { CAPACITY_REASONS } from '../lib/types'
@@ -257,13 +262,18 @@ export default function WorksheetPage() {
    * read is required -- but it is one request, not one per loaded page. This is
    * what made a class change take seconds.
    */
-  const rollupTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  /** Totals bar only -- deliberately lazy, and never in the path of a cell. */
-  const scheduleRollup = () => {
-    if (rollupTimer.current) clearTimeout(rollupTimer.current)
-    rollupTimer.current = setTimeout(() => {
-      void queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
-    }, 800)
+  /**
+   * Apply the claim totals the write just returned. The totals bar updates in
+   * the SAME tick as the cell -- no second request, no debounce. Null means the
+   * rollup could not be read, in which case the previous totals stand rather
+   * than blanking.
+   */
+  const applyTotals = (totals: ClaimTotals | null | undefined) => {
+    if (!totals) return
+    queryClient.setQueryData<ClaimSummary>(
+      ['claim', claimId],
+      (prev) => prev && { ...prev, ...totals },
+    )
   }
 
   /** Merge a partial row into the cached pages without a network call. */
@@ -302,7 +312,7 @@ export default function WorksheetPage() {
        * would flicker between two answers.
        */
       patchRowInCache(id, { ...data.applied, ...moneyFrom(data) })
-      scheduleRollup()
+      applyTotals(data.claim_totals)
     },
   })
 
@@ -312,7 +322,7 @@ export default function WorksheetPage() {
       editDisplayLine(id, body),
     onSuccess: (result, { id }) => {
       patchRowInCache(id, { ...(result.applied as Partial<ClaimItem>), ...moneyFrom(result) })
-      scheduleRollup()
+      applyTotals(result.claim_totals)
     },
     onError: (error) =>
       setNotice(error instanceof Error ? error.message : 'That edit was rejected.'),
@@ -382,7 +392,7 @@ export default function WorksheetPage() {
         ...(result.applied as Partial<ClaimItem>),
         ...moneyFrom(result as MoneyBlock),
       })
-      scheduleRollup()
+      applyTotals((result as MoneyBlock).claim_totals)
     },
     onError: (error) =>
       setNotice(
@@ -1310,6 +1320,13 @@ function Row({
   // Depreciation is server-owned, so it spins only while age or class -- the
   // two inputs that drive it -- are actually in flight.
   const depRecalculating = pendingField === 'age_years' || pendingField === 'category'
+  /**
+   * The four server-derived money cells while a write is in flight. They keep
+   * their last values -- blanking them was the old flash -- but read as
+   * not-yet-settled, which is honest for one round trip and dishonest for
+   * nothing at all. Never a computed guess: rule 20.
+   */
+  const moneyStale = pendingField !== null
 
   return (
     <div
@@ -1439,14 +1456,14 @@ function Row({
           }}
         />
       </div>
-      <div className="k-c k-c--ext k-mono">
+      <div className={`k-c k-c--ext k-mono${moneyStale ? ' k-cell--stale' : ''}`}>
         <Money value={item.ext_cost} />
       </div>
-      <div className="k-c k-c--tax k-mono">
+      <div className={`k-c k-c--tax k-mono${moneyStale ? ' k-cell--stale' : ''}`}>
         <Money value={item.tax} />
       </div>
       <div
-        className={`k-c k-c--rcvtax k-mono${item.alternative_sources?.length ? ' k-c--hascomps' : ''}`}
+        className={`k-c k-c--rcvtax k-mono${item.alternative_sources?.length ? ' k-c--hascomps' : ''}${moneyStale ? ' k-cell--stale' : ''}`}
         style={{ position: 'relative' }}
         onClick={(e) => {
           if (!item.alternative_sources?.length) return
@@ -1514,7 +1531,7 @@ function Row({
           </>
         ) : null}
       </div>
-      <div className="k-c k-c--depamt k-mono">
+      <div className={`k-c k-c--depamt k-mono${moneyStale ? ' k-cell--stale' : ''}`}>
         {/* A positive amount WITHHELD -- ACV already subtracts it, so a minus
             sign here would read as a second subtraction. Never -$0.00. */}
         {depAmount === null || depAmount === undefined ? (
@@ -1523,7 +1540,7 @@ function Row({
           fmtUSD(Math.max(0, depAmount))
         )}
       </div>
-      <div className="k-c k-c--acv k-mono k-acv">
+      <div className={`k-c k-c--acv k-mono k-acv${moneyStale ? ' k-cell--stale' : ''}`}>
         <Money value={item.acv_total_incl} />
       </div>
 

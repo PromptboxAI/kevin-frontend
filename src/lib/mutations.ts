@@ -26,6 +26,14 @@ export type OverrideBody = {
  * Pinned server-side against a subsequent GET, so applying it is not a guess:
  * a divergence is a build failure over there, not a flicker over here.
  */
+export type ClaimTotals = {
+  item_count: number
+  total_rcv: number
+  total_acv: number
+  total_tax: number
+  total_depreciation: number
+}
+
 export type MoneyBlock = {
   tax: number | null
   ext_cost: number | null
@@ -33,6 +41,12 @@ export type MoneyBlock = {
   depreciation_amount: number | null
   acv_total_incl: number | null
   recoverable?: number
+  /**
+   * The claim-level totals, computed server-side on the same write (e8d7d4b).
+   * Null when the rollup could not be read -- the edit still succeeded, so the
+   * client keeps its previous totals rather than blanking them.
+   */
+  claim_totals?: ClaimTotals | null
 }
 
 export type OverrideResponse = MoneyBlock & {
