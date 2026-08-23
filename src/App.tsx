@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import RequireAuth from './components/RequireAuth'
 import { AuthProvider } from './lib/auth'
 import ClaimsPage from './pages/ClaimsPage'
+import IntakePage from './pages/IntakePage'
 import NotFoundPage from './pages/NotFoundPage'
 import PortalPage from './pages/PortalPage'
 import SignInPage from './pages/SignInPage'
@@ -24,6 +25,15 @@ export default function App() {
           element={
             <RequireAuth>
               <ClaimsPage />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/claims/new"
+          element={
+            <RequireAuth>
+              <IntakePage />
             </RequireAuth>
           }
         />

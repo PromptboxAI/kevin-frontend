@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 
 /** Ported from top-nav.jsx. Routes not built yet stay visible but inert. */
 const TABS: [string, string | null][] = [
-  ['New claim', null],
+  ['New claim', '/claims/new'],
   ['My claims', '/claims'],
   ['Exports', null],
   ['Settings', null],

@@ -1032,3 +1032,41 @@ button.k-avatar-menu-item {
 .k-grid-dock:not(.k-grid-dock--off) .k-scroll .k-row {
   cursor: pointer;
 }
+
+/* --- Intake form (classes kevin.css does not provide) --- */
+.k-ifield-label {
+  font-size: 11px;
+  color: var(--k-fg-3);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.k-ifield-suffix {
+  font-family: var(--k-font-mono);
+  font-size: 12px;
+  color: var(--k-fg-4);
+  flex-shrink: 0;
+}
+
+.k-ifield-hint {
+  font-size: 11px;
+  color: var(--k-fg-4);
+  line-height: 1.45;
+}
+
+.k-intake-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.k-intake-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--k-line);
+}

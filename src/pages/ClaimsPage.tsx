@@ -99,9 +99,9 @@ export default function ClaimsPage() {
     <div className="k-shell">
       <AppHeader
         actions={
-          <button type="button" className="k-btn" title="Intake — coming in this build">
+          <Link to="/claims/new" className="k-btn">
             <Icon d={I.plus} size={12} /> New claim
-          </button>
+          </Link>
         }
       />
 
