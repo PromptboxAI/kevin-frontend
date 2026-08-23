@@ -333,13 +333,26 @@ export default function StagingPage() {
           </div>
 
           <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            {/* Add photos survives a processed session -- a second drop opens
+                the NEXT session and appends, which is the multi-session flow. */}
             <Link to="/claims/new" className="k-btn k-btn--ghost">
               <Icon d={I.plus} size={12} /> Add photos
             </Link>
+
+            {/* Process and Reset are gone, not greyed: a disabled control still
+                invites the click, and neither has anything left to do here. */}
+            {isProcessed ? (
+              <Link to={`/claims/${claimId}`} className="k-btn">
+                Open worksheet →
+              </Link>
+            ) : null}
+
+            {isProcessed ? null : (
+              <>
             <button
               type="button"
               className="k-btn k-btn--ghost"
-              disabled={busy || clustering || isProcessed}
+              disabled={busy || clustering}
               onClick={() => {
                 // A rebuild discards every group -- and the authored set notes
                 // with them. Photo notes survive; the sentences do not.
@@ -365,6 +378,8 @@ export default function StagingPage() {
             >
               Begin processing →
             </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -399,12 +414,21 @@ export default function StagingPage() {
         </section>
 
         <div className="k-stage-countline">
-          Showing <strong>{fmtInt(groups.length)}</strong> sets · {fmtInt(groups.length)} proposed by
-          Kevin
-          <span style={{ color: 'var(--k-fg-4)' }}>
-            {' '}
-            · select sets to merge, exclude, or delete them
-          </span>
+          {isProcessed ? (
+            <>
+              How this batch was grouped · <strong>{fmtInt(groups.length)}</strong> sets →{' '}
+              <strong>{fmtInt(itemSets.length)}</strong> line items
+            </>
+          ) : (
+            <>
+              Showing <strong>{fmtInt(groups.length)}</strong> sets · {fmtInt(groups.length)}{' '}
+              proposed by Kevin
+              <span style={{ color: 'var(--k-fg-4)' }}>
+                {' '}
+                · select sets to merge, exclude, or delete them
+              </span>
+            </>
+          )}
         </div>
 
         {isProcessed ? (
@@ -416,10 +440,6 @@ export default function StagingPage() {
                 grouping is kept here as a record of what was submitted; correcting an item is done
                 on the row, not by re-running.
               </span>
-              <div style={{ flex: 1 }} />
-              <Link to={`/claims/${claimId}`} className="k-btn k-btn--sm">
-                Open worksheet →
-              </Link>
             </div>
           </div>
         ) : null}
@@ -494,7 +514,8 @@ export default function StagingPage() {
               group={group}
               si={si}
               selected={sel.includes(group.group_key)}
-              busy={busy || isProcessed}
+              busy={busy}
+              editable={!isProcessed}
               selectable={selectable}
               onToggle={() =>
                 setSel((prev) =>
@@ -548,16 +569,23 @@ export default function StagingPage() {
               </>
             )}
           </div>
-          <button
-            type="button"
-            className="k-btn k-btn--lg"
-            disabled={!canProcess}
-            onClick={() => setConfirmProcess(true)}
-          >
-            {isProcessed
-              ? `Processed · ${fmtInt(itemSets.length)} line items`
-              : `Begin processing · ${fmtInt(itemSets.length)} sets →`}
-          </button>
+          {/* A processed session gets the LIVE action, not a greyed label of
+              what already happened -- disabled styling reads as a broken
+              button and drops its fill on hover. */}
+          {isProcessed ? (
+            <Link to={`/claims/${claimId}`} className="k-btn k-btn--lg">
+              Open worksheet · {fmtInt(itemSets.length)} line items →
+            </Link>
+          ) : (
+            <button
+              type="button"
+              className="k-btn k-btn--lg"
+              disabled={!canProcess}
+              onClick={() => setConfirmProcess(true)}
+            >
+              Begin processing · {fmtInt(itemSets.length)} sets →
+            </button>
+          )}
         </div>
       </div>
 
@@ -816,6 +844,7 @@ function SetCard({
   selected,
   busy,
   selectable,
+  editable,
   onToggle,
   onOpen,
   onNote,
@@ -827,6 +856,7 @@ function SetCard({
   selected: boolean
   busy: boolean
   selectable: boolean
+  editable: boolean
   onToggle: () => void
   onOpen: (i: number) => void
   onNote: () => void
@@ -898,14 +928,25 @@ function SetCard({
           <button
             type="button"
             className="k-stage-notechip"
-            title={group.note_source === 'derived' ? 'Written in the field — edit note' : 'Edit note'}
-            onClick={onNote}
+            disabled={!editable}
+            title={
+              editable
+                ? group.note_source === 'derived'
+                  ? 'Written in the field — edit note'
+                  : 'Edit note'
+                : 'Sent with these photos when they were processed'
+            }
+            onClick={editable ? onNote : undefined}
           >
             <Icon d={I.edit} size={10} />
             <span>{group.note}</span>
           </button>
         ) : null}
 
+        {/* Withdrawn, not disabled: excluding a set that is already a line item
+            would either do nothing or describe a grouping the worksheet no
+            longer follows. `editable` is false once the session is promoted. */}
+        {editable ? (
         <div className="k-stageset-acts">
           {!group.note ? (
             <button
@@ -943,6 +984,7 @@ function SetCard({
             {isCtx ? 'Include' : 'Exclude'}
           </button>
         </div>
+        ) : null}
       </div>
     </div>
   )
