@@ -216,3 +216,17 @@ grid of postage stamps, and it is the single slowest thing on the screen. A
 server-side resize (long edge ~600px) on this endpoint only — the lightbox and
 the worksheet still want the original — would cut it by two orders of
 magnitude.
+
+## 16. No delete path for a staging photo or group
+
+The design's set card carries a trash action after Exclude ("Delete these
+photos from the claim"). There is no endpoint for it — the staging surface has
+`merge`, `ungroup`, `PATCH …/groups/{key}`, `PATCH …/photos/{id}`, `reset` and
+`process`, none of which remove a photo. The action is therefore **not built**
+rather than wired to something that would fail.
+
+Worth confirming this is deliberate before anyone adds it: rule 22 says
+evidence is *excluded from the worksheet, never deleted*, which argues the
+trash affordance should come off the design rather than onto the API. If a
+real delete is wanted, it needs `DELETE /v1/claims/{id}/staging/photos/{id}`
+and a decision about what happens to an already-promoted photo.

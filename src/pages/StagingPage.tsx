@@ -236,6 +236,17 @@ export default function StagingPage() {
   const clustering =
     cluster.isPending || remainder.isPending || awaitingSets || data?.status === 'clustering'
 
+  /**
+   * Processing is TERMINAL and spends real vendor searches. Once a session has
+   * promoted its sets, re-running would bill the whole claim again -- so the
+   * action is withdrawn rather than merely discouraged. Every editing control
+   * goes with it: the rows now exist on the worksheet, and a merge here would
+   * describe a grouping the line items no longer follow.
+   */
+  const isProcessed = data?.status === 'processed'
+  const selectable = !isProcessed
+  const canProcess = !busy && !isProcessed && itemSets.length > 0
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
@@ -252,7 +263,7 @@ export default function StagingPage() {
 
   if (session.error instanceof ApiError && session.error.isMissing) {
     return (
-      <div className="k-shell">
+      <div className="k-intake">
         <AppHeader />
         <div className="k-intake-body">
           <div className="k-empty">
@@ -271,7 +282,7 @@ export default function StagingPage() {
   const lightboxSet = lightbox ? byKey(lightbox.key) : null
 
   return (
-    <div className="k-shell">
+    <div className="k-intake">
       <AppHeader />
 
       <div className="k-intake-body">
@@ -300,12 +311,24 @@ export default function StagingPage() {
               </span>
             </div>
 
+            {/* The invitation to arrange sets is false once they are promoted --
+                the run already happened and the rows exist. */}
             <p style={LEDE}>
-              Your upload was pre-clustered by capture time into{' '}
-              <strong>proposed photo sets</strong> — one set becomes at most one line item. Nothing
-              has been identified yet. Merge sets that show the same item, split ones that don’t,
-              exclude overview shots, and add a note wherever the photo alone won’t tell Kevin what
-              it’s looking at.
+              {isProcessed ? (
+                <>
+                  These <strong>{fmtInt(groups.length)} photo sets</strong> were submitted and
+                  became {fmtInt(itemSets.length)} line items. This is the record of how the photos
+                  were grouped — the items themselves are edited on the worksheet.
+                </>
+              ) : (
+                <>
+                  Your upload was pre-clustered by capture time into{' '}
+                  <strong>proposed photo sets</strong> — one set becomes at most one line item.
+                  Nothing has been identified yet. Merge sets that show the same item, split ones
+                  that don’t, exclude overview shots, and add a note wherever the photo alone won’t
+                  tell Kevin what it’s looking at.
+                </>
+              )}
             </p>
           </div>
 
@@ -316,7 +339,7 @@ export default function StagingPage() {
             <button
               type="button"
               className="k-btn k-btn--ghost"
-              disabled={busy || clustering}
+              disabled={busy || clustering || isProcessed}
               onClick={() => {
                 // A rebuild discards every group -- and the authored set notes
                 // with them. Photo notes survive; the sentences do not.
@@ -337,7 +360,7 @@ export default function StagingPage() {
             <button
               type="button"
               className="k-btn"
-              disabled={busy || itemSets.length === 0}
+              disabled={!canProcess}
               onClick={() => setConfirmProcess(true)}
             >
               Begin processing →
@@ -383,6 +406,23 @@ export default function StagingPage() {
             · select sets to merge, exclude, or delete them
           </span>
         </div>
+
+        {isProcessed ? (
+          <div className="k-tray k-tray--pending">
+            <div className="k-tray-hd">
+              <Icon d={I.check} size={14} />
+              <span className="k-tray-t">
+                These sets have been processed — they are line items on the worksheet now. The
+                grouping is kept here as a record of what was submitted; correcting an item is done
+                on the row, not by re-running.
+              </span>
+              <div style={{ flex: 1 }} />
+              <Link to={`/claims/${claimId}`} className="k-btn k-btn--sm">
+                Open worksheet →
+              </Link>
+            </div>
+          </div>
+        ) : null}
 
         {/* A 409 is "not yet" or "that would undo your work" — inline, never red. */}
         {conflict ? (
@@ -454,7 +494,8 @@ export default function StagingPage() {
               group={group}
               si={si}
               selected={sel.includes(group.group_key)}
-              busy={busy}
+              busy={busy || isProcessed}
+              selectable={selectable}
               onToggle={() =>
                 setSel((prev) =>
                   prev.includes(group.group_key)
@@ -494,17 +535,28 @@ export default function StagingPage() {
 
         <div style={FOOT}>
           <div style={FOOT_NOTE}>
-            Grouping is optional — the proposed sets are usually right. Anything you miss can still
-            be merged or deleted in the worksheet once Kevin has read the photos. Nothing is
-            identified or priced until you begin processing.
+            {isProcessed ? (
+              <>
+                Already processed — every set here became a line item. The grouping stays as a
+                record of what was submitted; corrections happen on the worksheet row.
+              </>
+            ) : (
+              <>
+                Grouping is optional — the proposed sets are usually right. Anything you miss can
+                still be merged or deleted in the worksheet once Kevin has read the photos. Nothing
+                is identified or priced until you begin processing.
+              </>
+            )}
           </div>
           <button
             type="button"
             className="k-btn k-btn--lg"
-            disabled={busy || itemSets.length === 0}
+            disabled={!canProcess}
             onClick={() => setConfirmProcess(true)}
           >
-            Begin processing · {fmtInt(itemSets.length)} sets →
+            {isProcessed
+              ? `Processed · ${fmtInt(itemSets.length)} line items`
+              : `Begin processing · ${fmtInt(itemSets.length)} sets →`}
           </button>
         </div>
       </div>
@@ -763,6 +815,7 @@ function SetCard({
   si,
   selected,
   busy,
+  selectable,
   onToggle,
   onOpen,
   onNote,
@@ -773,6 +826,7 @@ function SetCard({
   si: number
   selected: boolean
   busy: boolean
+  selectable: boolean
   onToggle: () => void
   onOpen: (i: number) => void
   onNote: () => void
@@ -801,15 +855,17 @@ function SetCard({
             onOpen={() => onOpen(i)}
           />
         ))}
-        <button
-          type="button"
-          className="k-stage-check k-stage-check--float"
-          data-on={selected || undefined}
-          aria-label={`Select ${SET_LABEL(si)}`}
-          onClick={onToggle}
-        >
-          {selected ? <Icon d={I.check} size={12} /> : null}
-        </button>
+        {selectable ? (
+          <button
+            type="button"
+            className="k-stage-check k-stage-check--float"
+            data-on={selected || undefined}
+            aria-label={`Select ${SET_LABEL(si)}`}
+            onClick={onToggle}
+          >
+            {selected ? <Icon d={I.check} size={12} /> : null}
+          </button>
+        ) : null}
         {isCtx ? <span className="k-stageset-ctxtag">Excluded</span> : null}
       </div>
 
@@ -827,11 +883,16 @@ function SetCard({
 
         {/* Raw capture metadata ONLY. Staging is a PRE-Vision surface, so no
             item names, makes or models -- and `group.reason` off this backend
-            carries exactly those, so it is deliberately not rendered here. */}
-        <div className="k-stage-rowfiles">
-          {group.photos.length} {group.photos.length === 1 ? 'photo' : 'photos'}
-          {group.photos.length > 1 ? ' · grouped by capture time' : ''}
-        </div>
+            carries exactly those, so it is deliberately not rendered here.
+            The design prints filenames and "2 photos - 4s apart" in these two
+            slots; StagingPhoto carries neither `filename` nor `taken_at` yet
+            (backend ask 14), so a single-photo set prints NOTHING rather than
+            restating the "1 photo" badge one line below it. */}
+        {group.photos.length > 1 ? (
+          <div className="k-stage-rowfiles">
+            {group.photos.length} photos · grouped by capture time
+          </div>
+        ) : null}
 
         {group.note ? (
           <button
@@ -850,6 +911,7 @@ function SetCard({
             <button
               type="button"
               className="k-stage-act"
+              disabled={busy}
               onClick={onNote}
               title="Add identification detail sent with these photos"
             >

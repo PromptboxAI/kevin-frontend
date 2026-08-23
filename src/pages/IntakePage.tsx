@@ -96,7 +96,7 @@ export default function IntakePage() {
   })
 
   return (
-    <div className="k-shell">
+    <div className="k-intake">
       <AppHeader />
 
       <div className="k-claims-body">
