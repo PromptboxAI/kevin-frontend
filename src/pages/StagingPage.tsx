@@ -40,6 +40,16 @@ export default function StagingPage() {
   const [confirmProcess, setConfirmProcess] = useState(false)
   /** Set by any hand arrangement -- it is what turns /cluster into a 409. */
   const [manuallyEdited, setManuallyEdited] = useState(false)
+  /**
+   * A clustering run was fired and its sets have not arrived yet.
+   *
+   * Status alone is not a sufficient poll condition: the worker can leave the
+   * session reading `review` (or flip through it) before this client's next
+   * tick, and polling then stops with `groups` still null -- the screen sat on
+   * "No sets yet" while the API already held 55 sets. Keep polling until the
+   * sets actually appear.
+   */
+  const [awaitingSets, setAwaitingSets] = useState(false)
 
   const session = useQuery({
     queryKey: ['staging', claimId],
@@ -55,14 +65,29 @@ export default function StagingPage() {
       if (!data) return false
       const waiting = data.status === 'uploading' || data.status === 'clustering'
       const extracting = pendingPhotos(data).length > 0
-      const poll = waiting || extracting
-      if (poll) log('poll', { status: data.status, extracting: pendingPhotos(data).length })
+      // Keep going until the sets land, not merely until the status settles.
+      const setsPending = awaitingSets && (data.groups?.length ?? 0) === 0
+      const poll = waiting || extracting || setsPending
+      if (poll)
+        log('poll', {
+          status: data.status,
+          extracting: pendingPhotos(data).length,
+          awaitingSets: setsPending,
+        })
       return poll ? 2500 : false
     },
   })
 
   const data = session.data
   const groups = data?.groups ?? []
+
+  // Stand down once the sets are on screen.
+  useEffect(() => {
+    if (awaitingSets && groups.length > 0) {
+      log('sets arrived', { count: groups.length })
+      setAwaitingSets(false)
+    }
+  }, [awaitingSets, groups.length])
   const unassigned = data?.ungrouped_photos ?? []
   const pending = pendingPhotos(data)
 
@@ -102,7 +127,8 @@ export default function StagingPage() {
   const cluster = useMutation({
     mutationFn: () => runCluster(claimId),
     onSuccess: (r) => {
-      log('cluster started', r)
+      log('cluster started — polling until the sets arrive', r)
+      setAwaitingSets(true)
       void session.refetch()
     },
     onError: fail('Clustering'),
@@ -112,6 +138,7 @@ export default function StagingPage() {
     mutationFn: () => clusterRemainder(claimId),
     onSuccess: (r) => {
       log('cluster remainder started (appends, never rebuilds)', r)
+      setAwaitingSets(true)
       void session.refetch()
     },
     onError: fail('Clustering the remainder'),
@@ -268,7 +295,7 @@ export default function StagingPage() {
             title={clusterBlocked ?? 'Group every photo by capture time and proximity'}
             onClick={() => cluster.mutate()}
           >
-            {cluster.isPending ? 'Clustering…' : 'Cluster photos'}
+            {cluster.isPending || awaitingSets ? 'Clustering…' : 'Cluster photos'}
           </button>
 
           <button
