@@ -271,20 +271,31 @@ export default function WorksheetPage() {
     )
   }
 
+  /**
+   * Re-read the row through the LIST endpoint, not the detail one.
+   *
+   * GET /v1/claim_items/{id} mints a fresh SIGNED IMAGE URL on every call --
+   * a storage round trip the grid never uses, and the reason the contract keeps
+   * image_url off the list at all. Paying it after every cell edit is what made
+   * Ext. Cost / Sales Tax / RCV + Tax take seconds to settle. The list page
+   * carries the same money columns with no signing.
+   */
   const refreshRow = async (id: number) => {
     try {
-      const fresh = await api.get<ClaimItem>(`/v1/claim_items/${id}`)
-      queryClient.setQueryData<InfiniteData<ClaimItemListResponse>>(
-        ['claim-items', claimId, status],
-        (prev) =>
-          prev && {
-            ...prev,
-            pages: prev.pages.map((page) => ({
-              ...page,
-              items: page.items.map((row) => (row.id === id ? { ...row, ...fresh } : row)),
-            })),
-          },
+      const cached = queryClient.getQueryData<InfiniteData<ClaimItemListResponse>>([
+        'claim-items',
+        claimId,
+        status,
+      ])
+      const page = cached?.pages.find((p) => p.items.some((row) => row.id === id))
+      const offset = page?.offset ?? 0
+      const fresh = await api.get<ClaimItemListResponse>(
+        `/v1/claim_items?claim_id=${encodeURIComponent(claimId)}&limit=${PAGE_SIZE}&offset=${offset}` +
+          (status ? `&status=${status}` : ''),
       )
+      const updated = fresh.items.find((row) => row.id === id)
+      if (updated) patchRowInCache(id, updated)
+      else void queryClient.invalidateQueries({ queryKey: ['claim-items', claimId] })
     } catch {
       // A failed re-read must not leave the grid stale; fall back to a refetch.
       void queryClient.invalidateQueries({ queryKey: ['claim-items', claimId] })

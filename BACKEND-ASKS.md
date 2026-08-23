@@ -140,7 +140,32 @@ upstream (the contract's DB/storage/queue case).
 The worksheet now prints the server's `detail` and the `X-Request-ID` with a
 Retry, so the next occurrence carries a traceable reference.
 
-## 10. Smaller notes
+## 11. `override` should return the tax-inclusive line totals
+
+Editing a price is currently TWO sequential round trips, and the adjuster waits
+through both:
+
+1. `PATCH …/override` — recomputes and returns `applied` (rcv, acv, category,
+   depreciation_pct, manual_reason)
+2. a re-read — because the contract computes `ext_cost`, `tax`,
+   `rcv_total_incl`, `depreciation_amount` and `acv_total_incl` **on read**, so
+   the write response cannot carry them
+
+The frontend already applies everything in `applied` on the first trip, so the
+class, the rate and the amber update immediately. But Ext. Cost, Sales Tax,
+RCV + Tax and ACV — the columns the adjuster is actually watching when they
+type a price — cannot settle until the second trip returns.
+
+**Request:** include the five tax-inclusive columns on `OverrideResponse`
+(either inside `applied` or alongside it). The server has just computed them;
+returning them removes an entire round trip from every money edit and is the
+only way to make the money columns update instantly without the client doing
+valuation math, which rule 20 forbids.
+
+Same applies to `PATCH /v1/claim_items` and `PATCH /v1/claim_items/category`,
+both of which can change quantity or class and therefore the totals.
+
+## 12. Smaller notes
 
 - `ClaimItemSummary` has no `ext_cost`. The worksheet's **Ext. Cost** column is
   restated from `rcv_total_incl − tax` (the contract guarantees
