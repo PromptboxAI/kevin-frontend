@@ -22,3 +22,18 @@ export function conflictCopy(action: 'merge' | 'cluster' | 'remainder', detail?:
   if (text.includes('manual') || text.includes('edit')) return CONFLICT_COPY.cluster_after_edits
   return CONFLICT_COPY.cluster_extracting
 }
+
+/**
+ * Deleting a staged photo is refused in three ways, all 409. They are different
+ * situations and the adjuster needs to know which one they hit.
+ */
+export function deleteConflictCopy(detail: unknown): string {
+  const text = typeof detail === 'string' ? detail.toLowerCase() : ''
+  if (text.includes('promoted'))
+    return 'Some of these photos are already line items on the worksheet. Processed evidence is excluded, never deleted — remove the line item instead.'
+  if (text.includes('clustering'))
+    return 'Kevin is grouping this session right now. Wait for it to finish, then delete.'
+  if (text.includes('processed'))
+    return 'This session has been processed — its photos are part of the claim record now.'
+  return 'These photos could not be deleted.'
+}

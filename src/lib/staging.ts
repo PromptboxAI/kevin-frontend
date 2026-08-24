@@ -103,3 +103,29 @@ export function getThumbnails(ids: number[]) {
     `/v1/staging/photos/thumbnails?ids=${ids.join(',')}`,
   )
 }
+
+export type StagingPhotoDeleteAck = {
+  status: string
+  photo_id: number
+  session_id: number
+  /** Photos left in the session, so the grid updates without a poll. */
+  remaining: number
+}
+
+/**
+ * Remove a staged photo BEFORE processing -- an accidental upload, or a
+ * personal shot that came along with the camera roll.
+ *
+ * This is NOT a hole in "excluded, never deleted". That rule governs PROCESSED
+ * evidence: once a photo is promoted onto a line item it is part of the claim
+ * record. A raw upload sitting in staging is not yet evidence of anything.
+ *
+ * The API enforces exactly that, with 409s the caller must surface rather than
+ * swallow: the photo is already promoted, the session is processed, or
+ * clustering is running and would lose the race.
+ */
+export function deleteStagingPhoto(claimId: string, photoId: number) {
+  return api.delete<StagingPhotoDeleteAck>(
+    `/v1/claims/${encodeURIComponent(claimId)}/staging/photos/${photoId}`,
+  )
+}

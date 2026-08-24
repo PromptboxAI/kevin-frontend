@@ -6,10 +6,11 @@ import Badge from '../components/Badge'
 import { I, Icon } from '../components/Icon'
 import { ApiError } from '../lib/api'
 import { fmtInt } from '../lib/format'
-import { SET_LABEL, conflictCopy } from '../lib/staging-copy'
+import { SET_LABEL, conflictCopy, deleteConflictCopy } from '../lib/staging-copy'
 import {
   NOTE_MAX,
   clusterRemainder,
+  deleteStagingPhoto,
   getStaging,
   getThumbnails,
   isActionable,
@@ -83,6 +84,8 @@ export default function StagingPage() {
   const [noteFor, setNoteFor] = useState<string | null>(null)
   const [lightbox, setLightbox] = useState<{ key: string; i: number } | null>(null)
   const [confirmProcess, setConfirmProcess] = useState(false)
+  /** Group keys queued for deletion, awaiting the destructive confirm. */
+  const [confirmDelete, setConfirmDelete] = useState<string[] | null>(null)
   const [conflict, setConflict] = useState<string | null>(null)
   /** A clustering run is in flight and its sets have not landed yet. */
   const [awaitingSets, setAwaitingSets] = useState(false)
@@ -104,7 +107,16 @@ export default function StagingPage() {
   })
 
   const data = session.data
-  const groups = useMemo(() => data?.groups ?? [], [data])
+  /**
+   * A group whose photos were all deleted SURVIVES on the backend as an empty
+   * row (verified: deleting the last photo leaves {kind:"context", photos:[]}).
+   * It is not a set -- it has nothing to show, promotes nothing, and counting
+   * it reported "1 photo set" for a session with 0 photos.
+   */
+  const groups = useMemo(
+    () => (data?.groups ?? []).filter((g) => g.photos.length > 0),
+    [data],
+  )
   const unassigned = data?.ungrouped_photos ?? []
   const stillExtracting = pendingPhotos(data)
   /** A loose photo is only actionable once its extraction finishes. */
@@ -214,6 +226,39 @@ export default function StagingPage() {
     onError: fail('other', 'Saving the note'),
   })
 
+  /**
+   * One DELETE per member photo -- the API deletes photos, not groups, and the
+   * emptied group row stays behind (filtered out above). Sequential so a
+   * partial failure stops rather than firing the rest into a known refusal.
+   */
+  const removePhotos = useMutation({
+    mutationFn: async (keys: string[]) => {
+      const ids = keys.flatMap((k) => byKey(k)?.photos.map((p) => p.id) ?? [])
+      for (const id of ids) await deleteStagingPhoto(claimId, id)
+      return ids.length
+    },
+    onSuccess: (n) => {
+      log(`deleted ${n} staged photos`)
+      setConfirmDelete(null)
+      setSel([])
+      void session.refetch()
+    },
+    onError: (error: unknown) => {
+      setConfirmDelete(null)
+      if (error instanceof ApiError) {
+        log('DELETE FAILED', { status: error.status, detail: error.detail, requestId: error.requestId })
+        setConflict(
+          error.status === 409
+            ? deleteConflictCopy(error.detail)
+            : `Delete failed — HTTP ${error.status}: ${error.message422}`,
+        )
+        void session.refetch()
+        return
+      }
+      setConflict('Delete failed.')
+    },
+  })
+
   const process = useMutation({
     mutationFn: () => processStaging(claimId),
     onSuccess: (r) => {
@@ -231,7 +276,12 @@ export default function StagingPage() {
   const duplicates = groups.filter((g) => g.kind === 'duplicate')
   const multi = groups.filter((g) => g.photos.length > 1)
   const noted = groups.filter((g) => g.note)
-  const busy = merge.isPending || split.isPending || process.isPending || reclassify.isPending
+  const busy =
+    merge.isPending ||
+    split.isPending ||
+    process.isPending ||
+    reclassify.isPending ||
+    removePhotos.isPending
   const selCount = sel.length + selPhotos.length
   const clustering =
     cluster.isPending || remainder.isPending || awaitingSets || data?.status === 'clustering'
@@ -533,6 +583,7 @@ export default function StagingPage() {
                   kind: group.kind === 'item' ? 'context' : 'item',
                 })
               }
+              onDelete={() => setConfirmDelete([group.group_key])}
             />
           ))}
 
@@ -621,6 +672,14 @@ export default function StagingPage() {
           >
             Exclude
           </button>
+          <button
+            type="button"
+            className="k-selbar-b k-selbar-b--danger"
+            disabled={busy || sel.length === 0}
+            onClick={() => setConfirmDelete(sel)}
+          >
+            Delete
+          </button>
           <div className="k-selbar-div" />
           <button
             type="button"
@@ -654,6 +713,64 @@ export default function StagingPage() {
           onIndex={(i) => setLightbox({ key: lightboxSet.group_key, i })}
           onClose={() => setLightbox(null)}
         />
+      ) : null}
+
+      {confirmDelete ? (
+        (() => {
+          const sets = confirmDelete.map(byKey).filter(Boolean) as StagingGroup[]
+          const n = sets.reduce((a, g) => a + g.photos.length, 0)
+          return (
+            <div className="k-stage-noteover" onClick={() => setConfirmDelete(null)}>
+              <div className="k-notemodal" onClick={(e) => e.stopPropagation()}>
+                <div className="k-notemodal-hd">
+                  <div>
+                    <div className="k-notemodal-t" style={{ color: 'var(--k-danger)' }}>
+                      Delete {fmtInt(sets.length)} {sets.length === 1 ? 'set' : 'sets'}?
+                    </div>
+                    <div className="k-notemodal-s">
+                      {fmtInt(n)} {n === 1 ? 'photo' : 'photos'}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="k-icon-btn"
+                    aria-label="Close"
+                    onClick={() => setConfirmDelete(null)}
+                  >
+                    <Icon d={I.close} size={15} />
+                  </button>
+                </div>
+                <div className="k-notemodal-body">
+                  <p className="k-notemodal-lede">
+                    {fmtInt(n)} {n === 1 ? 'photo' : 'photos'} will be removed from this claim. This
+                    cannot be undone. To keep the photos but leave them out of the run, use{' '}
+                    <strong style={{ color: 'var(--k-fg-2)' }}>Exclude</strong> instead.
+                  </p>
+                </div>
+                <div className="k-notemodal-ft">
+                  <div style={{ flex: 1 }} />
+                  <button
+                    type="button"
+                    className="k-btn k-btn--ghost"
+                    onClick={() => setConfirmDelete(null)}
+                  >
+                    Keep them
+                  </button>
+                  <button
+                    type="button"
+                    className="k-btn k-btn--danger"
+                    disabled={removePhotos.isPending}
+                    onClick={() => removePhotos.mutate(confirmDelete)}
+                  >
+                    {removePhotos.isPending
+                      ? 'Deleting…'
+                      : `Delete ${fmtInt(n)} ${n === 1 ? 'photo' : 'photos'}`}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )
+        })()
       ) : null}
 
       {confirmProcess ? (
@@ -850,6 +967,7 @@ function SetCard({
   onNote,
   onSplit,
   onToggleKind,
+  onDelete,
 }: {
   group: StagingGroup
   si: number
@@ -862,6 +980,7 @@ function SetCard({
   onNote: () => void
   onSplit: () => void
   onToggleKind: () => void
+  onDelete: () => void
 }) {
   const isCtx = group.kind !== 'item'
   const cls = [
@@ -982,6 +1101,17 @@ function SetCard({
             }
           >
             {isCtx ? 'Include' : 'Exclude'}
+          </button>
+          {/* Delete removes the PHOTOS from the claim. Only reachable before
+              processing -- the API refuses a promoted photo, and so do we. */}
+          <button
+            type="button"
+            className="k-stage-act k-stage-act--danger"
+            disabled={busy}
+            title="Delete these photos from the claim"
+            onClick={onDelete}
+          >
+            <Icon d={I.trash} size={11} />
           </button>
         </div>
         ) : null}

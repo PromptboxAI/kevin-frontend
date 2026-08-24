@@ -53,7 +53,6 @@ export default function IntakePage() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
 
-  const [name, setName] = useState('')
   const [claimNumber, setClaimNumber] = useState('')
   const [policyNumber, setPolicyNumber] = useState('')
   const [dateOfLoss, setDateOfLoss] = useState('')
@@ -87,6 +86,22 @@ export default function IntakePage() {
   const [jurRate, setJurRate] = useState('')
   const [taxChoice, setTaxChoice] = useState<string | null>(null)
 
+  /**
+   * The claim NAME is derived, which is why the design has no field for it:
+   * insured surname + cause of loss is exactly how the canonical claim reads
+   * ("Godfrey — Kitchen fire"). Asking for it again would invite a third
+   * spelling of facts already on the page.
+   */
+  const name = [insuredLast.trim(), lossType.trim()].filter(Boolean).join(' — ')
+
+  /**
+   * The slug is internal identity, derived silently from that name. It is never
+   * an editable field: it names the claim in every URL and in every export
+   * already sent to a carrier, so letting someone retype it would orphan them.
+   */
+  const claimId = slugify(name)
+  const idValid = claimId === '' ? true : isValidClaimId(claimId)
+
   const [error, setError] = useState<string | null>(null)
   const [created, setCreated] = useState<string | null>(null)
 
@@ -99,13 +114,6 @@ export default function IntakePage() {
     taxChoice && taxOptions.some((o) => o.label === taxChoice) ? taxChoice : taxOptions[0].label
   const taxRate = taxOptions.find((o) => o.label === taxLabel)?.rate ?? 0
 
-  /**
-   * The slug is internal identity, derived silently. It is never an editable
-   * field: it is the claim's name in every URL and in every export already sent
-   * to a carrier, so letting someone retype it would orphan them.
-   */
-  const claimId = slugify(name)
-  const idValid = claimId === '' && name.trim() === '' ? true : isValidClaimId(claimId)
 
   const insuredName = [insuredFirst.trim(), insuredLast.trim()].filter(Boolean).join(' ')
   const lossAddress = [street.trim(), city.trim(), [state, zip].filter(Boolean).join(' ').trim()]
@@ -265,7 +273,7 @@ export default function IntakePage() {
               onChange={(v) => setZip(v.replace(/[^0-9]/g, '').slice(0, 5))}
               hint={
                 zipTax
-                  ? `${zipTax.county ?? zipTax.label} · ${zipTax.rate}%`
+                  ? `${zipTax.label} · ${zipTax.rate}%`
                   : zip
                     ? 'Not recognised — add the jurisdiction'
                     : 'Sets the sales tax rate'
@@ -360,19 +368,7 @@ export default function IntakePage() {
               width={240}
               placeholder="Allstate"
               onChange={setCarrier}
-            />
-            <IntakeField
-              label="Claim name"
-              value={name}
-              width={300}
-              placeholder="Godfrey — Kitchen fire"
-              invalid={!idValid}
-              onChange={setName}
-              hint={
-                idValid
-                  ? 'Shown on the dashboard and the worksheet header'
-                  : 'Needs at least one letter or number'
-              }
+              hint={name ? `Filed as “${name}”` : 'Insured surname + cause of loss name the claim'}
             />
           </div>
 

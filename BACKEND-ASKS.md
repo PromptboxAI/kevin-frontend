@@ -251,3 +251,18 @@ one the rule requires) but cannot persist it.
 Ask: add `pp_limit_label: str | None` to `ClaimMetadata`, defaulting to null
 rather than to "Coverage C" — the whole point of the field is that the default
 is wrong for renters and commercial policies.
+
+## 18. Deleting the last photo in a staging group leaves an empty group behind
+
+`DELETE …/staging/photos/{id}` removes the photo but not the group row it
+emptied. Verified on a scratch session: after deleting the only photo,
+`GET …/staging` returns `photo_count: 0` alongside
+`groups: [{group_key: "51-0", kind: "context", photos: []}]`.
+
+The frontend filters zero-photo groups out — an empty set has nothing to show
+and promotes nothing, and counting it reported "1 photo set" for a session with
+0 photos. Flagging it because the same row is presumably visible to anything
+else reading the session, and because `/staging/process` would iterate it.
+
+Not urgent; a prune in the delete path (or a `having count(*) > 0` on the read)
+would settle it.
