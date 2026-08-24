@@ -39,6 +39,18 @@ export const I = {
   chevleft: <path d="m15 18-6-6 6-6" />,
   chevdown: <path d="m6 9 6 6 6-6" />,
   chevright: <path d="m9 6 6 6-6 6" />,
+  lock: (
+    <>
+      <rect x="4" y="10" width="16" height="11" rx="2" />
+      <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+    </>
+  ),
+  link: (
+    <>
+      <path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07L11 5" />
+      <path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07L13 19" />
+    </>
+  ),
   close: <path d="M6 6l12 12M18 6 6 18" />,
   edit: <path d="M4 20h4L19 9a2.5 2.5 0 0 0-3.5-3.5L4 17v3z" />,
   warn: (

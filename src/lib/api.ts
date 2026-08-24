@@ -149,6 +149,8 @@ export const portal = {
       method: 'GET',
       retryOnRateLimit: true,
     }),
+  post: <T>(token: string, path = '', options?: Options) =>
+    request<T>(`/p/${encodeURIComponent(token)}${path}`, { ...options, method: 'POST' }),
 }
 
 /**
