@@ -1535,8 +1535,7 @@ const Worksheet = ({ density = 'comfortable', sample = false, focusItem = null }
       <footer className="k-footer">
         <span>
           Showing <strong style={{ color: 'var(--k-fg-2)' }}>{filtered.length}</strong> of {rows.length} items
-          · Rendered {visible.length} rows (window {startIdx}–{endIdx})
-          · Auto-saved 2s ago
+          · All changes saved
         </span>
         <span style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <span style={{ color: 'var(--k-fg-4)' }}>↑ ↓ navigate · ⏎ edit</span>

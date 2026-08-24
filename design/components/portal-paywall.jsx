@@ -22,7 +22,11 @@ const PortalPaywall = () => {
   // Server-picked preview: ~10%, spread across rooms (first priced row per room, capped at 6)
   const seen = new Set(); const preview = [];
   for (const r of priced) { if (!seen.has(r.room) && preview.length < 6) { seen.add(r.room); preview.push(r); } }
-  const [paid, setPaid] = React.useState(false);
+  const [paid, setPaaid] = React.useState(false);
+  // Checkout is a Stripe-hosted page; unlock releases on the payment WEBHOOK,
+  // never the browser return URL. The modal here mocks that redirect round-trip.
+  const [checkout, setCheckout] = React.useState(false);
+  const setPaid = setPaaid;
   // Payload fields verbatim (rule 20): tax-inclusive line totals, no client math.
   const money = (r) => ({ ext: r.rcv_total_incl || 0, acv: r.acv_total_incl || 0 });
   const totIncl = priced.reduce((a, r) => ({ rcv: a.rcv + (r.rcv_total_incl || 0), acv: a.acv + (r.acv_total_incl || 0) }), { rcv: 0, acv: 0 });
@@ -35,7 +39,7 @@ const PortalPaywall = () => {
         </div>
         <Badge tone={paid ? 'ok' : 'quiet'} dot={true}>{paid ? 'Unlocked' : 'Preview'}</Badge>
       </header>
-      <main style={{ maxWidth: 1160, margin: '0 auto', padding: '28px 24px 60px' }}>
+      <main style={{ maxWidth: 1160, margin: '0 auto', padding: '28px 24px 60px', minWidth: 0, width: '100%', boxSizing: 'border-box' }}>
         <section style={{ background: 'var(--k-bg)', border: '1px solid var(--k-line)', borderRadius: 12, padding: '18px 22px', marginBottom: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
             <div>
@@ -57,7 +61,7 @@ const PortalPaywall = () => {
               <div style={{ fontSize: 14.5, fontWeight: 600 }}>Your full inventory is ready — 57 items, photographed and priced.</div>
               <div style={{ fontSize: 12, opacity: 0.85, marginTop: 3 }}>Preview shows {preview.length} of 57 lines. Pay once to unlock every line, the photos, and the download files (Excel + PDF).</div>
             </div>
-            <button className="k-btn k-btn--lg" style={{ background: '#fff', color: 'var(--k-fg)' }} onClick={() => setPaid(true)}>Unlock full inventory · {price}</button>
+            <button className="k-btn k-btn--lg" style={{ background: '#fff', color: 'var(--k-fg)' }} onClick={() => setCheckout(true)}>Unlock full inventory · {price}</button>
           </section>
         )}
         {/* Full worksheet column set (export parity, rule 17) minus adjuster-only
@@ -103,7 +107,7 @@ const PortalPaywall = () => {
               <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: 'linear-gradient(180deg, transparent, var(--k-bg) 85%)' }}>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: 13.5, fontWeight: 600 }}><Icon d={I.lock} size={13} /> 51 more lines locked</div>
-                  <button className="k-btn" style={{ marginTop: 10 }} onClick={() => setPaid(true)}>Unlock full inventory · {price}</button>
+                  <button className="k-btn" style={{ marginTop: 10 }} onClick={() => setCheckout(true)}>Unlock full inventory · {price}</button>
                   <div style={{ fontSize: 11, color: 'var(--k-fg-4)', marginTop: 6 }}>Secure checkout via Stripe · one-time payment</div>
                 </div>
               </div>
@@ -117,6 +121,19 @@ const PortalPaywall = () => {
             <button className="k-btn k-btn--ghost"><Icon d={I.download} size={13} /> PDF inventory</button>
             <button className="k-btn k-btn--ghost"><Icon d={I.download} size={13} /> Photos · .zip</button>
           </section>
+        )}
+        {checkout && !paid && (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 60, display: 'grid', placeItems: 'center', background: 'oklch(0.2 0.01 250 / 0.45)' }} onClick={() => setCheckout(false)}>
+            <div style={{ width: 400, background: 'var(--k-bg)', borderRadius: 14, border: '1px solid var(--k-line)', padding: '22px 24px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+              <div style={{ fontSize: 15, fontWeight: 600 }}>Continue to secure checkout</div>
+              <div style={{ fontSize: 12.5, color: 'var(--k-fg-3)', marginTop: 6, lineHeight: 1.5 }}>You'll be taken to Stripe to pay <strong>{price}</strong> (one-time). The full inventory unlocks automatically the moment payment is confirmed.</div>
+              {/* Production: redirect to the Stripe Checkout session URL from
+                  POST /p/{token}/checkout. No card fields ever render on our page. */}
+              <button className="k-btn k-btn--lg" style={{ marginTop: 16, width: '100%', justifyContent: 'center' }} onClick={() => { setCheckout(false); setPaid(true); }}>Pay {price} with Stripe →</button>
+              <button className="k-btn k-btn--ghost" style={{ marginTop: 8, width: '100%', justifyContent: 'center' }} onClick={() => setCheckout(false)}>Cancel</button>
+              <div style={{ fontSize: 10.5, color: 'var(--k-fg-4)', marginTop: 10 }}>Payments handled by Stripe — card details never touch Kevin.</div>
+            </div>
+          </div>
         )}
         <footer style={{ fontSize: 11, color: 'var(--k-fg-4)', marginTop: 26, textAlign: 'center' }}>Prepared with Kevin · kevin.co</footer>
       </main>

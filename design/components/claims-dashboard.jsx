@@ -303,8 +303,8 @@ const ClaimRowMenu = ({ claim, onStatus }) => {
   // status_counts.processing rides every claim row and survives close/archive.
   const busy = claim && (claim.status === 'processing' || ((claim.status_counts && claim.status_counts.processing) || 0) > 0);
   const items = [
-    { icon: I.expand,   label: 'Open' },
-    { icon: I.eye,      label: 'Preview' },
+    { icon: I.expand,   label: 'Open', act: 'open' },
+    { icon: I.eye,      label: 'Preview', act: 'open' },
     { icon: I.copy,     label: 'Duplicate', act: 'duplicate' },
     { kind: 'div' },
     { icon: I.download, label: 'Export…',   act: 'export', disabled: busy, why: 'Available when processing finishes' },
@@ -320,7 +320,7 @@ const ClaimRowMenu = ({ claim, onStatus }) => {
 
   return (
     <div ref={ref} style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end', position: 'relative' }}>
-      <button className="k-btn k-btn--ghost">Open →</button>
+      <a className="k-btn k-btn--ghost" href="12-Claim-overview.html" title="Open this claim">Open →</a>
       <button
         className="k-icon-btn"
         onClick={() => setOpen(o => !o)}
@@ -336,7 +336,7 @@ const ClaimRowMenu = ({ claim, onStatus }) => {
             {items.map((it, i) => it.kind === 'div'
               ? <div key={`d-${i}`} className="k-avatar-menu-div" />
               : (
-                <button key={i} className={`k-menu-item ${it.danger ? 'k-menu-item--danger' : ''}`} disabled={it.disabled} title={it.disabled ? it.why : undefined} onClick={() => { if (it.disabled) return; setOpen(false); if (it.act === 'close') onStatus(CLOSED_STATUSES.includes(claim.status) ? 'open' : 'closed'); else if (it.act) setModal(it.act); }} role="menuitem" style={{ width: '100%', justifyContent: 'flex-start', ...(it.disabled ? { opacity: 0.45, cursor: 'default' } : null) }}>
+                <button key={i} className={`k-menu-item ${it.danger ? 'k-menu-item--danger' : ''}`} disabled={it.disabled} title={it.disabled ? it.why : undefined} onClick={() => { if (it.disabled) return; setOpen(false); if (it.act === 'open') { window.location.href = '12-Claim-overview.html'; return; } if (it.act === 'close') onStatus(CLOSED_STATUSES.includes(claim.status) ? 'open' : 'closed'); else if (it.act) setModal(it.act); }} role="menuitem" style={{ width: '100%', justifyContent: 'flex-start', ...(it.disabled ? { opacity: 0.45, cursor: 'default' } : null) }}>
                   <span style={{ display: 'inline-grid', width: 14, color: it.danger ? 'inherit' : 'var(--k-fg-4)' }}><Icon d={it.icon} size={12} /></span>
                   <span style={{ marginLeft: 8 }}>{it.label}</span>
                 </button>

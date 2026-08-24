@@ -380,22 +380,25 @@ const Intake = ({ onBegin }) => {
             </div>
           </div>
           <div className="k-intake-form">
-            <IntakeField label="Claim number" value="CLM-2026-04412" mono width={220} />
-            <IntakeField label="Policy number" value="9 4 2 1 7 8 0 3 6" mono width={200} />
-            <IntakeField label="Date of loss" value="04 / 18 / 2026" mono width={170} />
-            <IntakeField label="Cause of loss" value="Kitchen fire" width={200} />
-            <IntakeField label="Carrier / agency" value="Allstate" width={240} />
             <IntakeField label="Insured — first name" value="Kevin" width={200} />
             <IntakeField label="Insured — last name" value="Godfrey" width={200} />
+            <div style={{ width: '100%', height: 0 }}></div>
             <IntakeField label="Loss address" value="123 Main St." width={260} />
             <IntakeField label="City" value="Smithtown" width={160} />
             <IntakeSelect label="State" defaultValue="NY" options={window.US_STATES} width={92} />
             <IntakeField label="Loss ZIP" value={zip} onChange={(e) => setZip(e.target.value.replace(/[^0-9]/g, '').slice(0, 5))} mono width={120} hint={zipTax ? `${zipTax.label} · ${zipTax.rate}%` : 'Not recognised — add the jurisdiction'} />
+            <div style={{ width: '100%', height: 0 }}></div>
+            <IntakeField label="Claim number" value="CLM-2026-04412" mono width={220} />
+            <IntakeField label="Policy number" value="9 4 2 1 7 8 0 3 6" mono width={200} />
+            <IntakeField label="Date of loss" value="04 / 18 / 2026" mono width={170} />
+            <IntakeField label="Cause of loss" value="Kitchen fire" width={200} />
             <IntakeSelect label="Local tax rate" key={zip + ':' + taxAdded.length} defaultValue={taxOptions[0]} options={[...taxOptions, '__addjur']} addLabel="+ Add tax jurisdiction…" onAdd={() => setJurOpen(true)} width={230} hint={zipTax ? 'Resolved from the loss ZIP' : 'No lookup for this ZIP — add it'} />
-            <IntakeField label="Policy form" value="HO-3 · Open perils" width={200} />
             <IntakeSelect label="Contents coverage label" defaultValue="Coverage C — Personal Property" options={['Coverage C — Personal Property', 'Personal Property', 'Contents', 'Coverage B — Contents (renters)', 'Business Personal Property', 'Unscheduled Personal Property']} width={280} hint="Policies name this differently — matches the insured's declarations page" />
             <IntakeField label="Personal property limit" value="$175,000" mono width={180} hint="Warns when the inventory nears it" />
             <IntakeField label="Amount already claimed" value="$0" mono width={180} hint="Prior contents payments on this loss" />
+            <div style={{ width: '100%', height: 0 }}></div>
+            <IntakeField label="Policy form" value="HO-3 · Open perils" width={200} />
+            <IntakeField label="Carrier / agency" value="Allstate" width={240} />
           </div>
         </section>
         )}
