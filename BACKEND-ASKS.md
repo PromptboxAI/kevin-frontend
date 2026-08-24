@@ -217,19 +217,23 @@ server-side resize (long edge ~600px) on this endpoint only — the lightbox and
 the worksheet still want the original — would cut it by two orders of
 magnitude.
 
-## 16. No delete path for a staging photo or group
+## 16. ~~No delete path for a staging photo or group~~ — WRONG, it exists
 
-The design's set card carries a trash action after Exclude ("Delete these
-photos from the claim"). There is no endpoint for it — the staging surface has
-`merge`, `ungroup`, `PATCH …/groups/{key}`, `PATCH …/photos/{id}`, `reset` and
-`process`, none of which remove a photo. The action is therefore **not built**
-rather than wired to something that would fail.
+**Retracted.** `DELETE /v1/claims/{claim_id}/staging/photos/{photo_id}` has
+been there all along (main.py:4857) — "Remove a staged photo BEFORE processing
+— an accidental upload, or a personal shot that came along with the camera
+roll." My route survey missed it because the decorator spans two lines and the
+line carrying `staging` is not the line carrying `@v1.delete`.
 
-Worth confirming this is deliberate before anyone adds it: rule 22 says
-evidence is *excluded from the worksheet, never deleted*, which argues the
-trash affordance should come off the design rather than onto the API. If a
-real delete is wanted, it needs `DELETE /v1/claims/{id}/staging/photos/{id}`
-and a decision about what happens to an already-promoted photo.
+Nothing is asked of the backend here. The frontend owes the work: the design's
+per-card trash action is buildable today as one DELETE per member photo, with
+the destructive confirm the design already specifies ("N photos will be removed
+from this claim. This cannot be undone. To keep the photos but leave them out
+of the run, use Exclude instead.").
+
+Worth keeping in view while building it: the endpoint is scoped to BEFORE
+processing, so the action belongs only on a session that has not been promoted
+— the same `editable` gate the processed-session pass added.
 
 ## 17. No field for the contents-coverage LABEL on a claim
 
