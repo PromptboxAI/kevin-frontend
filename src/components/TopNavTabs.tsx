@@ -11,10 +11,20 @@ const TABS: [string, string | null][] = [
 export default function TopNavTabs() {
   const { pathname } = useLocation()
 
+  // startsWith alone lights BOTH "New claim" and "My claims" on /claims/new,
+  // because /claims is a prefix of it. Exactly one tab is active: the one with
+  // the LONGEST matching path.
+  const activeTo = TABS.reduce<string | null>((best, [, to]) => {
+    if (to === null) return best
+    const matches = pathname === to || pathname.startsWith(to + '/')
+    if (!matches) return best
+    return best === null || to.length > best.length ? to : best
+  }, null)
+
   return (
     <nav style={{ display: 'flex', gap: 2, fontSize: 12.5 }}>
       {TABS.map(([label, to]) => {
-        const active = to !== null && pathname.startsWith(to)
+        const active = to !== null && to === activeTo
         if (!to) {
           return (
             <span

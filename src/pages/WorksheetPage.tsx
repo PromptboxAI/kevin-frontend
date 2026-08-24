@@ -397,7 +397,7 @@ export default function WorksheetPage() {
     onError: (error) =>
       setNotice(
         error instanceof ApiError
-          ? `Could not save the source link — HTTP ${error.status}: ${String(error.detail)}`
+          ? `Could not save the source link — HTTP ${error.status}: ${error.message422}`
           : 'Could not save the source link.',
       ),
   })

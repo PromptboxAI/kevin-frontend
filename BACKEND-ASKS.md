@@ -230,3 +230,20 @@ evidence is *excluded from the worksheet, never deleted*, which argues the
 trash affordance should come off the design rather than onto the API. If a
 real delete is wanted, it needs `DELETE /v1/claims/{id}/staging/photos/{id}`
 and a decision about what happens to an already-promoted photo.
+
+## 17. No field for the contents-coverage LABEL on a claim
+
+Rule 14 is explicit that a claim carries BOTH a `ppLimitLabel` (Coverage C ·
+Personal Property · Contents · Coverage B for renters · Business Personal
+Property) and the `ppLimit` amount, because policies name contents coverage
+differently and printing a coverage letter as though it were universal
+misrepresents the policy.
+
+`ClaimMetadata` has `personal_property_limit` but no label field, and it is a
+strict model — sending `pp_limit_label` 422s the entire create. The New-claim
+screen therefore captures the label in a select (the design's control, and the
+one the rule requires) but cannot persist it.
+
+Ask: add `pp_limit_label: str | None` to `ClaimMetadata`, defaulting to null
+rather than to "Coverage C" — the whole point of the field is that the default
+is wrong for renters and commercial policies.

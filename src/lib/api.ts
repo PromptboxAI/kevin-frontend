@@ -24,6 +24,34 @@ export class ApiError extends Error {
     this.retryAfter = retryAfter
   }
 
+  /**
+   * A message worth showing.
+   *
+   * A 422's `detail` is FastAPI's array of validation objects, and String()ing
+   * it renders "[object Object]" -- which told us a create had failed but not
+   * which field the API rejected. This names the field and the reason.
+   */
+  get message422(): string {
+    const d = this.detail
+    if (typeof d === 'string') return d
+    if (Array.isArray(d)) {
+      return d
+        .map((e) => {
+          const item = e as { loc?: unknown[]; msg?: string; type?: string }
+          const field = Array.isArray(item.loc)
+            ? item.loc.filter((p) => p !== 'body').join('.')
+            : ''
+          return [field, item.msg ?? item.type ?? 'invalid'].filter(Boolean).join(': ')
+        })
+        .join(' · ')
+    }
+    try {
+      return JSON.stringify(d)
+    } catch {
+      return `HTTP ${this.status}`
+    }
+  }
+
   /** 404 is deliberately "not found OR not yours" -- never distinguish them. */
   get isMissing() {
     return this.status === 404

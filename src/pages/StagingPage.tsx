@@ -151,7 +151,7 @@ export default function StagingPage() {
           setConflict(conflictCopy(action, error.detail))
           return
         }
-        setConflict(`${label} failed — HTTP ${error.status}: ${String(error.detail)}`)
+        setConflict(`${label} failed — HTTP ${error.status}: ${error.message422}`)
         return
       }
       setConflict(`${label} failed.`)
