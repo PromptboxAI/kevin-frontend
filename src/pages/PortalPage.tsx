@@ -38,7 +38,7 @@ import type { PortalItem, PortalResponse } from '../lib/portal'
  */
 
 /** Export-parity columns minus the adjuster-only internals. */
-const COLS = '40px 90px 40px 1.5fr 1fr 74px 78px 64px 84px 42px 52px 74px 84px'
+const COLS = '40px 90px 40px 1.5fr 1fr 74px 78px 64px 84px 42px 52px 74px 84px 46px'
 const NUM: React.CSSProperties = {
   textAlign: 'right',
   fontFamily: 'var(--k-font-mono)',
@@ -284,6 +284,11 @@ function Portal({
               <div>
                 <div style={STAT_L}>Items</div>
                 <div style={STAT_V}>{fmtInt(totals?.item_count ?? total)}</div>
+                {locked > 0 && !paid ? (
+                  <div style={{ fontSize: 10.5, color: 'var(--k-fg-4)', marginTop: 2 }}>
+                    {fmtInt(shown)} shown
+                  </div>
+                ) : null}
               </div>
               <div>
                 <div style={STAT_L}>Total RCV + tax</div>
@@ -308,6 +313,9 @@ function Portal({
               paddingTop: 8,
             }}
           >
+            {locked > 0 && !paid
+              ? `Totals cover all ${fmtInt(total)} items, including the ${fmtInt(locked)} not shown below. `
+              : ''}
             {data.disclaimer}
           </div>
         </section>
@@ -388,7 +396,7 @@ function Portal({
 
         {/* Export-parity column set minus the adjuster-only internals. */}
         <section style={{ ...CARD, overflow: 'auto' }}>
-          <div style={{ minWidth: 1050 }}>
+          <div style={{ minWidth: 1100 }}>
             <div
               style={{
                 display: 'grid',
@@ -415,6 +423,7 @@ function Portal({
               <span style={{ textAlign: 'right' }}>% Depr.</span>
               <span style={{ textAlign: 'right' }}>$ Depr.</span>
               <span style={{ textAlign: 'right' }}>ACV</span>
+              <span style={{ textAlign: 'center' }}>Source</span>
             </div>
 
             {items.map((item, i) => (
@@ -455,6 +464,7 @@ function Portal({
                     <span style={{ textAlign: 'right' }}>██%</span>
                     <span style={{ textAlign: 'right' }}>$██.██</span>
                     <span style={{ textAlign: 'right' }}>$███.██</span>
+                    <span style={{ textAlign: 'center' }}>█</span>
                   </div>
                 ))}
                 <div
@@ -635,17 +645,6 @@ function Row({ item, n }: { item: PortalItem; n: number }) {
       <span style={NUM}>{item.quantity ?? 1}</span>
       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {item.description || '—'}
-        {item.source_link ? (
-          <a
-            href={item.source_link}
-            target="_blank"
-            rel="noreferrer noopener"
-            title="Where this price came from"
-            style={{ marginLeft: 6, color: 'var(--k-accent)' }}
-          >
-            <Icon d={I.link} size={10} />
-          </a>
-        ) : null}
       </span>
       <span
         style={{
@@ -677,6 +676,23 @@ function Row({ item, n }: { item: PortalItem; n: number }) {
       </span>
       <span style={{ ...NUM, fontWeight: 600 }}>
         {item.acv_total_incl != null ? fmtUSD(item.acv_total_incl) : '—'}
+      </span>
+      {/* The link IS the disclosure -- one source, never a comp list, and
+          substitution is never labelled. */}
+      <span style={{ textAlign: 'center' }}>
+        {item.source_link ? (
+          <a
+            href={item.source_link}
+            target="_blank"
+            rel="noreferrer noopener"
+            title="Where this price came from"
+            style={{ color: 'var(--k-accent)' }}
+          >
+            <Icon d={I.link} size={12} />
+          </a>
+        ) : (
+          <span style={{ color: 'var(--k-fg-4)' }}>—</span>
+        )}
       </span>
     </div>
   )

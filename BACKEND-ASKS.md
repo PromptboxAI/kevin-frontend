@@ -266,3 +266,36 @@ else reading the session, and because `/staging/process` would iterate it.
 
 Not urgent; a prune in the delete path (or a `having count(*) > 0` on the read)
 would settle it.
+
+## 19. BLOCKER — `resolve_share` never selects `paid_at`, so `paid` is always false
+
+The payment landed. Stripe shows `checkout.session.completed` delivered
+**200 OK at 8:02:59 PM**, and a manual resend at 8:12:17 correctly returned
+`{"share_id":"9554aacb-…","unlocked":false}` — the conditional update matching
+zero rows is exactly what an idempotent retry looks like once `paid_at` is set.
+
+But `GET /p/{token}` still reports `paid: false`, because the read path never
+loads the column:
+
+    # services/shares.py:331 — resolve_share()
+    .select("id, owner, claim_id, audience, expires_at, revoked_at, "
+            "allow_download, released_at, view_count, unlock_price")
+
+`paid_at` is absent, so `share.get("paid_at")` is always `None`, so
+`_paywall_unlocked()` (main.py:3295) always returns False. No payment can ever
+unlock a share through this path, no matter how many webhooks succeed.
+
+Fix: add `paid_at` to that select list.
+
+### Second gate, independent of the above
+
+`can_download = allow_download AND released_at` (main.py:3522), and the webhook
+sets only `paid_at` / `payment_ref` / `payment_event_id` — never `released_at`.
+On share `9554aacb` `released_at` is null, so **downloads stay off even once
+`paid_at` is visible**, until someone calls `POST /v1/shares/{id}/release`.
+
+That may well be deliberate for an adjuster-sent link. It is worth a decision
+for a PAYWALLED one: the customer has paid for the document, and asking them to
+wait for the adjuster to also release it makes the purchase feel unfinished.
+Either the webhook stamps `released_at` alongside `paid_at` on a paywalled
+share, or the product accepts that paying unlocks the lines but not the files.
