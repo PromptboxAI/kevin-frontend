@@ -149,3 +149,49 @@ export function portalExportUrl(token: string, format: 'xlsx' | 'pdf'): string {
   const base = import.meta.env.VITE_API_BASE_URL ?? ''
   return `${base}/p/${encodeURIComponent(token)}/export?format=${format}`
 }
+
+/**
+ * What the INSURED may change on one line -- a deliberately tiny surface.
+ *
+ * Only fields actually sent are written, so editing age never disturbs a
+ * receipt someone entered last week. `age_years` is the reason this endpoint
+ * exists: it is null on most rows, no automation can fill it (Vision cannot
+ * read age off a photograph), and it drives depreciation -> ACV -> the number
+ * the claim settles on. The insured is the only person who knows it.
+ */
+export type PortalItemPatch = {
+  age_years?: number | null
+  claimed_rcv?: number | null
+  replaced_qty?: number | null
+  rcv?: number | null
+}
+
+/** The money, recomputed SERVER-side so the portal never derives it. */
+export type PortalItemPatchAck = {
+  status: string
+  row_id: number
+  applied: Record<string, unknown>
+  rcv_total_incl: number | null
+  depreciation_pct: number | null
+  acv_total_incl: number | null
+  recoverable: number
+}
+
+export function patchPortalItem(token: string, rowId: number, body: PortalItemPatch) {
+  return portal.patch<PortalItemPatchAck>(token, `/items/${rowId}`, { json: body })
+}
+
+/** The API rejects an obvious typo (2026 as a year rather than an age). */
+export const AGE_MAX = 200
+
+/**
+ * Parse an age as typed. Empty clears the field, which is a real edit -- an
+ * insured who cannot remember should be able to take the number back off.
+ */
+export function parseAge(input: string): { ok: true; value: number | null } | { ok: false } {
+  const text = input.trim()
+  if (text === '') return { ok: true, value: null }
+  const value = Number(text)
+  if (!Number.isFinite(value) || value < 0 || value > AGE_MAX) return { ok: false }
+  return { ok: true, value: Math.round(value * 10) / 10 }
+}

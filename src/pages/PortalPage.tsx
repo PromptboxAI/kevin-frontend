@@ -7,9 +7,12 @@ import { ApiError } from '../lib/api'
 import { isApiConfigured } from '../lib/env'
 import { fmtDate, fmtInt, fmtUSD } from '../lib/format'
 import {
+  AGE_MAX,
   POLL_ATTEMPTS,
   RETURNED_FROM_CHECKOUT,
   getPortal,
+  parseAge,
+  patchPortalItem,
   pollDelay,
   portalExportUrl,
   startCheckout,
@@ -214,6 +217,65 @@ function Portal({
   onPay: () => void
   onKeepWaiting: () => void
 }) {
+  const queryClient = useQueryClient()
+  /** Rows whose recompute is in flight -- money dims, never blanks. */
+  const [pending, setPending] = useState<Set<number>>(new Set())
+  const [rowError, setRowError] = useState<string | null>(null)
+
+  /**
+   * The insured corrects one line.
+   *
+   * The server recomputes depreciation -> ACV and returns the money, which is
+   * applied VERBATIM: the portal derives none of it, so it can never disagree
+   * with the worksheet or the export. The refetch that follows picks up the
+   * fields the ack does not carry ($ Depr.) and the claim totals.
+   *
+   * Two states only. This write is live on the next read -- it never queues,
+   * and it is never "Sent to your adjuster"; that belongs to proposed NEW
+   * items alone.
+   */
+  const saveAge = async (row: PortalItem, years: number | null) => {
+    if (years === row.age_years) return
+    setRowError(null)
+    setPending((p) => new Set(p).add(row.id))
+    try {
+      const ack = await patchPortalItem(token, row.id, { age_years: years })
+      queryClient.setQueryData<PortalResponse>(['portal', token], (prev) =>
+        prev
+          ? {
+              ...prev,
+              items: prev.items.map((it) =>
+                it.id === row.id
+                  ? {
+                      ...it,
+                      age_years: years,
+                      rcv_total_incl: ack.rcv_total_incl,
+                      depreciation_pct: ack.depreciation_pct,
+                      acv_total_incl: ack.acv_total_incl,
+                      recoverable: ack.recoverable,
+                    }
+                  : it,
+              ),
+            }
+          : prev,
+      )
+      // $ Depr. and the claim totals are not on the ack -- re-read for them.
+      await queryClient.invalidateQueries({ queryKey: ['portal', token] })
+    } catch (err) {
+      setRowError(
+        err instanceof ApiError
+          ? `That age could not be saved — HTTP ${err.status}: ${err.message422}`
+          : 'That age could not be saved.',
+      )
+    } finally {
+      setPending((p) => {
+        const next = new Set(p)
+        next.delete(row.id)
+        return next
+      })
+    }
+  }
+
   const { claim, items, totals, locked_count: locked, unlock_price: price } = data
   const paywalled = price !== null
   const priceLabel = price !== null ? fmtUSD(price) : ''
@@ -389,6 +451,40 @@ function Portal({
           </section>
         ) : null}
 
+        {rowError ? (
+          <div
+            style={{
+              ...CARD,
+              padding: '10px 16px',
+              marginBottom: 10,
+              fontSize: 12.5,
+              color: 'var(--k-danger)',
+            }}
+          >
+            {rowError}
+          </div>
+        ) : null}
+
+        {paid || !paywalled ? (
+          <div
+            style={{
+              fontSize: 12,
+              color: 'var(--k-fg-3)',
+              margin: '0 2px 8px',
+              display: 'flex',
+              gap: 6,
+              alignItems: 'center',
+            }}
+          >
+            <Icon d={I.info} size={13} />
+            <span>
+              Know how old something was? Type the age in years — your adjuster's depreciation
+              and ACV estimate update straight away. These remain the adjuster's estimates; the
+              carrier makes the final settlement decision.
+            </span>
+          </div>
+        ) : null}
+
         {/* Export-parity column set minus the adjuster-only internals. */}
         <section style={{ ...CARD, overflow: 'auto' }}>
           <div style={{ minWidth: 1100 }}>
@@ -422,7 +518,16 @@ function Portal({
             </div>
 
             {items.map((item, i) => (
-              <Row key={item.id} item={item} n={i + 1} />
+              <Row
+                key={item.id}
+                item={item}
+                n={i + 1}
+                /* Locked/preview rows are read-only: a withheld inventory is
+                   not one the holder has bought the right to correct. */
+                editable={!paywalled || paid}
+                pending={pending.has(item.id)}
+                onAge={(years) => void saveAge(item, years)}
+              />
             ))}
 
             {locked > 0 && !paid ? (
@@ -610,7 +715,22 @@ function Portal({
   )
 }
 
-function Row({ item, n }: { item: PortalItem; n: number }) {
+function Row({
+  item,
+  n,
+  editable,
+  pending,
+  onAge,
+}: {
+  item: PortalItem
+  n: number
+  editable: boolean
+  pending: boolean
+  onAge: (years: number | null) => void
+}) {
+  // While the server recomputes, the derived money DIMS rather than blanking:
+  // a cell that empties reads as "your edit deleted the price".
+  const dim: React.CSSProperties = pending ? { opacity: 0.45 } : {}
   return (
     <div
       style={{
@@ -662,14 +782,18 @@ function Row({ item, n }: { item: PortalItem; n: number }) {
       </span>
       <span style={NUM}>{item.tax != null ? fmtUSD(item.tax) : '—'}</span>
       <span style={NUM}>{item.rcv_total_incl != null ? fmtUSD(item.rcv_total_incl) : '—'}</span>
-      <span style={NUM}>{item.age_years ?? '—'}</span>
-      <span style={{ ...NUM, color: 'var(--k-fg-3)' }}>
+      {editable ? (
+        <AgeCell value={item.age_years} disabled={pending} onCommit={onAge} />
+      ) : (
+        <span style={NUM}>{item.age_years ?? '—'}</span>
+      )}
+      <span style={{ ...NUM, color: 'var(--k-fg-3)', ...dim }}>
         {item.depreciation_pct != null ? `${Math.round(item.depreciation_pct * 100)}%` : '—'}
       </span>
-      <span style={{ ...NUM, color: 'var(--k-fg-3)' }}>
+      <span style={{ ...NUM, color: 'var(--k-fg-3)', ...dim }}>
         {item.depreciation_amount != null ? fmtUSD(item.depreciation_amount) : '—'}
       </span>
-      <span style={{ ...NUM, fontWeight: 600 }}>
+      <span style={{ ...NUM, fontWeight: 600, ...dim }}>
         {item.acv_total_incl != null ? fmtUSD(item.acv_total_incl) : '—'}
       </span>
       {/* The link IS the disclosure -- one source, never a comp list, and
@@ -690,6 +814,110 @@ function Row({ item, n }: { item: PortalItem; n: number }) {
         )}
       </span>
     </div>
+  )
+}
+
+/**
+ * Age, as the insured types it.
+ *
+ * Same conventions as the worksheet: clear on focus so a stale number is not
+ * edited by accident, Enter or Tab commits, Escape abandons. The cell renders
+ * the DRAFT while focused and the server's value otherwise -- rendering the
+ * prop mid-commit is what made worksheet cells flash their old value back.
+ */
+function AgeCell({
+  value,
+  disabled,
+  onCommit,
+}: {
+  value: number | null
+  disabled: boolean
+  onCommit: (years: number | null) => void
+}) {
+  const [draft, setDraft] = useState<string | null>(null)
+  const [bad, setBad] = useState(false)
+  const ref = useRef<HTMLInputElement>(null)
+  // A REF, not state: the gate has to be readable in the same tick the user
+  // typed, and state may still be a render behind.
+  const dirty = useRef(false)
+
+  /**
+   * Commit reads the INPUT, not the draft state.
+   *
+   * Two bugs came out of doing it the other way. Routing Enter through
+   * e.currentTarget.blur() silently did nothing: the field kept focus, the
+   * number sat there looking saved, and no PATCH was ever sent. Reading
+   * `draft` then failed too -- a character and the Enter that follows it can
+   * land in one React batch, so the keydown handler still closed over the
+   * previous render's empty draft. The DOM value is what the client actually
+   * typed, and it is never stale.
+   *
+   * Setting draft to null makes the following onBlur a no-op, so Enter and the
+   * blur it triggers cannot both fire the same write.
+   */
+  const commit = () => {
+    if (!dirty.current) return
+    const typed = ref.current?.value ?? draft ?? ''
+    const parsed = parseAge(typed)
+    if (!parsed.ok) {
+      setBad(true)
+      return
+    }
+    setBad(false)
+    dirty.current = false
+    setDraft(null)
+    onCommit(parsed.value)
+  }
+
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      disabled={disabled}
+      aria-label="Age in years"
+      title={`How old was this item? Years, up to ${AGE_MAX}.`}
+      value={draft ?? (value ?? '')}
+      placeholder="—"
+      onFocus={() => setDraft('')}
+      onChange={(e) => {
+        dirty.current = true
+        setDraft(e.target.value)
+        setBad(false)
+      }}
+      ref={ref}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          commit()
+          ref.current?.blur()
+        } else if (e.key === 'Escape') {
+          dirty.current = false
+          setDraft(null)
+          setBad(false)
+          ref.current?.blur()
+        }
+        // Tab needs no case: it moves focus, which fires onBlur, which commits.
+      }}
+      style={{
+        width: '100%',
+        textAlign: 'right',
+        fontFamily: 'var(--k-font-mono)',
+        fontSize: 11.5,
+        padding: '3px 4px',
+        border: '1px solid transparent',
+        borderRadius: 4,
+        background: bad ? 'oklch(0.95 0.06 25)' : 'transparent',
+        color: 'var(--k-fg)',
+        outline: 0,
+      }}
+      onMouseEnter={(e) => {
+        if (!disabled) e.currentTarget.style.borderColor = 'var(--k-line)'
+      }}
+      onMouseLeave={(e) => {
+        if (document.activeElement !== e.currentTarget)
+          e.currentTarget.style.borderColor = 'transparent'
+      }}
+    />
   )
 }
 

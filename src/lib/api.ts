@@ -151,6 +151,8 @@ export const portal = {
     }),
   post: <T>(token: string, path = '', options?: Options) =>
     request<T>(`/p/${encodeURIComponent(token)}${path}`, { ...options, method: 'POST' }),
+  patch: <T>(token: string, path = '', options?: Options) =>
+    request<T>(`/p/${encodeURIComponent(token)}${path}`, { ...options, method: 'PATCH' }),
 }
 
 /**
