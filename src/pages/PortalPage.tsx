@@ -284,11 +284,6 @@ function Portal({
               <div>
                 <div style={STAT_L}>Items</div>
                 <div style={STAT_V}>{fmtInt(totals?.item_count ?? total)}</div>
-                {locked > 0 && !paid ? (
-                  <div style={{ fontSize: 10.5, color: 'var(--k-fg-4)', marginTop: 2 }}>
-                    {fmtInt(shown)} shown
-                  </div>
-                ) : null}
               </div>
               <div>
                 <div style={STAT_L}>Total RCV + tax</div>
