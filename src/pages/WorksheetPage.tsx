@@ -329,6 +329,8 @@ export default function WorksheetPage() {
   })
 
   const [exporting, setExporting] = useState(false)
+  /** Open only for the FIRST export, which is the one that stamps the date. */
+  const [confirmExport, setConfirmExport] = useState(false)
 
   const runExport = async () => {
     setExporting(true)
@@ -340,6 +342,7 @@ export default function WorksheetPage() {
       setNotice(error instanceof Error ? error.message : 'Export failed.')
     } finally {
       setExporting(false)
+      setConfirmExport(false)
     }
   }
 
@@ -558,14 +561,27 @@ export default function WorksheetPage() {
               /* Exports are repeatable: a later one is simply a new version.
                  Only a claim still processing has nothing settled to export. */
               disabled={claim.data?.status === 'processing' || exporting}
-              onClick={() => void runExport()}
+              /* The FIRST export stamps exported_at permanently -- that date is
+                 the Proof of Loss timestamp. Re-downloads are unlimited and
+                 never move it, so only the first one asks. */
+              onClick={() => {
+                if (claim.data?.exported_at) void runExport()
+                else setConfirmExport(true)
+              }}
               title={
                 claim.data?.status === 'processing'
                   ? 'Still processing — some lines have no price yet'
-                  : 'Download the XactContents .xlsx'
+                  : claim.data?.exported_at
+                    ? `Re-download the XactContents .xlsx · Proof of Loss dated ${fmtDate(claim.data.exported_at)}`
+                    : 'Generates the Proof of Loss and stamps its date'
               }
             >
-              <Icon d={I.download} size={12} /> {exporting ? 'Preparing…' : 'Export claim'}
+              <Icon d={I.download} size={12} />{' '}
+              {exporting
+                ? 'Preparing…'
+                : claim.data?.exported_at
+                  ? 'Download export'
+                  : 'Generate carrier export'}
             </button>
           </>
         }
@@ -1071,6 +1087,64 @@ export default function WorksheetPage() {
       {/* Undocked, the panel is a modal over the grid. */}
       {!docked && openRow !== null ? (
         <ItemDrawer rowId={openRow} onClose={() => setOpenRow(null)} />
+      ) : null}
+
+      {/* The first export is the one that matters: it stamps exported_at, and
+          that date IS the Proof of Loss date. Re-downloads never move it, so
+          this asks once and then gets out of the way. */}
+      {confirmExport ? (
+        <div className="k-stage-noteover" onClick={() => setConfirmExport(false)}>
+          <div className="k-notemodal" onClick={(e) => e.stopPropagation()}>
+            <div className="k-notemodal-hd">
+              <div>
+                <div className="k-notemodal-t">Generate the carrier export?</div>
+                <div className="k-notemodal-s">
+                  {fmtInt(claim.data?.item_count ?? 0)} line items ·{' '}
+                  {claim.data?.claim_number ?? claimId}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="k-icon-btn"
+                aria-label="Close"
+                onClick={() => setConfirmExport(false)}
+              >
+                <Icon d={I.close} size={15} />
+              </button>
+            </div>
+
+            <div className="k-notemodal-body">
+              <p className="k-notemodal-lede">
+                This is the finished document, not a preview. Generating it dates your{' '}
+                <strong style={{ color: 'var(--k-fg-2)' }}>Proof of Loss</strong> as today, and
+                that date is permanent — it is what the carrier reads as the day the schedule
+                was produced.
+              </p>
+              <p className="k-notemodal-lede">
+                You can re-download the file as often as you like afterwards, and keep editing
+                the worksheet. Neither moves the date.
+              </p>
+            </div>
+
+            <div className="k-notemodal-ft" style={{ justifyContent: 'flex-end', marginTop: 0 }}>
+              <button
+                type="button"
+                className="k-btn k-btn--ghost"
+                onClick={() => setConfirmExport(false)}
+              >
+                Not yet
+              </button>
+              <button
+                type="button"
+                className="k-btn"
+                disabled={exporting}
+                onClick={() => void runExport()}
+              >
+                {exporting ? 'Preparing…' : 'Generate export'}
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
     </div>
   )
