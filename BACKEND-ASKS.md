@@ -267,7 +267,7 @@ else reading the session, and because `/staging/process` would iterate it.
 Not urgent; a prune in the delete path (or a `having count(*) > 0` on the read)
 would settle it.
 
-## 19. BLOCKER — `resolve_share` never selects `paid_at`, so `paid` is always false
+## 19. ~~BLOCKER — `resolve_share` never selects `paid_at`~~ — SHIPPED (f662e79)
 
 The payment landed. Stripe shows `checkout.session.completed` delivered
 **200 OK at 8:02:59 PM**, and a manual resend at 8:12:17 correctly returned
@@ -299,3 +299,52 @@ for a PAYWALLED one: the customer has paid for the document, and asking them to
 wait for the adjuster to also release it makes the purchase feel unfinished.
 Either the webhook stamps `released_at` alongside `paid_at` on a paywalled
 share, or the product accepts that paying unlocks the lines but not the files.
+
+
+## 20. Increment 3 (paid-document delivery) — what the frontend needs settled
+
+`delivered_at` / `delivery_error` are already on `ShareSummary`, which is the
+right shape. Four things to agree BEFORE the job ships, because each one is a
+404 or a dead pixel if we guess differently.
+
+**a. The emailed link must resolve to a route that exists.** The public router
+has exactly one public path: `/p/:token`. If the delivery email points at the
+existing share URL, nothing is needed. If it mints a SEPARATE signed
+document URL, send the path shape and I will add the route — a backend-minted
+link 404ing on the frontend is what started this rebuild, and it should not
+be the thing that greets someone who has just paid.
+
+**b. `delivered_at` and `delivery_error` currently have nowhere to render.**
+There is no share-management UI in the app yet: every share in testing was
+minted by hand against the API. So the adjuster cannot see delivery state at
+all — the same gap you just closed for `paid_at`, one screen further along. I
+am building the share sheet; flagging it so nobody assumes the field is
+already visible because the model declares it.
+
+**c. Is there a retry?** If `delivery_error` is set, the adjuster needs an
+action, not just a red line. If a retry endpoint is coming, name it and I will
+wire the control in the same pass. If delivery only ever retries internally,
+say so and the UI will state that instead of offering a button that lies.
+
+**d. Reuse an existing email, don't mint a 17th.** `design/emails/` holds 16
+send-ready templates. `06-export-ready.html` is the closest fit and
+`10-payment-receipt.html` covers the charge. If delivery needs its own, it
+should join that folder so the set stays the single source — the notification
+rows in Settings and the `notifications` docs article are kept in sync with it.
+
+## 21. Sparse source links — the frontend warning, and the one number it needs
+
+Agreed the API should not block minting on this, and that the warning belongs
+here. Making it concrete needs one thing from the payload.
+
+`ClaimItemSummary` carries `manual_source_url`, and the portal's `PortalItem`
+carries the derived `source_link`. At MINT time the adjuster is not looking at
+the portal, so the count that matters — *priced lines with no substantiation* —
+has to come from either the claim rollup or a scan of the items already loaded.
+
+Deriving it client-side is fine and I will do that by default. But it is only
+correct if the worksheet's item payload exposes the SAME derivation the portal
+and the xlsx use (`sources.substantiation_link`), not just `manual_source_url`.
+If the two can disagree, the warning will quote a number the document does not
+honour, which is worse than no warning. Confirm which, or add the derived
+`source_link` to `ClaimItemSummary` and the question disappears.
