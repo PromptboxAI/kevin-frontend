@@ -235,7 +235,7 @@ Worth keeping in view while building it: the endpoint is scoped to BEFORE
 processing, so the action belongs only on a session that has not been promoted
 — the same `editable` gate the processed-session pass added.
 
-## 17. No field for the contents-coverage LABEL on a claim
+## 17. ~~No field for the contents-coverage LABEL on a claim~~ — SHIPPED, now wired
 
 Rule 14 is explicit that a claim carries BOTH a `ppLimitLabel` (Coverage C ·
 Personal Property · Contents · Coverage B for renters · Business Personal
@@ -427,3 +427,26 @@ null, absent, and whitespace-only.
 One request in return: send `filename` as **null**, not as an empty string or
 the literal `"null"`. The guard handles all three, but only null is honest
 about the field never having been captured.
+
+
+## 25. Two accepted fields the intake screen never collects
+
+`ClaimMetadata` accepts `estimator_name` and `business_name` (schemas.py:152-3)
+and both store correctly — verified with a round-trip. The New-claim screen
+asks for neither, so every claim created through the UI has them null.
+
+They are preparer identity, which is the block a carrier looks at first on a
+Proof of Loss: who prepared this schedule, and for which firm. Two questions
+before adding fields for them:
+
+1. **Should they be on the claim at all, or on the account?** They are the same
+   two values on every claim an adjuster creates — Mariana Reyes / Reyes
+   Adjusting, every time. Asking per claim is 14 keystrokes of retyping and an
+   invitation to inconsistent spellings across a book of claims, which is worse
+   than blank on a document a carrier reconciles.
+2. If they belong on the account, is there a profile endpoint they should
+   default from, with the intake fields prefilled and editable for the case
+   where one claim is prepared by someone else?
+
+Happy to add two plain fields if the answer is "per claim" — just flagging that
+the shape of the question changes the right UI.

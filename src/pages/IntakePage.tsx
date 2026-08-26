@@ -147,11 +147,10 @@ export default function IntakePage() {
           // The select carries a percentage; the API stores a fraction.
           ...(zipTax ? { tax_rate: Math.round((taxRate / 100) * 1e6) / 1e6 } : {}),
           ...(policyForm.trim() ? { policy_form: policyForm.trim() } : {}),
-          // The coverage LABEL has no field on the API yet (ClaimMetadata is a
-          // strict model, so sending one 422s the whole create). The select
-          // stays because rule 14 is explicit that the label travels with the
-          // claim -- filed as backend ask 17; until it lands the label is
-          // captured but not persisted.
+          // Rule 14: the claim carries BOTH the limit and the LABEL, because
+          // policies name contents coverage differently and printing a coverage
+          // letter as though it were universal misrepresents the policy.
+          ...(coverageLabel ? { personal_property_limit_label: coverageLabel } : {}),
           ...(ppLimitValue !== null ? { personal_property_limit: ppLimitValue } : {}),
           ...(alreadyValue !== null ? { amount_already_claimed: alreadyValue } : {}),
         },
