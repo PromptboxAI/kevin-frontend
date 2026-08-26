@@ -277,6 +277,14 @@ export default function StagingPage() {
   const duplicates = groups.filter((g) => g.kind === 'duplicate')
   const multi = groups.filter((g) => g.photos.length > 1)
   const noted = groups.filter((g) => g.note)
+  /**
+   * Sets clustering could not validate. Counted so the adjuster can see there
+   * IS work here before scrolling 55 cards looking for it -- a set that stays
+   * unread promotes to an unpriced line.
+   */
+  const unreadable = groups.filter(
+    (g) => g.vision_fallback && g.kind === 'item' && !(g.note && g.note_source === 'adjuster'),
+  )
   const busy =
     merge.isPending ||
     split.isPending ||
@@ -442,6 +450,11 @@ export default function StagingPage() {
               ['Photo sets', groups.length, 'accent'],
               ['Multi-photo sets', multi.length, null],
               ['You excluded', excluded.length, 'quiet'],
+              [
+                'Needs a note',
+                unreadable.length,
+                unreadable.length ? 'warn' : 'quiet',
+              ],
               ['With a note', noted.length, noted.length ? 'accent' : 'quiet'],
               ['Duplicates removed', duplicates.length, 'quiet'],
             ] as [string, number, string | null][]
@@ -452,9 +465,11 @@ export default function StagingPage() {
                 style={
                   tone === 'accent'
                     ? { color: 'var(--k-accent)' }
-                    : tone === 'quiet'
-                      ? { color: 'var(--k-fg-3)' }
-                      : undefined
+                    : tone === 'warn'
+                      ? { color: 'var(--k-warn)' }
+                      : tone === 'quiet'
+                        ? { color: 'var(--k-fg-3)' }
+                        : undefined
                 }
               >
                 {fmtInt(value)}
@@ -1031,9 +1046,11 @@ function SetCard({
           )}
         </div>
 
-        {/* Raw capture metadata ONLY. Staging is a PRE-Vision surface, so no
-            item names, makes or models -- and `group.reason` off this backend
-            carries exactly those, so it is deliberately not rendered here.
+        {/* Raw capture metadata ONLY -- no item names, makes or models, so a
+            machine's guess cannot anchor the adjuster's read of the set before
+            they have reviewed it. `reason` and `suggested_description` both
+            carry identities and are deliberately not rendered here;
+            `vision_fallback` is a boolean, not an identity, so it is.
             The design prints filenames and "2 photos - 4s apart" in these two
             slots; StagingPhoto carries neither `filename` nor `taken_at` yet
             (backend ask 14), so a single-photo set prints NOTHING rather than
@@ -1055,6 +1072,35 @@ function SetCard({
           }
           return null
         })()}
+
+        {/* Kevin could not read this set. Neutral by construction -- a fact
+            about whether clustering validated, never an item name -- and
+            ACTIONABLE right here: at promote, only a barcode or a note the
+            adjuster wrote can price it. Miss this and the line arrives on the
+            worksheet unpriced. */}
+        {group.vision_fallback && !isCtx ? (
+          <button
+            type="button"
+            className="k-stage-rowreason k-stage-fallback"
+            onClick={editable ? onNote : undefined}
+            disabled={!editable}
+            title={
+              editable
+                ? 'Add a note so Kevin can price this'
+                : 'Kevin could not read this set'
+            }
+          >
+            <Icon d={I.warn} size={11} />
+            <span>
+              Kevin couldn&rsquo;t read this one.
+              {group.note && group.note_source === 'adjuster'
+                ? ' Your note will be used to price it.'
+                : editable
+                  ? ' Add a note and it can still be priced.'
+                  : ''}
+            </span>
+          </button>
+        ) : null}
 
         {group.note ? (
           <button

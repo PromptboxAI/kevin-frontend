@@ -77,6 +77,15 @@ export type ClaimItem = {
   room_id: number | null
   status: ItemStatus
   manual_reason: ManualReason | null
+  /**
+   * What vision read off the photos, post-promote and adjuster-facing.
+   *
+   * Deliberately NOT on the staging card (rule 23): a machine's guess at an
+   * item's identity must not anchor the adjuster's read of a set before they
+   * have reviewed it. Here, on a line that could not be priced, it is the
+   * starting point for the description the line needs.
+   */
+  suggested_description?: string | null
   valuation_basis: 'retail' | 'like_kind_new' | 'comparable_sale' | 'manual' | null
   is_manually_queried: boolean
   category: string | null

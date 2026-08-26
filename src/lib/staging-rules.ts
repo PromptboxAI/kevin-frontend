@@ -46,6 +46,23 @@ export type GroupKind = 'item' | 'context' | 'duplicate'
 export type StagingGroup = {
   group_key: string
   kind: GroupKind
+  /**
+   * Clustering could not validate this stack.
+   *
+   * ACTIONABLE, and this is the last moment it can be. At promote the backend
+   * calls build_stack_query with exact_identifier_only=True on these: only a
+   * barcode or exact identifier may price them, and everything derived from
+   * the photos is deliberately refused. Otherwise the line lands `needs_manual`
+   * and has to be chased backwards from the worksheet.
+   *
+   * The one thing that rescues it lives on this screen: a set note a HUMAN
+   * wrote becomes the search query. A machine-derived note never does. So the
+   * cue exists to get the adjuster to write one, and it needs no item name to
+   * do that.
+   *
+   * Read THIS, never a `reason` prefix -- the suffix changes freely.
+   */
+  vision_fallback?: boolean
   reason: string | null
   confidence: number | null
   /** Fused by the backend. NEVER re-concatenate client-side. */
@@ -54,6 +71,15 @@ export type StagingGroup = {
   note_source: 'derived' | 'adjuster' | null
   room: string | null
   photos: StagingPhoto[]
+  /**
+   * Vision's guess at the item. NOT FOR THE STAGING CARD -- see rule 23: no
+   * names, makes or models before the adjuster has reviewed the set, so a
+   * machine's guess cannot anchor their read of it. These belong to the
+   * worksheet and the item drawer, post-promote.
+   */
+  suggested_description?: string | null
+  suggested_make?: string | null
+  suggested_category?: string | null
 }
 
 export type StagingTally = {

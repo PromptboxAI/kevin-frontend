@@ -15,9 +15,13 @@ const MANUAL_COPY: Record<string, string> = {
   luxury_brand: 'Names a luxury brand — routed for appraisal.',
   low_sample: 'Too few comparable listings to price confidently.',
   no_comps: 'No comparable listings found.',
-  no_query: 'The photos yielded no usable search signal.',
+  no_query: 'The photos told Kevin nothing it could search on. Describe the item and reprice.',
   no_description: 'No defensible description to price against.',
-  vision_unavailable: 'We could not read these photos — describe the item and reprice.',
+  // Kept DISTINCT from no_query on purpose: this line has a label, it just is
+  // not one we will price from. "Tell us what it is" is the wrong ask when the
+  // photos said nothing at all.
+  vision_unavailable:
+    'Kevin could not read these photos, and the label it does have is not one it will price from. Describe the item and reprice.',
   low_confidence_high_value: 'We found a price, but this line needs your eyes.',
   valuation_error: 'The comp lookup failed. A reprice will usually fix it.',
   quota_exhausted: 'Waiting on pricing capacity — retry shortly.',
@@ -225,6 +229,22 @@ export default function ItemDrawer({
                     <span className="k-lkq-note-b">
                       {MANUAL_COPY[data.manual_reason] ?? 'This line needs a manual price.'}
                     </span>
+                    {/* Post-promote and adjuster-facing, so the machine's read
+                        of the photos belongs here -- it is the starting point
+                        for the description this line needs, and the reason the
+                        adjuster does not have to open the photo to guess. */}
+                    {data.suggested_description &&
+                    data.suggested_description !== data.description ? (
+                      <span
+                        className="k-lkq-note-b"
+                        style={{ marginTop: 6, color: 'var(--k-fg-3)' }}
+                      >
+                        Kevin read this as:{' '}
+                        <strong style={{ color: 'var(--k-fg-2)', fontWeight: 600 }}>
+                          {data.suggested_description}
+                        </strong>
+                      </span>
+                    ) : null}
                   </div>
                 ) : null}
 

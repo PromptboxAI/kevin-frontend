@@ -1279,3 +1279,30 @@ button.k-avatar-menu-item {
   display: flex;
   flex-direction: column;
 }
+
+/* Clustering could not validate this set. Amber is reserved for special limits
+   (rule 6), so this borrows the WARN text colour only -- no amber fill, no
+   badge -- and reads as a prompt rather than an error. It is a button because
+   the fix is one click away: write the note that lets it price. */
+.k-stage-fallback {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  text-align: left;
+  padding: 3px 0 0;
+  border: 0;
+  background: none;
+  color: var(--k-warn);
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.4;
+  cursor: pointer;
+}
+.k-stage-fallback[disabled] {
+  cursor: default;
+  opacity: 0.75;
+}
+.k-stage-fallback:not([disabled]):hover {
+  text-decoration: underline;
+}
