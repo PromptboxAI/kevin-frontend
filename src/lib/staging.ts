@@ -16,6 +16,8 @@ export {
   isActionable,
   needsRescueNote,
   hasPricingNote,
+  authoredNotesLostOnMerge,
+  authoredNoteLostOnSplit,
   pendingPhotos,
   photoLabel,
   photoFilenames,

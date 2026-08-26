@@ -135,6 +135,34 @@ export function needsRescueNote(group: StagingGroup): boolean {
   return !!group.vision_fallback && group.kind === 'item' && !hasPricingNote(group)
 }
 
+/**
+ * Notes a MERGE or SPLIT will destroy.
+ *
+ * A rescue note is not permanent, and neither action says so in the gesture:
+ *
+ * - **Merge with two or more authored notes** discards all of them. There is
+ *   no non-arbitrary way to pick whose sentence survives, so the merged set
+ *   falls back to derived. (With exactly one, the backend carries it -- see
+ *   b76133d.)
+ * - **Split** gives every fragment `note_source: derived`. The sentence
+ *   described a set that no longer exists; asserting it of each fragment would
+ *   fabricate notes the adjuster never wrote.
+ *
+ * Either way the adjuster's own words go, and on a `vision_fallback` set that
+ * is the difference between a line that prices and one that arrives
+ * `needs_manual`. Same reasoning as confirming a paid-link revoke: the
+ * destructive part is not visible in the gesture.
+ */
+export function authoredNotesLostOnMerge(groups: StagingGroup[]): number {
+  const authored = groups.filter(hasPricingNote)
+  return authored.length >= 2 ? authored.length : 0
+}
+
+/** Splitting always drops the set's authored note. */
+export function authoredNoteLostOnSplit(group: StagingGroup): boolean {
+  return hasPricingNote(group) && group.photos.length > 1
+}
+
 /** A photo can be grouped only once extraction has finished. */
 export function isActionable(photo: StagingPhoto): boolean {
   return photo.status !== 'uploaded'

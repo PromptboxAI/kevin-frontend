@@ -17,6 +17,8 @@ import {
   mergeGroups,
   needsRescueNote,
   hasPricingNote,
+  authoredNotesLostOnMerge,
+  authoredNoteLostOnSplit,
   pendingPhotos,
   photoFilenames,
   processStaging,
@@ -89,6 +91,10 @@ export default function StagingPage() {
   const [confirmProcess, setConfirmProcess] = useState(false)
   /** Group keys queued for deletion, awaiting the destructive confirm. */
   const [confirmDelete, setConfirmDelete] = useState<string[] | null>(null)
+  /** A merge or split about to destroy the adjuster's own words. */
+  const [confirmNoteLoss, setConfirmNoteLoss] = useState<
+    { kind: 'merge'; count: number } | { kind: 'split'; key: string } | null
+  >(null)
   const [conflict, setConflict] = useState<string | null>(null)
   /** A clustering run is in flight and its sets have not landed yet. */
   const [awaitingSets, setAwaitingSets] = useState(false)
@@ -592,7 +598,11 @@ export default function StagingPage() {
               }
               onOpen={(i) => setLightbox({ key: group.group_key, i })}
               onNote={() => setNoteFor(group.group_key)}
-              onSplit={() => split.mutate(group.group_key)}
+              onSplit={() => {
+                if (authoredNoteLostOnSplit(group))
+                  setConfirmNoteLoss({ kind: 'split', key: group.group_key })
+                else split.mutate(group.group_key)
+              }}
               onToggleKind={() =>
                 reclassify.mutate({
                   key: group.group_key,
@@ -671,7 +681,11 @@ export default function StagingPage() {
                 ? 'Select another set to merge'
                 : 'Combine into one set — becomes one line item'
             }
-            onClick={() => merge.mutate('item')}
+            onClick={() => {
+              const lost = authoredNotesLostOnMerge(sel.map(byKey).filter(Boolean) as StagingGroup[])
+              if (lost) setConfirmNoteLoss({ kind: 'merge', count: lost })
+              else merge.mutate('item')
+            }}
           >
             {merge.isPending ? 'Merging…' : 'Merge into one item'}
           </button>
@@ -729,6 +743,65 @@ export default function StagingPage() {
           onIndex={(i) => setLightbox({ key: lightboxSet.group_key, i })}
           onClose={() => setLightbox(null)}
         />
+      ) : null}
+
+      {confirmNoteLoss ? (
+        <div className="k-stage-noteover" onClick={() => setConfirmNoteLoss(null)}>
+          <div className="k-notemodal" onClick={(e) => e.stopPropagation()}>
+            <div className="k-notemodal-hd">
+              <div>
+                <div className="k-notemodal-t">
+                  {confirmNoteLoss.kind === 'merge'
+                    ? 'Merging discards both notes'
+                    : 'Splitting discards your note'}
+                </div>
+                <div className="k-notemodal-s">Your own words, not the derived summary</div>
+              </div>
+            </div>
+            <div className="k-notemodal-body">
+              <p className="k-notemodal-lede">
+                {confirmNoteLoss.kind === 'merge' ? (
+                  <>
+                    {fmtInt(confirmNoteLoss.count)} of the selected sets carry a note you wrote.
+                    There is no way to choose whose words describe the merged set, so all of them
+                    are dropped and the summary from the photos returns.
+                  </>
+                ) : (
+                  <>
+                    Your note described this set. The photos are about to become separate sets, so
+                    it cannot be true of each of them — it is dropped rather than copied onto
+                    fragments you never wrote it for.
+                  </>
+                )}
+              </p>
+              <p className="k-notemodal-lede">
+                On a set Kevin couldn&rsquo;t read, that note is what lets the line be priced.
+                Without it the line arrives on the worksheet unpriced.
+              </p>
+            </div>
+            <div className="k-notemodal-ft" style={{ justifyContent: 'flex-end', marginTop: 0 }}>
+              <button
+                type="button"
+                className="k-btn k-btn--ghost"
+                onClick={() => setConfirmNoteLoss(null)}
+              >
+                Keep the note
+              </button>
+              <button
+                type="button"
+                className="k-btn"
+                disabled={busy}
+                onClick={() => {
+                  if (confirmNoteLoss.kind === 'merge') merge.mutate('item')
+                  else split.mutate(confirmNoteLoss.key)
+                  setConfirmNoteLoss(null)
+                }}
+              >
+                {confirmNoteLoss.kind === 'merge' ? 'Merge anyway' : 'Split anyway'}
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
 
       {confirmDelete ? (
