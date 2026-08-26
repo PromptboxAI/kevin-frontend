@@ -429,7 +429,7 @@ the literal `"null"`. The guard handles all three, but only null is honest
 about the field never having been captured.
 
 
-## 25. Two accepted fields the intake screen never collects
+## 25. ~~Two accepted fields the intake screen never collects~~ — BUILT, per-claim
 
 `ClaimMetadata` accepts `estimator_name` and `business_name` (schemas.py:152-3)
 and both store correctly — verified with a round-trip. The New-claim screen
@@ -450,3 +450,15 @@ before adding fields for them:
 
 Happy to add two plain fields if the answer is "per claim" — just flagging that
 the shape of the question changes the right UI.
+
+
+**Resolved:** per-claim, mirroring Xactimate. An estimate is a point-in-time
+legal document — an adjuster who prepared an inventory in March must still be
+named on it after they leave the firm, so a shared profile row that all claims
+pointed at would rewrite history retroactively.
+
+The retyping is solved client-side instead: previous values are offered back
+from this browser as a native datalist, type-or-pick. That list is a
+convenience with no authority — the claim holds its own copy of whatever was
+submitted, so clearing it, editing it, or moving machines leaves every existing
+claim untouched. Which is the same property the per-claim decision is protecting.

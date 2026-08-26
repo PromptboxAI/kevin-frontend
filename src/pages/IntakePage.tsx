@@ -15,6 +15,13 @@ import {
   taxOptionsFor,
   type Jurisdiction,
 } from '../lib/us-states'
+import {
+  RECENT_BUSINESS,
+  RECENT_ESTIMATOR,
+  browserStore,
+  recentValues,
+  rememberValue,
+} from '../lib/recent-values'
 import type { ClaimSummary } from '../lib/types'
 
 const EYEBROW: React.CSSProperties = {
@@ -75,6 +82,22 @@ export default function IntakePage() {
   const [state, setState] = useState('NY')
   const [zip, setZip] = useState('')
   const [policyForm, setPolicyForm] = useState('')
+  /**
+   * Preparer identity, stored ON THE CLAIM by decision, mirroring Xactimate.
+   * An estimate is a point-in-time document: if the adjuster who prepared this
+   * inventory later leaves the firm, the claim must still name them. A profile
+   * table that all claims pointed at would rewrite history retroactively.
+   *
+   * The retyping that implies is solved client-side -- previous values are
+   * offered back from this browser, and are only ever a shortcut.
+   */
+  const [estimatorName, setEstimatorName] = useState('')
+  const [businessName, setBusinessName] = useState('')
+  const store = browserStore()
+  const [recentEstimator, setRecentEstimator] = useState(() =>
+    recentValues(store, RECENT_ESTIMATOR),
+  )
+  const [recentBusiness, setRecentBusiness] = useState(() => recentValues(store, RECENT_BUSINESS))
   const [coverageLabel, setCoverageLabel] = useState(COVERAGE_LABELS[0])
   const [ppLimit, setPpLimit] = useState('')
   const [alreadyClaimed, setAlreadyClaimed] = useState('')
@@ -147,6 +170,8 @@ export default function IntakePage() {
           // The select carries a percentage; the API stores a fraction.
           ...(zipTax ? { tax_rate: Math.round((taxRate / 100) * 1e6) / 1e6 } : {}),
           ...(policyForm.trim() ? { policy_form: policyForm.trim() } : {}),
+          ...(estimatorName.trim() ? { estimator_name: estimatorName.trim() } : {}),
+          ...(businessName.trim() ? { business_name: businessName.trim() } : {}),
           // Rule 14: the claim carries BOTH the limit and the LABEL, because
           // policies name contents coverage differently and printing a coverage
           // letter as though it were universal misrepresents the policy.
@@ -157,6 +182,12 @@ export default function IntakePage() {
       }),
     onSuccess: (claim) => {
       void queryClient.invalidateQueries({ queryKey: ['claims'] })
+      // Only after it lands on a real claim: a value that never got submitted
+      // is not one worth offering back.
+      if (estimatorName.trim())
+        setRecentEstimator(rememberValue(store, RECENT_ESTIMATOR, estimatorName))
+      if (businessName.trim())
+        setRecentBusiness(rememberValue(store, RECENT_BUSINESS, businessName))
       // Stay on the page: step 2 needs the claim to exist before photos can be
       // staged against it. Continue is one action, not two.
       setCreated(claim.claim_id)
@@ -360,6 +391,35 @@ export default function IntakePage() {
               width={200}
               placeholder="HO-3 · Open perils"
               onChange={setPolicyForm}
+            />
+            {/* 5 — who prepared it. Last because it is the one block that
+                repeats across a book of claims, and the suggestions make it
+                two clicks rather than two fields. */}
+            <IntakeField
+              label="Prepared by"
+              value={estimatorName}
+              width={220}
+              placeholder="Mariana Reyes"
+              suggestions={recentEstimator}
+              onChange={setEstimatorName}
+              hint={
+                recentEstimator.length
+                  ? 'Pick a previous name or type a new one'
+                  : 'Prints on the export as the preparer'
+              }
+            />
+            <IntakeField
+              label="Firm / business"
+              value={businessName}
+              width={240}
+              placeholder="Reyes Adjusting"
+              suggestions={recentBusiness}
+              onChange={setBusinessName}
+              hint={
+                recentBusiness.length
+                  ? 'Pick a previous firm or type a new one'
+                  : 'Stays on this claim even if you move firms'
+              }
             />
             <IntakeField
               label="Carrier / agency"
