@@ -1,6 +1,6 @@
 # Email templates — reference
 
-Fourteen send-ready HTML emails. Preview them all at `index.html`.
+Seventeen send-ready HTML emails. Preview them all at `index.html`.
 
 These are **static HTML with placeholder merge values**. Engineering wires them to a
 sending service and swaps the placeholders for real merge fields. Nothing here is
@@ -81,3 +81,15 @@ Change one and change all three.
 The remaining seven are auth, billing and team messages that are not user-toggleable:
 `01-verify-email`, `02-password-reset`, `03-password-changed`, `04-new-sign-in`,
 `10-payment-receipt`, `12-team-invite`, `13-claim-assigned`.
+
+## A note on 17-inventory-delivered
+
+Every other template in this folder is addressed to an ACCOUNT HOLDER — the
+adjuster. `17-inventory-delivered.html` is the only one written for the
+insured, who has no Kevin account and never will. That is why its footer does
+not offer a preferences link (there is nothing to log into) and sends questions
+to the adjuster rather than to support: on a claim, the adjuster is the
+relationship, and Kevin is the tool they used.
+
+If a second client-facing email is ever added, copy this footer rather than the
+account-holder one.

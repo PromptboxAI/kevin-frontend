@@ -348,3 +348,21 @@ and the xlsx use (`sources.substantiation_link`), not just `manual_source_url`.
 If the two can disagree, the warning will quote a number the document does not
 honour, which is worse than no warning. Confirm which, or add the derived
 `source_link` to `ClaimItemSummary` and the question disappears.
+
+## 22. Proof of Loss date: UTC stamp vs. local rendering
+
+Verified stamping on a throwaway claim: `exported_at` came back as
+`2026-08-26T00:21:39Z`, and the worksheet tooltip reads **Aug 25, 2026** —
+correct for the adjuster's timezone (00:21 UTC = 20:21 EDT the previous day),
+and correct as "the day I produced this".
+
+But this is the Proof of Loss date, and the .xlsx presumably prints its own
+rendering of the same instant. If the document formats `exported_at` in UTC
+while the app shows the adjuster's local date, a schedule produced any evening
+after 8pm Eastern carries **one date on screen and the next day's date in the
+file the carrier receives**.
+
+Not asking for a change yet — asking which one the document prints. If the
+xlsx renders UTC, the two should be reconciled deliberately, and the answer is
+probably that the export should carry the adjuster's local calendar date, since
+that is what "the day the schedule was produced" means to everyone reading it.
