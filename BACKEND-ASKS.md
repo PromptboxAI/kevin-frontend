@@ -182,7 +182,7 @@ lost.
   `PATCH …/override` per row. Fine at current selection sizes; worth revisiting
   if bulk edits get large.
 
-## 14. Staging `group.reason` carries identified data — REPRO BELOW (not display-layer)
+## 14. ~~Staging `group.reason` carries identified data~~ — MY BUG, fixed in 0bebc43
 
 `GET /v1/claims/{id}/staging` returns, on the live `godfrey-kitchen-fire`
 session, `reason` strings like:
@@ -370,31 +370,52 @@ that is what "the day the schedule was produced" means to everyone reading it.
 
 ---
 
-# Issue 14 repro — it is in the API response, not the display layer
+# Issue 14 — CLOSED, and it was mine
 
-The frontend does not render `group.reason` at all (removed in 0bebc43), so
-nothing on screen can be producing these. They are in the raw JSON.
+**The rendered string was `group.reason`, and my own component was rendering
+it.** The scaffold printed it into `.k-stage-rowreason` on the set card. On
+2026-08-24 I queried the live page:
 
-**Claim** `godfrey-kitchen-fire` · **session** 45 · status `processed`
+    [...document.querySelectorAll('.k-stage-rowreason')].map(e => e.innerText)
+    -> "Single Hot Wheels '70 Plymouth Road Runner die-cast car in original
+        packaging. || Single shoe sole, Madden brand, distinct item shown wet
+        on ground. || ..."
 
-    curl -H "Authorization: Bearer $TOKEN"       https://kevin-backend-production.up.railway.app/v1/claims/godfrey-kitchen-fire/staging       | jq '.groups[] | {group_key, kind, confidence, reason}'
+That is a query against the DOM, so those strings were on screen — but they
+were on screen because I put them there. `0bebc43` rewrote the card and
+stopped rendering the field; its subject line is literally "stop showing
+pre-Vision item names". The same commit filed this ask, which is the mistake:
+I fixed my own defect and reported it as the backend's in one action.
 
-| group_key | photo id | confidence | `reason` exactly as returned |
-| --- | --- | --- | --- |
-| `45-1` | 3887 | 0.6 | `Single shoe sole, Madden brand, distinct item shown wet on ground.` |
-| `45-0` | 3886 | 0.9 | `Single Hot Wheels '70 Plymouth Road Runner die-cast car in original packaging.` |
-| `45-2` | 3888 | 0.7 | `Marvin Gaye In Concert DVD held up, distinct media item.` |
-| `45-3` | 3889 | 0.6 | `Gold sandal held up, distinct item from Bakers brand text visible.` |
+Nothing is owed here. `reason` is load-bearing for
+`vision_cluster.is_fallback(reason)` at promote and is not for display, which
+is exactly how it is now treated: read from the payload, never rendered.
 
-`45-1` is the cleanest single example: the brand name **Madden** is in the
-string, on a pre-Vision surface, straight off the endpoint.
+`suggested_description` / `suggested_make` naming brands is correct and has
+never been rendered on staging — an inventory line a carrier reconciles against
+a receipt should say "Hot Wheels '70 Plymouth Road Runner".
 
-Worth noting these are *clustering* rows — every one is a single-photo group,
-so whatever wrote the reason had already looked at the image contents. Pricing
-refusing to price it afterwards is a separate question from this text existing.
+## 24. `vision_fallback` — which surface should render it?
 
----
+Noted: key "couldn't validate" off `vision_fallback`, never off a `reason`
+prefix, and render `suggested_description` as the adjuster-facing line. Both
+will be wired.
 
+One question before they are, because the answer differs by screen:
+
+- On the **worksheet / item drawer** this is straightforward — an adjuster-
+  facing surface, post-promote, where a "couldn't validate" chip and the
+  long-form description both belong.
+- On **staging** it collides with a locked rule: rule 23 says staging is a
+  PRE-Vision surface that must never show identified data — no item names, no
+  makes, no models — because the adjuster has not yet agreed to spend the run.
+  `suggested_description` is an item name by construction.
+
+If those fields are populated on staging groups, rendering them there would
+undo the fix above. So: is `vision_fallback` meant for the staging card (as a
+neutral "Kevin could not read this one" cue, with NO description shown), for
+the worksheet, or for both with different content? Happy to wire whichever —
+just not to guess a fourth time on this one.
 ## 23. `filename` is permanently null on older photos — handled
 
 Noted that pre-this-week uploads cannot be backfilled. The UI already degrades
