@@ -12,6 +12,33 @@ export type StagingPhoto = {
   note: string | null
   room: string | null
   status: PhotoStatus
+  /**
+   * OPTIONAL AND OFTEN NULL, permanently.
+   *
+   * `filename` was not captured on uploads before this week and cannot be
+   * backfilled, so any older photo will carry null forever. Never render it
+   * raw -- go through `photoLabel()`, which falls back rather than printing
+   * "null" or collapsing the line.
+   */
+  filename?: string | null
+  /** Capture time. Same rule: absent on older rows. */
+  taken_at?: string | null
+}
+
+/**
+ * What to call a photo on screen.
+ *
+ * A missing filename is normal history, not an error, so it reads as an
+ * ordinary photo rather than announcing that data is absent.
+ */
+export function photoLabel(photo: Pick<StagingPhoto, 'id' | 'filename'>): string {
+  const name = photo.filename?.trim()
+  return name && name.length > 0 ? name : `Photo ${photo.id}`
+}
+
+/** Filenames for a set, skipping the ones that were never captured. */
+export function photoFilenames(photos: Pick<StagingPhoto, 'filename'>[]): string[] {
+  return photos.map((p) => p.filename?.trim()).filter((n): n is string => !!n && n.length > 0)
 }
 
 export type GroupKind = 'item' | 'context' | 'duplicate'

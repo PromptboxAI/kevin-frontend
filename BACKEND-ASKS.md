@@ -182,7 +182,7 @@ lost.
   `PATCH …/override` per row. Fine at current selection sizes; worth revisiting
   if bulk edits get large.
 
-## 14. Staging `group.reason` carries identified data — staging must not show it
+## 14. Staging `group.reason` carries identified data — REPRO BELOW (not display-layer)
 
 `GET /v1/claims/{id}/staging` returns, on the live `godfrey-kitchen-fire`
 session, `reason` strings like:
@@ -366,3 +366,43 @@ Not asking for a change yet — asking which one the document prints. If the
 xlsx renders UTC, the two should be reconciled deliberately, and the answer is
 probably that the export should carry the adjuster's local calendar date, since
 that is what "the day the schedule was produced" means to everyone reading it.
+
+
+---
+
+# Issue 14 repro — it is in the API response, not the display layer
+
+The frontend does not render `group.reason` at all (removed in 0bebc43), so
+nothing on screen can be producing these. They are in the raw JSON.
+
+**Claim** `godfrey-kitchen-fire` · **session** 45 · status `processed`
+
+    curl -H "Authorization: Bearer $TOKEN"       https://kevin-backend-production.up.railway.app/v1/claims/godfrey-kitchen-fire/staging       | jq '.groups[] | {group_key, kind, confidence, reason}'
+
+| group_key | photo id | confidence | `reason` exactly as returned |
+| --- | --- | --- | --- |
+| `45-1` | 3887 | 0.6 | `Single shoe sole, Madden brand, distinct item shown wet on ground.` |
+| `45-0` | 3886 | 0.9 | `Single Hot Wheels '70 Plymouth Road Runner die-cast car in original packaging.` |
+| `45-2` | 3888 | 0.7 | `Marvin Gaye In Concert DVD held up, distinct media item.` |
+| `45-3` | 3889 | 0.6 | `Gold sandal held up, distinct item from Bakers brand text visible.` |
+
+`45-1` is the cleanest single example: the brand name **Madden** is in the
+string, on a pre-Vision surface, straight off the endpoint.
+
+Worth noting these are *clustering* rows — every one is a single-photo group,
+so whatever wrote the reason had already looked at the image contents. Pricing
+refusing to price it afterwards is a separate question from this text existing.
+
+---
+
+## 23. `filename` is permanently null on older photos — handled
+
+Noted that pre-this-week uploads cannot be backfilled. The UI already degrades
+rather than breaking: `photoLabel()` falls back to `Photo {id}` and
+`photoFilenames()` drops the nulls, so a set with no captured filenames shows
+its capture metadata line instead of an empty separator run. Unit-tested for
+null, absent, and whitespace-only.
+
+One request in return: send `filename` as **null**, not as an empty string or
+the literal `"null"`. The guard handles all three, but only null is honest
+about the field never having been captured.

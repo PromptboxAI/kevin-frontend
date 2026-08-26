@@ -8,6 +8,7 @@ import ClaimTabs from '../components/ClaimTabs'
 import CompsPopover from '../components/CompsPopover'
 import EditableCell from '../components/EditableCell'
 import ItemDrawer from '../components/ItemDrawer'
+import ShareSheet from '../components/ShareSheet'
 import { I, Icon } from '../components/Icon'
 import { ApiError, api, downloadExport } from '../lib/api'
 import { fmtDate, fmtInt, fmtPct, fmtUSD } from '../lib/format'
@@ -331,6 +332,7 @@ export default function WorksheetPage() {
   const [exporting, setExporting] = useState(false)
   /** Open only for the FIRST export, which is the one that stamps the date. */
   const [confirmExport, setConfirmExport] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
 
   const runExport = async () => {
     setExporting(true)
@@ -554,6 +556,14 @@ export default function WorksheetPage() {
               title="Photo staging — coming in this build"
             >
               <Icon d={I.plus} size={12} /> Add photos
+            </button>
+            <button
+              type="button"
+              className="k-btn k-btn--ghost"
+              onClick={() => setShareOpen(true)}
+              title="Send the client a read-only link"
+            >
+              <Icon d={I.link} size={12} /> Share
             </button>
             <button
               type="button"
@@ -1087,6 +1097,10 @@ export default function WorksheetPage() {
       {/* Undocked, the panel is a modal over the grid. */}
       {!docked && openRow !== null ? (
         <ItemDrawer rowId={openRow} onClose={() => setOpenRow(null)} />
+      ) : null}
+
+      {shareOpen ? (
+        <ShareSheet claimId={claimId} items={items} onClose={() => setShareOpen(false)} />
       ) : null}
 
       {/* The first export is the one that matters: it stamps exported_at, and

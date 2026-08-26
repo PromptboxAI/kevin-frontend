@@ -16,6 +16,7 @@ import {
   isActionable,
   mergeGroups,
   pendingPhotos,
+  photoFilenames,
   processStaging,
   reclassifyGroup,
   runCluster,
@@ -1037,11 +1038,23 @@ function SetCard({
             slots; StagingPhoto carries neither `filename` nor `taken_at` yet
             (backend ask 14), so a single-photo set prints NOTHING rather than
             restating the "1 photo" badge one line below it. */}
-        {group.photos.length > 1 ? (
-          <div className="k-stage-rowfiles">
-            {group.photos.length} photos · grouped by capture time
-          </div>
-        ) : null}
+        {(() => {
+          // `filename` is null forever on anything uploaded before it was
+          // captured, so the line degrades to the count rather than vanishing
+          // or printing an empty separator run.
+          const names = photoFilenames(group.photos)
+          if (names.length === group.photos.length && names.length > 0) {
+            return <div className="k-stage-rowfiles">{names.join('  ·  ')}</div>
+          }
+          if (group.photos.length > 1) {
+            return (
+              <div className="k-stage-rowfiles">
+                {group.photos.length} photos · grouped by capture time
+              </div>
+            )
+          }
+          return null
+        })()}
 
         {group.note ? (
           <button

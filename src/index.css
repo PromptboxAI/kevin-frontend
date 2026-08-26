@@ -1254,3 +1254,28 @@ button.k-avatar-menu-item {
   border-top: 1px solid var(--k-line);
   padding-top: 10px;
 }
+
+/* --- Share sheet ---
+   `k-input` and `k-share-mgr` are referenced by design/components/share-claim.jsx
+   but were never written into kevin.css -- verified absent from the design's own
+   copy too, so this is a gap in the stylesheet rather than drift on our side.
+   Defined here, in app-only styles, so kevin.css stays the design's file. */
+.k-input {
+  padding: 6px 9px;
+  border: 1px solid var(--k-line);
+  border-radius: 6px;
+  background: var(--k-bg-2);
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--k-fg);
+  outline: 0;
+}
+.k-input:focus {
+  border-color: var(--k-accent);
+  background: var(--k-bg);
+}
+
+.k-share-mgr {
+  display: flex;
+  flex-direction: column;
+}

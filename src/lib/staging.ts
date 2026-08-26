@@ -15,6 +15,8 @@ export {
   THUMB_BATCH,
   isActionable,
   pendingPhotos,
+  photoLabel,
+  photoFilenames,
   clusterBlockedReason,
   remainderBlockedReason,
   thumbnailBatches,
