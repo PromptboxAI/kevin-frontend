@@ -14,6 +14,8 @@ export {
   NOTE_MAX,
   THUMB_BATCH,
   isActionable,
+  needsRescueNote,
+  hasPricingNote,
   pendingPhotos,
   photoLabel,
   photoFilenames,

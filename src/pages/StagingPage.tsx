@@ -15,6 +15,8 @@ import {
   getThumbnails,
   isActionable,
   mergeGroups,
+  needsRescueNote,
+  hasPricingNote,
   pendingPhotos,
   photoFilenames,
   processStaging,
@@ -282,9 +284,7 @@ export default function StagingPage() {
    * IS work here before scrolling 55 cards looking for it -- a set that stays
    * unread promotes to an unpriced line.
    */
-  const unreadable = groups.filter(
-    (g) => g.vision_fallback && g.kind === 'item' && !(g.note && g.note_source === 'adjuster'),
-  )
+  const unreadable = groups.filter(needsRescueNote)
   const busy =
     merge.isPending ||
     split.isPending ||
@@ -1093,7 +1093,7 @@ function SetCard({
             <Icon d={I.warn} size={11} />
             <span>
               Kevin couldn&rsquo;t read this one.
-              {group.note && group.note_source === 'adjuster'
+              {hasPricingNote(group)
                 ? ' Your note will be used to price it.'
                 : editable
                   ? ' Add a note and it can still be priced.'

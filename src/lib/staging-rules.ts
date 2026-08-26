@@ -103,6 +103,38 @@ export type StagingSessionFull = {
 export const NOTE_MAX = 300
 export const THUMB_BATCH = 100
 
+/**
+ * Does this set carry a note that will actually price it?
+ *
+ * Mirrors the server's rule exactly, and both halves matter:
+ *
+ *   if not query and g.get("note_source") == NOTE_SOURCE_ADJUSTER:
+ *       query = (g.get("note") or "").strip() or None
+ *
+ * 1. `note_source == 'adjuster'`, never the text. EVERY group ships with a
+ *    note -- `derived` is the default, a fusion of member photo notes like
+ *    "master bedroom | by the window". Letting that become the search query
+ *    would price the room. So a set with a note is not a set that is rescued.
+ * 2. `.strip() or None` -- a whitespace-only note rescues NOTHING. Telling the
+ *    adjuster "your note will be used" over "   " promises pricing that will
+ *    not happen, and it fails silently: the line just arrives needs_manual.
+ */
+export function hasPricingNote(
+  group: Pick<StagingGroup, 'note' | 'note_source'>,
+): boolean {
+  return group.note_source === 'adjuster' && (group.note ?? '').trim().length > 0
+}
+
+/**
+ * A set clustering could not validate, that nothing will rescue at promote.
+ *
+ * These are the ones the adjuster still has to act on: at promote they price
+ * from a barcode or an adjuster note or not at all.
+ */
+export function needsRescueNote(group: StagingGroup): boolean {
+  return !!group.vision_fallback && group.kind === 'item' && !hasPricingNote(group)
+}
+
 /** A photo can be grouped only once extraction has finished. */
 export function isActionable(photo: StagingPhoto): boolean {
   return photo.status !== 'uploaded'
