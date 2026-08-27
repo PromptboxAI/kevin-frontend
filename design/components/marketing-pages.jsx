@@ -125,18 +125,18 @@ const ProductOverview = () => {
         {/* Two-up proof — the two screens that absorb the manual hours. */}
         <div className="k-proof-hd">
           <div className="k-proof-eyebrow">Where the hours actually go</div>
-          <h2 className="k-proof-h2">Triage before you look. Export when you’re done.</h2>
-          <p className="k-proof-sub">The dump gets sorted without you. The file lands in XactContents without reformatting.</p>
+          <h2 className="k-proof-h2">Processing runs unattended. Exporting takes one click.</h2>
+          <p className="k-proof-sub">Items resolve into the grid as Kevin identifies them. The file lands in XactContents without reformatting.</p>
         </div>
         <section className="k-proof-two">
           <window.MktShot
-            src="../assets/marketing/staging-sets-2x.webp"
-            alt="Kevin photo staging — proposed photo sets awaiting review, one merged into a single item with an adjuster note"
-            label="kevin.co/claims/CLM-2026-04412/staging"
-            slot="Photo staging — proposed sets"
-            size="Capture from pages/73-Photo-staging.html · 1400 × 875"
-            ratio="3156 / 1720"
-            caption="Shots seconds apart become one set — the wide frame and the model plate, priced once. Merge, split, or set aside before anything is identified."
+            src="../assets/marketing/processing-live-anim.webp"
+            alt="Kevin processing — items resolving into the worksheet as photos are identified, each with a confidence indicator and a live price"
+            label="kevin.co/claims/CLM-2026-04412/processing"
+            slot="Processing — items resolving live"
+            size="Capture from pages/04-Processing.html · 1600 × 950"
+            ratio="1600 / 950"
+            caption="Items land in the grid as Kevin identifies them — confidence dots show what it is sure of. Open the worksheet on the first batch; you never wait for the last photo."
           />
           <window.MktShot
             src="../assets/marketing/export-modal-2x.webp"

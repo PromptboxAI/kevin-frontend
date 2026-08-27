@@ -77,7 +77,7 @@ const MktShot = ({ src, alt, label, slot, size, caption, ratio }) => {
       </div>
       <div className="k-shot-body" style={ratio ? { aspectRatio: ratio } : null}>
         {src && !broken
-          ? <img src={src} alt={alt || slot || label} onError={() => setBroken(true)} />
+          ? <img src={src} alt={alt || slot || label} loading="lazy" decoding="async" onError={() => setBroken(true)} />
           : (
             <div className="k-shot-ph">
               <span className="k-shot-ph-badge">Screenshot slot</span>
