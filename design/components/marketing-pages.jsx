@@ -88,10 +88,12 @@ const ProductOverview = () => {
             in never reflows the page. */}
         <section className="k-proof-solo">
           <window.MktShot
+            src="../assets/marketing/worksheet-review.png"
+            alt="Kevin review worksheet — priced line items with make, model, content class, depreciation and ACV columns"
             label="kevin.co/claims/CLM-2026-04412/worksheet"
             slot="Review worksheet — 57 priced lines"
             size="Capture from pages/05-Worksheet-flat.html · 2000 × 1125"
-            ratio="16 / 9"
+            ratio="924 / 540"
             caption="One grid, every cell editable — and every price traceable to the comp it came from."
           />
         </section>
