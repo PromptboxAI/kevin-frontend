@@ -88,7 +88,7 @@ const ProductOverview = () => {
             in never reflows the page. */}
         <section className="k-proof-solo">
           <window.MktShot
-            src="../assets/marketing/worksheet-review-2x.png"
+            src="../assets/marketing/worksheet-review-2x.webp"
             alt="Kevin review worksheet — priced line items with make, model, content class, depreciation and ACV columns"
             label="kevin.co/claims/CLM-2026-04412/worksheet"
             slot="Review worksheet — 57 priced lines"
@@ -130,7 +130,7 @@ const ProductOverview = () => {
         </div>
         <section className="k-proof-two">
           <window.MktShot
-            src="../assets/marketing/staging-sets-2x.png"
+            src="../assets/marketing/staging-sets-2x.webp"
             alt="Kevin photo staging — proposed photo sets awaiting review, one merged into a single item with an adjuster note"
             label="kevin.co/claims/CLM-2026-04412/staging"
             slot="Photo staging — proposed sets"
@@ -139,7 +139,7 @@ const ProductOverview = () => {
             caption="Shots seconds apart become one set — the wide frame and the model plate, priced once. Merge, split, or set aside before anything is identified."
           />
           <window.MktShot
-            src="../assets/marketing/export-modal-2x.png"
+            src="../assets/marketing/export-modal-2x.webp"
             alt="Kevin export modal — Xactimate Excel XactContents template, client PDF and full bundle, with download and share actions"
             label="Export claim · CLM-2026-04412"
             slot="Carrier export modal"
