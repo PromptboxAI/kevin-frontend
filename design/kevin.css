@@ -4310,3 +4310,32 @@
       /* Surface rows: the 140px thumbnail track leaves too little for the copy. */
       .k-prod-surface { grid-template-columns: minmax(0, 1fr); gap: 18px; padding: 22px 20px; }
     }
+
+    /* ══ MARKETING MOBILE SAFETY NET ═══════════════════════════════════════════
+       Every marketing screen carries its display headings, section padding and
+       button rows as INLINE styles. A media query cannot reach an inline style,
+       so these pages read fine on desktop and slide sideways on every phone. A
+       375px sweep of all 18 marketing/auth pages found 9 broken: segment pages
+       122–181px over, contact 131, request-access 151, done-for-you 141,
+       docs 146, watch-demo 62, about 66, 404 45.
+
+       Converting each offender to a class means editing six component files and
+       trusting every future page to remember. These longhand !important rules
+       override the inline shorthand instead — the one legitimate use of
+       !important — and are scoped to the marketing shells, below the breakpoint
+       only, so desktop and the app tools are untouched. New marketing pages get
+       the floor for free. Class-based sizing (.k-h1, .k-prod-hero h1) still
+       wins above 900px; this only sets a mobile ceiling. — */
+    @media (max-width: 900px) {
+      .k-landing h1, .k-docs-main h1 { font-size: clamp(30px, 8.5vw, 46px) !important; }
+      .k-landing h2, .k-docs-main h2 { font-size: clamp(23px, 6.4vw, 36px) !important; }
+      /* Pull-quotes and stat numerals are set inline at 30–42px too. */
+      .k-landing blockquote { font-size: clamp(17px, 4.6vw, 24px) !important; }
+    }
+    @media (max-width: 560px) {
+      /* Button rows are inline `display:flex; gap:10` with no class to hook.
+         :has() reaches the exact shape — a flex row holding a large button —
+         without needing one. */
+      .k-landing div:has(> .k-btn--lg) { flex-wrap: wrap !important; }
+      .k-landing .k-btn--lg { flex: 1 1 100%; justify-content: center; }
+    }
