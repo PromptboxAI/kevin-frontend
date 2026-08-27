@@ -3,7 +3,10 @@
 // Layout: hero → hairline stats → asymmetric two-column (numbered rail ⟷ photo collage)
 // → full-bleed on-site band → accent quote → closing CTA. Deliberately non-linear.
 const DoneForYou = () => (
-  <div className="k-landing">
+  // k-dfy is a page hook: every section here is inline-styled with no class of
+  // its own, so there is nothing for a breakpoint to target. Scoped to this
+  // page rather than another global rule.
+  <div className="k-landing k-dfy">
     <window.MktNav active="product" />
     <main className="k-mkt-main">
       <section className="k-mkt-hero" style={{ textAlign: 'center', maxWidth: 780, margin: '0 auto', padding: '60px 40px 30px' }}>

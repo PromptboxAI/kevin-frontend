@@ -4386,3 +4386,28 @@
       .k-topbar div:has(> .k-btn) { flex-wrap: wrap; row-gap: 8px; }
       .k-topbar { row-gap: 8px; }
     }
+
+    /* — Done-for-you (76). Every section on this page is an inline-styled
+         <section> with no class, so nothing here could be reached by a
+         breakpoint: 40px of inline side padding on six sections plus three
+         inline grids (repeat(3,1fr), 1.05fr/0.95fr, 1fr/1fr) floored the page
+         at 502px in a 375px viewport. The attribute selectors below match the
+         inline style text itself, and longhand !important beats the inline
+         shorthand. Deliberately scoped to .k-dfy -- the last blanket rule I
+         wrote matched a column-flex card and blew up the pricing tiers. — */
+    @media (max-width: 900px) {
+      .k-dfy .k-mkt-main > section,
+      .k-dfy section[style*="padding"] {
+        padding-left: 20px !important; padding-right: 20px !important;
+      }
+      .k-dfy [style*="grid-template-columns"] {
+        grid-template-columns: minmax(0, 1fr) !important;
+        gap: 20px !important;
+      }
+      /* The on-site band's inner row is an inline flex that cannot shrink below
+         its content, flooring .k-mkt-main 12px past the viewport. Safe to wrap
+         here: every flex row on this page is horizontal (the two button rows
+         carry .k-hero-actions), so there is no column container to break --
+         which is exactly how the pricing tiers got wrecked earlier. */
+      .k-dfy section > div[style*="display: flex"] { flex-wrap: wrap; }
+    }
