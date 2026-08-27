@@ -139,6 +139,9 @@ const LegalHub = () => {
           </aside>
         </div>
       </div>
+      {/* Public page (/legal). The page holding Privacy and Terms had no way
+          back out to anywhere else. */}
+      <window.MktFooter />
     </div>
   );
 };

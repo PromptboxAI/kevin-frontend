@@ -241,6 +241,10 @@ const Docs = () => {
           ) : null}
         </main>
       </div>
+      {/* Public page (/docs): without this the page dead-ends with no route to
+          Privacy, Terms or About, and carries none of the legal-identity trust
+          signals SEO.md wants on indexed pages. */}
+      <window.MktFooter />
     </div>
   );
 };
