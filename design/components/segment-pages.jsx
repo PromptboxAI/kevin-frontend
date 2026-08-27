@@ -14,7 +14,7 @@ const ForAdjusters = () => (
         <div className="k-seg-hero-l">
           <Badge tone="accent" dot={true}>For independent, carrier &amp; public adjusters</Badge>
           <h1 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 64, letterSpacing: '-0.028em', margin: '20px 0 18px', lineHeight: 1.02 }}>
-            Stop typing. Start adjusting.
+            Stop typing.<br />Start adjusting.
           </h1>
           <p style={{ fontSize: 17, color: 'var(--k-fg-2)', lineHeight: 1.5, margin: 0, maxWidth: 530 }}>
             Drop a folder of damage photos. Kevin returns a complete personal-property inventory — items identified, brands matched, depreciation suggested, three live retailer comps per line. Then you do the part that requires judgment.
@@ -99,6 +99,34 @@ const ForAdjusters = () => (
         </div>
       </section>
 
+      {/* — Visual proof. Same MktShot frames and captures as landing/product,
+            so an adjuster sees the real grid before being asked for a card. — */}
+      <div className="k-proof-hd">
+        <div className="k-proof-eyebrow">The two screens that matter</div>
+        <h2 className="k-proof-h2">Every line defends itself. Then it exports.</h2>
+        <p className="k-proof-sub">The part a carrier will question, and the file that answers them.</p>
+      </div>
+      <section className="k-proof-two">
+        <window.MktShot
+          src="../assets/marketing/worksheet-review-2x.webp"
+          alt="Kevin review worksheet — priced line items with make, model, content class, depreciation and ACV columns"
+          label="kevin.co/claims/CLM-2026-04412/worksheet"
+          slot="Review worksheet"
+          size="Capture from pages/05-Worksheet-flat.html"
+          ratio="1740 / 964"
+          caption="Live retail comps behind every RCV, with a dated proof link. Depreciation off the schedule you picked. Blank where Kevin could not corroborate a price."
+        />
+        <window.MktShot
+          src="../assets/marketing/export-modal-2x.webp"
+          alt="Kevin export modal — Xactimate Excel XactContents template, client PDF and full bundle"
+          label="Export claim · CLM-2026-04412"
+          slot="Carrier export"
+          size="Capture from pages/06-Export-modal.html"
+          ratio="1740 / 1056"
+          caption="Xactimate (Excel) · .xlsx · XactContents template — static values in every derived cell, because the importer breaks on formulas."
+        />
+      </section>
+
       {/* — Side-by-side example — */}
       <section className="k-seg-example">
         <div className="k-seg-example-l">
@@ -181,6 +209,11 @@ const ForAdjusters = () => (
       </section>
 
       {/* — CTA — */}
+      {/* Shared with landing and pricing via landing.jsx, so testimonials, the
+          settled-with roster and the ROI maths stay identical across pages. */}
+      <window.MktSocialProof />
+      <window.MktROISection />
+
       <section className="k-mkt-cta">
         <h2 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 44, letterSpacing: '-0.028em', margin: '0 0 14px', lineHeight: 1.05, textAlign: 'center' }}>
           Try Kevin on your next claim.
