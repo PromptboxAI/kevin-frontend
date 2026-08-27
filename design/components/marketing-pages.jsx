@@ -71,15 +71,29 @@ const ProductOverview = () => {
         <section className="k-mkt-hero" style={{ textAlign: 'center', maxWidth: 820, margin: '0 auto', padding: '60px 40px 40px' }}>
           <Badge tone="accent" dot={true}>Product overview</Badge>
           <h1 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 64, letterSpacing: '-0.028em', margin: '20px 0 18px', lineHeight: 1.02 }}>
-            Photos in. Inventory out.
+            Photo dump in. XactContents out.
           </h1>
           <p style={{ fontSize: 17, color: 'var(--k-fg-2)', lineHeight: 1.5, margin: 0, maxWidth: 620, marginLeft: 'auto', marginRight: 'auto' }}>
-            Kevin turns a folder of photos into a complete, priced personal-property inventory — for insurance adjusters settling claims or estate sale professionals cataloging a home. Drop the photos, review the grid, export.
+            Kevin turns a folder of photos into a complete, priced personal-property inventory — for adjusters settling contents claims and estate professionals cataloging a home. It triages the dump, identifies each item, prices it against live retail comps, and writes the spreadsheet your carrier already accepts.
           </p>
           <div style={{ display: 'flex', gap: 10, marginTop: 28, justifyContent: 'center' }}>
-            <a className="k-btn k-btn--lg" href="58-Account-create.html">Start a new claim →</a>
+            <a className="k-btn k-btn--lg" href="58-Account-create.html">Start your 7-day free trial →</a>
             <a className="k-btn k-btn--ghost k-btn--lg" href="21-Pricing.html">See pricing</a>
           </div>
+        </section>
+
+        {/* Visual proof — the screen the whole product exists to produce.
+            MktShot (landing.jsx) renders a labeled slot until a PNG is passed
+            to `src`; the frame is identical either way, so dropping the capture
+            in never reflows the page. */}
+        <section className="k-proof-solo">
+          <window.MktShot
+            label="kevin.co/claims/CLM-2026-04412/worksheet"
+            slot="Review worksheet — 57 priced lines"
+            size="Capture from pages/05-Worksheet-flat.html · 2000 × 1125"
+            ratio="16 / 9"
+            caption="One grid, every cell editable — and every price traceable to the comp it came from."
+          />
         </section>
 
         {/* Five surfaces */}
@@ -106,6 +120,27 @@ const ProductOverview = () => {
           </div>
         </section>
 
+        {/* Two-up proof — the two screens that absorb the manual hours. */}
+        <div className="k-proof-hd">
+          <div className="k-proof-eyebrow">Where the hours actually go</div>
+          <h2 className="k-proof-h2">Triage before you look. Export when you’re done.</h2>
+          <p className="k-proof-sub">The dump gets sorted without you. The file lands in XactContents without reformatting.</p>
+        </div>
+        <section className="k-proof-two">
+          <window.MktShot
+            label="kevin.co/claims/CLM-2026-04412/staging"
+            slot="Photo staging — proposed sets"
+            size="Capture from pages/73-Photo-staging.html · 1400 × 875"
+            caption="Shots seconds apart become one set — the wide frame and the model plate, priced once. Merge, split, or set aside before anything is identified."
+          />
+          <window.MktShot
+            label="Export claim · CLM-2026-04412"
+            slot="Carrier export modal"
+            size="Capture from pages/06-Export-modal.html · 1400 × 875"
+            caption="Xactimate (Excel) · .xlsx · XactContents template — static values in every derived cell, because the importer breaks on formulas."
+          />
+        </section>
+
         {/* Defensibility band */}
         <section className="k-mkt-band">
           <div style={{ flex: 1 }}>
@@ -114,7 +149,7 @@ const ProductOverview = () => {
               Every price has a receipt.
             </h2>
             <p style={{ fontSize: 14.5, color: 'var(--k-fg-2)', lineHeight: 1.55, margin: 0, maxWidth: 480 }}>
-Every priced line carries a dated link to the comp the price came from, and the audit log records who changed what and when. A year later you can show where each number came from without remembering a thing.
+              Every priced line carries a dated link to the comp the price came from, and the audit log records who changed what, and when. Months later — at supplement, at reinspection, at the call where someone questions a number — you can show your work without remembering a thing.
             </p>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 320 }}>
@@ -138,10 +173,10 @@ Every priced line carries a dated link to the comp the price came from, and the 
           <h2 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 44, letterSpacing: '-0.028em', margin: '0 0 14px', lineHeight: 1.05, textAlign: 'center' }}>
             Try it on a real claim.
           </h2>
-          <p style={{ fontSize: 15, color: 'var(--k-fg-3)', margin: '0 0 28px', maxWidth: 480, textAlign: 'center' }}>7-day free trial — full product, real claims.</p>
+          <p style={{ fontSize: 15, color: 'var(--k-fg-3)', margin: '0 0 28px', maxWidth: 480, textAlign: 'center' }}>Seven days, the full product, your own claims. $249/mo flat after that — unlimited claims, no per-seat or per-claim fees.</p>
           <div style={{ display: 'flex', gap: 10 }}>
-            <a className="k-btn k-btn--lg" href="58-Account-create.html">Start a new claim →</a>
-            <a className="k-btn k-btn--ghost k-btn--lg" href="48-Sample-claim.html">Open the sample claim</a>
+            <a className="k-btn k-btn--lg" href="58-Account-create.html">Start your 7-day free trial →</a>
+            <a className="k-btn k-btn--ghost k-btn--lg" href="48-Sample-claim.html">See a finished claim</a>
           </div>
         </section>
         <MktFooter />

@@ -4048,3 +4048,197 @@
     @media (max-width: 820px) { .k-roi-inner { grid-template-columns: minmax(0, 1fr); gap: 28px; } }
 
     .k-flags-band--one { grid-template-columns: 1fr; }
+
+    /* ══ MARKETING FUNNEL BLOCK — appended Aug 2026 ════════════════════════════
+       Scope: landing / product / pricing / request-access ONLY. Kept as one
+       trailing block so app-side edits to kevin.css merge as an append, never an
+       interleave. Tokens only — no raw hex. Its own breakpoints live at the end
+       of this block rather than in the shared marketing @media above.
+       ────────────────────────────────────────────────────────────────────────── */
+
+    /* — Screenshot frame (MktShot). Holds a real PNG, or a labeled slot until
+         one is dropped in. The frame is identical either way, so swapping a
+         placeholder for a screenshot never reflows the page. — */
+    .k-shot {
+      border: 1px solid var(--k-line); border-radius: 10px; background: var(--k-bg);
+      overflow: hidden; box-shadow: 0 1px 2px oklch(0.20 0.02 250 / 0.04), 0 8px 24px oklch(0.20 0.02 250 / 0.06);
+    }
+    .k-shot-chrome {
+      display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px;
+      background: var(--k-bg-3); border-bottom: 1px solid var(--k-line);
+    }
+    .k-shot-dots { display: flex; gap: 5px; flex: 0 0 auto; }
+    .k-shot-dots i { width: 8px; height: 8px; border-radius: 99px; background: var(--k-line-2); display: block; }
+    .k-shot-label {
+      font-family: var(--k-font-mono); font-size: 10.5px; color: var(--k-fg-4);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .k-shot-body { position: relative; width: 100%; aspect-ratio: 16 / 10; background: var(--k-bg-2); }
+    .k-shot-body img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; }
+
+    /* Placeholder state — a drop target, deliberately legible about what belongs
+       here so the visual can be swapped in without reading the JSX. */
+    .k-shot-ph {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 6px; padding: 24px; text-align: center;
+      background-image:
+        linear-gradient(45deg, var(--k-bg-3) 25%, transparent 25%, transparent 75%, var(--k-bg-3) 75%),
+        linear-gradient(45deg, var(--k-bg-3) 25%, transparent 25%, transparent 75%, var(--k-bg-3) 75%);
+      background-size: 16px 16px; background-position: 0 0, 8px 8px;
+    }
+    .k-shot-ph-badge {
+      display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px;
+      border-radius: 99px; border: 1px dashed var(--k-line-2); background: var(--k-bg);
+      font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--k-fg-4);
+    }
+    .k-shot-ph-t { font-size: 13.5px; font-weight: 600; color: var(--k-fg-2); margin-top: 2px; }
+    .k-shot-ph-s { font-family: var(--k-font-mono); font-size: 11px; color: var(--k-fg-4); }
+    .k-shot-cap {
+      padding: 10px 12px; border-top: 1px solid var(--k-line); background: var(--k-bg);
+      font-size: 12px; color: var(--k-fg-3); line-height: 1.5;
+    }
+
+    /* — Visual-proof section: alternating copy ⟷ screenshot rows — */
+    .k-proof { border-top: 1px solid var(--k-line); padding: 64px 40px 8px; }
+    .k-proof-hd { max-width: 760px; margin: 0 auto 44px; text-align: center; }
+    .k-proof-h2 {
+      font-family: var(--k-font-display); font-weight: 400; font-size: 38px;
+      letter-spacing: -0.024em; line-height: 1.1; margin: 10px 0 12px;
+    }
+    .k-proof-sub { font-size: 15.5px; color: var(--k-fg-3); line-height: 1.6; margin: 0; }
+    .k-proof-row {
+      max-width: 1080px; margin: 0 auto 56px; display: grid;
+      grid-template-columns: 0.85fr 1.15fr; gap: 48px; align-items: center;
+    }
+    .k-proof-row--flip .k-proof-copy { order: 2; }
+    .k-proof-eyebrow {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--k-accent);
+    }
+    .k-proof-h {
+      font-family: var(--k-font-display); font-weight: 400; font-size: 27px;
+      letter-spacing: -0.02em; line-height: 1.16; margin: 10px 0 12px;
+    }
+    .k-proof-body { font-size: 14.5px; color: var(--k-fg-3); line-height: 1.65; margin: 0 0 16px; }
+    .k-proof-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+    .k-proof-list li {
+      display: flex; gap: 9px; align-items: flex-start;
+      font-size: 13.5px; color: var(--k-fg-2); line-height: 1.5;
+    }
+    .k-proof-list li svg { flex: 0 0 auto; margin-top: 3px; color: var(--k-ok); }
+
+    /* — Solo + two-up screenshot layouts (Product). Same MktShot frame as the
+         alternating rows, laid out full-bleed or side by side. — */
+    .k-proof-solo { max-width: 1080px; margin: 0 auto; padding: 8px 40px 56px; }
+    .k-proof-two {
+      max-width: 1080px; margin: 0 auto; padding: 0 40px 56px;
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; align-items: start;
+    }
+
+    @media (max-width: 1080px) {
+      .k-proof-row { grid-template-columns: minmax(0, 1fr); gap: 26px; }
+      .k-proof-row--flip .k-proof-copy { order: 0; }
+    }
+    @media (max-width: 820px) {
+      .k-proof { padding: 44px 24px 4px; }
+      .k-proof-h2 { font-size: 30px; }
+      .k-proof-h { font-size: 23px; }
+      .k-proof-solo { padding: 4px 24px 40px; }
+      .k-proof-two { grid-template-columns: minmax(0, 1fr); gap: 22px; padding: 0 24px 40px; }
+    }
+    @media (max-width: 520px) {
+      .k-proof-h2 { font-size: 25px; }
+      .k-shot-label { display: none; }
+    }
+
+    /* — Settled-with marquee. Replaces the wrapped .k-carrier-logos row on the
+         landing page; the pill/mark/name styling above is reused untouched.
+         Spacing is margin-right on the pills rather than gap on the track, so
+         the duplicated roster tiles exactly at translateX(-50%) — a gap on the
+         track leaves a half-gap seam at the loop point. — */
+    .k-carrier-marquee {
+      /* width:0 is load-bearing, not redundant with flex:1. .k-landing is a
+         column flex container, so .k-social is a flex item whose cross-axis
+         (horizontal) size cannot go below its min-content -- and the track's
+         intrinsic width propagates up through it, widening the whole document.
+         An explicit 0 width zeroes that contribution; flex-grow restores it. */
+      flex: 1 1 0; width: 0; min-width: 0; overflow: hidden;
+      -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 56px, #000 calc(100% - 56px), transparent 100%);
+      mask-image: linear-gradient(90deg, transparent 0, #000 56px, #000 calc(100% - 56px), transparent 100%);
+    }
+    .k-carrier-track {
+      display: flex; align-items: center; width: max-content;
+      animation: k-carrier-scroll 48s linear infinite;
+    }
+    .k-carrier-track > .k-carrier-pill { margin-right: 10px; flex: 0 0 auto; }
+    /* Hover pauses so a name can actually be read. */
+    .k-carrier-marquee:hover .k-carrier-track { animation-play-state: paused; }
+    @keyframes k-carrier-scroll {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+    /* Reduced motion: no scroll at all — fall back to the wrapped row. */
+    @media (prefers-reduced-motion: reduce) {
+      .k-carrier-marquee { -webkit-mask-image: none; mask-image: none; }
+      .k-carrier-track { animation: none; width: auto; flex-wrap: wrap; gap: 8px 0; }
+    }
+    @media (max-width: 820px) {
+      .k-carrier-marquee {
+        -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
+        mask-image: linear-gradient(90deg, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
+      }
+    }
+    /* Narrow: the label drops to its own line so the marquee gets the full band
+       width (side by side it was left with ~74px). The band stays a ROW flex
+       container and wraps -- switching it to column would break the width:0
+       mechanism above, since flex-grow would then apply to height, not width. */
+    @media (max-width: 640px) {
+      .k-carrier-band { flex-wrap: wrap; gap: 0; padding: 22px 20px; }
+      .k-carrier-band-l {
+        flex: 0 0 100%;
+        border-right: 0; border-bottom: 1px solid var(--k-line);
+        padding: 0 0 12px; margin-bottom: 14px;
+        align-self: auto;
+      }
+      /* Getting the marquee onto its own line is fiddly: a ZERO-basis item never
+         wraps (it "fits" in 0 remaining space, then renders 0 wide), but a 100%
+         basis is a percentage, which is treated as auto for intrinsic sizing --
+         that lets the track's 3000px max-content propagate up through .k-social
+         and blow the page out to 1280px inside a 375px viewport. A definite 1px
+         basis threads it: too big to fit beside the 100% label so it wraps, and
+         a definite contribution of 1px so nothing propagates. flex-grow then
+         fills the line. */
+      .k-carrier-marquee { flex: 1 1 1px; width: 0; }
+    }
+
+    /* — Landing hero actions. Was an inline style; a media query can't reach one,
+         and the two large buttons overflow a 375px viewport side by side. — */
+    .k-hero-actions { display: flex; gap: 10px; margin-top: 28px; }
+
+    /* — Landing mobile grids. The shared "Marketing + Auth responsive" block
+         above collapses the hero, nav, CTA and pricing tiers, but never touched
+         the landing's own multi-column sections: the stats ribbon stayed at 4
+         columns, testimonials and How-it-works at 3, and the product gallery at
+         2, on a 375px phone. Together with the absolutely-positioned hero
+         callouts they pushed the document ~35px wider than the viewport, so the
+         whole page slid sideways. — */
+    @media (max-width: 900px) {
+      .k-stats-ribbon { padding: 12px 20px 32px; }
+      .k-stats-ribbon-inner { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .k-pg-grid { grid-template-columns: minmax(0, 1fr); }
+      .k-testimonials { grid-template-columns: minmax(0, 1fr); }
+      .k-how { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+      .k-howband { padding: 48px 20px; }
+      .k-band { flex-direction: column; align-items: flex-start; gap: 18px; padding: 32px 20px; }
+      .k-band-l { max-width: none; }
+      .k-audience-inner { flex-wrap: wrap; justify-content: center; gap: 10px 16px; padding: 16px 20px; }
+      .k-audience-r { flex-wrap: wrap; justify-content: center; gap: 8px 10px; }
+      /* Pinned to the corners of the hero card — there is no room beside it. */
+      .k-anno { display: none; }
+    }
+    @media (max-width: 520px) {
+      .k-stats-ribbon-inner { grid-template-columns: minmax(0, 1fr); }
+      .k-hero-actions { flex-direction: column; align-items: stretch; }
+      .k-hero-actions > .k-btn { width: 100%; justify-content: center; }
+      .k-trust { flex-wrap: wrap; row-gap: 4px; }
+    }

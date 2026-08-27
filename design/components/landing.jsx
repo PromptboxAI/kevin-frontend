@@ -41,8 +41,59 @@ const ROICalculator = () => {
   );
 };
 
-const Landing = ({ onStartClaim, onSampleClaim }) => {
+// Screenshot slot for the marketing funnel. Pass `src` to render a real PNG;
+// with none it renders a labeled drop target of identical size, so swapping a
+// visual in never reflows the section around it. Exported on window so the
+// Product page can use the same frame.
+// Carriers whose claims Kevin-built inventories have settled with. Real
+// insurers only, and never framed as partners or customers (domain rule 3).
+const LANDING_CARRIERS = [
+  { name: 'Nationwide',       mark: 'N',   color: 'oklch(0.32 0.10 252)' },
+  { name: 'Allstate',         mark: 'A',   color: 'oklch(0.42 0.18 252)' },
+  { name: 'State Farm',       mark: 'SF',  color: 'oklch(0.48 0.18 25)'  },
+  { name: 'Travelers',        mark: 'T',   color: 'oklch(0.45 0.18 25)'  },
+  { name: 'Chubb',            mark: 'C',   color: 'oklch(0.52 0.18 35)'  },
+  { name: 'SageSure',         mark: 'S',   color: 'oklch(0.50 0.15 145)' },
+  { name: 'Narragansett Bay', mark: 'NB',  color: 'oklch(0.50 0.13 235)' },
+  { name: 'GEICO',            mark: 'G',   color: 'oklch(0.50 0.15 165)' },
+  { name: 'Liberty Mutual',   mark: 'LM',  color: 'oklch(0.30 0.13 252)' },
+  { name: 'AFICS',            mark: 'AF',  color: 'oklch(0.40 0.10 240)' },
+  { name: 'AIG',              mark: 'AIG', color: 'oklch(0.35 0.14 252)' },
+  { name: 'Amica',            mark: 'A',   color: 'oklch(0.45 0.12 215)' },
+  { name: 'USAA',             mark: 'U',   color: 'oklch(0.38 0.11 252)' },
+];
+
+const MktShot = ({ src, alt, label, slot, size, caption, ratio }) => {
+  // A capture that 404s falls back to the labeled slot rather than a broken
+  // image icon — this page takes paid traffic. Reset on src change so fixing
+  // the path recovers without a reload.
+  const [broken, setBroken] = React.useState(false);
+  React.useEffect(() => { setBroken(false); }, [src]);
+  return (
+    <figure className="k-shot" style={{ margin: 0 }}>
+      <div className="k-shot-chrome">
+        <span className="k-shot-dots"><i /><i /><i /></span>
+        <span className="k-shot-label">{label}</span>
+      </div>
+      <div className="k-shot-body" style={ratio ? { aspectRatio: ratio } : null}>
+        {src && !broken
+          ? <img src={src} alt={alt || slot || label} onError={() => setBroken(true)} />
+          : (
+            <div className="k-shot-ph">
+              <span className="k-shot-ph-badge">Screenshot slot</span>
+              <div className="k-shot-ph-t">{slot}</div>
+              <div className="k-shot-ph-s">{size || '1600 × 1000 · PNG'}</div>
+            </div>
+          )}
+      </div>
+      {caption ? <figcaption className="k-shot-cap">{caption}</figcaption> : null}
+    </figure>
+  );
+};
+
+const Landing = ({ onStartClaim, onSampleClaim, onStartTrial }) => {
   const IMG = window.PRODUCT_IMG || {};
+  const startTrial = onStartTrial || onStartClaim;
   return (
     <div className="k-landing">
       <header className="k-nav">
@@ -62,27 +113,27 @@ const Landing = ({ onStartClaim, onSampleClaim }) => {
 
       <main className="k-hero">
         <div className="k-hero-l">
-          <Badge tone="accent" dot={true}>Photos in. Inventory out.</Badge>
+          <Badge tone="accent" dot={true}>Photos in. XactContents-ready inventory out.</Badge>
           <h1 className="k-h1">
-            The only content adjuster you’ll ever need.
+            The contents estimate writes itself.
           </h1>
           <p className="k-lede">
             Bulk-ingest hundreds of photos and Kevin returns a complete, Xactimate-ready
             personal property inventory — items identified, brands matched, depreciation suggested,
             and three live pricing comps per line. Hundreds of items reviewed in one grid — not one at a time.
           </p>
-          <div style={{ display: 'flex', gap: 10, marginTop: 28 }}>
-            <button className="k-btn k-btn--lg" onClick={onStartClaim}>Start a new claim →</button>
-            <button className="k-btn k-btn--ghost k-btn--lg" onClick={onSampleClaim}>Open a sample claim</button>
+          <div className="k-hero-actions">
+            <button className="k-btn k-btn--lg" onClick={startTrial}>Start your 7-day free trial →</button>
+            <button className="k-btn k-btn--ghost k-btn--lg" onClick={onSampleClaim}>See a finished claim</button>
           </div>
           <div className="k-trust">
-            <span>AES-256 encryption at rest</span>
+            <span>7-day free trial</span>
             <span className="k-trust-dot">·</span>
-            <span>Xactimate export</span>
+            <span>$249/mo flat · unlimited claims</span>
             <span className="k-trust-dot">·</span>
-            <span>No upload caps</span>
+            <span>No per-claim or per-seat fees</span>
             <span className="k-trust-dot">·</span>
-            <span>500+ line items per worksheet</span>
+            <span>AES-256 at rest</span>
           </div>
         </div>
 
@@ -176,6 +227,108 @@ const Landing = ({ onStartClaim, onSampleClaim }) => {
             <span className="k-trust-dot">·</span>
             <span>Estate liquidators</span>
           </div>
+        </div>
+      </section>
+
+      {/* — Visual proof — real product screenshots. Each MktShot renders a
+            labeled slot until a PNG is dropped into `src`; the frame is the same
+            size either way, so adding the image never reflows the row. — */}
+      <section className="k-proof">
+        <div className="k-proof-hd">
+          <div className="k-pg-eyebrow-top">What you actually get</div>
+          <h2 className="k-proof-h2">Three screens between a photo dump and a completed estimate.</h2>
+          <p className="k-proof-sub">No new workflow to learn. The photos you already take, the file your carrier already accepts.</p>
+        </div>
+
+        {/* Row 1 — automated photo triage */}
+        <div className="k-proof-row">
+          <div className="k-proof-copy">
+            <div className="k-proof-eyebrow">Automated photo triage</div>
+            <h3 className="k-proof-h">300 photos in. Nothing sorted by hand.</h3>
+            <p className="k-proof-body">
+              Kevin clusters the dump into photo sets before you review a single frame — the wide
+              shot and the model-plate close-up of the same item land together, duplicates collapse,
+              context shots are set aside. You approve a proposal instead of sorting a folder.
+            </p>
+            <ul className="k-proof-list">
+              {[
+                'One item per photo set — a photo is never counted twice',
+                'Duplicates caught by hash across the whole claim, not just the batch',
+                'Merge, split or annotate any set before it is processed',
+              ].map(t => (
+                <li key={t}><Icon d={I.check} size={13} stroke={2.5} />{t}</li>
+              ))}
+            </ul>
+          </div>
+          <MktShot
+            src="../assets/marketing/staging-proposed-sets.png"
+            alt="Kevin photo staging — proposed photo sets awaiting review, one merged into a single item with an adjuster note"
+            label="kevin.co/claims/CLM-2026-04412/staging"
+            slot="Photo staging — proposed sets"
+            size="Capture from pages/73-Photo-staging.html · 1600 × 1000"
+            caption="Proposed photo sets, before processing — merge, split, or set aside."
+          />
+        </div>
+
+        {/* Row 2 — the review worksheet */}
+        <div className="k-proof-row k-proof-row--flip">
+          <div className="k-proof-copy">
+            <div className="k-proof-eyebrow">One reviewable grid</div>
+            <h3 className="k-proof-h">Every line defends itself.</h3>
+            <p className="k-proof-body">
+              Each priced line cites live retail comps with dated merchant links — the median sets
+              RCV. Depreciation comes off the schedule you selected. And when Kevin cannot corroborate
+              a price, it leaves the cell blank for you rather than inventing one.
+            </p>
+            <ul className="k-proof-list">
+              {[
+                'Editable everywhere — qty, description, make, model, class, age, depreciation',
+                'Special-limits classes flagged, never blocked',
+                'Source URLs travel with the export',
+              ].map(t => (
+                <li key={t}><Icon d={I.check} size={13} stroke={2.5} />{t}</li>
+              ))}
+            </ul>
+          </div>
+          <MktShot
+            src="../assets/marketing/worksheet-review-grid.png"
+            alt="Kevin review worksheet — priced line items with make, model, content class, depreciation and ACV columns"
+            label="kevin.co/claims/CLM-2026-04412/worksheet"
+            slot="Review worksheet — 57 priced lines"
+            size="Capture from pages/05-Worksheet-flat.html · 1600 × 1000"
+            caption="The RCV popover open on a line — live comps with dated proof links."
+          />
+        </div>
+
+        {/* Row 3 — the carrier export */}
+        <div className="k-proof-row">
+          <div className="k-proof-copy">
+            <div className="k-proof-eyebrow">Carrier-ready export</div>
+            <h3 className="k-proof-h">One click to XactContents.</h3>
+            <p className="k-proof-body">
+              Kevin writes the pre-formatted <strong>Xactimate (Excel) · .xlsx · XactContents template</strong>
+              {' '}— static values in every derived cell, because the importer breaks on formulas.
+              Download it, share a link, or email it. Kevin shows you what deserves a second look
+              and lets you decide; it never holds your export hostage.
+            </p>
+            <ul className="k-proof-list">
+              {[
+                'Xactimate-parity columns — per-line sales tax, age, % depreciation and ACV',
+                'A client-facing PDF inventory generated alongside it',
+                'Nothing to reformat, retype, or paste',
+              ].map(t => (
+                <li key={t}><Icon d={I.check} size={13} stroke={2.5} />{t}</li>
+              ))}
+            </ul>
+          </div>
+          <MktShot
+            src="../assets/marketing/export-modal.png"
+            alt="Kevin export modal — Xactimate Excel XactContents template, client PDF and full bundle, with download and share actions"
+            label="Export claim · CLM-2026-04412"
+            slot="Carrier export modal"
+            size="Capture from pages/06-Export-modal.html · 1600 × 1000"
+            caption="The export modal — formats, what needs attention, and live download buttons."
+          />
         </div>
       </section>
 
@@ -377,29 +530,23 @@ const Landing = ({ onStartClaim, onSampleClaim }) => {
           ))}
         </div>
 
+        {/* Settled-with band. The roster scrolls; the "Settled with" label stays
+            put so the claim never detaches from the logos and read as a
+            partner/customer wall — Kevin has no carrier relationships.
+            Duplicated once and translated -50% for a seamless loop: spacing is
+            margin-right on each pill, NOT gap on the track, so the two copies
+            tile exactly (a track gap would leave a half-gap seam). */}
         <div className="k-carrier-band">
           <div className="k-carrier-band-l">Settled with</div>
-          <div className="k-carrier-logos">
-            {[
-              { name: 'Nationwide',       mark: 'N',   color: 'oklch(0.32 0.10 252)' },
-              { name: 'Allstate',         mark: 'A',   color: 'oklch(0.42 0.18 252)' },
-              { name: 'State Farm',       mark: 'SF',  color: 'oklch(0.48 0.18 25)'  },
-              { name: 'Travelers',        mark: 'T',   color: 'oklch(0.45 0.18 25)'  },
-              { name: 'Chubb',            mark: 'C',   color: 'oklch(0.52 0.18 35)'  },
-              { name: 'SageSure',         mark: 'S',   color: 'oklch(0.50 0.15 145)' },
-              { name: 'Narragansett Bay', mark: 'NB',  color: 'oklch(0.50 0.13 235)' },
-              { name: 'GEICO',            mark: 'G',   color: 'oklch(0.50 0.15 165)' },
-              { name: 'Liberty Mutual',   mark: 'LM',  color: 'oklch(0.30 0.13 252)' },
-              { name: 'AFICS',            mark: 'AF',  color: 'oklch(0.40 0.10 240)' },
-              { name: 'AIG',              mark: 'AIG', color: 'oklch(0.35 0.14 252)' },
-              { name: 'Amica',            mark: 'A',   color: 'oklch(0.45 0.12 215)' },
-              { name: 'USAA',             mark: 'U',   color: 'oklch(0.38 0.11 252)' },
-            ].map(c => (
-              <div key={c.name} className="k-carrier-pill">
-                <span className="k-carrier-mark" style={{ background: c.color }}>{c.mark}</span>
-                <span className="k-carrier-name">{c.name}</span>
-              </div>
-            ))}
+          <div className="k-carrier-marquee">
+            <div className="k-carrier-track">
+              {LANDING_CARRIERS.concat(LANDING_CARRIERS).map((c, i) => (
+                <div key={i} className="k-carrier-pill" aria-hidden={i >= LANDING_CARRIERS.length ? true : undefined}>
+                  <span className="k-carrier-mark" style={{ background: c.color }}>{c.mark}</span>
+                  <span className="k-carrier-name">{c.name}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -462,7 +609,7 @@ const Landing = ({ onStartClaim, onSampleClaim }) => {
             Bring a real loss. Run it end to end on the free trial — and if you want company, we'll walk the worksheet with you on a 30-minute call.
           </p>
           <div className="k-cta-actions">
-            <button className="k-cta-primary" onClick={onStartClaim}>Start your free trial →</button>
+            <button className="k-cta-primary" onClick={startTrial}>Start your free trial →</button>
             <a className="k-cta-secondary" href="51-Book-call.html">Book a 30-min call</a>
           </div>
           <div className="k-cta-trust">
@@ -480,4 +627,4 @@ const Landing = ({ onStartClaim, onSampleClaim }) => {
   );
 };
 
-window.Landing = Landing;
+Object.assign(window, { Landing, MktShot });
