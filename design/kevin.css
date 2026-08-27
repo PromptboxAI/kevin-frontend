@@ -4242,3 +4242,53 @@
       .k-hero-actions > .k-btn { width: 100%; justify-content: center; }
       .k-trust { flex-wrap: wrap; row-gap: 4px; }
     }
+
+    /* — Pricing: stat row + trial strip. The stat row's 3-column grid was an
+         inline style on the element, which no media query can reach — same
+         debt as the landing hero actions. Now a class. — */
+    .k-stat-row--3 {
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px; text-align: left;
+    }
+    .k-tier-trial {
+      margin-top: 10px; text-align: center;
+      font-size: 11.5px; line-height: 1.5; color: var(--k-fg-4);
+    }
+
+    /* — Pricing mobile. This page was the worst of the marketing set: 705px of
+         content in a 375px viewport, nearly 2x. Contributors were the fixed
+         380px calc card, the value band's 40px padding and row layout, the
+         3-col stat row, the 2-col FAQ grid, and the tier grid's 420px track. — */
+    /* Pricing hero padding was inline (60px 40px 40px), so no breakpoint could
+       reach it -- and its 80px of horizontal padding was what forced
+       .k-mkt-main wide on a phone. */
+    .k-price-hero { padding: 60px 40px 40px; }
+    /* Font size was inline too. At 56px "subscription." is a single unbreakable
+       word wider than a phone, which set the hero's min-content and dragged
+       .k-mkt-main -- and therefore the whole page -- out to 411px. */
+    .k-price-hero h1 { font-size: 56px; }
+    /* Stats section. Padding was inline (56px 40px 8px) -- the 8px bottom left
+       the footnote crowding the ROI band's top border. */
+    .k-price-stats { padding: 56px 40px 64px; }
+
+    @media (max-width: 900px) {
+      /* .k-mkt-main is a flex item of .k-landing with min-width:auto, so it
+         cannot shrink below its widest child's min-content. Without this the
+         whole page is sized by the hero, not by the viewport. */
+      .k-mkt-main { min-width: 0; }
+      .k-price-hero { padding: 40px 20px 28px; }
+      .k-price-hero h1 { font-size: clamp(30px, 8vw, 44px); }
+      .k-price-stats { padding: 40px 20px 48px; }
+      .k-stat-row--3 { grid-template-columns: minmax(0, 1fr); }
+      .k-faq-grid { grid-template-columns: minmax(0, 1fr); }
+      .k-mkt-band {
+        flex-direction: column; align-items: stretch;
+        gap: 20px; padding: 26px 20px; margin: 28px 0;
+      }
+      .k-calc { width: auto; }
+      .k-mkt-cta { padding: 56px 20px; }
+      .k-mkt-main { padding: 0 20px 44px; }
+    }
+    @media (max-width: 520px) {
+      .k-tiers { grid-template-columns: minmax(0, 1fr); max-width: none; }
+    }

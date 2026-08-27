@@ -91,6 +91,93 @@ const MktShot = ({ src, alt, label, slot, size, caption, ratio }) => {
   );
 };
 
+// Social proof — testimonials + the scrolling settled-with roster. Shared by
+// the landing page and pricing (21); pricing shows it directly under the
+// tiers, where the price has just been stated and proof is what carries the
+// click. Lives here rather than being duplicated so the quotes and the
+// carrier roster can never drift between the two pages.
+// ROI calculator section — shared by the landing page and pricing (21).
+// On pricing it replaces the old 'Priced like the tools you already use'
+// value band: a visitor who has just read $249 wants the number against
+// their own caseload, not a restatement of the price.
+const MktROISection = () => (
+    <section className="k-roi">
+      <div className="k-roi-inner">
+        <div className="k-roi-copy">
+          <div className="k-cta-eyebrow">What's your time worth?</div>
+          <h2 className="k-roi-h">The math on your own caseload.</h2>
+          <p className="k-roi-sub">
+            Adjusters spend 4–6 hours typing and pricing a single contents claim. Kevin does that pass on autopilot — set your volume and rate, and see what comes back.
+          </p>
+        </div>
+        <ROICalculator />
+      </div>
+    </section>
+);
+
+const MktSocialProof = () => (
+    <section className="k-social">
+      <div className="k-social-hd">
+        <div className="k-pg-eyebrow-top">From the people who use it</div>
+        <h2 className="k-pg-h2">The grid does the typing. They do the work.</h2>
+      </div>
+
+      <div className="k-testimonials">
+        {[
+          {
+            quote: "Friday's claim, Saturday's export. The grid does the typing — I do the review. Six adjusters here, all the same story.",
+            name: "James Cunningham",
+            role: "Principal · Loss Consulting",
+            initials: "JC",
+          },
+          {
+            quote: "Liberty Mutual challenged a $4,200 RCV on a dining set. I clicked the cell, sent the three source URLs, settled in 20 minutes. Every number defends itself.",
+            name: "A. Mendez",
+            role: "Independent Adjuster",
+            initials: "AM",
+          },
+          {
+            quote: "Kevin flagged $54k of jewelry against Chubb's per-item cap before I sent the export. Saved me a back-and-forth I would have lost.",
+            name: "Tricia O’Connell",
+            role: "Public Adjuster",
+            initials: "TO",
+          },
+        ].map((t, i) => (
+          <figure key={i} className="k-testi">
+            <blockquote className="k-testi-quote">“{t.quote}”</blockquote>
+            <figcaption className="k-testi-who">
+              <span className="k-audit-avatar k-audit-avatar--adjuster" style={{ width: 36, height: 36, fontSize: 12 }}>{t.initials}</span>
+              <div>
+                <div className="k-testi-name">{t.name}</div>
+                <div className="k-testi-role">{t.role}</div>
+              </div>
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+
+      {/* Settled-with band. The roster scrolls; the "Settled with" label stays
+          put so the claim never detaches from the logos and read as a
+          partner/customer wall — Kevin has no carrier relationships.
+          Duplicated once and translated -50% for a seamless loop: spacing is
+          margin-right on each pill, NOT gap on the track, so the two copies
+          tile exactly (a track gap would leave a half-gap seam). */}
+      <div className="k-carrier-band">
+        <div className="k-carrier-band-l">Settled with</div>
+        <div className="k-carrier-marquee">
+          <div className="k-carrier-track">
+            {LANDING_CARRIERS.concat(LANDING_CARRIERS).map((c, i) => (
+              <div key={i} className="k-carrier-pill" aria-hidden={i >= LANDING_CARRIERS.length ? true : undefined}>
+                <span className="k-carrier-mark" style={{ background: c.color }}>{c.mark}</span>
+                <span className="k-carrier-name">{c.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+);
+
 const Landing = ({ onStartClaim, onSampleClaim, onStartTrial }) => {
   const IMG = window.PRODUCT_IMG || {};
   const startTrial = onStartTrial || onStartClaim;
@@ -490,66 +577,7 @@ const Landing = ({ onStartClaim, onSampleClaim, onStartTrial }) => {
       </section>
 
       {/* — Social proof: testimonials + settled-with carriers — */}
-      <section className="k-social">
-        <div className="k-social-hd">
-          <div className="k-pg-eyebrow-top">From the people who use it</div>
-          <h2 className="k-pg-h2">The grid does the typing. They do the work.</h2>
-        </div>
-
-        <div className="k-testimonials">
-          {[
-            {
-              quote: "Friday's claim, Saturday's export. The grid does the typing — I do the review. Six adjusters here, all the same story.",
-              name: "James Cunningham",
-              role: "Principal · Loss Consulting",
-              initials: "JC",
-            },
-            {
-              quote: "Liberty Mutual challenged a $4,200 RCV on a dining set. I clicked the cell, sent the three source URLs, settled in 20 minutes. Every number defends itself.",
-              name: "A. Mendez",
-              role: "Independent Adjuster",
-              initials: "AM",
-            },
-            {
-              quote: "Kevin flagged $54k of jewelry against Chubb's per-item cap before I sent the export. Saved me a back-and-forth I would have lost.",
-              name: "Tricia O’Connell",
-              role: "Public Adjuster",
-              initials: "TO",
-            },
-          ].map((t, i) => (
-            <figure key={i} className="k-testi">
-              <blockquote className="k-testi-quote">“{t.quote}”</blockquote>
-              <figcaption className="k-testi-who">
-                <span className="k-audit-avatar k-audit-avatar--adjuster" style={{ width: 36, height: 36, fontSize: 12 }}>{t.initials}</span>
-                <div>
-                  <div className="k-testi-name">{t.name}</div>
-                  <div className="k-testi-role">{t.role}</div>
-                </div>
-              </figcaption>
-            </figure>
-          ))}
-        </div>
-
-        {/* Settled-with band. The roster scrolls; the "Settled with" label stays
-            put so the claim never detaches from the logos and read as a
-            partner/customer wall — Kevin has no carrier relationships.
-            Duplicated once and translated -50% for a seamless loop: spacing is
-            margin-right on each pill, NOT gap on the track, so the two copies
-            tile exactly (a track gap would leave a half-gap seam). */}
-        <div className="k-carrier-band">
-          <div className="k-carrier-band-l">Settled with</div>
-          <div className="k-carrier-marquee">
-            <div className="k-carrier-track">
-              {LANDING_CARRIERS.concat(LANDING_CARRIERS).map((c, i) => (
-                <div key={i} className="k-carrier-pill" aria-hidden={i >= LANDING_CARRIERS.length ? true : undefined}>
-                  <span className="k-carrier-mark" style={{ background: c.color }}>{c.mark}</span>
-                  <span className="k-carrier-name">{c.name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+      <window.MktSocialProof />
 
       {/* — How it works — */}
       <section className="k-howband">
@@ -586,19 +614,9 @@ const Landing = ({ onStartClaim, onSampleClaim, onStartTrial }) => {
       {/* — ROI calculator. Math and the 4.5h baseline come from the backend spec
             (kevin-web-spec-claude.pdf): hours saved per claim vs manual lookup,
             claims/month × hourly rate → reclaimed time and dollars. Sliders, so
-            the number on screen is the visitor's own workflow, not ours. — */}
-      <section className="k-roi">
-        <div className="k-roi-inner">
-          <div className="k-roi-copy">
-            <div className="k-cta-eyebrow">What's your time worth?</div>
-            <h2 className="k-roi-h">The math on your own caseload.</h2>
-            <p className="k-roi-sub">
-              Adjusters spend 4–6 hours typing and pricing a single contents claim. Kevin does that pass on autopilot — set your volume and rate, and see what comes back.
-            </p>
-          </div>
-          <ROICalculator />
-        </div>
-      </section>
+            the number on screen is the visitor's own workflow, not ours.
+            Shared with pricing (21) via MktROISection. — */}
+      <window.MktROISection />
 
       {/* — Final CTA band — */}
       <section className="k-cta">
@@ -627,4 +645,4 @@ const Landing = ({ onStartClaim, onSampleClaim, onStartTrial }) => {
   );
 };
 
-Object.assign(window, { Landing, MktShot });
+Object.assign(window, { Landing, MktShot, MktSocialProof, MktROISection });

@@ -1,10 +1,12 @@
-// Pricing page — clean three-tier table with per-claim pricing & enterprise tier
+// Pricing page — two tiers, flat monthly. NOT per-claim and NOT per-seat
+// (domain rule 9): the Solo per-claim and Agency per-seat tiers were scrapped.
+// Must stay in sync with settings-pages.jsx -> SettingsBilling.
 
 const { KevinWordmark, Icon, I, Badge } = window;
 
 const TIERS = [
   {
-    id: 'pro', name: 'Pro', tag: "For Content Inventory Specialists, IA's and Public Adjusters",
+    id: 'pro', name: 'Pro', tag: 'One adjuster. Unlimited claims.',
     price: 249, suffix: '/mo',
     blurb: 'One flat monthly subscription. Unlimited claims, unlimited photos. Cancel anytime.',
     cta: 'Start 7-day free trial',
@@ -17,21 +19,21 @@ const TIERS = [
       ['Comparable source link on every line',                          true],
       ['RCV and ACV, multi-method depreciation, adjuster override',     true],
       ['24 content classes mapped to Xactimate PCS codes',              true],
-      ['Confidence gating — low-confidence high-value lines held for review, never published silently', true],
+      ['Every price traceable — unpriced lines arrive blank and editable, never guessed', true],
       ['Written-inventory import — spreadsheet in, priced list out',    true],
       ['Editable worksheet with per-item photo drawer and full audit trail', true],
       ['XactContents-format XLSX and PDF export',                       true],
       ['Client-facing share links',                                     true],
       ['Version retention and change history on every line',            true],
       ['Mobile capture, any phone, nothing to install',                 true],
-      ['Unlimited claims, unlimited storage, archive and restore',      true],
+      ['Unlimited claims, 500 GB photo storage, archive and restore',   true],
     ],
   },
   {
-    id: 'ent', name: 'Enterprise', tag: 'For carriers, TPAs & multi-adjuster agencies',
+    id: 'ent', name: 'Enterprise', tag: 'Two or more adjusters, one invoice.',
     price: 'Custom', suffix: '',
     blurb: 'Volume licensing for a whole desk or agency, with the controls a larger operation needs.',
-    cta: 'Contact sales',
+    cta: 'Talk to us about your desk',
     primary: false,
     features: [
       ['Everything in Pro',                      true],
@@ -46,36 +48,30 @@ const TIERS = [
 ];
 
 const FAQS = [
-  ['What counts as a claim?',
-   'One loss event — one insured, one date of loss, one address. On Pro it doesn\'t matter: claims are unlimited, so run as many as you need.'],
-  ['Do I pay extra for photos or items?',
-   'No. Pro includes unlimited photos and items on every claim, with 500 GB of active photo storage on the account — no per-claim caps.'],
-  ['Is the AI included, or is it extra?',
-   'Included — all of it. Vision identification, live retail comps, depreciation, and every future model improvement ship inside the flat price. No add-ons, no tier upgrades, no per-item AI fees.'],
-  ['What does the 7-day free trial include?',
-   'Everything in Pro — real claims, full exports, live comps. Run an actual loss through Kevin end-to-end before your subscription starts.'],
-  ['Does this work for estate sales?',
-   'Yes. Pro includes estate sale mode — catalog a whole home, track condition and disposition, and export a clean inventory PDF. Same flat price.'],
-  ['Can I cancel anytime?',
-   'Yes. Pro is month-to-month, cancel whenever. No annual lock-in unless you want one (we discount it).'],
-  ['Are pricing comps included or extra?',
-   'Included. Every RCV cell gets top-3 retailer comps. We don\'t charge per comp or per refresh.'],
-  ['Who owns my data — and how long do you keep it?',
-   'You do, and forever. Claims get audited years after they settle, so nothing is ever deleted — closed claims move to slower archived storage but stay fully accessible, and you can export everything at any time.'],
-  ['Is “unlimited claims” really unlimited?',
-   'Yes. No claim caps, no per-claim fees. The one metered thing is photo storage (500 GB included — real cost, generous pool); going over triggers an email, never a mid-claim lockout.'],
   ['Do I need a credit card to start the trial?',
    "Yes. We verify your card at signup, but you're not charged during the 7-day trial."],
+  ['What does the 7-day free trial include?',
+   'Everything in Pro \u2014 real claims, full exports, live comps. Run an actual loss through Kevin end-to-end before your subscription starts.'],
   ['What happens when the trial ends?',
    "Your Pro subscription starts automatically and your card is charged $249. We email you at signup and again 3 days before, so it's never a surprise."],
-  ['Can I cancel during the trial?',
-   "Yes — one click in Settings → Billing, any time before your charge date, and you're never charged."],
-  ['Can I cancel after I’ve been charged?',
-   'Yes, any time. You keep access through the period you’ve paid for. No cancellation fee, no notice period, no phone call.'],
+  ['Am I locked in? Can I cancel?',
+   "No contract, month to month. Cancel in one click in Settings \u2192 Billing \u2014 before your charge date and you're never charged at all; after it, you keep access through the period you've paid for. No cancellation fee, no notice period, no phone call."],
   ['Do I lose my work if I cancel?',
    'No. Your claims, worksheets and exports stay available to download.'],
-  ['Is there a contract?',
-   'No. Month to month, cancel any time.'],
+  ['Is \u201cunlimited claims\u201d really unlimited?',
+   'Yes. No claim caps, no per-claim fees. The one metered thing is photo storage (500 GB included \u2014 real cost, generous pool); going over triggers an email, never a mid-claim lockout.'],
+  ['What counts as a claim?',
+   'One loss event \u2014 one insured, one date of loss, one address. On Pro it doesn\'t matter: claims are unlimited, so run as many as you need.'],
+  ['Do I pay extra for photos or items?',
+   'No. Pro includes unlimited photos and items on every claim, with 500 GB of active photo storage on the account \u2014 no per-claim caps.'],
+  ['Are pricing comps included or extra?',
+   'Included. Every RCV cell gets top-3 retailer comps. We don\'t charge per comp or per refresh.'],
+  ['Is the AI included, or is it extra?',
+   'Included \u2014 all of it. Vision identification, live retail comps, depreciation, and every future model improvement ship inside the flat price. No add-ons, no tier upgrades, no per-item AI fees.'],
+  ['Who owns my data \u2014 and how long do you keep it?',
+   'You do, and forever. Claims get audited years after they settle, so nothing is ever deleted \u2014 closed claims move to slower archived storage but stay fully accessible, and you can export everything at any time.'],
+  ['Does this work for estate sales?',
+   'Yes. Pro includes estate sale mode \u2014 catalog a whole home, track condition and disposition, and export a clean inventory PDF. Same flat price.'],
 ];
 
 const Pricing = () => (
@@ -83,9 +79,9 @@ const Pricing = () => (
     <window.MktNav active="pri" />
 
     <main className="k-mkt-main">
-      <section className="k-mkt-hero" style={{ textAlign: 'center', maxWidth: 760, margin: '0 auto', padding: '60px 40px 40px' }}>
+      <section className="k-mkt-hero k-price-hero" style={{ textAlign: 'center', maxWidth: 760, margin: '0 auto' }}>
         <Badge tone="accent" dot={true}>Pricing</Badge>
-        <h1 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 56, letterSpacing: '-0.028em', margin: '18px 0 16px', lineHeight: 1.04 }}>
+        <h1 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, letterSpacing: '-0.028em', margin: '18px 0 16px', lineHeight: 1.04 }}>
           One subscription. Unlimited claims.
         </h1>
         <p style={{ fontSize: 16, color: 'var(--k-fg-2)', lineHeight: 1.55, margin: 0, maxWidth: 560, marginLeft: 'auto', marginRight: 'auto' }}>
@@ -115,6 +111,11 @@ const Pricing = () => (
             </div>
             <p className="k-tier-blurb">{t.blurb}</p>
             <a className={`k-btn k-btn--lg ${t.primary ? '' : 'k-btn--ghost'}`} href={t.primary ? '58-Account-create.html' : '38-Contact.html'} style={{ width: '100%', justifyContent: 'center' }}>{t.cta}</a>
+            {/* The card question is THE objection for cold traffic. Answer it at
+                the button, not 15 FAQ rows below the fold. */}
+            {t.primary && (
+              <div className="k-tier-trial">Card verified at signup · not charged for 7 days · one-click cancel in Settings → Billing</div>
+            )}
             <div className="k-tier-features">
               {t.features.map(([label, on, hint], i) => (
                 <div key={i} className={`k-tier-feat ${!on ? 'k-tier-feat--off' : ''}`}>
@@ -130,11 +131,16 @@ const Pricing = () => (
         ))}
       </section>
 
+      {/* — Social proof, straight under the tiers. The price has just landed and
+            proof is what carries the click; shared with the landing page via
+            MktSocialProof (landing.jsx) so the quotes and the settled-with
+            roster can never drift between the two. — */}
+      <window.MktSocialProof />
+
       {/* — Performance metrics — measured on real claims, same figures as landing/segments — */}
-      <section style={{ maxWidth: 980, margin: '0 auto', padding: '56px 40px 8px', textAlign: 'center' }}>
-        <div style={{ fontFamily: 'var(--k-font-mono)', fontSize: 11, color: 'var(--k-fg-4)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, marginBottom: 10 }}>What $249 buys back</div>
+      <section className="k-price-stats" style={{ maxWidth: 980, margin: '0 auto', textAlign: 'center' }}>
         <h2 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 34, letterSpacing: '-0.024em', margin: '0 0 28px' }}>Measured on real claims, not a demo</h2>
-        <div className="k-stat-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, textAlign: 'left' }}>
+        <div className="k-stat-row k-stat-row--3">
           <div className="k-stat-card">
             <div className="k-stat-n">~29 min</div>
             <div className="k-stat-l">256 photos → priced inventory</div>
@@ -148,34 +154,17 @@ const Pricing = () => (
           <div className="k-stat-card">
             <div className="k-stat-n">$249</div>
             <div className="k-stat-l">flat, unlimited claims</div>
-            <div className="k-stat-s">One recovered claim-day covers months of Kevin</div>
+            <div className="k-stat-s">At $150/hr, 1.7 recovered hours pays for the month</div>
           </div>
         </div>
         <div style={{ fontSize: 12, color: 'var(--k-fg-4)', marginTop: 14 }}>Times measured on a 256-photo pack-out and a 200-row written inventory against a 4-minute-per-row manual baseline.</div>
       </section>
-      {/* — Value band — */}
-      <section className="k-mkt-band">
-        <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 28, letterSpacing: '-0.022em', lineHeight: 1.2, marginBottom: 8 }}>
-            Priced like the tools you already use.
-          </div>
-          <p style={{ fontSize: 14, color: 'var(--k-fg-3)', margin: 0, maxWidth: 480 }}>
-            One flat monthly subscription, billed per user — same as Xactimate or XactContents. Run one claim or fifty; the price doesn't move. Running a whole desk or agency? Enterprise gives you volume licensing on a single invoice.
-          </p>
-        </div>
-        <div className="k-calc">
-          <div className="k-calc-l">Kevin Pro</div>
-          <div className="k-calc-row">
-            <span className="k-calc-num">$249</span>
-            <span className="k-calc-unit">/ month</span>
-          </div>
-          <div className="k-calc-bar"><div style={{ width: '100%' }} /></div>
-          <div className="k-calc-foot">
-            <span>Unlimited claims</span>
-            <span style={{ color: 'var(--k-accent)', fontWeight: 600 }}>7-day free trial</span>
-          </div>
-        </div>
-      </section>
+      {/* — ROI calculator, shared with the landing page (MktROISection in
+            landing.jsx). Replaces the old 'Priced like the tools you already
+            use' value band, which restated the price the visitor had just
+            read; the sliders answer the question they actually have. — */}
+      <window.MktROISection />
+
 
       {/* — FAQ — */}
       <section className="k-faq">
@@ -198,7 +187,7 @@ const Pricing = () => (
         <p style={{ fontSize: 15, color: 'var(--k-fg-3)', margin: '0 0 28px', maxWidth: 480, textAlign: 'center' }}>
           Bring a real loss. We'll get you set up and walk you through the worksheet in a 30-minute call.
         </p>
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div className="k-hero-actions" style={{ marginTop: 0 }}>
           <a className="k-btn k-btn--lg" href="58-Account-create.html">Start your free trial →</a>
           <a className="k-btn k-btn--ghost k-btn--lg" href="38-Contact.html">Talk to sales</a>
         </div>
