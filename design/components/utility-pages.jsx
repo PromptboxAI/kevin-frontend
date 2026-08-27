@@ -162,7 +162,7 @@ const WatchDemo = () => (
   <div className="k-landing">
     <MktNav />
     <main className="k-mkt-main">
-      <section style={{ textAlign: 'center', maxWidth: 800, margin: '0 auto', padding: '52px 40px 30px' }}>
+      <section className="k-demo-sec" style={{ textAlign: 'center', maxWidth: 800, margin: '0 auto', padding: '52px 40px 30px' }}>
         <Badge tone="accent" dot={true}>Written walkthrough</Badge>
         <h1 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 48, letterSpacing: '-0.028em', margin: '18px 0 14px', lineHeight: 1.05 }}>
           Every step, start to export.
@@ -172,7 +172,7 @@ const WatchDemo = () => (
         </p>
       </section>
 
-      <section style={{ maxWidth: 800, margin: '0 auto', padding: '0 40px' }}>
+      <section className="k-demo-sec" style={{ maxWidth: 800, margin: '0 auto', padding: '0 40px' }}>
         <div className="k-demo-steps">
           {DEMO_STEPS.map(([n, t, time, items], i) => (
             <div key={i} className="k-demo-step">

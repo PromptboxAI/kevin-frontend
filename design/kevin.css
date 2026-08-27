@@ -4411,3 +4411,42 @@
          which is exactly how the pricing tiers got wrecked earlier. */
       .k-dfy section > div[style*="display: flex"] { flex-wrap: wrap; }
     }
+
+    /* — Segment pages (22, 23), Watch-demo (52), 404 (56). The last four of the
+         marketing set. Unlike done-for-you these mostly HAVE classes; they just
+         never had breakpoints, so their multi-column grids ran at full desktop
+         width on a phone. — */
+    .k-seg-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+
+    @media (max-width: 900px) {
+      .k-seg-hero { grid-template-columns: minmax(0, 1fr); gap: 32px; padding: 40px 0 28px; }
+      .k-seg-example { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 32px 20px; margin: 28px 0; }
+      .k-seg-why-grid { grid-template-columns: minmax(0, 1fr); }
+      .k-seg-work-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .k-seg-stats { grid-template-columns: minmax(0, 1fr); }
+      /* Full-bleed pull-quote: margin:32px -40px reaches past a 20px gutter. */
+      .k-seg-quote { margin-left: 0; margin-right: 0; padding: 48px 20px; }
+      .k-seg-quote-inner { padding: 0; }
+
+      .k-demo-sec { padding-left: 20px !important; padding-right: 20px !important; }
+      /* The step header is a flex row of number + title + duration that cannot
+         shrink below its content; the title needs min-width:0 and the row needs
+         to wrap before the duration chip pushes the page out. */
+      .k-demo-step-hd { flex-wrap: wrap; row-gap: 4px; }
+      .k-demo-step-t { min-width: 0; }
+      .k-demo-step { padding: 16px 16px; }
+      .k-demo-note { padding: 12px 14px; }
+
+      .k-404 { padding: 48px 20px 40px; }
+      /* A 152px numeral is wider than the viewport on its own. */
+      .k-404-num { font-size: clamp(84px, 26vw, 132px) !important; }
+      /* Suggested-route rows are flex with a monospace path that will not wrap;
+         the path is the long part, so let the row break and the path shrink. */
+      .k-404-suggest-grid { grid-template-columns: minmax(0, 1fr); }
+      .k-404-suggest { padding: 18px 16px; }
+      .k-404-suggest-row { flex-wrap: wrap; row-gap: 2px; }
+      .k-404-suggest-row > span { min-width: 0; overflow-wrap: anywhere; }
+    }
+    @media (max-width: 560px) {
+      .k-seg-work-grid { grid-template-columns: minmax(0, 1fr); }
+    }

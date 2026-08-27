@@ -56,7 +56,7 @@ const ForAdjusters = () => (
       </section>
 
       {/* — Stat strip — */}
-      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, margin: '4px 0' }}>
+      <section className="k-seg-stats" style={{ margin: '4px 0' }}>
         <div className="k-stat-card">
           <div className="k-stat-n">2m 41s</div>
           <div className="k-stat-l">Avg time to a complete inventory</div>
