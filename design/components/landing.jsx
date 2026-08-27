@@ -201,8 +201,11 @@ const Landing = ({ onStartClaim, onSampleClaim, onStartTrial }) => {
       <main className="k-hero">
         <div className="k-hero-l">
           <Badge tone="accent" dot={true}>Photos in. XactContents-ready inventory out.</Badge>
+          {/* Explicit breaks, not wrapping: three lines set the left column's
+              height against the hero card on the right. Each line is short
+              enough to still fit at the 34px mobile clamp. */}
           <h1 className="k-h1">
-            The contents estimate writes itself.
+            The contents<br />estimate writes<br />itself.
           </h1>
           <p className="k-lede">
             Bulk-ingest hundreds of photos and Kevin returns a complete, Xactimate-ready
