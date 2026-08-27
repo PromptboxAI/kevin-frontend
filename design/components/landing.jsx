@@ -348,7 +348,8 @@ const Landing = ({ onStartClaim, onSampleClaim, onStartTrial }) => {
             </ul>
           </div>
           <MktShot
-            src="../assets/marketing/staging-proposed-sets.png"
+            src="../assets/marketing/staging-sets-2x.png"
+            ratio="3156 / 1720"
             alt="Kevin photo staging — proposed photo sets awaiting review, one merged into a single item with an adjuster note"
             label="kevin.co/claims/CLM-2026-04412/staging"
             slot="Photo staging — proposed sets"
@@ -378,7 +379,8 @@ const Landing = ({ onStartClaim, onSampleClaim, onStartTrial }) => {
             </ul>
           </div>
           <MktShot
-            src="../assets/marketing/worksheet-review-grid.png"
+            src="../assets/marketing/worksheet-review-2x.png"
+            ratio="3186 / 1766"
             alt="Kevin review worksheet — priced line items with make, model, content class, depreciation and ACV columns"
             label="kevin.co/claims/CLM-2026-04412/worksheet"
             slot="Review worksheet — 57 priced lines"
@@ -409,7 +411,8 @@ const Landing = ({ onStartClaim, onSampleClaim, onStartTrial }) => {
             </ul>
           </div>
           <MktShot
-            src="../assets/marketing/export-modal.png"
+            src="../assets/marketing/export-modal-2x.png"
+            ratio="3156 / 1916"
             alt="Kevin export modal — Xactimate Excel XactContents template, client PDF and full bundle, with download and share actions"
             label="Export claim · CLM-2026-04412"
             slot="Carrier export modal"
