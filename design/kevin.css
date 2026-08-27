@@ -4466,6 +4466,13 @@
       }
       .k-footx-brand { grid-column: 1 / -1; max-width: none; margin-right: 0; }
       .k-footx-base { padding: 14px 20px 22px; gap: 4px 14px; align-items: flex-start; }
+      /* On most pages the footer sits INSIDE .k-mkt-main, which already carries
+         a 20px gutter below 900 -- so the footer's own 20px stacked on top and
+         its content sat 40px from the edge while the body text above sat at 20.
+         Landing, whose footer is a direct child of .k-landing, was the only one
+         aligned. Drop the inner gutter where it is doubled. */
+      .k-mkt-main .k-footx-cols,
+      .k-mkt-main .k-footx-base { padding-left: 0; padding-right: 0; }
     }
     @media (max-width: 900px) {
       .k-footnote {
