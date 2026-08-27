@@ -102,15 +102,21 @@ const ProductOverview = () => {
         <section style={{ padding: '40px 0 60px' }}>
           <div className="k-prod-surfaces">
             {[
-              { n: '01', t: 'Intake',   img: 'CP:20260805_142226.jpg',   href: '03-Intake.html',        body: 'Claim and policy details, the contents coverage limit, and a loss ZIP that resolves the sales-tax rate. One short form, then straight to the photos.' },
-              { n: '02', t: 'Stage',    img: 'CP:20260805_143825.jpg',   href: '73-Photo-staging.html', body: 'Drop a folder, a phone dump, or a whole .zip — no total-size cap. Duplicates are hashed out, and shots taken seconds apart are grouped into one set — merge, split, or exclude before anything is identified.' },
-              { n: '03', t: 'Process',  img: 'CP:20260805_143757.jpg',       href: '04-Processing.html',    body: 'Item, make, model number, content class. Three live comps per item, with the median becoming the replacement cost and a dated proof link on the line.' },
-              { n: '04', t: 'Review',   img: 'CP:20260805_144545.jpg',     href: '05-Worksheet-flat.html', body: 'One grid, every cell editable. Pin the item panel to see the source photo and comps beside the row. Special-limits flags, room filters, class grouping.' },
-              { n: '05', t: 'Export',   img: 'CP:20260805_144140.jpg', href: '06-Export-modal.html',  body: 'The XactContents spreadsheet for claims, a client-ready PDF for estate sales, or the whole bundle with photos and the audit log.' },
-            ].map((s) => ({ ...s, img: s.img.startsWith('CP:') ? ('../assets/claim/web/' + s.img.slice(3)) : s.img })).map((s, i) => (
+              { n: '01', t: 'Intake',   img: 'intake-form',      href: '03-Intake.html',        body: 'Claim and policy details, the contents coverage limit, and a loss ZIP that resolves the sales-tax rate. One short form, then straight to the photos.' },
+              { n: '02', t: 'Stage',    img: 'staging-sets',     href: '73-Photo-staging.html', body: 'Drop a folder, a phone dump, or a whole .zip — no total-size cap. Duplicates are hashed out, and shots taken seconds apart are grouped into one set — merge, split, or exclude before anything is identified.' },
+              { n: '03', t: 'Process',  img: 'processing-live', href: '04-Processing.html',    body: 'Item, make, model number, content class. Three live comps per item, with the median becoming the replacement cost and a dated proof link on the line.' },
+              { n: '04', t: 'Review',   img: 'worksheet-review', href: '05-Worksheet-flat.html', body: 'One grid, every cell editable. Pin the item panel to see the source photo and comps beside the row. Special-limits flags, room filters, class grouping.' },
+              { n: '05', t: 'Export',   img: 'export-modal',     href: '06-Export-modal.html',  body: 'The XactContents spreadsheet for claims, a client-ready PDF for estate sales, or the whole bundle with photos and the audit log.' },
+            ].map((s, i) => (
               <a key={i} className="k-prod-surface" href={s.href}>
                 <div className="k-prod-surface-img">
-                  <Thumb idx={i} size={88} src={s.img} label={s.t.slice(0,3)} />
+                  <img
+                    className="k-prod-surface-shot"
+                    src={'../assets/marketing/' + s.img + '-thumb.webp'}
+                    alt={'Kevin ' + s.t + ' screen'}
+                    loading="lazy"
+                    decoding="async"
+                  />
                 </div>
                 <div>
                   <div style={{ fontFamily: 'var(--k-font-mono)', fontSize: 11, color: 'var(--k-accent)', fontWeight: 700, letterSpacing: '0.05em' }}>{s.n}</div>
@@ -121,6 +127,39 @@ const ProductOverview = () => {
             ))}
           </div>
         </section>
+
+        {/* Intake — the first screen a trial user touches, and the one that
+            decides whether the tax rate and the coverage label are right for
+            every line that follows. */}
+        <div className="k-proof-row k-proof-row--flip" style={{ paddingTop: 8 }}>
+          <div className="k-proof-copy">
+            <div className="k-proof-eyebrow">Where a claim starts</div>
+            <h3 className="k-proof-h">One short form, then the photos.</h3>
+            <p className="k-proof-body">
+              Claim and policy details, the contents coverage limit under whatever name the
+              policy gives it, and the loss ZIP — which resolves the sales-tax rate so every
+              line carries the right tax without anyone looking it up.
+            </p>
+            <ul className="k-proof-list">
+              {[
+                'Contents limit carries the policy\u2019s own label, never a hardcoded coverage letter',
+                'Loss ZIP sets the tax rate — 8.625% on a Smithtown claim, applied per line',
+                'Takes a minute; everything after it is review, not data entry',
+              ].map(t => (
+                <li key={t}><Icon d={I.check} size={13} stroke={2.5} />{t}</li>
+              ))}
+            </ul>
+          </div>
+          <window.MktShot
+            src="../assets/marketing/intake-form-2x.webp"
+            alt="Kevin new-claim intake form — insured, carrier, policy and loss details with the contents coverage limit and loss ZIP"
+            label="kevin.co/claims/new"
+            slot="New claim — intake"
+            size="Capture from pages/03-Intake.html · 1740 × 1034"
+            ratio="1740 / 1034"
+            caption="The loss ZIP resolves the tax rate; the coverage limit keeps the policy’s own wording."
+          />
+        </div>
 
         {/* Two-up proof — the two screens that absorb the manual hours. */}
         <div className="k-proof-hd">

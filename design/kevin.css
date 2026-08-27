@@ -4483,3 +4483,16 @@
          a 15px indent once the row wraps. Flush it left instead. */
       .k-footnote > :last-child { margin-left: 0 !important; }
     }
+
+    /* — Product surface rows: real screen captures instead of the square photo
+         thumb. Thumb crops to a square, which gutted a 16:10 UI shot; these are
+         420px WebP cropped to a shared 16:10 and rendered at the 140px track. — */
+    .k-prod-surface-shot {
+      width: 140px; aspect-ratio: 16 / 10; object-fit: cover; object-position: top center;
+      display: block; border-radius: 6px; border: 1px solid var(--k-line);
+      background: var(--k-bg-2);
+    }
+    @media (max-width: 900px) {
+      /* The row is single-column here, so let the shot use the full width. */
+      .k-prod-surface-shot { width: 100%; max-width: 320px; }
+    }
