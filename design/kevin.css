@@ -3557,7 +3557,9 @@
       /* Generic: top chrome on docs/legal/security marketing shells wraps */
       .k-topbar { flex-wrap: wrap; gap: 8px; row-gap: 8px; }
       /* Any 2-col marketing grid inside these shells collapses */
-      .k-landing .k-two-col, .k-req-split { grid-template-columns: minmax(0, 1fr) !important; }
+      /* .k-req-split was a dead selector -- no component has ever rendered that
+         class, so request-access never collapsed. The real grid is .k-req-main. */
+      .k-landing .k-two-col, .k-req-main { grid-template-columns: minmax(0, 1fr) !important; }
     }
     @media (max-width: 520px) {
       .k-nav { padding: 10px 14px; }
@@ -4327,8 +4329,8 @@
        the floor for free. Class-based sizing (.k-h1, .k-prod-hero h1) still
        wins above 900px; this only sets a mobile ceiling. — */
     @media (max-width: 900px) {
-      .k-landing h1, .k-docs-main h1 { font-size: clamp(30px, 8.5vw, 46px) !important; }
-      .k-landing h2, .k-docs-main h2 { font-size: clamp(23px, 6.4vw, 36px) !important; }
+      .k-landing h1, .k-docs-main h1, .k-req h1 { font-size: clamp(30px, 8.5vw, 46px) !important; }
+      .k-landing h2, .k-docs-main h2, .k-req h2 { font-size: clamp(23px, 6.4vw, 36px) !important; }
       /* Pull-quotes and stat numerals are set inline at 30–42px too. */
       .k-landing blockquote { font-size: clamp(17px, 4.6vw, 24px) !important; }
     }
@@ -4336,6 +4338,25 @@
       /* Button rows are inline `display:flex; gap:10` with no class to hook.
          :has() reaches the exact shape — a flex row holding a large button —
          without needing one. */
-      .k-landing div:has(> .k-btn--lg) { flex-wrap: wrap !important; }
-      .k-landing .k-btn--lg { flex: 1 1 100%; justify-content: center; }
+      .k-landing div:has(> .k-btn--lg), .k-req div:has(> .k-btn--lg) { flex-wrap: wrap !important; }
+      .k-landing .k-btn--lg, .k-req .k-btn--lg { flex: 1 1 100%; justify-content: center; }
     }
+
+    /* — Request access (15). The Enterprise destination, and the page pricing
+         now routes multi-adjuster firms to. It was 158px over at 375px because
+         its two-column grid never collapsed: the shared responsive block aimed
+         at .k-req-split, a class no component has ever rendered. That is fixed
+         above; these carry the rest — the 80px of side padding and 60px gutter
+         left ~235px for two columns, and the footer row would not wrap. — */
+    @media (max-width: 900px) {
+      .k-req-main { gap: 32px; padding: 32px 20px 44px; min-width: 0; }
+      .k-req-foot { flex-wrap: wrap; justify-content: flex-start; gap: 12px; }
+      .k-req-section { padding: 18px 16px 20px; }
+      /* Field widths are inline percentages (width: 22%) sized for a desktop
+         column; at 335px they squeeze a field to 66px. */
+      .k-req .k-insp-field { width: 100% !important; }
+    }
+    /* An input in a flex row defaults to min-width:auto, so it refuses to shrink
+       below its placeholder and punches out of its own field. Not scoped to a
+       breakpoint -- it is wrong at any width. */
+    .k-insp-field input { min-width: 0; }
