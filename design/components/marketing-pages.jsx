@@ -68,15 +68,15 @@ const ProductOverview = () => {
     <div className="k-landing">
       <MktNav active="product" />
       <main className="k-mkt-main">
-        <section className="k-mkt-hero" style={{ textAlign: 'center', maxWidth: 820, margin: '0 auto', padding: '60px 40px 40px' }}>
+        <section className="k-mkt-hero k-prod-hero" style={{ textAlign: 'center', maxWidth: 820, margin: '0 auto' }}>
           <Badge tone="accent" dot={true}>Product overview</Badge>
-          <h1 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 64, letterSpacing: '-0.028em', margin: '20px 0 18px', lineHeight: 1.02 }}>
+          <h1 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, letterSpacing: '-0.028em', margin: '20px 0 18px', lineHeight: 1.02 }}>
             Photo dump in. XactContents out.
           </h1>
           <p style={{ fontSize: 17, color: 'var(--k-fg-2)', lineHeight: 1.5, margin: 0, maxWidth: 620, marginLeft: 'auto', marginRight: 'auto' }}>
             Kevin turns a folder of photos into a complete, priced personal-property inventory — for adjusters settling contents claims and estate professionals cataloging a home. It triages the dump, identifies each item, prices it against live retail comps, and writes the spreadsheet your carrier already accepts.
           </p>
-          <div style={{ display: 'flex', gap: 10, marginTop: 28, justifyContent: 'center' }}>
+          <div className="k-hero-actions" style={{ justifyContent: 'center' }}>
             <a className="k-btn k-btn--lg" href="58-Account-create.html">Start your 7-day free trial →</a>
             <a className="k-btn k-btn--ghost k-btn--lg" href="21-Pricing.html">See pricing</a>
           </div>
@@ -152,7 +152,7 @@ const ProductOverview = () => {
               Every priced line carries a dated link to the comp the price came from, and the audit log records who changed what, and when. Months later — at supplement, at reinspection, at the call where someone questions a number — you can show your work without remembering a thing.
             </p>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 320 }}>
+          <div className="k-mkt-band-r" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {[
               ['A dated proof link on every priced line', 'ok'],
               ['Audit log of every edit, exportable',     'ok'],
@@ -174,7 +174,7 @@ const ProductOverview = () => {
             Try it on a real claim.
           </h2>
           <p style={{ fontSize: 15, color: 'var(--k-fg-3)', margin: '0 0 28px', maxWidth: 480, textAlign: 'center' }}>Seven days, the full product, your own claims. $249/mo flat after that — unlimited claims, no per-seat or per-claim fees.</p>
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div className="k-hero-actions" style={{ marginTop: 0 }}>
             <a className="k-btn k-btn--lg" href="58-Account-create.html">Start your 7-day free trial →</a>
             <a className="k-btn k-btn--ghost k-btn--lg" href="48-Sample-claim.html">See a finished claim</a>
           </div>

@@ -4292,3 +4292,21 @@
     @media (max-width: 520px) {
       .k-tiers { grid-template-columns: minmax(0, 1fr); max-width: none; }
     }
+
+    /* — Product (37) mobile. Three inline styles floored the page at 511px in a
+         375px viewport: the hero's 80px of horizontal padding plus a 64px h1
+         whose longest word ("XactContents") is wider than a phone on its own;
+         the defensibility band's right column carrying a hard minWidth:320; and
+         the closing CTA's two large buttons side by side. Same class-based
+         treatment as the landing hero and the pricing hero. — */
+    .k-prod-hero { padding: 60px 40px 40px; }
+    .k-prod-hero h1 { font-size: 64px; }
+    .k-mkt-band-r { min-width: 320px; }
+
+    @media (max-width: 900px) {
+      .k-prod-hero { padding: 40px 20px 28px; }
+      .k-prod-hero h1 { font-size: clamp(32px, 8.5vw, 46px); }
+      .k-mkt-band-r { min-width: 0; }
+      /* Surface rows: the 140px thumbnail track leaves too little for the copy. */
+      .k-prod-surface { grid-template-columns: minmax(0, 1fr); gap: 18px; padding: 22px 20px; }
+    }
