@@ -14,7 +14,7 @@ const DoneForYou = () => (
         <p style={{ fontSize: 16.5, color: 'var(--k-fg-3)', lineHeight: 1.6, margin: '0 auto', maxWidth: 620 }}>
           No time to run it yourself? Our team takes your photo dump or written list through Kevin — identification, live pricing, depreciation, line-by-line review — and returns an XactContents-ready .xlsx and a client-facing PDF, usually within one business day.
         </p>
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 26 }}>
+        <div className="k-hero-actions" style={{ justifyContent: 'center', marginTop: 26 }}>
           <a className="k-btn k-btn--lg" href="38-Contact.html">Send us a claim →</a>
           <a className="k-btn k-btn--ghost k-btn--lg" href="51-Book-call.html">Talk it through first</a>
         </div>
@@ -105,7 +105,7 @@ const DoneForYou = () => (
       <section style={{ maxWidth: 780, margin: '0 auto', padding: '10px 40px 64px', textAlign: 'center' }}>
         <h2 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 26, letterSpacing: '-0.02em', margin: '0 0 6px' }}>Rather run it yourself?</h2>
         <p style={{ fontSize: 13.5, color: 'var(--k-fg-3)', margin: '0 0 18px', lineHeight: 1.6 }}>The full product is $249/mo with a 7-day free trial — most adjusters who send us one claim run the next one themselves.</p>
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+        <div className="k-hero-actions" style={{ justifyContent: 'center', marginTop: 0 }}>
           <a className="k-btn" href="21-Pricing.html">See pricing →</a>
           <a className="k-btn k-btn--ghost" href="48-Sample-claim.html">Open the sample claim</a>
         </div>

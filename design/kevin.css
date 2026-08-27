@@ -4338,8 +4338,16 @@
       /* Button rows are inline `display:flex; gap:10` with no class to hook.
          :has() reaches the exact shape — a flex row holding a large button —
          without needing one. */
-      .k-landing div:has(> .k-btn--lg), .k-req div:has(> .k-btn--lg) { flex-wrap: wrap !important; }
-      .k-landing .k-btn--lg, .k-req .k-btn--lg { flex: 1 1 100%; justify-content: center; }
+      /* NOTE: an earlier version of this rule set flex-wrap:wrap on any div
+         holding a large button, via :has(). That broke the pricing tiers --
+         .k-tier is a COLUMN flex container, and wrap turns a column container
+         into multiple columns, which blew the page out to 912px. CSS cannot
+         test flex-direction, so the shape cannot be targeted safely. Button
+         rows opt in through .k-hero-actions instead; only the button sizing is
+         safe to apply broadly. */
+      .k-hero-actions { flex-wrap: wrap; }
+      .k-landing .k-hero-actions > .k-btn--lg,
+      .k-req .k-hero-actions > .k-btn--lg { flex: 1 1 100%; justify-content: center; }
     }
 
     /* — Request access (15). The Enterprise destination, and the page pricing
@@ -4360,3 +4368,21 @@
        below its placeholder and punches out of its own field. Not scoped to a
        breakpoint -- it is wrong at any width. */
     .k-insp-field input { min-width: 0; }
+
+    /* — Contact (38). .k-contact is a two-column grid the shared responsive
+         block never named -- the same omission as .k-req-main. At 375 its
+         1.05fr column plus a 56px gutter and 80px of padding squeezed the form
+         to 66px and pushed it off-screen entirely. — */
+    @media (max-width: 900px) {
+      .k-contact { grid-template-columns: minmax(0, 1fr); gap: 32px; padding: 40px 20px 44px; }
+      .k-contact-meta { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+    }
+
+    /* — Docs (24). The docs body itself collapses correctly at 820; the overflow
+         is the topbar's inline flex row, which holds the action buttons and
+         cannot wrap. These are plain .k-btn, not .k-btn--lg, and the shell is
+         .k-topbar rather than .k-landing, so neither existing net reached it. — */
+    @media (max-width: 900px) {
+      .k-topbar div:has(> .k-btn) { flex-wrap: wrap; row-gap: 8px; }
+      .k-topbar { row-gap: 8px; }
+    }

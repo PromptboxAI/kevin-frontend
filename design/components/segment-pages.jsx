@@ -19,7 +19,7 @@ const ForAdjusters = () => (
           <p style={{ fontSize: 17, color: 'var(--k-fg-2)', lineHeight: 1.5, margin: 0, maxWidth: 530 }}>
             Drop a folder of damage photos. Kevin returns a complete personal-property inventory — items identified, brands matched, depreciation suggested, three live retailer comps per line. Then you do the part that requires judgment.
           </p>
-          <div style={{ display: 'flex', gap: 10, marginTop: 32 }}>
+          <div className="k-hero-actions" style={{ marginTop: 32 }}>
             <a className="k-btn k-btn--lg" href="58-Account-create.html">Start a new claim →</a>
             <a className="k-btn k-btn--ghost k-btn--lg" href="52-Watch-demo.html">Watch demo</a>
           </div>
@@ -188,7 +188,7 @@ const ForAdjusters = () => (
         <p style={{ fontSize: 15, color: 'var(--k-fg-3)', margin: '0 0 28px', maxWidth: 480, textAlign: 'center' }}>
           7-day free trial — full product, real claims. Carrier profile pre-loaded for the major ones.
         </p>
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div className="k-hero-actions" style={{ marginTop: 0 }}>
           <a className="k-btn k-btn--lg" href="58-Account-create.html">Start a claim →</a>
           <a className="k-btn k-btn--ghost k-btn--lg" href="38-Contact.html">Talk to an adjuster who uses Kevin</a>
         </div>
@@ -214,7 +214,7 @@ const ForLiquidators = () => (
           <p style={{ fontSize: 17, color: 'var(--k-fg-2)', lineHeight: 1.5, margin: 0, maxWidth: 530 }}>
             Walk every room with your phone. Kevin builds the inventory: brand-matched, fair-market-valued, categorized into estate-friendly classes — ready to print, share, or take to auction.
           </p>
-          <div style={{ display: 'flex', gap: 10, marginTop: 32 }}>
+          <div className="k-hero-actions" style={{ marginTop: 32 }}>
             <a className="k-btn k-btn--lg" href="58-Account-create.html">Start an estate →</a>
             <a className="k-btn k-btn--ghost k-btn--lg" href="48-Sample-claim.html">See a sample inventory</a>
           </div>
@@ -312,7 +312,7 @@ const ForLiquidators = () => (
         <p style={{ fontSize: 15, color: 'var(--k-fg-3)', margin: '0 0 28px', maxWidth: 500, textAlign: 'center' }}>
           Process a real estate end-to-end before you decide. We'll configure the export and class scheme on the kickoff call.
         </p>
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div className="k-hero-actions" style={{ marginTop: 0 }}>
           <a className="k-btn k-btn--lg" href="58-Account-create.html">Start your first estate →</a>
           <a className="k-btn k-btn--ghost k-btn--lg" href="51-Book-call.html">Book a 30-min call</a>
         </div>
