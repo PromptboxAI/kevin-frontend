@@ -4450,3 +4450,29 @@
     @media (max-width: 560px) {
       .k-seg-work-grid { grid-template-columns: minmax(0, 1fr); }
     }
+
+    /* — Footers on mobile. Two separate ones, both jumbled at 375px.
+         .k-footx (MktFooter, every marketing page): the link columns are flex
+         with a 32px gap, so three of them land 2-up on uneven left edges (24
+         and 177) with an orphan on a third row. A 2-col grid puts every column
+         on the same two gutters and lets the brand span the full width.
+         .k-footnote (404, sample-claim): flex-wrap:nowrap with 40px of padding
+         crushed its three items into 375px, each wrapping internally onto its
+         own baseline — 109px tall and visibly ragged. — */
+    @media (max-width: 560px) {
+      .k-footx-cols {
+        display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 24px 20px; padding: 28px 20px 18px;
+      }
+      .k-footx-brand { grid-column: 1 / -1; max-width: none; margin-right: 0; }
+      .k-footx-base { padding: 14px 20px 22px; gap: 4px 14px; align-items: flex-start; }
+    }
+    @media (max-width: 900px) {
+      .k-footnote {
+        flex-wrap: wrap; align-items: flex-start;
+        padding: 18px 20px; gap: 4px 8px; line-height: 1.5;
+      }
+      /* The trailing group is pushed right with margin-left:auto, which reads as
+         a 15px indent once the row wraps. Flush it left instead. */
+      .k-footnote > :last-child { margin-left: 0 !important; }
+    }
