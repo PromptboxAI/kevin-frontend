@@ -130,15 +130,21 @@ const ProductOverview = () => {
         </div>
         <section className="k-proof-two">
           <window.MktShot
+            src="../assets/marketing/staging-proposed-sets.png"
+            alt="Kevin photo staging — proposed photo sets awaiting review, one merged into a single item with an adjuster note"
             label="kevin.co/claims/CLM-2026-04412/staging"
             slot="Photo staging — proposed sets"
             size="Capture from pages/73-Photo-staging.html · 1400 × 875"
+            ratio="909 / 540"
             caption="Shots seconds apart become one set — the wide frame and the model plate, priced once. Merge, split, or set aside before anything is identified."
           />
           <window.MktShot
+            src="../assets/marketing/export-modal.png"
+            alt="Kevin export modal — Xactimate Excel XactContents template, client PDF and full bundle, with download and share actions"
             label="Export claim · CLM-2026-04412"
             slot="Carrier export modal"
             size="Capture from pages/06-Export-modal.html · 1400 × 875"
+            ratio="909 / 540"
             caption="Xactimate (Excel) · .xlsx · XactContents template — static values in every derived cell, because the importer breaks on formulas."
           />
         </section>
