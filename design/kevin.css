@@ -4496,3 +4496,8 @@
       /* The row is single-column here, so let the shot use the full width. */
       .k-prod-surface-shot { width: 100%; max-width: 320px; }
     }
+
+    /* — Forced display-heading lines. A <br> sets where a line breaks but does
+         not stop that line wrapping again in a narrow column; nowrap pins it.
+         Only used where the copy is short enough to hold at the mobile clamp. — */
+    .k-h1-line { white-space: nowrap; }

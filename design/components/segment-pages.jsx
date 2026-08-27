@@ -14,7 +14,11 @@ const ForAdjusters = () => (
         <div className="k-seg-hero-l">
           <Badge tone="accent" dot={true}>For independent, carrier &amp; public adjusters</Badge>
           <h1 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 64, letterSpacing: '-0.028em', margin: '20px 0 18px', lineHeight: 1.02 }}>
-            Stop typing.<br />Start adjusting.
+            {/* nowrap per line: a <br> alone still lets a line wrap again when
+                the hero column is narrow, which turned this into three lines at
+                wide viewports. Two lines, always. */}
+            <span className="k-h1-line">Stop typing.</span><br />
+            <span className="k-h1-line">Start adjusting.</span>
           </h1>
           <p style={{ fontSize: 17, color: 'var(--k-fg-2)', lineHeight: 1.5, margin: 0, maxWidth: 530 }}>
             Drop a folder of damage photos. Kevin returns a complete personal-property inventory — items identified, brands matched, depreciation suggested, three live retailer comps per line. Then you do the part that requires judgment.
