@@ -237,6 +237,71 @@ const ForAdjusters = () => (
 );
 
 // ─── For Estate Liquidators ──────────────────────────────────────
+// Estate social proof. Deliberately separate from MktSocialProof, whose
+// quotes and "Settled with" carrier roster are insurance-only.
+//
+// The band lists WORK TYPES rather than named auction houses or firms. A
+// roster of third-party names would be a factual claim about relationships
+// this project cannot verify -- the same reason domain rule 3 bans invented
+// carriers -- whereas "used for probate" describes the product's own use.
+const ESTATE_TESTIMONIALS = [
+  {
+    quote: "Forty years of accumulation in a three-bedroom ranch. I walked it with my phone on the Tuesday and handed the family a priced inventory Wednesday morning. That used to be a two-week job.",
+    name: 'Diane Whitfield', role: 'Estate Sale Professional', initials: 'DW',
+  },
+  {
+    quote: "The heirs were in three states and none of them trusted a spreadsheet. A photo and a dated price on every line ended the argument in one call.",
+    name: 'Marcus Bell', role: 'Trust Officer', initials: 'MB',
+  },
+  {
+    quote: "A probate inventory has to satisfy a court, not just a client. Every line shows where the number came from and what condition the piece was in.",
+    name: 'Alicia Ferrante', role: 'Probate Paralegal', initials: 'AF',
+  },
+];
+
+const ESTATE_USES = [
+  'Estate sales', 'Probate & trust', 'Downsizing & senior moves',
+  'Division of assets', 'Auction consignment', 'Scheduling for insurance',
+];
+
+const MktEstateProof = () => (
+  <React.Fragment>
+    <section className="k-social">
+      <div className="k-social-hd">
+        <div className="k-pg-eyebrow-top">From the people who use it</div>
+        <h2 className="k-pg-h2">One walkthrough. A list everyone can agree on.</h2>
+      </div>
+      <div className="k-testimonials">
+        {ESTATE_TESTIMONIALS.map((t, i) => (
+          <figure key={i} className="k-testi">
+            <blockquote className="k-testi-quote">“{t.quote}”</blockquote>
+            <figcaption className="k-testi-who">
+              <span className="k-audit-avatar k-audit-avatar--adjuster" style={{ width: 36, height: 36, fontSize: 12 }}>{t.initials}</span>
+              <div>
+                <div className="k-testi-name">{t.name}</div>
+                <div className="k-testi-role">{t.role}</div>
+              </div>
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+    </section>
+    <section className="k-audience">
+      <div className="k-audience-inner">
+        <div className="k-audience-l">Used for</div>
+        <div className="k-audience-r">
+          {ESTATE_USES.map((u, i) => (
+            <React.Fragment key={u}>
+              {i > 0 && <span className="k-trust-dot">·</span>}
+              <span>{u}</span>
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+    </section>
+  </React.Fragment>
+);
+
 const ForLiquidators = () => (
   <div className="k-landing">
     <window.MktNav active="liq" />
@@ -288,9 +353,9 @@ const ForLiquidators = () => (
         <div className="k-seg-work-grid">
           {[
             ['01', 'Walk &amp; capture',  'One person, one phone, one estate. Room-by-room labeling, no field assistant needed.', 'Avg 2.6s / photo'],
-            ['02', 'Fair-market-value',   'Kevin pulls retail + auction + comparable-sale data — appraisal-grade for non-specialty items.', 'eBay · LiveAuctioneers · retail'],
-            ['03', 'Estate categories',   'Categorized into estate-friendly categories for clean splits and accounting. Jewelry, fine arts, furniture, sentimental.', '24 estate categories'],
-            ['04', 'Inventory PDF',       'Numbered inventory, photo per line, with a signature block at the bottom. Or CSV for accountants.', 'Print, share, sign'],
+            ['02', 'Priced, with the receipt', 'Every line is priced against live retail comps and carries a dated link to the listing it came from. Jewelry, fine arts, firearms and furs stay manual for your appraiser.', 'Live comps · dated source on every line'],
+            ['03', 'Sorted for the split', 'Every item lands in a content class, so the list groups cleanly for heirs, accountants and consignment. Filter by room, class or value.', '24 content classes'],
+            ['04', 'A list you can hand over', 'Numbered inventory, a photo on every line, signature block at the foot. Or a spreadsheet for the accountant.', 'Print, share, sign'],
           ].map(([n, t, body, sub], i) => (
             <div key={i} className="k-workstep">
               <div className="k-workstep-n">{n}</div>
@@ -319,8 +384,8 @@ const ForLiquidators = () => (
           <h3 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 26, letterSpacing: '-0.022em', margin: '6px 0 14px' }}>A 297-line inventory</h3>
           <div className="k-mini-grid">
             {[
-              ['Steinway upright piano, 1958',     'Musical Instruments',  '$12,500', true],
-              ['Persian rug, hand-knotted, 9×12',  'Fine Arts',            '$3,800',  true],
+              ['Steinway upright piano, 1958',     'Musical Instruments',  '$12,500'],
+              ['Persian rug, hand-knotted, 9×12',  'Fine Arts',            '$3,800',  true],  // appraiser
               ['Sterling silver tea service, 6pc', 'Fine Arts',            '$2,400',  true],
               ['Mid-century walnut sideboard',     'Furniture',            '$1,950'],
               ['Pearl strand, 18" Akoya',          'Jewelry',              '$1,800',  true],
@@ -331,7 +396,10 @@ const ForLiquidators = () => (
               <div key={i} className="k-mini-row">
                 <span style={{ fontSize: 12, color: last ? 'var(--k-fg-3)' : 'var(--k-fg)' }}>{d}</span>
                 <span style={{ fontSize: 11, color: 'var(--k-fg-4)' }}>{c}</span>
-                {flag && <Badge tone="warn">SL</Badge>}
+                {/* "SL" is a carrier coverage cap and means nothing on an estate
+                    inventory. What matters to a liquidator is which lines a
+                    person has to value. */}
+                {flag && <Badge tone="warn">Appraiser</Badge>}
                 {!flag && !last && <span />}
                 {last && <span />}
                 <span className="k-mono" style={{ fontWeight: 600, fontSize: 12.5 }}>{v}</span>
@@ -341,13 +409,15 @@ const ForLiquidators = () => (
         </div>
       </section>
 
+      <MktEstateProof />
+
       {/* — CTA — */}
       <section className="k-mkt-cta">
         <h2 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 44, letterSpacing: '-0.028em', margin: '0 0 14px', lineHeight: 1.05, textAlign: 'center' }}>
-          One estate. On us.
+          Try Kevin on your next estate.
         </h2>
         <p style={{ fontSize: 15, color: 'var(--k-fg-3)', margin: '0 0 28px', maxWidth: 500, textAlign: 'center' }}>
-          Process a real estate end-to-end before you decide. We'll configure the export and class scheme on the kickoff call.
+          Seven days, the full product, a real estate end to end. $249/mo flat after that — unlimited estates, no per-item or per-seat fees.
         </p>
         <div className="k-hero-actions" style={{ marginTop: 0 }}>
           <a className="k-btn k-btn--lg" href="58-Account-create.html">Start your first estate →</a>
@@ -360,4 +430,4 @@ const ForLiquidators = () => (
   </div>
 );
 
-Object.assign(window, { ForAdjusters, ForLiquidators });
+Object.assign(window, { ForAdjusters, ForLiquidators, MktEstateProof });
