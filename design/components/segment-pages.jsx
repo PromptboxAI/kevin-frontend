@@ -367,6 +367,35 @@ const ForLiquidators = () => (
         </div>
       </section>
 
+      {/* — Visual proof. The estate equivalents of the adjusters two-up: the
+            estate worksheet and the client PDF, NOT the Xactimate export -- an
+            estate professional never touches XactContents. — */}
+      <div className="k-proof-hd">
+        <div className="k-proof-eyebrow">The two things you hand over</div>
+        <h2 className="k-proof-h2">A list that prices itself. A PDF the family can read.</h2>
+        <p className="k-proof-sub">The inventory you work in, and the document that leaves your hands.</p>
+      </div>
+      <section className="k-proof-two">
+        <window.MktShot
+          src="../assets/marketing/estate-worksheet-2x.webp"
+          alt="Kevin estate worksheet — inventory lines with class, condition, disposition and fair-market value"
+          label="kevin.co/estates/worksheet"
+          slot="Estate worksheet"
+          size="Capture from pages/62-Estate-worksheet.html"
+          ratio="1740 / 964"
+          caption="Priced against live comps with a dated source on every line, grouped by room and class. Condition and disposition tracked per item."
+        />
+        <window.MktShot
+          src="../assets/marketing/estate-pdf-sheet-2x.webp"
+          alt="Kevin estate inventory PDF — numbered lines with a photo and value on each, and a signature block"
+          label="Estate inventory · PDF"
+          slot="Client inventory PDF"
+          size="Capture from pages/74-PDF-inventory.html"
+          ratio="1632 / 970"
+          caption="Numbered, a photo on every line, signature block at the foot — the document you hand to heirs, an accountant or a consignor."
+        />
+      </section>
+
       {/* — Side-by-side estate example — */}
       <section className="k-seg-example">
         <div className="k-seg-example-l">
