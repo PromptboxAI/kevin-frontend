@@ -40,7 +40,14 @@ Every other page in `pages/` carries noindex (58 pages). The app lives behind au
 - og:image social cards (1200×630) — none exist yet
 - favicon / apple-touch-icon set
 - ~~sitemap.xml + robots.txt~~ DONE — `deploy/sitemap.xml` + `deploy/robots.txt` (serve from the site root; update lastmod on content changes)
-- ~~JSON-LD~~ DONE — Organization + SoftwareApplication on landing, FAQPage on pricing (generated from the live FAQ copy in pricing.jsx — re-sync if the FAQ changes)
+- ~~JSON-LD~~ DONE — Organization + SoftwareApplication on landing, FAQPage on pricing.
+  **Re-sync the FAQPage block whenever `pricing.jsx` FAQS changes.** It drifted once and
+  went unnoticed because JSON-LD is invisible on the page: the markup still carried
+  "What about the free first claim?" — the offer domain rule 9 scrapped — months after the
+  page itself moved to the 7-day trial, and had 9 questions against the page's 12. Google
+  requires FAQ markup to mirror visible content, so a mismatch risks a manual action as
+  well as advertising an offer that does not exist. Regenerate from the RENDERED DOM
+  (`.k-faq-q` / `.k-faq-a`), not from source, so it cannot disagree with what a visitor sees.
 
 
 ## Footer identity (Aug 2026)
