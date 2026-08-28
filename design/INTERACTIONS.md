@@ -144,6 +144,8 @@ update its row here in the same edit. Anything not listed → flag back, don't g
 |---|---|---|---|
 | 02 Landing | Hero **Start your 7-day free trial** / **See a finished claim** | ✅ | onStartClaim → intake; onSampleClaim → sample claim. PRODUCTION: the trial CTA is the paid-ads conversion event — point it at account-create (`58`), not intake. |
 | 02 | Final CTA **Start your first claim** / **Book a 30-min call** | ✅ / 🔌 | first→intake; Book→ `51-Book-call.html` |
+| 15 Request-access | **Request a quote** (primary) | ✅ | Submits the Enterprise form (`type="submit"`, prevented in-prototype). PRODUCTION: `POST` the lead to the CRM, then confirm on-page. It previously read "Request access" while pointing at `51-Book-call.html`, so the primary action skipped the form the page exists to collect. |
+| 15 Request-access | **Book a call instead** (secondary) | ✅ | → `51-Book-call.html` |
 | 21 Pricing | **Start 7-day free trial** (Pro tier) | ✅ | → `58-Account-create.html`. Trial terms strip sits under the button — card verified, 7 days, one-click cancel. |
 | 21 Pricing | **Talk to us about your desk** (Enterprise tier) | ✅ | → `38-Contact.html`. Relabelled from "Contact sales", which reads heavyweight to a small regional firm. |
 | 21 Pricing | **MktSocialProof** / **MktROISection** | — shared render | Both defined in `landing.jsx`, exported on `window`, consumed by landing and pricing so testimonials, the settled-with roster and the ROI math cannot drift between pages. Pricing's wrapper loads `landing.jsx` before `pricing.jsx`. |

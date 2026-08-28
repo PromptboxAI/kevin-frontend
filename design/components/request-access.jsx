@@ -49,13 +49,13 @@ const RequestAccess = () => {
         <aside className="k-req-l">
           <div style={{ fontSize: 11, color: 'var(--k-fg-4)', fontFamily: 'var(--k-font-mono)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Enterprise · teams</div>
           <h1 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 44, letterSpacing: '-0.028em', margin: '8px 0 14px', lineHeight: 1.04 }}>
-            Kevin for agencies, carriers, and TPAs.
+            Two or more adjusters,<br />one invoice.
           </h1>
           <p style={{ fontSize: 15, color: 'var(--k-fg-2)', lineHeight: 1.55, margin: '0 0 20px', maxWidth: 460 }}>
-            Tell us how your team works. We pair you with an onboarding specialist who sets up your workspace, export defaults, and reviewer roles — then trains your adjusters in a 45-minute call.
+            Volume licensing for agencies, carriers and TPAs — every adjuster on one bill, with shared carrier profiles and depreciation schedules so two people on the same desk price a claim the same way. Tell us how your team works and we will quote it.
           </p>
           <p style={{ fontSize: 13, color: 'var(--k-fg-3)', lineHeight: 1.5, margin: '0 0 32px', maxWidth: 460 }}>
-            Working solo? You don't need this — <a className="k-link">start on Pro</a> with a 7-day free trial.
+            One adjuster? You don't need this — <a className="k-link" href="58-Account-create.html">start on Pro</a> at $249/mo flat, unlimited claims, 7-day free trial.
           </p>
 
           <div className="k-req-bullets">
@@ -69,15 +69,15 @@ const RequestAccess = () => {
             <div className="k-req-bullet">
               <span className="k-req-step">2</span>
               <div>
-                <div style={{ fontSize: 13.5, fontWeight: 600 }}>Onboarding call within 48 hours</div>
-                <div style={{ fontSize: 12, color: 'var(--k-fg-3)', marginTop: 2 }}>30 min · we set up your workspace and team together</div>
+                <div style={{ fontSize: 13.5, fontWeight: 600 }}>A call within two business days</div>
+                <div style={{ fontSize: 12, color: 'var(--k-fg-3)', marginTop: 2 }}>30 min · workspace, export defaults, reviewer roles and your carrier profiles, set up together</div>
               </div>
             </div>
             <div className="k-req-bullet">
               <span className="k-req-step">3</span>
               <div>
-                <div style={{ fontSize: 13.5, fontWeight: 600 }}>Free first claim, full team</div>
-                <div style={{ fontSize: 12, color: 'var(--k-fg-3)', marginTop: 2 }}>Pilot on a real loss before you commit</div>
+                <div style={{ fontSize: 13.5, fontWeight: 600 }}>Pilot on your own losses</div>
+                <div style={{ fontSize: 12, color: 'var(--k-fg-3)', marginTop: 2 }}>Your whole team on the 7-day trial, real claims, before a contract exists</div>
               </div>
             </div>
           </div>
@@ -175,11 +175,14 @@ const RequestAccess = () => {
 
           <div className="k-req-foot">
             <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', maxWidth: 360 }}>
-              By submitting you agree to Kevin's <a className="k-link">Privacy Policy</a> and our outreach within 48 hours. Encrypted at rest — your data stays yours.
+              By submitting you agree to Kevin's <a className="k-link" href="25-Legal-hub.html">Privacy Policy</a> and to us contacting you within two business days. AES-256 at rest, TLS 1.3 in transit — your data stays yours.
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button type="button" className="k-btn k-btn--ghost">Book a demo instead</button>
-              <a className="k-btn k-btn--lg" href="51-Book-call.html">Request access →</a>
+            <div className="k-hero-actions" style={{ marginTop: 0 }}>
+              <a className="k-btn k-btn--ghost" href="51-Book-call.html">Book a call instead</a>
+              {/* Submits the form. The label used to read "Request access" while
+                  pointing at Book-call, so the primary action skipped the form
+                  the page exists to collect. */}
+              <button type="submit" className="k-btn k-btn--lg">Request a quote →</button>
             </div>
           </div>
         </form>
