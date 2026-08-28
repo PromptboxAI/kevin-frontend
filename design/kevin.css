@@ -4555,3 +4555,30 @@
     }
     .k-about-founder-fig { margin: 0; }
     .k-about-founder-dash { color: var(--k-fg-4); }
+
+    /* — About: "Where Kevin stops". A full-bleed band with hairline-separated
+         rows, deliberately NOT the card grid the principles use — the boundaries
+         should read as a different kind of statement, not four more features. — */
+    .k-about-not { background: var(--k-bg-2); border-top: 1px solid var(--k-line); border-bottom: 1px solid var(--k-line); }
+    .k-about-not-inner { max-width: 1080px; margin: 0 auto; padding: 64px 40px 56px; }
+    .k-about-not-hd { margin-bottom: 32px; }
+    .k-about-not-list { margin: 0; }
+    .k-about-not-row {
+      display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 32px;
+      padding: 22px 0; border-top: 1px solid var(--k-line); align-items: start;
+    }
+    .k-about-not-row:last-child { border-bottom: 1px solid var(--k-line); }
+    .k-about-not-t {
+      font-family: var(--k-font-display); font-size: 20px; letter-spacing: -0.018em;
+      line-height: 1.25; color: var(--k-fg); margin: 0; text-wrap: balance;
+    }
+    .k-about-not-d {
+      font-size: 14px; color: var(--k-fg-3); line-height: 1.62;
+      margin: 0; text-wrap: pretty;
+    }
+    @media (max-width: 900px) {
+      .k-about-not-inner { padding: 40px 20px 36px; }
+      .k-about-not-hd { margin-bottom: 22px; }
+      .k-about-not-row { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 18px 0; }
+      .k-about-not-t { font-size: 18px; }
+    }

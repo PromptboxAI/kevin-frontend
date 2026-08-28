@@ -354,6 +354,36 @@ const About = () => (
         ))}
       </section>
 
+      <section className="k-about-not">
+        <div className="k-about-not-inner">
+          <div className="k-about-not-hd">
+            <div style={{ fontFamily: 'var(--k-font-mono)', fontSize: 11, color: 'var(--k-fg-4)', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Boundaries</div>
+            <h2 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 38, letterSpacing: '-0.025em', margin: '8px 0 0', lineHeight: 1.1 }}>
+              Where Kevin stops.
+            </h2>
+          </div>
+          <dl className="k-about-not-list">
+            {[
+              ['It isn\u2019t an appraisal.',
+               'Kevin prices from live retail comps and shows you the listing each number came from. A signed appraisal is a different instrument \u2014 and for jewelry, fine arts, firearms and furs you should still get one. Those classes are never auto-priced.'],
+              ['It doesn\u2019t talk to your carrier.',
+               'There is no direct submit and no carrier-facing screen. Kevin builds the file; you decide who receives it, when, and in what format. Nothing leaves your account on its own.'],
+              ['It doesn\u2019t decide anything.',
+               'Special limits are flagged, never enforced. Every price, content class, age and depreciation percentage on the worksheet is yours to overrule, and the audit log records that you did.'],
+              ['It won\u2019t hold your work hostage.',
+               'No readiness gate on an export, no approval step, no \u201cnot ready yet\u201d. Kevin surfaces what deserves a second look \u2014 unpriced lines, missing model numbers, capped classes \u2014 and then gets out of the way.'],
+              ['It isn\u2019t a compliance system.',
+               'Retention and record-keeping obligations belong to you and the carrier, not to us. Kevin keeps everything and never deletes to reclaim space, but it does not pretend to be your system of record.'],
+            ].map(([t, d], i) => (
+              <div key={i} className="k-about-not-row">
+                <dt className="k-about-not-t">{t}</dt>
+                <dd className="k-about-not-d">{d}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </section>
+
       {/* Was a single card in a repeat(4, 1fr) grid — one person at 25% width
           with three empty columns beside them, which is most of why this page
           read as unfinished. A founder-led section instead: the photo carries
