@@ -4553,3 +4553,5 @@
     @media (max-width: 520px) {
       .k-about-stats { grid-template-columns: minmax(0, 1fr); }
     }
+    .k-about-founder-fig { margin: 0; }
+    .k-about-founder-dash { color: var(--k-fg-4); }

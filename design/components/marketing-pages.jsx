@@ -363,9 +363,9 @@ const About = () => (
           <img src="../assets/kevin-godfrey.png" alt="Kevin Godfrey, founder" loading="lazy" decoding="async" />
         </div>
         <div className="k-about-founder-body">
-          <div style={{ fontFamily: 'var(--k-font-mono)', fontSize: 11, color: 'var(--k-fg-4)', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Why Kevin exists</div>
+          <div style={{ fontFamily: 'var(--k-font-mono)', fontSize: 11, color: 'var(--k-fg-4)', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Founder</div>
           <h2 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 36, letterSpacing: '-0.025em', margin: '10px 0 18px', lineHeight: 1.1 }}>
-            Twenty-two years of contents, and the same Friday night.
+            An adjuster in Long Island, NY.
           </h2>
           <p className="k-about-founder-p">
             Kevin Godfrey spent twenty-two years as an adjuster and settled more than ten thousand
@@ -379,16 +379,19 @@ const About = () => (
             whether the number is right, whether the class is right, whether the carrier will wear
             it: that is the adjuster's work, and it is the only part worth an evening.
           </p>
-          <p className="k-about-founder-quote">
-            “The field work never changed. The typing did.”
-          </p>
-          <div className="k-about-founder-attrib">
-            <span>Kevin Godfrey</span>
-            <span className="k-trust-dot">·</span>
-            <span>Founder</span>
-            <span className="k-trust-dot">·</span>
-            <span>Smithtown, New York</span>
-          </div>
+          <figure className="k-about-founder-fig">
+            <blockquote className="k-about-founder-quote">
+              “The field work never changed. The typing did.”
+            </blockquote>
+            <figcaption className="k-about-founder-attrib">
+              <span className="k-about-founder-dash">—</span>
+              <span>Kevin Godfrey</span>
+              <span className="k-trust-dot">·</span>
+              <span>Founder</span>
+              <span className="k-trust-dot">·</span>
+              <span>Smithtown, New York</span>
+            </figcaption>
+          </figure>
         </div>
       </section>
 

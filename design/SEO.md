@@ -30,7 +30,7 @@ Rules:
 | 25-Legal-hub.html | /legal | Privacy & Terms — Kevin | Kevin’s privacy policy and terms of service. |
 | 37-Product-overview.html | /product | Product — Kevin | How Kevin works end to end: photo ingestion, item identification, live retail comps, depreciation, and carrier-ready exports. |
 | 38-Contact.html | /contact | Contact — Kevin | Questions, support, or Enterprise inquiries — reach the Kevin team. |
-| 39-About.html | /about | About — Kevin | Built by an adjuster who settled over 10,000 claims. A small team in Long Island, NY. |
+| 39-About.html | /about | About — Kevin | Built by an adjuster who settled over 10,000 claims in twenty-two years, because contents inventory should not cost you a Friday night. Long Island, NY. |
 | 48-Sample-claim.html | /sample | Sample Claim — Kevin | Explore a real 60-photo kitchen-fire claim: the photos Kevin read and the 57-line priced worksheet it produced. |
 | 52-Watch-demo.html | /demo | Watch the Demo — Kevin | From photo drop to Xactimate. Real footage, real photos. |
 | 53-Careers.html | /careers | Careers — Kevin | Help build the content inventory tool adjusters actually want to use. |
