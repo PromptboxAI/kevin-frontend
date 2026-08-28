@@ -363,24 +363,22 @@ function buildAltSources(t) {
   });
 }
 
-// FMV comps come from the SECONDARY market — sold listings and hammer prices —
-// not retail. Same payload shape as alternative_sources so the item drawer can
-// render either, but the sources and economics are different.
-const FMV_MARKETS = [
-  ['eBay (sold)',          'ebay.com',            0.92],
-  ['Facebook Marketplace', 'facebook.com',        1.00],
-  ['LiveAuctioneers',      'liveauctioneers.com', 1.11],
-];
-// The median of the sold comps sets FMV — the estate equivalent of the retail
-// median setting RCV. These are observed sales, never asking prices.
-function buildFmvSources(t, fmv) {
-  const slug = (t.model || t.desc).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  return FMV_MARKETS.map(([source, host, mult]) => ({
-    title: t.desc,
-    source,
-    price: Math.round(fmv * mult * 100) / 100,
-    link: `https://www.${host}/itm/${slug}`,
-  }));
+// Estate FMV is a DEPRECIATION HAIRCUT off the RCV taken from ACTIVE retail
+// listings. There is no sold-comp or hammer-price feed and none is planned, so
+// the comps behind an estate line are the same active listings that set RCV on
+// a claim — the only difference is the haircut applied to them.
+//
+// This no longer lists eBay (sold), Facebook Marketplace or LiveAuctioneers.
+// Printing those as provenance claims a data source that was never integrated,
+// which is false on a document a client or a court may read. Naming them is now
+// blocked by check-domain-rules.py.
+const FMV_HAIRCUT = 0.33;
+function buildFmvSources(t, fmv, retail) {
+  // Price the comps at RETAIL: they are active listings, not observed sales.
+  // `retail` wins when the caller knows it; otherwise fall back to the item's
+  // own RCV, and only then to the FMV figure.
+  const base = retail != null ? retail : (t.rcv != null ? t.rcv : fmv);
+  return buildAltSources({ ...t, rcv: base });
 }
 
 // Field notes are written per PHOTO on mobile (sets do not exist until the
@@ -848,18 +846,20 @@ const KevinAPI = {
     }, 1600));
   },
   // POST /v1/estate_items/:id/reprice  → { fmv, alternative_sources }
-  // Same contract as reprice(), against sold comps instead of retail listings.
+  // Same contract as reprice(). The comps are the same ACTIVE retail listings;
+  // FMV is the haircut off their median, not a separate sold-comp lookup.
   repriceFmv(id, { query }) {
     const desc = query;
     return new Promise((resolve) => setTimeout(() => {
       const t = { mfr: '', model: desc, desc };
       const base = SAMPLE_BASE.find((s) => s.desc === desc);
       const retail = base ? base.rcv : Math.round((900 + (desc.length % 7) * 145) * 100) / 100;
-      // Secondary-market value sits well under retail.
-      const seed = Math.round(retail * 0.33);
-      const sources = buildFmvSources(t, seed);
+      const sources = buildFmvSources(t, null, retail);
       const median = [...sources].sort((a, b) => a.price - b.price)[Math.floor(sources.length / 2)];
-      resolve({ rcv: median.price, alternative_sources: sources, fetchedAt: new Date().toISOString() });
+      // FMV = haircut off the median ACTIVE listing, which is what the backend
+      // now does. The comps returned stay at their real retail prices.
+      const fmv = Math.round(median.price * FMV_HAIRCUT * 100) / 100;
+      resolve({ rcv: fmv, alternative_sources: sources, fetchedAt: new Date().toISOString() });
     }, 1600));
   },
   // POST /v1/claim_items/:id  → { dep }   (server recalculates from the claim's

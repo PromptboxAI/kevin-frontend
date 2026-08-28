@@ -19,9 +19,9 @@ function buildEstateRows(n = 96) {
   const rooms = window.ROOM_OPTIONS || ['Living room','Master bedroom','Kitchen','Garage'];
   for (let i = 0; i < n; i++) {
     const t = SAMPLE_BASE[i % SAMPLE_BASE.length];
-    // Secondary-market value, roughly a fraction of retail. The backend derives
-    // this from sold comps; here we seed a plausible figure and build the comps
-    // around it so the median matches (see buildFmvSources).
+    // FMV is a depreciation haircut off the RCV from active retail listings.
+    // The backend derives it that way; there is no sold-comp feed (see
+    // buildFmvSources). The comps stay at retail — only the value is cut.
     const fmv = Math.round(t.rcv * (0.25 + (i % 5) * 0.08));
     const fmvSources = window.buildFmvSources(t, fmv);
     out.push({
@@ -34,7 +34,8 @@ function buildEstateRows(n = 96) {
       disposition: ['Unassigned','For sale','Sold','Keep','Donate'][i % 5],
       // Realised sale price — only exists once an item is Sold.
       salePrice: (i % 5) === 2 ? Math.round(fmv * (0.70 + (i % 7) * 0.05)) : null,
-      // Median of the sold comps — the value the appraiser can defend.
+      // The active retail listings the haircut was taken off — what an
+      // appraiser or an heir can check the number against.
       alternative_sources: fmvSources,
       sourceLink: null,
       mfr: t.mfr, model: t.model, age: 0, qty: 1,

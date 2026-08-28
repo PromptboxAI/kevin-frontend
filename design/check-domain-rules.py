@@ -34,6 +34,7 @@ RULES = [
     ("10", "per-retailer sources / store list",  r"per[- ](retailer|store)\s+(integration|scraper|adapter)|18\s+stores|toggleable\s+stores"),
     ("10", "domain allowlist / blocklist",       r"(domain|strict)\s+(allow|block)list|allowlists?\s+govern"),
     ("11", "the removed comparable-sale path",   r"comparable[- ]sale|marketComp|back[- ]solve|resale\s+market\s+decides|RCV\s+equals\s+the\s+market\s+comp"),
+    ("11", "sold-comp provenance (no such feed)", r"eBay|LiveAuctioneers|Facebook\s+Marketplace|hammer\s+price|sold\s+comps?"),
     ("12", "dead needs_manual badges",           r"Appraisal\s+req'?d|Low\s+sample\s+badge|\$5k\s+(gate|approval)"),
     ("16", "an export readiness gate",           r"Export\s+anyway|not\s+ready\s+to\s+export"),
     ("19", "unlimited storage (it is 500 GB)",   r"unlimited\s+storage"),

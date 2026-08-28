@@ -146,6 +146,14 @@ Claude Code will NOT infer intent for an undocumented static control — an iner
 
 ## Conventions when editing
 
+- **Run `python check-domain-rules.py` before handing work off.** It greps the shipping
+  surfaces for language the domain rules above scrapped — per-seat pricing, the free
+  first claim, SOC 2, Xactimate XML, sold-comp provenance — and exits 1 on a hit. Copy
+  outlives a scrapped decision because nothing fails when it is wrong: three separate
+  instances of the dead free-first-claim offer were once live at the same time, one of
+  them inside FAQ JSON-LD that never renders on screen. A hit is a prompt, not a verdict
+  — legitimate copy denies these terms ("no per-seat math") or lists them as one option
+  among several. Judge each against the rule it names.
 - Match the existing visual vocabulary exactly — don't introduce new colors, fonts, shadow styles, or spacing rhythms.
 - When a change affects multiple screens, apply it everywhere it appears (the stakeholder expects site-wide consistency — e.g. footer, wordmark, carrier names).
 - Real imagery: `window.PRODUCT_IMG` maps item keys → Unsplash URLs (used in landing gallery). The `<Thumb>` component falls back to a striped placeholder when no `src` given. Most of the app uses placeholders intentionally.

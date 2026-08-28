@@ -768,7 +768,7 @@ const Lightbox = ({ row, index, total, onNav, onClose, onUpdate, docked, onToggl
           <ItemHistory rowId={row.id} />
           <div className="k-insp-field">
             <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-              <span>{manualRow ? 'No comps yet' : estate ? 'Sold comps · median sets FMV' : 'Live comps · median sets RCV'}</span>
+              <span>{manualRow ? 'No comps yet' : estate ? 'Live comps · haircut sets FMV' : 'Live comps · median sets RCV'}</span>
               {!editing && <button className="k-link" onClick={() => { setQuery(row.desc); setEditing(true); }}><Icon d={manualRow ? I.search : I.refresh} size={10} /> {manualRow ? 'Look up pricing' : 'Recheck'}</button>}
             </label>
             {queryTrimmed && !repricing && (
