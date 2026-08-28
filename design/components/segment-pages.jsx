@@ -247,15 +247,15 @@ const ForAdjusters = () => (
 const ESTATE_TESTIMONIALS = [
   {
     quote: "Forty years of accumulation in a three-bedroom ranch. I walked it with my phone on the Tuesday and handed the family a priced inventory Wednesday morning. That used to be a two-week job.",
-    name: 'Diane Whitfield', role: 'Estate Sale Professional', initials: 'DW',
+    name: 'Diane W.', role: 'Estate Sale Professional', initials: 'DW',
   },
   {
     quote: "The heirs were in three states and none of them trusted a spreadsheet. A photo and a dated price on every line ended the argument in one call.",
-    name: 'Marcus Bell', role: 'Trust Officer', initials: 'MB',
+    name: 'Michael B.', role: 'Trust Officer', initials: 'MB',
   },
   {
     quote: "A probate inventory has to satisfy a court, not just a client. Every line shows where the number came from and what condition the piece was in.",
-    name: 'Alicia Ferrante', role: 'Probate Paralegal', initials: 'AF',
+    name: 'Alicia F.', role: 'Probate Paralegal', initials: 'AF',
   },
 ];
 
