@@ -42,9 +42,8 @@ Every other page in `pages/` carries noindex (58 pages). The app lives behind au
 ## Still to do at deploy
 
 - ~~og:image social cards (1200×630)~~ DONE — 6 cards in `assets/og/`, wired to the 13
-  public pages. Note: the old `assets/og-default.png` is a 909×525 **JPEG** despite the
-  .png name and was never referenced; it is superseded by `assets/og/og-default.png` and
-  can be deleted.
+  public pages. The old `assets/og-default.png` (a 909×525 JPEG despite the .png name,
+  referenced nowhere) has been deleted — the card is now `assets/og/og-default.png`.
 - favicon / apple-touch-icon set
 - ~~sitemap.xml + robots.txt~~ DONE — `deploy/sitemap.xml` + `deploy/robots.txt` (serve from the site root; update lastmod on content changes)
 - ~~JSON-LD~~ DONE — Organization + SoftwareApplication on landing, FAQPage on pricing.
