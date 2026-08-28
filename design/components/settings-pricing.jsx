@@ -18,8 +18,7 @@ const PRICING_COVERAGE = [
 const PRICING_BASES = [
   ['Retail comp',          'Item still sold new \u2014 RCV = median of the live merchant comps returned for the query. Two alternates stay one click away in the worksheet, each with a dated proof link.'],
   ['Like-kind substitute', 'Exact model discontinued but a comparable is still sold new \u2014 Kevin prices the nearest NEW equivalent as RCV. Substitution is noted on the row.'],
-  ['Comparable sale',      'No trustworthy retail evidence — no retail channel at all, or a retail bucket too thin to clear the sample floor — so the resale market decides. The observed resale price is published exactly as found: RCV equals the market comp, with no gross-up.'],
-  ['Manual / appraisal',   'The valuation service returned no confident comp, or the item needs an appraisal — it arrives flagged needs_manual with a reason, and the adjuster enters the value with a proof link.'],
+  ['Manual / appraisal',   'No confident new-replacement comp came back, or the class is manual-only (Jewelry, Fine Arts, Firearms, Furs) — the item arrives flagged needs_manual with a reason, RCV and ACV null, and the adjuster types the value and attaches a proof link. Kevin never prices an item off a used listing to avoid leaving it blank.'],
 ];
 
 const SettingsPricing = () => {
@@ -87,7 +86,7 @@ const SettingsPricing = () => {
               <div style={{ fontSize: 11, color: 'var(--k-fg-4)', fontFamily: 'var(--k-font-mono)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Pricing</div>
               <h1 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 28, letterSpacing: '-0.022em', margin: '4px 0 4px' }}>Where Kevin gets Replacement Cost Values.</h1>
               <p style={{ fontSize: 13, color: 'var(--k-fg-3)', margin: 0, maxWidth: 760 }}>
-                Every comp comes from <strong>one unified aggregator</strong> — there are no per-retailer integrations. What the source roster below controls is not <em>where</em> we fetch, but how results are <strong>classified and ranked</strong>: retail-vs-resale bucketing chooses the valuation basis, strict allowlists govern Jewelry and Fine Arts, and the priority chain sets which comp leads. Google Shopping and the Google Immersive Product API span major retailers, specialty stores, brand-direct storefronts and marketplaces. There are no per-store scrapers to maintain or switch on. RCV defaults to the <strong>median of the live comps</strong> returned for an item, with the alternates one click away in the worksheet and a dated proof link kept for the file.
+                Every comp comes from <strong>one unified aggregator</strong> — there are no per-retailer integrations. What the source roster below controls is not <em>where</em> we fetch, but how results are <strong>classified and ranked</strong>: whether a confident new-replacement comp exists chooses the valuation basis, and the priority chain sets which comp leads. Jewelry, Fine Arts, Firearms and Furs are never auto-priced — they arrive flagged for a person. Google Shopping and the Google Immersive Product API span major retailers, specialty stores, brand-direct storefronts and marketplaces. There are no per-store scrapers to maintain or switch on. RCV defaults to the <strong>median of the live comps</strong> returned for an item, with the alternates one click away in the worksheet and a dated proof link kept for the file.
               </p>
             </div>
           </div>
