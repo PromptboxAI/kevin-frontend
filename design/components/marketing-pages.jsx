@@ -425,18 +425,33 @@ const About = () => (
         </div>
       </section>
 
-      <section className="k-about-stats">
-        {[
-          ['2024', 'Founded'],
-          ['3',          'People behind it'],
-          ['$1B+',       'In total claims settled'],
-          ['310+',       'Claims processed in beta'] /* was 'Line items processed in beta' — 310 now counts claims; flag if you want line items back */,
-        ].map(([n, l], i) => (
-          <div key={i} className="k-stat-cell" style={{ borderRight: i < 3 ? '1px solid var(--k-line)' : 0 }}>
-            <div className="k-stat-cell-n">{n}</div>
-            <div className="k-stat-cell-l">{l}</div>
+      <section className="k-about-time">
+        <div className="k-about-time-inner">
+          <div className="k-about-time-hd">
+            <div style={{ fontFamily: 'var(--k-font-mono)', fontSize: 11, color: 'var(--k-fg-4)', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>How it got here</div>
+            <h2 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 38, letterSpacing: '-0.025em', margin: '8px 0 0', lineHeight: 1.1 }}>
+              From a Friday night to a flat subscription.
+            </h2>
           </div>
-        ))}
+          <ol className="k-about-time-track">
+            {[
+              ['Before 2024', 'Twenty-two years in the field',
+               'Over 10,000 claims settled and more than $1B in total losses. Contents was always the part that took the weekend.'],
+              ['2024', 'Kevin founded',
+               'Started in Long Island, NY, to do the part of a contents claim that never needed a person doing it.'],
+              ['2025', 'Beta on real losses',
+               '310+ claims processed across 12 carriers \u2014 actual pack-outs and actual photographs, not a demo set.'],
+              ['2026', 'Open to any adjuster',
+               'Pro at $249/mo flat, unlimited claims, seven-day free trial. No per-seat maths and no per-claim fee.'],
+            ].map(([year, t, d], i) => (
+              <li key={i} className="k-about-time-item">
+                <div className="k-about-time-year">{year}</div>
+                <div className="k-about-time-t">{t}</div>
+                <p className="k-about-time-d">{d}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
       </section>
 
       <section className="k-mkt-cta">

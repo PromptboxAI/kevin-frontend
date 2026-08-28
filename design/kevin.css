@@ -2525,11 +2525,6 @@
       font-weight: 700; font-size: 17px; letter-spacing: 0.02em;
       margin-bottom: 14px;
     }
-    .k-about-stats {
-      display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
-      max-width: 1280px; margin: 0 auto 40px; padding: 0 40px;
-      border: 1px solid var(--k-line); border-radius: 14px; background: var(--k-bg); overflow: hidden;
-    }
 
     /* ── Security sub-pages ──────────────────────────────────────── */
     .k-sec { width: 100%; min-height: 100%; display: flex; flex-direction: column; background: var(--k-bg); }
@@ -4545,13 +4540,6 @@
       .k-about-hero { padding: 44px 20px 32px; }
       .k-about-pillars { grid-template-columns: minmax(0, 1fr); gap: 16px; padding: 24px 20px; }
       .k-about-pillar { padding: 22px 20px; }
-      .k-about-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 0 20px; row-gap: 20px; }
-      /* The inline borderRight between stat cells reads as a stray rule once
-         they wrap onto two rows. */
-      .k-about-stats .k-stat-cell { border-right: 0 !important; }
-    }
-    @media (max-width: 520px) {
-      .k-about-stats { grid-template-columns: minmax(0, 1fr); }
     }
     .k-about-founder-fig { margin: 0; }
     .k-about-founder-dash { color: var(--k-fg-4); }
@@ -4581,4 +4569,46 @@
       .k-about-not-hd { margin-bottom: 22px; }
       .k-about-not-row { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 18px 0; }
       .k-about-not-t { font-size: 18px; }
+    }
+
+    /* — About: timeline. Four steps along a hairline, dot per step. Replaces the
+         stat strip, which held the same figures as bare numbers a section away
+         — a trajectory says more than four counters and does not repeat them. — */
+    .k-about-time-inner { max-width: 1080px; margin: 0 auto; padding: 64px 40px 60px; }
+    .k-about-time-hd { margin-bottom: 40px; }
+    .k-about-time-track {
+      list-style: none; margin: 0; padding: 0;
+      display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px;
+    }
+    .k-about-time-item { position: relative; padding-top: 26px; }
+    /* The rule runs through every step; the dot marks this one. */
+    .k-about-time-item::before {
+      content: ''; position: absolute; top: 5px; left: 0; right: -24px; height: 1px;
+      background: var(--k-line);
+    }
+    .k-about-time-item:last-child::before { right: 0; }
+    .k-about-time-item::after {
+      content: ''; position: absolute; top: 1px; left: 0;
+      width: 9px; height: 9px; border-radius: 99px; background: var(--k-accent);
+    }
+    .k-about-time-year {
+      font-family: var(--k-font-mono); font-size: 11.5px; font-weight: 700;
+      color: var(--k-accent); letter-spacing: 0.05em;
+    }
+    .k-about-time-t {
+      font-family: var(--k-font-display); font-size: 20px; letter-spacing: -0.018em;
+      line-height: 1.25; margin: 8px 0 8px; text-wrap: balance;
+    }
+    .k-about-time-d { font-size: 13.5px; color: var(--k-fg-3); line-height: 1.6; margin: 0; text-wrap: pretty; }
+
+    @media (max-width: 900px) {
+      .k-about-time-inner { padding: 40px 20px 36px; }
+      .k-about-time-hd { margin-bottom: 26px; }
+      /* Vertical: the rule runs down the left edge instead of across. */
+      .k-about-time-track { grid-template-columns: minmax(0, 1fr); gap: 0; }
+      .k-about-time-item { padding: 0 0 26px 24px; }
+      .k-about-time-item::before { top: 6px; bottom: -6px; left: 4px; right: auto; width: 1px; height: auto; }
+      .k-about-time-item:last-child::before { bottom: auto; height: 0; }
+      .k-about-time-item::after { top: 4px; left: 0; }
+      .k-about-time-t { font-size: 18px; margin: 6px 0 6px; }
     }
