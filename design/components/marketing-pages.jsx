@@ -332,14 +332,19 @@ const About = () => (
         </p>
       </section>
 
+      <section className="k-about-belief-hd">
+        <div style={{ fontFamily: 'var(--k-font-mono)', fontSize: 11, color: 'var(--k-fg-4)', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>What we hold to</div>
+        <h2 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 38, letterSpacing: '-0.025em', margin: '8px 0 0', lineHeight: 1.1 }}>
+          Four things we will not trade away.
+        </h2>
+      </section>
+
       <section className="k-about-pillars">
         {[
-          { t: 'One grid, no wizard',        body: 'Everything Kevin found sits in a single editable spreadsheet — room, description, make, model, class, cost, age, depreciation. No locked steps, no modal asking if you are sure. Pin the item panel and work down the list.' },
-          { t: 'One item per photo',         body: 'Kevin groups shots taken seconds apart into one item, so three angles of a sofa are one line, not three. You merge, split, or skip a set before anything is identified — and add a note that steers what Kevin looks for.' },
-          { t: 'Priced, or honestly blank',  body: 'Three live comps per item; the median becomes the replacement cost, with a dated proof link on the line. When Kevin cannot find a confident comp it leaves the cell empty for you to fill — never a guess dressed up as a number.' },
-          { t: 'Yours to take anywhere',     body: 'Export the XactContents spreadsheet, a client PDF, or the whole bundle with every photo and the audit log. Kevin never pushes into a carrier system — you send the file. Nothing is ever deleted to reclaim space.' },
-          { t: 'Like kind and quality, priced',  body: 'Half of what is inventoried is discontinued. Kevin finds the nearest model still sold new, prices that, and records the swap on the line so the carrier sees the reasoning. Replacement cost always holds a new-replacement price — never a used listing that has already lost value once.' },
-          { t: 'The math is the backend\u2019s job',  body: 'Depreciation comes from the schedule on the claim, computed server-side, so the number in your worksheet is the number in the exported spreadsheet — to the penny. Change a class or an age and the cell waits for the answer rather than guessing at one.' },
+          { t: 'The adjuster decides',        body: 'Kevin flags — special limits, thin evidence, a class that needs an appraiser — and then gets out of the way. Nothing is blocked, no export is held hostage, no approval gate stands between you and your own file. You can override every number on the page.' },
+          { t: 'Every number shows its work',  body: 'Each price cites the live comps behind it with a dated link, and the audit log records who changed what and when. When Kevin cannot corroborate a price it leaves the cell blank rather than inventing one — a confident wrong number is worse than an honest gap.' },
+          { t: 'One grid, no wizard',          body: 'Everything sits in a single editable spreadsheet — room, description, make, model, class, cost, age, depreciation. No locked steps, no modal asking whether you are sure. Pin the item panel and work down the list the way you already work.' },
+          { t: 'Your data, your file',         body: 'Export the XactContents spreadsheet, a client PDF, or the whole bundle with every photo and the audit log. Kevin never pushes into a carrier system — you send the file. Nothing is deleted to reclaim space, because it is your record, not ours.' },
         ].map((p, i) => (
           <div key={i} className="k-about-pillar">
             <div style={{ fontFamily: 'var(--k-font-mono)', fontSize: 11, color: 'var(--k-accent)', fontWeight: 700, letterSpacing: '0.05em' }}>0{i + 1}</div>
@@ -349,31 +354,48 @@ const About = () => (
         ))}
       </section>
 
-      <section className="k-about-team">
-        <div style={{ fontFamily: 'var(--k-font-mono)', fontSize: 11, color: 'var(--k-fg-4)', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Team</div>
-        <h2 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 38, letterSpacing: '-0.025em', margin: '8px 0 32px' }}>
-          A small team in Long Island, NY.
-        </h2>
-        <div className="k-about-team-grid">
-          {[
-            { name: 'Kevin Godfrey',   role: 'Founder',  bio: 'Insurance adjuster for 22 years, settling over 10,000 claims. Built Kevin because his nights and weekends were going to Xactimate, not his kids.', initials: 'KG', photo: '../assets/kevin-godfrey.png' },
-          ].map((p, i) => (
-            <div key={i} className="k-about-card">
-              {p.photo
-                ? <span className="k-about-avatar" style={{ overflow: 'hidden', padding: 0 }}><img src={p.photo} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} /></span>
-                : <span className="k-about-avatar">{p.initials}</span>}
-              <div style={{ fontSize: 15, fontWeight: 600 }}>{p.name}</div>
-              <div style={{ fontSize: 12, color: 'var(--k-fg-4)', fontFamily: 'var(--k-font-mono)', marginTop: 2 }}>{p.role}</div>
-              <p style={{ fontSize: 12.5, color: 'var(--k-fg-3)', lineHeight: 1.5, margin: '12px 0 0' }}>{p.bio}</p>
-            </div>
-          ))}
+      {/* Was a single card in a repeat(4, 1fr) grid — one person at 25% width
+          with three empty columns beside them, which is most of why this page
+          read as unfinished. A founder-led section instead: the photo carries
+          the credibility an About page is actually here to establish. */}
+      <section className="k-about-founder">
+        <div className="k-about-founder-media">
+          <img src="../assets/kevin-godfrey.png" alt="Kevin Godfrey, founder" loading="lazy" decoding="async" />
+        </div>
+        <div className="k-about-founder-body">
+          <div style={{ fontFamily: 'var(--k-font-mono)', fontSize: 11, color: 'var(--k-fg-4)', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Why Kevin exists</div>
+          <h2 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 36, letterSpacing: '-0.025em', margin: '10px 0 18px', lineHeight: 1.1 }}>
+            Twenty-two years of contents, and the same Friday night.
+          </h2>
+          <p className="k-about-founder-p">
+            Kevin Godfrey spent twenty-two years as an adjuster and settled more than ten thousand
+            claims. Contents was always the part that ate the weekend: the structure gets scoped in
+            an afternoon, then the personal property list takes days — photograph everything,
+            identify it, find what it costs today, argue the depreciation, type all of it in.
+          </p>
+          <p className="k-about-founder-p">
+            None of that work needed a person. Reading a model number off a photograph, finding
+            three live prices, applying the schedule to the age — that is machine work. Deciding
+            whether the number is right, whether the class is right, whether the carrier will wear
+            it: that is the adjuster's work, and it is the only part worth an evening.
+          </p>
+          <p className="k-about-founder-quote">
+            “The field work never changed. The typing did.”
+          </p>
+          <div className="k-about-founder-attrib">
+            <span>Kevin Godfrey</span>
+            <span className="k-trust-dot">·</span>
+            <span>Founder</span>
+            <span className="k-trust-dot">·</span>
+            <span>Smithtown, New York</span>
+          </div>
         </div>
       </section>
 
       <section className="k-about-stats">
         {[
           ['2024', 'Founded'],
-          ['3',          'Full-time team'],
+          ['3',          'People behind it'],
           ['$1B+',       'In total claims settled'],
           ['310+',       'Claims processed in beta'] /* was 'Line items processed in beta' — 310 now counts claims; flag if you want line items back */,
         ].map(([n, l], i) => (
