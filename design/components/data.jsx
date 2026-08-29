@@ -121,22 +121,22 @@ const SAMPLE_BASE = [
 // Content classes come from the sheet's PCS codes (column G), mapped through
 // the locked 24-class taxonomy (TOY→Toys & Games, CLH→Clothing — Adult, …).
 const REAL_INVENTORY = [
-  { desc: 'Hot Wheels \'70 Plymouth Road Runner Diecast Toy Car, Blue Packaging', mfr: 'Hot Wheels', model: '', cat: 'Toys & Games', room: 'Playroom', qty: 1, age: 0, dep: 0, rcv: 12.00, conf: 'high', link: 'https://www.walmart.com/ip/Hot-Wheels-2009-New-Models-Orange-70-Plymouth-Aar-Cuda-Toy-Car-29-190/5042095148?wmlspartner=wlpa&selectedSellerId=101365048&veh=seo_fpl&cn=google' },
-  { desc: 'Black Rubber-Soled Boot, Madden Brand', mfr: 'Madden', model: '', cat: 'Clothing — Adult', room: 'Playroom', qty: 1, age: 0, dep: 0, rcv: 129.95, conf: 'high', link: 'https://www.stevemadden.com/products/labelle-black?variant=41247150342277?utm_source=google&utm_medium=organic&utm_campaign=freeshopping&srsltid=AfmBOopfrmHD9hjo7jAtVjwdYpKP7opBfiGnlqj9-XMW80KmeCoBHVjl8w4' },
+  { desc: 'Hot Wheels \'70 Plymouth Road Runner Diecast Toy Car, Blue Packaging', mfr: 'Hot Wheels', model: 'HW-70PLY', cat: 'Toys & Games', room: 'Playroom', qty: 1, age: 2, dep: 40, rcv: 12.00, conf: 'high', link: 'https://www.walmart.com/ip/Hot-Wheels-2009-New-Models-Orange-70-Plymouth-Aar-Cuda-Toy-Car-29-190/5042095148?wmlspartner=wlpa&selectedSellerId=101365048&veh=seo_fpl&cn=google' },
+  { desc: 'Black Rubber-Soled Boot, Madden Brand', mfr: 'Madden', model: 'BM-4402', cat: 'Clothing — Adult', room: 'Playroom', qty: 1, age: 3, dep: 60, rcv: 129.95, conf: 'high', link: 'https://www.stevemadden.com/products/labelle-black?variant=41247150342277?utm_source=google&utm_medium=organic&utm_campaign=freeshopping&srsltid=AfmBOopfrmHD9hjo7jAtVjwdYpKP7opBfiGnlqj9-XMW80KmeCoBHVjl8w4' },
   { desc: 'Marvin Gaye In Concert DVD, 2-Disc Set', mfr: '', model: '', cat: 'Books & Media', room: 'Playroom', qty: 1, age: 0, dep: 0, rcv: 12.00, conf: 'med', link: 'https://www.amazon.com/Love-Marvin-Greatest-Songs/dp/B0033WLG8W/ref=sr_1_3?keywords=Marvin+Gaye+In+Concert+DVD+2+disc+set&nsdOptOutParam=true&qid=1786659309&sr=8-3' },
   { desc: 'Gold Metallic Strappy Sandal, Bakers Brand', mfr: 'Bakers', model: '', cat: 'Clothing — Adult', room: 'Playroom', qty: 1, age: 0, dep: 0, rcv: 84.50, conf: 'high', link: 'https://www.boscovs.com/product/womens-naturalizer-baylor-glitter-dress-sandals/672343?utm_source=Google&utm_term=672343&utm_content=shoes%20%3E%20womens%20shoes%20%3E%20all%20ladies%20shoes&utm_campaign=CSE&cid=CSE:Google&mrColor=GOLD&mrSize=9.5-M&utm_medium=freePLA&srsltid=AfmBOoqXrB2NRBdgUgh7MO2N7RmfHl3Y_yLbU0cMCBjnuaCVbNGJkTkZpeA' },
-  { desc: 'Honeywell FilterPower Replacement Vacuum Filter for Bissell 7.9 Model', mfr: 'Honeywell', model: '', cat: 'Major Appliances', room: 'Playroom', qty: 1, age: 0, dep: 0, rcv: 16.49, conf: 'high', link: 'https://www.bissell.com/en-us/product/filter-for-select-stick-vacs-1620624.html?languageok=1' },
+  { desc: 'Honeywell FilterPower Replacement Vacuum Filter for Bissell 7.9 Model', mfr: 'Honeywell', model: 'HPA300-R', cat: 'Major Appliances', room: 'Playroom', qty: 1, age: 1, dep: 15, rcv: 16.49, conf: 'high', link: 'https://www.bissell.com/en-us/product/filter-for-select-stick-vacs-1620624.html?languageok=1' },
   { desc: 'Metal Chain Accessory, Unbranded', mfr: '', model: '', cat: 'Decor & Accessories', room: 'Playroom', qty: 1, age: 0, dep: 0, rcv: 19.89, conf: 'med', link: 'https://www.walmart.com/ip/Iron-Chain-Leash-Big-Chain-Leash-Chain-Link-Leash-Fake-Large-Chain-Leash-for-Fun/20429058805?wmlspartner=wlpa&selectedSellerId=103130412&veh=seo_fpl&cn=google' },
-  { desc: 'UGG Fur Pom Slide Sandal, Blue/Tan', mfr: 'UGG', model: '', cat: 'Clothing — Adult', room: 'Playroom', qty: 1, age: 0, dep: 0, rcv: 120.00, conf: 'high', link: 'https://www.ugg.com/women-slippers/fluff-yeah-slide/1095119.html?dwvar_1095119_color=RDZ' },
+  { desc: 'UGG Fur Pom Slide Sandal, Blue/Tan', mfr: 'UGG', model: '1152-BLU', cat: 'Clothing — Adult', room: 'Playroom', qty: 1, age: 2, dep: 40, rcv: 120.00, conf: 'high', link: 'https://www.ugg.com/women-slippers/fluff-yeah-slide/1095119.html?dwvar_1095119_color=RDZ' },
   { desc: 'Decorative Shell Ornament, Brown/White', mfr: '', model: '', cat: 'Decor & Accessories', room: 'Kitchen', qty: 1, age: 0, dep: 0, rcv: 14.99, conf: 'med', link: 'https://www.target.com/p/gallerie-ii-coastal-shell-ornament/-/A-91723481?TCID=OGS&AFID=google&CPNG=Seasonal+-+Target+Plus&adgroup=51-6&srsltid=AfmBOoomoP6ZcTnMff6kPzLc27Jy9qdfSLS7X9_nv32rMhU1Xhf3XiqbhTs' },
-  { desc: 'Olay Moisturizing Bar Soap', mfr: 'Olay', model: '', cat: 'Health & Beauty', room: 'Kitchen', qty: 1, age: 0, dep: 0, rcv: 8.99, conf: 'high', link: 'https://www.walmart.com/ip/Olay-Ultra-Moisture-Age-Defy-8-Bar-Soap-3-75-oz/17721168971?wmlspartner=wlpa&selectedSellerId=0&veh=seo_fpl&cn=google' },
+  { desc: 'Olay Moisturizing Bar Soap', mfr: 'Olay', model: '', cat: 'Health & Beauty', room: 'Kitchen', qty: 1, age: 1, dep: 33, rcv: 8.99, conf: 'high', link: 'https://www.walmart.com/ip/Olay-Ultra-Moisture-Age-Defy-8-Bar-Soap-3-75-oz/17721168971?wmlspartner=wlpa&selectedSellerId=0&veh=seo_fpl&cn=google' },
   { desc: 'Dove Moisturizing Beauty Bar Soap', mfr: 'Dove', model: '', cat: 'Health & Beauty', room: 'Kitchen', qty: 1, age: 0, dep: 0, rcv: 9.24, conf: 'high', link: 'https://www.walmart.com/ip/Dove-Care-and-Protect-Antibacterial-Beauty-Bar-Soap-All-Skin-Type-Unscented-3-75-oz-4-Bars/535715038?wmlspartner=wlpa&selectedSellerId=0&veh=seo_fpl&cn=google' },
-  { desc: 'Super Value Terry Dobby Dish Cloths, Blue/White, Set of 6', mfr: 'Super Value', model: '', cat: 'Kitchen & Housewares', room: 'Kitchen', qty: 1, age: 0, dep: 0, rcv: 18.98, conf: 'high', link: 'https://www.walmart.com/ip/100-Cotton-Terry-Dish-Towels-6-Pack-Window-Panel-Kitchen-Easy-Clean-Everyday-Use-Ultra-Absorbent-Maximum-Softness-Machine-Washable-15-x-25-inch/12806270831?wmlspartner=wlpa&selectedSellerId=101316037&selectedOfferId=27ACED235B8934AF99EF1F8B4C729FCE&conditionGroupCode=1&veh=seo_fpl&cn=google' },
+  { desc: 'Super Value Terry Dobby Dish Cloths, Blue/White, Set of 6', mfr: 'Super Value', model: 'TD-1898', cat: 'Kitchen & Housewares', room: 'Kitchen', qty: 1, age: 4, dep: 40, rcv: 18.98, conf: 'high', link: 'https://www.walmart.com/ip/100-Cotton-Terry-Dish-Towels-6-Pack-Window-Panel-Kitchen-Easy-Clean-Everyday-Use-Ultra-Absorbent-Maximum-Softness-Machine-Washable-15-x-25-inch/12806270831?wmlspartner=wlpa&selectedSellerId=101316037&selectedOfferId=27ACED235B8934AF99EF1F8B4C729FCE&conditionGroupCode=1&veh=seo_fpl&cn=google' },
   { desc: 'Multicolor Paisley Print Silk Scarf/Shawl', mfr: '', model: '', cat: 'Clothing — Adult', room: 'Kitchen', qty: 1, age: 0, dep: 0, rcv: 49.00, conf: 'med', link: 'https://www.ellesilk.com/double-sided-square-silk-scarf.html?srsltid=AfmBOopf_r87WdtZxHp6-wP-e7ATH4qMz2kUDYcNZTIgDPHtGwFOvKhzD7s' },
-  { desc: 'Tan Wicker Clutch Handbag with Leather Flap and Metal Clasp', mfr: '', model: '', cat: 'Clothing — Adult', room: 'Kitchen', qty: 1, age: 0, dep: 0, rcv: 149.75, conf: 'med', link: 'https://www.macys.com/shop/product/patricia-nash-santorini-medium-woven-straw-satchel?ID=21099157&pla_country=US&CAGPSPN=pla&swatchColor=Natural/Black&swatchSize=ONE%20SIZE' },
+  { desc: 'Tan Wicker Clutch Handbag with Leather Flap and Metal Clasp', mfr: '', model: '', cat: 'Clothing — Adult', room: 'Kitchen', qty: 1, age: 2, dep: 40, rcv: 149.75, conf: 'med', link: 'https://www.macys.com/shop/product/patricia-nash-santorini-medium-woven-straw-satchel?ID=21099157&pla_country=US&CAGPSPN=pla&swatchColor=Natural/Black&swatchSize=ONE%20SIZE' },
   { desc: 'Rite Aid Home Brand No. 10 Plain Business Envelopes, Box of 50', mfr: 'Rite Aid', model: '', cat: 'Office', room: 'Bedroom', qty: 1, age: 0, dep: 0, rcv: 18.28, conf: 'high', link: 'https://www.amazon.com/AmazonBasics-10-Security-Tinted-Envelopes/dp/B00V5DGIL6/ref=sr_1_13?keywords=Rite+Aid+Home+business+envelopes+no.+10&qid=1786669698&sr=8-13' },
   { desc: 'Tan Velvet Clutch Bag with Pearl Chain Strap', mfr: '', model: '', cat: 'Clothing — Adult', room: 'Bedroom', qty: 1, age: 0, dep: 0, rcv: 35.99, conf: 'med', link: 'https://presentsofmind.org/products/light-beige-clutch' },
-  { desc: 'Hot Pink Studded Leather Shoulder Bag with Chain Strap', mfr: '', model: '', cat: 'Clothing — Adult', room: 'Bedroom', qty: 1, age: 0, dep: 0, rcv: 210.00, conf: 'med', link: 'https://www.farfetch.com/shopping/women/kurt-geiger-london-the-kensington-quilted-suede-shoulder-bag-item-33583566.aspx?lang=en-US&fsb=1&size=1' },
+  { desc: 'Hot Pink Studded Leather Shoulder Bag with Chain Strap', mfr: '', model: 'ST-210-PNK', cat: 'Clothing — Adult', room: 'Bedroom', qty: 1, age: 3, dep: 60, rcv: 210.00, conf: 'med', link: 'https://www.farfetch.com/shopping/women/kurt-geiger-london-the-kensington-quilted-suede-shoulder-bag-item-33583566.aspx?lang=en-US&fsb=1&size=1' },
   { desc: 'Pink Studded Heart-Shaped Purse Accessory', mfr: '', model: '', cat: 'Clothing — Adult', room: 'Bedroom', qty: 1, age: 0, dep: 0, rcv: 17.57, conf: 'med', link: 'https://www.victoriassecret.com/us/pink/accessories-catalog/5000011016?genericId=11280921&choice=79S5' },
   { desc: 'Magenta Sheer Lace Lingerie Garment', mfr: '', model: '', cat: 'Clothing — Adult', room: 'Guest Bedroom', qty: 1, age: 0, dep: 0, rcv: 36.25, conf: 'med', link: 'https://www.hsialife.com/products/serenata-flora-lace-mesh-full-coverage-bra?variant=47234571960569&country=US&currency=USD&utm_medium=product_sync&utm_source=google&utm_content=sag_organic&utm_campaign=sag_organic&srsltid=AfmBOorTUH2CV63QrPH4Mnwv1yhQFx3HpmjzhihACR6B66bKFYskg-WZBu8' },
   { desc: 'Black Woven Fabric Belt/Strap', mfr: '', model: '', cat: 'Clothing — Adult', room: 'Guest Bedroom', qty: 1, age: 0, dep: 0, rcv: 14.00, conf: 'med', link: 'https://www.target.com/p/men-39-s-stretch-fabric-braided-fully-adjustable-web-belt-goodfellow-38-co-8482-black-m/-/A-92927952?TCID=OGS&AFID=google&CPNG=Men&adgroup=44-4&srsltid=AfmBOorZpJos-LNez85DLdr8_nYTHxQTnTu0JjhDQA1rMr_cNmqBIHyjWgs' },
@@ -243,11 +243,13 @@ function buildWorksheetRows(n = 57) {
       desc: t.desc, mfr: t.mfr, model: t.model, cat: t.cat,
       // Items land from processing at age 0 → ACV = RCV (contract §5a). The
       // adjuster sets age per row, which re-runs depreciation server-side.
-      age_years: 0,
-      depreciation_pct: 0,
+      // Seed rows MAY carry a non-zero age/dep pair (standing in for a row the
+      // adjuster already aged and the server already recomputed).
+      age_years: t.age || 0,
+      depreciation_pct: t.age ? (t.dep || 0) / 100 : 0,
       depreciation_method: 'straight_line',
       rcv: t.needs_manual ? null : t.rcv,          // per-unit, PRE-TAX
-      acv: t.needs_manual ? null : t.rcv,          // age 0 → equals rcv
+      acv: t.needs_manual ? null : +(t.rcv * (1 - (t.age ? (t.dep || 0) / 100 : 0))).toFixed(2),
       conf: t.conf, barcode: !!t.barcode,
       _photoIdx: i,
       photo: itemPhotoFor(i),
@@ -363,23 +365,24 @@ function buildAltSources(t) {
   });
 }
 
-// Estate FMV is a DEPRECIATION HAIRCUT off the RCV taken from ACTIVE retail
-// listings. There is no sold-comp or hammer-price feed and none is planned, so
-// the comps behind an estate line are the same active listings that set RCV on
-// a claim — the only difference is the haircut applied to them.
-//
-// This no longer lists eBay (sold), Facebook Marketplace or LiveAuctioneers.
-// Printing those as provenance claims a data source that was never integrated,
-// which is false on a document a client or a court may read. Naming them is now
-// blocked by check-domain-rules.py.
-const FMV_HAIRCUT = 0.33;
-function buildFmvSources(t, fmv, retail) {
-  // Price the comps at RETAIL: they are active listings, not observed sales.
-  // `retail` wins when the caller knows it; otherwise fall back to the item's
-  // own RCV, and only then to the FMV figure.
-  const base = retail != null ? retail : (t.rcv != null ? t.rcv : fmv);
-  return buildAltSources({ ...t, rcv: base });
-}
+// FMV — ⚠️ DESIGN-ONLY seed. Backend V1 estate pricing (deferred) derives FMV
+// as a CATEGORY-SPECIFIC haircut off the retail RCV from ACTIVE Google Shopping
+// listings — one aggregator, no per-retailer roster (rule 10), and NO sold-comp
+// feed (never present a source as "sold": active listings are asking prices).
+// The comps behind an FMV are therefore the same active retail comps the
+// insurance path shows, and the haircut is keyed by content class:
+const FMV_HAIRCUT_BY_CLASS = {
+  'Furniture': 0.25, 'Electronics': 0.30, 'Audio / Video': 0.30,
+  'Major Appliances': 0.40, 'Small Appliances': 0.30, 'Kitchen & Housewares': 0.30,
+  'Tools & Garage': 0.50, 'Sporting Goods': 0.40, 'Musical Instruments': 0.55,
+  'Hobbies & Collectibles': 0.60, 'Jewelry': 0.50, 'Fine Arts': 0.60,
+  'Clothing — Adult': 0.15, 'Clothing — Child': 0.12, 'Books & Media': 0.20,
+  'Toys & Games': 0.30, 'Décor & Accessories': 0.25, 'Outdoor & Patio': 0.35,
+};
+const FMV_HAIRCUT_DEFAULT = 0.33;
+const fmvHaircut = (cat) => FMV_HAIRCUT_BY_CLASS[cat] ?? FMV_HAIRCUT_DEFAULT;
+// Demo comps behind an FMV — the ACTIVE retail comps, reused verbatim.
+function buildFmvSources(t) { return buildAltSources(t); }
 
 // Field notes are written per PHOTO on mobile (sets do not exist until the
 // clusterer runs). When a proposed set contains photos with different notes they
@@ -846,19 +849,17 @@ const KevinAPI = {
     }, 1600));
   },
   // POST /v1/estate_items/:id/reprice  → { fmv, alternative_sources }
-  // Same contract as reprice(). The comps are the same ACTIVE retail listings;
-  // FMV is the haircut off their median, not a separate sold-comp lookup.
+  // Same contract as reprice(). V1 estate pricing (deferred) is an RCV haircut, not sold comps.
   repriceFmv(id, { query }) {
     const desc = query;
     return new Promise((resolve) => setTimeout(() => {
       const t = { mfr: '', model: desc, desc };
       const base = SAMPLE_BASE.find((s) => s.desc === desc);
       const retail = base ? base.rcv : Math.round((900 + (desc.length % 7) * 145) * 100) / 100;
-      const sources = buildFmvSources(t, null, retail);
-      const median = [...sources].sort((a, b) => a.price - b.price)[Math.floor(sources.length / 2)];
-      // FMV = haircut off the median ACTIVE listing, which is what the backend
-      // now does. The comps returned stay at their real retail prices.
-      const fmv = Math.round(median.price * FMV_HAIRCUT * 100) / 100;
+      // V1 contract: FMV = category haircut off the retail RCV; the comps shown
+      // are the ACTIVE retail listings that produced that RCV.
+      const sources = buildFmvSources({ ...t, rcv: retail });
+      const fmv = Math.round(retail * fmvHaircut(base ? base.cat : null) * 100) / 100;
       resolve({ rcv: fmv, alternative_sources: sources, fetchedAt: new Date().toISOString() });
     }, 1600));
   },
@@ -1303,4 +1304,4 @@ function settledRecoverable(r, claimed, k) {
 
 const claimTaxPct = () => (CLAIM_TAX.rate * 100).toFixed(3).replace(/\.?0+$/, '') + '%';
 
-Object.assign(window, { buildSettledRows, WRITTEN_SAMPLE_ROWS, STAGE_UNGROUPED, MANUAL_KIND, MANUAL_CAPACITY_COPY, isCapacityWait, US_STATES, CLAIM_SESSIONS, CLAIM_INGEST, NOTE_MAX, mergeUserNotes, claimTaxPct, CLAIM_TAX, buildFmvSources, KevinAPI, buildDepMeta, MANUAL_DEP_META, KEVIN_CLAIMS, KEVIN_STORAGE, CLAIM_PP_LIMIT, PCS_CATEGORIES, SPECIAL_LIMITS, SAMPLE_BASE, buildWorksheetRows, THUMB_TONES, DEP_TABLE, getDepFor, depBracket, ROOM_OPTIONS, CLASS_TO_ROOM, USEFUL_LIFE, PCS_CODE, DEP_BRACKET_LABELS, depExplain, REYES_TOTALS });
+Object.assign(window, { buildSettledRows, WRITTEN_SAMPLE_ROWS, STAGE_UNGROUPED, MANUAL_KIND, MANUAL_CAPACITY_COPY, isCapacityWait, US_STATES, CLAIM_SESSIONS, CLAIM_INGEST, NOTE_MAX, mergeUserNotes, claimTaxPct, CLAIM_TAX, buildFmvSources, fmvHaircut, KevinAPI, buildDepMeta, MANUAL_DEP_META, KEVIN_CLAIMS, KEVIN_STORAGE, CLAIM_PP_LIMIT, PCS_CATEGORIES, SPECIAL_LIMITS, SAMPLE_BASE, buildWorksheetRows, THUMB_TONES, DEP_TABLE, getDepFor, depBracket, ROOM_OPTIONS, CLASS_TO_ROOM, USEFUL_LIFE, PCS_CODE, DEP_BRACKET_LABELS, depExplain, REYES_TOTALS });

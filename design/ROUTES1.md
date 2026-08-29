@@ -58,8 +58,6 @@ Auth state column: **Public** (no login) · **Auth** (signed-in app) · **Carrie
 | `29-Share-claim.html` | `/claim/:id/share` | Auth | Handoff modal (co-edit / handoff / link) |
 | `48-Sample-claim.html` | `/sample` | Public | Interactive demo worksheet (from landing) |
 | `54-Add-item.html` | `/claim/:id/add` | Auth | Add-item modal |
-| `62-Estate-worksheet.html` | `/estate/:id/review` | Auth | Estate worksheet — FMV + dispositions |
-| `80-Estate-PDF.html` | `/estate/:id/inventory.pdf` | Auth | Estate client PDF — description · condition · FMV · source (no insurance math). **Deferred epic** — real route is `GET /v1/claims/:id/export?format=pdf&mode=estate`; V1 FMV = category haircut off retail RCV, never labelled as sold comps |
 
 ## Worksheet directions (design explorations)
 

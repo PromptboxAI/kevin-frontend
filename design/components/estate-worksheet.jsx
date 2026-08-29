@@ -19,11 +19,12 @@ function buildEstateRows(n = 96) {
   const rooms = window.ROOM_OPTIONS || ['Living room','Master bedroom','Kitchen','Garage'];
   for (let i = 0; i < n; i++) {
     const t = SAMPLE_BASE[i % SAMPLE_BASE.length];
-    // FMV is a depreciation haircut off the RCV from active retail listings.
-    // The backend derives it that way; there is no sold-comp feed (see
-    // buildFmvSources). The comps stay at retail — only the value is cut.
-    const fmv = Math.round(t.rcv * (0.25 + (i % 5) * 0.08));
-    const fmvSources = window.buildFmvSources(t, fmv);
+    // Backend V1 (deferred): FMV = category-specific haircut off the retail RCV
+    // from active listings. Seeded here via window.fmvHaircut with mild per-row
+    // jitter so the demo doesn't read as one flat multiplier.
+    const cut = window.fmvHaircut(t.cat);
+    const fmv = Math.round(t.rcv * Math.max(0.08, cut + ((i % 5) - 2) * 0.03));
+    const fmvSources = window.buildFmvSources(t);
     out.push({
       id: i + 1,
       room: rooms[i % rooms.length],
@@ -34,8 +35,7 @@ function buildEstateRows(n = 96) {
       disposition: ['Unassigned','For sale','Sold','Keep','Donate'][i % 5],
       // Realised sale price — only exists once an item is Sold.
       salePrice: (i % 5) === 2 ? Math.round(fmv * (0.70 + (i % 7) * 0.05)) : null,
-      // The active retail listings the haircut was taken off — what an
-      // appraiser or an heir can check the number against.
+      // Active retail comps behind the FMV — design-only; see FMV note in data.jsx.
       alternative_sources: fmvSources,
       sourceLink: null,
       mfr: t.mfr, model: t.model, age: 0, qty: 1,
@@ -239,7 +239,7 @@ const EstateWorksheet = () => {
             <button className="k-btn" onClick={() => setExportOpen(o => !o)}><Icon d={I.download} size={12}/> Export inventory <Icon d={I.chevdown} size={11} /></button>
             {exportOpen && (
               <div className="k-pop" style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, width: 268, zIndex: 60, padding: 4 }}>
-                <a className="k-menu-item" href="74-PDF-inventory.html" onClick={() => setExportOpen(false)}>
+                <a className="k-menu-item" href="80-Estate-PDF.html" onClick={() => setExportOpen(false)}>
                   <Icon d={I.printer} size={13} />
                   <span style={{ flex: 1 }}>PDF inventory<span className="k-menu-sub">Client-ready · print or save</span></span>
                 </a>
@@ -391,3 +391,4 @@ const EstateWorksheet = () => {
 };
 
 window.EstateWorksheet = EstateWorksheet;
+window.buildEstateRows = buildEstateRows;
