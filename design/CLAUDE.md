@@ -4,6 +4,31 @@ Persistent project context for Claude. Read this first.
 
 ---
 
+## Porting rule — read before touching any screen
+
+For any screen, open the matching `design/components/*.jsx` and `kevin.css`
+**first**, and lift markup, class names, and behavior **verbatim**. Never
+restyle a `k-` class, never invent a control, never approximate a color — if a
+class or token doesn't exist in `kevin.css`, that's a signal you've drifted.
+Deviations require an explicit note in the PR/commit message.
+
+Corollaries learned the hard way:
+
+- **Backgrounds come from the stylesheet, not from eye.** Page chrome
+  (`.k-topbar`, `.k-toolbar`, `.k-grid`, `.k-totals`) is `--k-bg`. Only
+  `.k-row--head`, the active-tab pill and the active-row highlight use
+  `--k-bg-3`; `--k-bg-2` is row hover, the search field and inputs. A visible
+  grey panel means a background was assigned where `kevin.css` sets none.
+- **Check specificity before overriding.** `kevin.css` carries two-class rules
+  (e.g. `.k-grid-dock > .k-grid`) that silently beat a one-class rule of yours.
+- **Widths that live in a grid track stay there** — e.g. the docked item panel
+  is the 440px column of `.k-grid-dock`, not a width on the panel.
+- **Verify against the deployed URL, not localhost**, before reporting a fix.
+
+---
+
+---
+
 ## Related folders
 
 - **kevin-backend/** (sibling folder) — the live FastAPI backend: `main.py`, `schemas.py`, and `FRONTEND.md` (the API contract, source of truth for payload shapes). READ-ONLY from the frontend project — never edit files there; the contract docs are the interface.
@@ -124,6 +149,14 @@ Claude Code will NOT infer intent for an undocumented static control — an iner
 
 ## Conventions when editing
 
+- **Run `python check-domain-rules.py` before handing work off.** It greps the shipping
+  surfaces for language the domain rules above scrapped — per-seat pricing, the free
+  first claim, SOC 2, Xactimate XML, sold-comp provenance — and exits 1 on a hit. Copy
+  outlives a scrapped decision because nothing fails when it is wrong: three separate
+  instances of the dead free-first-claim offer were once live at the same time, one of
+  them inside FAQ JSON-LD that never renders on screen. A hit is a prompt, not a verdict
+  — legitimate copy denies these terms ("no per-seat math") or lists them as one option
+  among several. Judge each against the rule it names.
 - Match the existing visual vocabulary exactly — don't introduce new colors, fonts, shadow styles, or spacing rhythms.
 - When a change affects multiple screens, apply it everywhere it appears (the stakeholder expects site-wide consistency — e.g. footer, wordmark, carrier names).
 - Real imagery: `window.PRODUCT_IMG` maps item keys → Unsplash URLs (used in landing gallery). The `<Thumb>` component falls back to a striped placeholder when no `src` given. Most of the app uses placeholders intentionally.
