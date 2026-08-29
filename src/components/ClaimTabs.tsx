@@ -10,7 +10,10 @@ const TABS: [Tab, string | null][] = [
   ['Overview', null],
   ['Photos', 'staging'],
   ['Worksheet', 'worksheet'],
-  ['Notes & audit', null],
+  // There is no claim-wide audit feed and none should be built: the trail is
+  // per item, and it lives in the item drawer's History panel. The tab points
+  // at the worksheet, where opening any row reaches it.
+  ['Notes & audit', 'worksheet'],
   ['Export', null],
 ]
 
@@ -60,6 +63,11 @@ export default function ClaimTabs({
             key={label}
             className="k-claim-tab"
             to={slug === 'staging' ? `/claims/${claimId}/staging` : `/claims/${claimId}`}
+            title={
+              label === 'Notes & audit'
+                ? "Open any row to see that item's history"
+                : undefined
+            }
           >
             {inner}
           </Link>

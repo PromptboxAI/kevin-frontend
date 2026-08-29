@@ -95,11 +95,20 @@ export default function ProcessingPage() {
     )
   }
 
-  const rows: [string, number, string][] = [
+  /**
+   * Outcome buckets, in the design's colour semantics.
+   *
+   * AMBER IS NOT USED HERE. Rule 6 reserves it for special-limits classes, and
+   * a `needs_manual` line is not a warning -- it is a normal terminal state
+   * waiting on a human price (rule 12). Colouring it amber would teach the
+   * adjuster that amber means "unpriced", which is exactly the signal the
+   * worksheet needs it NOT to mean.
+   */
+  const rows: [string, number, 'ok' | 'neutral' | 'danger'][] = [
     ['Priced', counts?.completed ?? 0, 'ok'],
-    ['Needs your price', counts?.needs_manual ?? 0, 'warn'],
-    ['You overrode', counts?.overridden ?? 0, 'quiet'],
-    ['Failed', counts?.failed ?? 0, (counts?.failed ?? 0) > 0 ? 'danger' : 'quiet'],
+    ['Needs your price', counts?.needs_manual ?? 0, 'neutral'],
+    ['You overrode', counts?.overridden ?? 0, 'neutral'],
+    ['Failed', counts?.failed ?? 0, 'danger'],
   ]
 
   return (
@@ -149,41 +158,46 @@ export default function ProcessingPage() {
           {/* Terminal buckets, not sequential stages. These are outcomes a line
               can land in, and drawing them as a pipeline would imply an order
               that does not exist. */}
-          <div style={{ marginTop: 22, maxWidth: 520 }}>
-            {rows.map(([label, value, tone], i) => (
-              <div
-                key={label}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '7px 0',
-                  fontSize: 13,
-                  borderBottom: i < rows.length - 1 ? '1px solid var(--k-line)' : 0,
-                }}
-              >
-                <span style={{ color: 'var(--k-fg-3)' }}>{label}</span>
-                <span
-                  className="k-mono"
+          <section className="k-proc-stats" style={{ marginTop: 22, maxWidth: 520 }}>
+            <div className="k-proc-sec-hd">
+              <span>Outcomes</span>
+            </div>
+            <div style={{ padding: '4px 14px 12px' }}>
+              {rows.map(([label, value, tone], i) => (
+                <div
+                  key={label}
                   style={{
-                    fontWeight: 600,
-                    color:
-                      value === 0
-                        ? 'var(--k-fg-4)'
-                        : tone === 'ok'
-                          ? 'var(--k-ok)'
-                          : tone === 'warn'
-                            ? 'var(--k-warn)'
-                            : tone === 'danger'
-                              ? 'var(--k-danger)'
-                              : 'var(--k-fg-3)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '6px 0',
+                    fontSize: 12.5,
+                    borderBottom: i < rows.length - 1 ? '1px solid var(--k-line)' : 0,
                   }}
                 >
-                  {fmtInt(value)}
-                </span>
-              </div>
-            ))}
-          </div>
+                  <span style={{ color: 'var(--k-fg-3)' }}>{label}</span>
+                  <span
+                    className="k-mono"
+                    style={{
+                      fontWeight: 600,
+                      fontVariantNumeric: 'tabular-nums',
+                      // A zero is not an outcome worth colouring.
+                      color:
+                        value === 0
+                          ? 'var(--k-fg-4)'
+                          : tone === 'ok'
+                            ? 'var(--k-ok)'
+                            : tone === 'danger'
+                              ? 'var(--k-danger)'
+                              : 'var(--k-fg-2)',
+                    }}
+                  >
+                    {fmtInt(value)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
 
           {stalled ? (
             <div className="k-share-snapnote" style={{ marginTop: 18, maxWidth: 520 }}>

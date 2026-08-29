@@ -1,3 +1,4 @@
+import ItemHistory from './ItemHistory'
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Badge from './Badge'
@@ -497,6 +498,10 @@ export default function ItemDrawer({
                     .filter(Boolean)
                     .join(' · ')}
                 </span>
+
+                {/* The audit trail. Lazy: nothing is fetched until asked, and
+                    most rows are never asked about. */}
+                <ItemHistory rowId={rowId} />
               </div>
             </>
           ) : null}

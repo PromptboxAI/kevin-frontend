@@ -98,16 +98,22 @@ Never blocks: "Open worksheet so far (N)" is live throughout, because rows
 exist as they land. A run that stops moving for 90s says so rather than
 spinning silently.
 
-## 4. Audit log — the defensibility story, currently a dead tab
+## 4. ~~Audit log~~ — BUILT, item-scoped
 
-`GET /v1/claim_items/{row_id}/events` is live. The `Notes & audit` tab routes
-to `null`. Rule 5: the audit log is who-changed-what-when and is core to the
-product; it is a single-pane timeline, never a collaboration tool.
+`ItemHistory` in the item drawer: lazy `GET /v1/claim_items/{row_id}/events` on
+first expand, because an item's history is unbounded and most rows are never
+asked about.
 
-Every client write is recorded with `actor_kind='client'` and the share id, so
-the adjuster can see exactly what the insured changed and through which link.
-That trail is the reason a client write is allowed at all — and nothing
-surfaces it.
+There is NO claim-wide feed endpoint and none should be built. The claim-level
+"Notes & audit" tab now points at the worksheet, where opening any row reaches
+the trail. Rule 5: a timeline, never a collaboration tool.
+
+Copy branches on `event_type`, never on payload shape, and unknown types render
+rather than disappear — a trail that silently omits what it does not recognise
+is worse than one saying "status changed", because the gap is invisible.
+
+`lkq` and `bucket_used` are surfaced here deliberately: adjuster-facing IN THE
+APP, never in an export. The export builder has no access to this endpoint.
 
 ## 5. Row-level evidence
 
