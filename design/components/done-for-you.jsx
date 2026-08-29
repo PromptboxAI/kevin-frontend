@@ -111,7 +111,7 @@ const DoneForYou = () => (
       {/* Rate card. Marginal bands, so the buyer can see volume rewarded at
           every step rather than at one cliff. The worked example is the point:
           a flat top rate on 2,000 lines would be $14,000. */}
-      <section style={{ maxWidth: 940, margin: '0 auto', padding: '8px 40px 20px' }}>
+      <section className="k-dfy-rates-sec" style={{ maxWidth: 940, margin: '0 auto' }}>
         <div style={{ fontFamily: 'var(--k-font-mono)', fontSize: 11, color: 'var(--k-fg-4)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>What it costs</div>
         <h2 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 34, letterSpacing: '-0.024em', margin: '8px 0 8px', lineHeight: 1.1 }}>
           Priced by the line. The bigger the loss, the less each line costs.
