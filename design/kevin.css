@@ -4018,3 +4018,38 @@
       .k-about-time-item::after { top: 4px; left: 0; }
       .k-about-time-t { font-size: 18px; margin: 6px 0 6px; }
     }
+
+    /* — Done-for-you rate card. Band + price rows on hairlines, then the worked
+         example in a tinted box. Deliberately not the .k-tier card grid: this is
+         a one-time per-engagement quote, not a subscription tier, and it must
+         not read like one (domain rule 9). — */
+    .k-dfy-rates { margin: 0 0 26px; max-width: 620px; }
+    .k-dfy-rate {
+      display: flex; align-items: baseline; justify-content: space-between; gap: 20px;
+      padding: 12px 0; border-top: 1px solid var(--k-line);
+    }
+    .k-dfy-rate:last-child { border-bottom: 1px solid var(--k-line); }
+    .k-dfy-rate-band { margin: 0; font-size: 14px; font-weight: 600; color: var(--k-fg); }
+    .k-dfy-rate-v { margin: 0; font-size: 14px; color: var(--k-fg); text-align: right; }
+    .k-dfy-rate-v .k-mono { font-weight: 700; }
+    .k-dfy-rate-note { color: var(--k-fg-4); font-size: 12.5px; margin-left: 6px; }
+
+    .k-dfy-worked {
+      max-width: 620px; padding: 20px 22px;
+      background: var(--k-bg-2); border: 1px solid var(--k-line); border-radius: 12px;
+    }
+    .k-dfy-worked-hd {
+      font-family: var(--k-font-mono); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase; color: var(--k-fg-4); margin-bottom: 10px;
+    }
+    .k-dfy-worked-t { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    .k-dfy-worked-t td { padding: 7px 0; color: var(--k-fg-2); }
+    .k-dfy-worked-t td:last-child { text-align: right; color: var(--k-fg); }
+    .k-dfy-worked-tot td { border-top: 1px solid var(--k-line-2, var(--k-line)); font-weight: 700; color: var(--k-fg); padding-top: 10px; }
+    .k-dfy-worked-foot { font-size: 12.5px; color: var(--k-fg-3); line-height: 1.6; margin: 14px 0 0; }
+
+    @media (max-width: 560px) {
+      .k-dfy-rate { flex-direction: column; gap: 2px; }
+      .k-dfy-rate-v { text-align: left; }
+      .k-dfy-worked { padding: 16px 16px; }
+    }

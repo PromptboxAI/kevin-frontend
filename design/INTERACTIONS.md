@@ -15,6 +15,46 @@ update its row here in the same edit. Anything not listed → flag back, don't g
 
 ---
 
+
+## Conversion events — what the ad spend is measured against
+
+The design package fires nothing. This table is the CONTRACT: it says which
+control marks which event and where the event actually happens, so the app build
+wires the pixel/GA calls to the right moment rather than inferring it. The
+wiring itself belongs to the app build, not here.
+
+The one that matters commercially is **`trial_activated`**. A visitor who
+submits step 1 has typed an email; a visitor who clears the SetupIntent at
+step 3 has attached a card and started a paid trial. Optimising a campaign
+against `trial_start` buys addresses; optimising against `trial_activated`
+buys trials. Send `trial_activated` as the conversion, and keep the earlier two
+as funnel steps so drop-off between them stays visible.
+
+`AccountCreate` lives in `components/onboarding.jsx` and is a three-step wizard
+(details → verify → card), not three routes — every step below is a state
+change inside `58-Account-create.html`, so a page-view trigger will not see any
+of them.
+
+| Event | Fires when | Where | Notes |
+|---|---|---|---|
+| `trial_start` | Step 1 submitted — name, email and a password meeting the rules | `58` → `AccountCreate` step 0 → 1 | Top of funnel. An email exists; nothing is billable yet. |
+| `account_created` | Step 2 submitted — verification code accepted | `58` → step 1 → 2 | The account exists. Still no card. |
+| `card_added` / `trial_activated` | Step 3 SetupIntent succeeds | `58` → step 2 complete | **THE ads conversion event.** Card attached, 7-day trial running, $249/mo begins at day 7 unless cancelled. Fire once; do not re-fire if the user revisits. |
+| `enterprise_quote_submitted` | **Request a quote** submitted | `15-Request-access` | Enterprise lead. Distinct from a trial — it is sales-qualified, not self-serve, so keep it out of the trial conversion count. |
+| `contact_submitted` | Contact form submitted | `38-Contact` | General enquiry. |
+| `sample_claim_viewed` | Page reaches the sample claim | `48-Sample-claim` | Engagement, not conversion. Public and unauthenticated, so it is also the one event a bot can trigger — do not optimise against it. |
+
+Two things to get right when wiring:
+
+- **De-duplicate `trial_activated`.** It is a state change, not a navigation, so
+  a re-render or a back-and-forward can fire it twice and inflate the conversion
+  count the bidding algorithm trains on.
+- **Do not attach events to the marketing CTAs themselves.** `Start your 7-day
+  free trial` on landing, pricing, product and both segment pages all route to
+  `58`; counting the click counts intent, not outcome. The events above are the
+  outcomes.
+
+
 ## Global chrome (all authenticated pages)
 | Control | State | Production behavior |
 |---|---|---|
