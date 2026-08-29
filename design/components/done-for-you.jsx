@@ -167,9 +167,9 @@ const DoneForYou = () => (
           </table>
           <p className="k-dfy-worked-foot">
             The alternative on a loss that size is two field adjusters and an inside rep working it for
-            two weeks — and the rep is still looking up replacement costs one item at a time. The rate
-            runs from <strong>$7.00</strong> a line on a small claim down to <strong>$2.50</strong> once you are
-            past 800.
+            two weeks — and the rep is still looking up replacement costs one item at a time. That runs
+            about <strong>$9,000</strong>. This is <strong>$5,000</strong>, a <strong>$4,000</strong> saving,
+            and you get it back in a day.
           </p>
         </div>
       </section>
