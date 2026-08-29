@@ -9,6 +9,7 @@ import CompsPopover from '../components/CompsPopover'
 import EditableCell from '../components/EditableCell'
 import ItemDrawer from '../components/ItemDrawer'
 import ShareSheet from '../components/ShareSheet'
+import ProposalsPanel from '../components/ProposalsPanel'
 import { I, Icon } from '../components/Icon'
 import { ApiError, api, downloadExport } from '../lib/api'
 import { fmtDate, fmtInt, fmtPct, fmtUSD } from '../lib/format'
@@ -28,6 +29,7 @@ import type {
   RetryDeferredResponse,
 } from '../lib/mutations'
 import { numberRows, rowInvariant, windowRange } from '../lib/rows'
+import { listProposals } from '../lib/proposals'
 import type { NumberedItem } from '../lib/rows'
 import { CAPACITY_REASONS } from '../lib/types'
 import type { ClaimItem, ClaimItemListResponse, ClaimSummary } from '../lib/types'
@@ -163,6 +165,20 @@ export default function WorksheetPage() {
       api.get<{ categories: string[]; rules: Record<string, unknown> }>('/v1/depreciation-rules'),
     staleTime: Infinity,
   })
+
+  /**
+   * Client proposals waiting on the adjuster.
+   *
+   * Fetched at the page level rather than inside the panel so the count is
+   * visible without opening anything -- a queue nobody can see is the failure
+   * this whole surface exists to fix.
+   */
+  const proposals = useQuery({
+    queryKey: ['proposals', claimId],
+    queryFn: () => listProposals(claimId),
+  })
+  const pendingProposals =
+    proposals.data?.proposals.filter((p) => p.status === 'pending').length ?? 0
 
   const claim = useQuery({
     queryKey: ['claim', claimId],
@@ -333,6 +349,7 @@ export default function WorksheetPage() {
   /** Open only for the FIRST export, which is the one that stamps the date. */
   const [confirmExport, setConfirmExport] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
+  const [proposalsOpen, setProposalsOpen] = useState(false)
 
   const runExport = async () => {
     setExporting(true)
@@ -557,6 +574,21 @@ export default function WorksheetPage() {
             >
               <Icon d={I.plus} size={12} /> Add photos
             </button>
+            {/* Only when there IS something waiting: a permanent zero-badge
+                teaches people to ignore the control. */}
+            {pendingProposals > 0 ? (
+              <button
+                type="button"
+                className="k-btn k-btn--ghost"
+                onClick={() => setProposalsOpen(true)}
+                title="Items your client proposed, waiting on you"
+              >
+                <Icon d={I.plus} size={12} /> Client items
+                <span className="k-claim-tab-n" style={{ marginLeft: 6 }}>
+                  {pendingProposals}
+                </span>
+              </button>
+            ) : null}
             <button
               type="button"
               className="k-btn k-btn--ghost"
@@ -1097,6 +1129,10 @@ export default function WorksheetPage() {
       {/* Undocked, the panel is a modal over the grid. */}
       {!docked && openRow !== null ? (
         <ItemDrawer rowId={openRow} onClose={() => setOpenRow(null)} />
+      ) : null}
+
+      {proposalsOpen ? (
+        <ProposalsPanel claimId={claimId} onClose={() => setProposalsOpen(false)} />
       ) : null}
 
       {shareOpen ? (
