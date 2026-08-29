@@ -4,6 +4,7 @@ import { AuthProvider } from './lib/auth'
 import ClaimsPage from './pages/ClaimsPage'
 import IntakePage from './pages/IntakePage'
 import StagingPage from './pages/StagingPage'
+import ProcessingPage from './pages/ProcessingPage'
 import NotFoundPage from './pages/NotFoundPage'
 import PortalPage from './pages/PortalPage'
 import SignInPage from './pages/SignInPage'
@@ -44,6 +45,15 @@ export default function App() {
           element={
             <RequireAuth>
               <StagingPage />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/claims/:claimId/processing"
+          element={
+            <RequireAuth>
+              <ProcessingPage />
             </RequireAuth>
           }
         />

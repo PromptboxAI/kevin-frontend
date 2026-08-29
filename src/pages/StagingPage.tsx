@@ -275,7 +275,9 @@ export default function StagingPage() {
       setConfirmProcess(false)
       void queryClient.invalidateQueries({ queryKey: ['claim-items', claimId] })
       void queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
-      navigate(`/claims/${claimId}`)
+      // Not straight to the worksheet: the run has only just started, and an
+      // inventory that is half-built reads as an inventory that is wrong.
+      navigate(`/claims/${claimId}/processing`)
     },
     onError: fail('other', 'Processing'),
   })

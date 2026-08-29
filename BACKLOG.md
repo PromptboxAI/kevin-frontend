@@ -74,15 +74,29 @@ already been declared locally and a third was about to be; a divergent answer
 to "which statuses are shelved" shows up as a menu offering Re-open on a live
 claim.
 
-## 3. Processing has no screen
+## 3. ~~Processing has no screen~~ — BUILT
 
-`Process` navigates straight to the worksheet and rows fill in silently. After
-a 52-set run that is a long unexplained wait, and the first thing an adjuster
-sees is an inventory that looks wrong because it is half-built.
+`/claims/:claimId/processing`, and Process now lands there instead of dropping
+the adjuster onto a half-built worksheet.
 
-Poll `GET /v1/claims/{id}` → `status_counts`. Design screen `04`. The design's
-`processing.jsx` is a 90-second scripted animation on wall time — bind to the
-real counts, do not port the script.
+Every figure is the real `status_counts` tally. The design's `processing.jsx`
+is a 90-second animation driven by wall time and is deliberately NOT ported: a
+progress bar that is lying is worse than none. Polling backs off (2s → 4s → 8s)
+and stops when `processing` hits zero, then hands off to the worksheet on its
+own — the adjuster asked for an inventory, not a progress screen.
+
+Two judgement calls worth keeping:
+
+- `needs_manual` counts as SETTLED, not failed. It is a line waiting on a
+  human, which is a normal outcome, and counting it as incomplete would leave
+  the bar stuck below 100% forever on a claim with jewellery in it.
+- The outcomes render as a flat list, not the design's sequential stage bar.
+  They are terminal buckets a line lands in; drawing them as a pipeline would
+  imply an order that does not exist.
+
+Never blocks: "Open worksheet so far (N)" is live throughout, because rows
+exist as they land. A run that stops moving for 90s says so rather than
+spinning silently.
 
 ## 4. Audit log — the defensibility story, currently a dead tab
 
