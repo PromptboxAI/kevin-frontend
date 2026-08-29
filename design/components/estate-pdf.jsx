@@ -93,7 +93,6 @@ const EstatePdf = () => {
             <th className="pdf-c-num">#</th>
             <th className="pdf-c-room">Room / Area</th>
             <th className="pdf-c-desc">Description</th>
-            <th className="pdf-c-make">Make · Model</th>
             <th className="pdf-c-cond">Condition</th>
             <th className="pdf-c-src">FMV source</th>
             <th className="pdf-c-num2">FMV</th>
@@ -107,8 +106,7 @@ const EstatePdf = () => {
               <tr key={r.id}>
                 <td className="pdf-c-num pdf-mono">{String(i + 1).padStart(3, '0')}</td>
                 <td className="pdf-c-room">{r.room || '—'}</td>
-                <td className="pdf-c-desc">{r.desc}</td>
-                <td className="pdf-c-make">{r.mfr}{r.model ? <span className="pdf-model"> · {r.model}</span> : ''}</td>
+                <td className="pdf-c-desc">{r.desc}{r.mfr ? <div className="pdf-desc-sub">{r.mfr}{r.model ? <span className="pdf-model"> · {r.model}</span> : ''}</div> : null}</td>
                 <td className="pdf-c-cond">{r.condition}</td>
                 <td className="pdf-c-src">{m ? m.source : '—'}</td>
                 <td className="pdf-c-num2 pdf-mono pdf-strong">{fmtUSD(r.fmv)}</td>
@@ -119,7 +117,7 @@ const EstatePdf = () => {
         </tbody>
         <tfoot>
           <tr className="pdf-total-row">
-            <td colSpan={6}>Total · {rows.length} items</td>
+            <td colSpan={5}>Total · {rows.length} items</td>
             <td className="pdf-c-num2 pdf-mono pdf-strong">{fmtUSD(total)}</td>
             <td className="pdf-c-num2 pdf-mono pdf-muted">{fmtUSD(realised)}</td>
           </tr>
