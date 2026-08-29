@@ -5,10 +5,10 @@ import { I, Icon } from './Icon'
 import { downloadExport } from '../lib/api'
 import { claimAction, deleteClaim, duplicateClaim } from '../lib/mutations'
 import { fmtInt } from '../lib/format'
+import { CLOSED_STATUSES } from '../lib/types'
 import type { ClaimSummary } from '../lib/types'
 
 /** Ported from ClaimRowMenu in design/components/claims-dashboard.jsx. */
-const CLOSED_STATUSES = ['closed', 'archived']
 
 type Modal = 'duplicate' | 'export' | 'archive' | 'delete' | null
 

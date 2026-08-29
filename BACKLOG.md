@@ -15,8 +15,10 @@ Ordered by what breaks an adjuster's day, not by screen count.
   static `YYYY-MM-DD` string the adjuster typed. There is no UTC-vs-local
   conversion to build, and the worksheet's `exported_at` tooltip is display
   only.
-- **`GET /claims/{id}/preview` is not a document preview.** It was a redundant
-  alias for the claim detail and is being deleted. An export preview must be
+- **`GET /claims/{id}/preview` is GONE.** It was a redundant alias for the
+  claim detail and has now been removed — it returns 404. Nothing in this
+  codebase called it, and `ROUTES.md`'s only "preview" mention is the
+  written-import wizard step, which is unrelated. An export preview must be
   rendered client-side from item fields already in state.
 - **Claim progress does NOT come from a jobs endpoint.** `/v1/jobs/*` is
   admin-only worker health. Poll `GET /v1/claims/{id}` and read
@@ -49,18 +51,28 @@ Contract that shapes the UI:
 - A rejected proposal carries no messaging back to the insured by design; the
   portal input simply returns.
 
-## 2. Claim lifecycle is unreachable
+## 2. ~~Claim lifecycle is unreachable~~ — MY AUDIT WAS WRONG
 
-`setClaimStatus` exists in `mutations.ts` and is **never called**. All four
-routes are live: `close`, `reopen`, `archive`, `unarchive`. An adjuster
-currently cannot finish a claim.
+I reported this as unbuilt and orphaned. It was neither. The dashboard row menu
+already wired all four verbs, the **Archived** filter chip already existed, and
+the mutation is called `claimAction`, not `setClaimStatus` — I had the name
+wrong too, which is how I convinced myself it had no callers.
 
-Rule 15: archive is reversible and keeps everything; delete is permanent and
-requires typing DELETE. Kevin gates neither for compliance — retention belongs
-to the carrier and the adjuster.
+The real gap was one screen wide: **the worksheet header had no lifecycle
+action**, so an adjuster deciding a claim was done had to walk back to the
+dashboard to say so. Built as a `⋯` menu beside Export, reusing `claimAction`
+and the row menu's own gate (work in flight, never the label — a closed claim
+can still have lines pricing, because `closed` outranks `processing` in the
+derived status).
 
-Needs: dashboard row menu + worksheet header, an **Archived** filter on the
-dashboard, and the delete confirm.
+Delete and Duplicate are deliberately NOT repeated there: they are list
+operations. You delete a claim you are not inside, and duplicating one you are
+editing invites confusion about which copy you are now looking at.
+
+Along the way, `CLOSED_STATUSES` was hoisted into `types.ts`. Two copies had
+already been declared locally and a third was about to be; a divergent answer
+to "which statuses are shelved" shows up as a menu offering Re-open on a live
+claim.
 
 ## 3. Processing has no screen
 
@@ -113,10 +125,13 @@ free-text room field and no way to manage the set or bulk-assign.
 Note: nothing currently sends the per-batch `room` at upload, which is why
 every row on the demo claim reads `—`.
 
-## 9. Bulk row delete
+## 9. ~~Bulk row delete~~ — NOT A GAP
 
-`DELETE /v1/claim_items` takes a set of ids. The worksheet has selection and
-no delete.
+`DELETE /v1/claim_items` takes `item_ids`, documented at `FRONTEND.md:575`, and
+it is the consistent key across assign-room, staging process and bulk import.
+The 422 I hit was the API enforcing its contract, not an inconsistency. The
+worksheet still has no delete CONTROL, which is worth building, but there is
+nothing to reconcile.
 
 ## 10. Mobile capture
 

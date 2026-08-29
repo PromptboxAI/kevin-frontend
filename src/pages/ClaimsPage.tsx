@@ -9,6 +9,7 @@ import { I, Icon } from '../components/Icon'
 import { ApiError, api } from '../lib/api'
 import { fmtDate, fmtInt, fmtSince, fmtUSD, greetingFor } from '../lib/format'
 import { useAuth } from '../lib/auth'
+import { CLOSED_STATUSES } from '../lib/types'
 import type { ClaimListResponse, ClaimSummary } from '../lib/types'
 
 /**
@@ -16,7 +17,6 @@ import type { ClaimListResponse, ClaimSummary } from '../lib/types'
  * flavours of OPEN, never chips -- exported is a row badge. Only `archived` is
  * excluded from GET /v1/claims by default, so it needs an explicit request.
  */
-const CLOSED_STATUSES = ['closed', 'archived']
 
 type Chip = 'All' | 'Processing' | 'In review' | 'Open' | 'Closed' | 'Archived'
 

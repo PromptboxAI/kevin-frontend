@@ -10,6 +10,7 @@ import EditableCell from '../components/EditableCell'
 import ItemDrawer from '../components/ItemDrawer'
 import ShareSheet from '../components/ShareSheet'
 import ProposalsPanel from '../components/ProposalsPanel'
+import ClaimStateMenu from '../components/ClaimStateMenu'
 import { I, Icon } from '../components/Icon'
 import { ApiError, api, downloadExport } from '../lib/api'
 import { fmtDate, fmtInt, fmtPct, fmtUSD } from '../lib/format'
@@ -625,6 +626,9 @@ export default function WorksheetPage() {
                   ? 'Download export'
                   : 'Generate carrier export'}
             </button>
+            {/* Finishing a claim happens while looking at it, not on the walk
+                back to the dashboard. */}
+            {claim.data ? <ClaimStateMenu claim={claim.data} onNotice={setNotice} /> : null}
           </>
         }
       />

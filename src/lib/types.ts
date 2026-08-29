@@ -60,6 +60,16 @@ export type ClaimListResponse = {
 export type ItemStatus = 'processing' | 'completed' | 'failed' | 'overridden' | 'needs_manual'
 
 /** Why a row is unpriced. quota_/budget_exhausted are CAPACITY waits, not adjuster work. */
+/**
+ * Statuses that mean the claim is off the working set.
+ *
+ * `closed` and `archived` are DERIVED and both outrank processing, so a shelved
+ * claim can still have lines pricing. Defined once: two copies of this had
+ * already appeared, and a divergent answer shows up as a menu offering
+ * "Re-open" on a live claim.
+ */
+export const CLOSED_STATUSES: readonly string[] = ['closed', 'archived']
+
 export type ManualReason =
   | 'manual_class' | 'luxury_brand' | 'low_sample' | 'no_comps' | 'no_query'
   | 'no_description' | 'vision_unavailable' | 'low_confidence_high_value'
