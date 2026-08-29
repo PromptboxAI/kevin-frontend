@@ -2,9 +2,12 @@
 // One-time per-claim engagements (admin revenue "Services" stream); no subscription needed.
 // Layout: hero → hairline stats → asymmetric two-column (numbered rail ⟷ photo collage)
 // → full-bleed on-site band → rate card → accent quote → closing CTA.
-// Deliberately non-linear. Rates are MARGINAL: each band prices only the
-// lines that fall inside it, so the effective rate falls as the job grows
-// and no threshold ever makes one more line cost more than the last.
+// Deliberately non-linear. Rates are FLAT PER TIER, not marginal: the line
+// count selects ONE rate and every line bills at it, so an adjuster can price
+// a job in their head. Note the tiers are non-monotonic at the boundaries --
+// 801 lines bills less than 800 -- see the rate-card comment.
+// Site days are NOT part of this: they are an on-site charge and live in the
+// on-site band, because a client who sends their own photos never incurs one.
 const DoneForYou = () => (
   // k-dfy is a page hook: every section here is inline-styled with no class of
   // its own, so there is nothing for a breakpoint to target. Scoped to this
@@ -87,15 +90,21 @@ const DoneForYou = () => (
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 16, fontWeight: 600 }}>Can't get to the site? We'll shoot it too.</div>
             <p style={{ fontSize: 13, color: 'var(--k-fg-3)', margin: '4px 0 0', lineHeight: 1.55, maxWidth: 600 }}>
-              For an additional fee, a Kevin field photographer walks the loss and captures every item — wide shots, model plates, serial tags — then the claim runs straight through the same build. One engagement, from front door to finished worksheet.
+              A Kevin field photographer walks the loss and captures every item — wide shots, model plates, serial tags — then the claim runs straight through the same build. One engagement, from front door to finished worksheet.
+            </p>
+            <p style={{ fontSize: 13, color: 'var(--k-fg-2)', margin: '8px 0 0', lineHeight: 1.55, maxWidth: 600 }}>
+              <strong>$275 a site day</strong>, one per 1,200 items or part thereof, on top of the line rate. Only
+              charged when we do the shooting — send your own photos and there is no site day at all.
             </p>
           </div>
           <a className="k-btn" href="38-Contact.html" style={{ flex: '0 0 auto' }}>Ask about on-site →</a>
         </div>
       </section>
 
-      {/* Social proof — accent quote */}
-      <section style={{ maxWidth: 940, margin: '0 auto', padding: '44px 40px 26px' }}>
+      {/* Social proof — accent quote. Extra top padding: the on-site band above
+          is full-bleed and tinted, so the quote card needs room to read as a
+          separate beat rather than as part of that band. */}
+      <section className="k-dfy-quote-sec" style={{ maxWidth: 940, margin: '0 auto' }}>
         <div style={{ background: 'var(--k-accent)', borderRadius: 14, padding: '30px 34px', color: '#fff', display: 'flex', gap: 22, alignItems: 'center' }}>
           <img src="../assets/kevin-godfrey.png" alt="" style={{ width: 56, height: 56, borderRadius: 99, objectFit: 'cover', flex: '0 0 auto', border: '2px solid oklch(1 0 0 / 0.35)' }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
           <div>
@@ -108,26 +117,31 @@ const DoneForYou = () => (
       </section>
 
       {/* Closing — self-serve upsell */}
-      {/* Rate card. Marginal bands, so the buyer can see volume rewarded at
-          every step rather than at one cliff. The worked example is the point:
-          a flat top rate on 2,000 lines would be $14,000. */}
+      {/* Rate card. FLAT PER TIER: the line count picks one rate and every line
+          bills at it. Chosen over marginal brackets because an adjuster should
+          be able to price a job in their head while still on the phone.
+
+          KNOWN EDGE: the bands are non-monotonic at their boundaries. 800 lines
+          bills $2,800; 801 bills $2,002.50 -- $797.50 less for one MORE line --
+          and an 800-line job ($2,800) bills more than an 1,100-line one
+          ($2,750). Deliberate trade-off for legibility; if it ever bites, the
+          fix is to cap each band at the next band's entry price rather than to
+          go marginal. */}
       <section className="k-dfy-rates-sec" style={{ maxWidth: 940, margin: '0 auto' }}>
         <div style={{ fontFamily: 'var(--k-font-mono)', fontSize: 11, color: 'var(--k-fg-4)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>What it costs</div>
         <h2 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 34, letterSpacing: '-0.024em', margin: '8px 0 8px', lineHeight: 1.1 }}>
           Priced by the line. The bigger the loss, the less each line costs.
         </h2>
         <p style={{ fontSize: 14, color: 'var(--k-fg-3)', lineHeight: 1.6, margin: '0 0 22px', maxWidth: 620 }}>
-          Every band is <strong>marginal</strong> — it prices only the lines that fall inside it, the way a tax bracket
-          does. Crossing a threshold never makes the next line cost more than the last.
+          Your line count sets one rate, and every line on the claim bills at it.
         </p>
 
         <dl className="k-dfy-rates">
           {[
-            ['Lines 1–150', '$7.00', 'per line'],
-            ['Lines 151–400', '$5.00', 'per line'],
-            ['Lines 401–800', '$3.50', 'per line'],
-            ['Lines 801+', '$2.50', 'per line'],
-            ['Site day', '$275', 'one per 1,200 items or part thereof'],
+            ['1–150 lines', '$7.00', 'a line, all lines'],
+            ['151–400 lines', '$5.00', 'a line, all lines'],
+            ['401–800 lines', '$3.50', 'a line, all lines'],
+            ['801+ lines', '$2.50', 'a line, all lines'],
           ].map(([band, rate, note], i) => (
             <div key={i} className="k-dfy-rate">
               <dt className="k-dfy-rate-band">{band}</dt>
@@ -137,32 +151,31 @@ const DoneForYou = () => (
         </dl>
 
         <div className="k-dfy-worked">
-          <div className="k-dfy-worked-hd">A 2,000-line estate, worked through</div>
+          <div className="k-dfy-worked-hd">A 2,000-line contents inventory, worked through</div>
           <table className="k-dfy-worked-t">
             <tbody>
               {[
-                ['150 lines at $7.00', '$1,050'],
-                ['250 lines at $5.00', '$1,250'],
-                ['400 lines at $3.50', '$1,400'],
-                ['1,200 lines at $2.50', '$3,000'],
-                ['2 site days at $275', '$550'],
+                ['2,000 lines — past 800, so every line is $2.50', '$5,000'],
+                ['You sent the photos, so no site day', '—'],
               ].map(([l, v], i) => (
                 <tr key={i}><td>{l}</td><td className="k-mono">{v}</td></tr>
               ))}
               <tr className="k-dfy-worked-tot">
-                <td>Total · $3.62 a line</td><td className="k-mono">$7,250</td>
+                <td>Total · $2.50 a line</td><td className="k-mono">$5,000</td>
               </tr>
             </tbody>
           </table>
           <p className="k-dfy-worked-foot">
-            The same 2,000 lines at a flat $7.00 would be <strong>$14,000</strong>. Across the range the
-            effective rate glides from <strong>$12.50</strong> a line on a 50-line job to <strong>$3.12</strong> at 5,000 lines.
+            The alternative on a loss that size is two field adjusters and an inside rep working it for
+            two weeks — and the rep is still looking up replacement costs one item at a time. The rate
+            runs from <strong>$7.00</strong> a line on a small claim down to <strong>$2.50</strong> once you are
+            past 800.
           </p>
         </div>
       </section>
 
       <section style={{ maxWidth: 780, margin: '0 auto', padding: '10px 40px 64px', textAlign: 'center' }}>
-        <h2 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 26, letterSpacing: '-0.02em', margin: '0 0 6px' }}>Rather run it yourself?</h2>
+        <h2 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 26, letterSpacing: '-0.02em', margin: '32px 0 6px' }}>Rather run it yourself?</h2>
         <p style={{ fontSize: 13.5, color: 'var(--k-fg-3)', margin: '0 0 18px', lineHeight: 1.6 }}>The full product is $249/mo with a 7-day free trial — most adjusters who send us one claim run the next one themselves.</p>
         <div className="k-hero-actions" style={{ justifyContent: 'center', marginTop: 0 }}>
           <a className="k-btn" href="21-Pricing.html">See pricing →</a>

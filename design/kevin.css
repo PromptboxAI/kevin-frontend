@@ -4058,3 +4058,7 @@
        rather than fight an inline value. */
     .k-dfy-rates-sec { padding: 64px 40px 24px; }
     @media (max-width: 900px) { .k-dfy-rates-sec { padding: 40px 20px 20px; } }
+    /* Quote card sits under the full-bleed tinted on-site band; 44px was not
+       enough separation from it. */
+    .k-dfy-quote-sec { padding: 72px 40px 26px; }
+    @media (max-width: 900px) { .k-dfy-quote-sec { padding: 44px 20px 22px; } }
