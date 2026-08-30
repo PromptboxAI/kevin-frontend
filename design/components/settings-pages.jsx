@@ -638,7 +638,7 @@ const BILLING_PLANS = {
     name: 'Pro', heading: 'Pro plan.', price: '$249.00', renews: 'Sep 1',
     nextLine: <React.Fragment>Next invoice: <strong style={{ color: 'var(--k-fg-2)' }}>Sep 1, 2026 · $249.00</strong></React.Fragment>,
     kpis: [['Current plan', 'Pro', 'Flat monthly'], ['Claims', 'Unlimited', 'No per-claim charges'], ['This month', '$249.00', 'Auto-renews Sep 1']],
-    blurb: <React.Fragment>You're on <strong style={{ color: 'var(--k-fg-2)' }}>Kevin Pro</strong> — one flat price, unlimited claims, cancel anytime. Running a desk or a team? Enterprise gives you volume licensing on one invoice.</React.Fragment>,
+    blurb: <React.Fragment>You're on <strong style={{ color: 'var(--k-fg-2)' }}>Kevin Pro</strong> — one flat price, unlimited claims, 2,000 line items a month included, cancel anytime. Running a desk or a team? Enterprise gives you volume licensing on one invoice.</React.Fragment>,
     showCancel: true, showPayment: true, showBillingEmail: true, storageGB: null, storageNote: null,
     invoices: [
       ['INV-2026-008', 'Aug 01, 2026', 'Pro · monthly', '$249.00'],
@@ -689,7 +689,7 @@ const SettingsBilling = ({ plan = 'pro' }) => {
         <div className="k-set-card-body" style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
           <Icon d={I.check} size={16} />
           <span style={{ fontSize: 12.5, color: 'var(--k-fg-3)', lineHeight: 1.55 }}>
-            <strong style={{ color: 'var(--k-fg-2)' }}>Complimentary account.</strong> Nothing is billed and no card is required. Every Pro feature is available, including unlimited claims and all export formats.
+            <strong style={{ color: 'var(--k-fg-2)' }}>Complimentary account.</strong> Nothing is billed and no card is required. Every Pro feature is available, including the 2,000-item monthly allowance and all export formats.
           </span>
         </div>
       </section>
@@ -816,7 +816,7 @@ const SettingsApi = ({ plan = 'pro' }) => {
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 14.5, fontWeight: 600, marginBottom: 4 }}>Included with Enterprise</div>
             <p style={{ fontSize: 12.5, color: 'var(--k-fg-3)', lineHeight: 1.55, margin: '0 0 12px', maxWidth: 560 }}>
-              You're on <strong style={{ color: 'var(--k-fg-2)' }}>Pro</strong> — unlimited claims, every export format, no API. Enterprise adds scoped API keys, webhooks, and volume licensing on one invoice.
+              You're on <strong style={{ color: 'var(--k-fg-2)' }}>Pro</strong> — unlimited claims, 2,000 items a month, every export format, no API. Enterprise adds scoped API keys, webhooks, and volume licensing on one invoice.
             </p>
             <div style={{ display: 'flex', gap: 8 }}>
               <a className="k-btn" href="15-Request-access.html">Talk to us about Enterprise →</a>

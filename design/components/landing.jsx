@@ -36,7 +36,7 @@ const ROICalculator = () => {
           <div className="k-roi-stat-l">Your time, back on the books · yearly</div>
         </div>
       </div>
-      <div className="k-roi-foot">Based on 4.5 hours saved per claim vs. manual lookup. Kevin is $249/mo flat — unlimited claims.</div>
+      <div className="k-roi-foot">Based on 4.5 hours saved per claim vs. manual lookup. Kevin is $249/mo, including 2,000 line items.</div>
     </div>
   );
 };
@@ -219,7 +219,7 @@ const Landing = ({ onStartClaim, onSampleClaim, onStartTrial }) => {
           <div className="k-trust">
             <span>7-day free trial</span>
             <span className="k-trust-dot">·</span>
-            <span>$249/mo flat · unlimited claims</span>
+            <span>$249/mo · 2,000 items included</span>
             <span className="k-trust-dot">·</span>
             <span>No per-claim or per-seat fees</span>
             <span className="k-trust-dot">·</span>

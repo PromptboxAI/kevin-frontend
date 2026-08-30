@@ -235,10 +235,18 @@ const DOC_ARTICLES_B = {
 
   'storage-fair-use': {
     title: 'Storage & fair use',
-    summary: 'Unlimited claims, generous storage, nothing ever deleted.',
+    summary: 'Unlimited claims, a generous item allowance, nothing ever deleted.',
     blocks: [
-      ['p', 'Claims are unlimited on every plan. Photograph storage is the one metered dimension, because it is the one real variable cost — but it never gets in the way of work.'],
-      ['h2', 'The policy'],
+      ['p', 'Claims are unlimited on every plan — run as many as you like, with no per-claim fee. Two things are metered, because they are the two real variable costs: the line items Kevin prices for you, and the photographs it stores. Neither ever gets in the way of work.'],
+      ['h2', 'Line items'],
+      ['ul', [
+        'Pro includes 2,000 line items per billing month.',
+        'Additional items are $0.20 each, added to the following invoice.',
+        'A 60-photo kitchen fire is roughly 57 items, so 2,000 covers about thirty-five claims that size in a month.',
+        'Going over never locks a claim or blocks an export — the work finishes, the overage bills after.',
+      ]],
+      ['note', 'Estate sales are priced separately at $249 per estate rather than against the monthly allowance, because a single estate can run to thousands of items.'],
+      ['h2', 'Storage'],
       ['ul', [
         'Pro includes 500 GB of active storage.',
         'Closed claims move to archived storage after ninety days. Still fully accessible, marginally slower on first load.',
@@ -247,7 +255,7 @@ const DOC_ARTICLES_B = {
       ]],
       ['note', 'Nothing is ever deleted to reclaim space. Tiering closed claims to archived storage is how the cost is managed — not deletion, and not a cap on claims.'],
       ['h2', 'Where to see it'],
-      ['p', 'Billing settings shows storage used against the pool, derived from the actual photograph count on your account rather than an estimate.'],
+      ['p', 'Billing settings shows both meters — items used against the monthly allowance, and storage used against the pool — the latter derived from the actual photograph count on your account rather than an estimate.'],
     ],
   },
 
@@ -259,7 +267,7 @@ const DOC_ARTICLES_B = {
       ['h2', 'The plans'],
       ['table', [
         ['Plan', 'For', 'Price'],
-        ['Pro', 'Content inventory specialists, IAs and public adjusters', '$249 / month, unlimited claims'],
+        ['Pro', 'Content inventory specialists, IAs and public adjusters', '$249 / month · unlimited claims · 2,000 line items, then $0.20 an item'],
         ['Enterprise', 'Carriers, TPAs, and multi-adjuster teams', 'Custom, volume licensing on one invoice'],
       ]],
       ['h2', 'The 7-day free trial'],

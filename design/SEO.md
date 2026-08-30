@@ -23,7 +23,7 @@ Rules:
 | 00-Sign-in.html | /signin | Sign in — Kevin | Sign in to your Kevin account. |
 | 02-Landing.html | / | Kevin — Photos in. Inventory out. | Drop your claim photos and Kevin builds a defensible, Xactimate-ready contents inventory: identified items, live retail comps, depreciation, and ACV — reviewed by you. |
 | 15-Request-access.html | /request-access | Kevin for Teams — Enterprise | Volume licensing for carriers, TPAs, and multi-adjuster agencies. One invoice, custom terms. |
-| 21-Pricing.html | /pricing | Pricing — Kevin | One flat monthly plan for content inventory specialists, IAs and public adjusters. Unlimited claims, no per-seat or per-claim fees. 7-day free trial. |
+| 21-Pricing.html | /pricing | Pricing — Kevin | $249/mo for content inventory specialists, IAs and public adjusters. Unlimited claims, 2,000 items a month included, no per-seat fee. 7-day free trial. |
 | 22-For-Adjusters.html | /for-adjusters | Kevin for Insurance Adjusters | Turn pack-out photo dumps into priced, defensible contents inventories that import straight into Xactimate and XactContents. |
 | 23-For-Estate-Liquidators.html | /for-estate-liquidators | Kevin for Estate Sale Professionals | Photograph an estate, get a fair-market-value inventory with sold comps, conditions, and statuses — ready to hand a client. |
 | 24-Docs.html | /docs | Documentation — Kevin | Guides for every step: uploading photos, staging and grouping, the review worksheet, pricing, depreciation, and exporting to Xactimate. |

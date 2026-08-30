@@ -8,7 +8,7 @@ const TIERS = [
   {
     id: 'pro', name: 'Pro', tag: 'One adjuster. Unlimited claims.',
     price: 249, suffix: '/mo',
-    blurb: 'One flat monthly subscription. Unlimited claims, unlimited photos. Cancel anytime.',
+    blurb: 'One flat monthly subscription. Unlimited claims, 2,000 items a month included, then $0.20 an item. Cancel anytime.',
     cta: 'Start 7-day free trial',
     primary: true,
     features: [
@@ -26,7 +26,8 @@ const TIERS = [
       ['Client-facing share links',                                     true],
       ['Version retention and change history on every line',            true],
       ['Mobile capture, any phone, nothing to install',                 true],
-      ['Unlimited claims, 500 GB photo storage, archive and restore',   true],
+      ['Unlimited claims · 2,000 items a month · $0.20 an item after',  true],
+      ['500 GB photo storage, archive and restore',                     true],
     ],
   },
   {
@@ -59,19 +60,19 @@ const FAQS = [
   ['Do I lose my work if I cancel?',
    'No. Your claims, worksheets and exports stay available to download.'],
   ['Is \u201cunlimited claims\u201d really unlimited?',
-   'Yes. No claim caps, no per-claim fees. The one metered thing is photo storage (500 GB included \u2014 real cost, generous pool); going over triggers an email, never a mid-claim lockout.'],
+   'Yes \u2014 run as many claims as you like, with no per-claim fee. What is metered is line items: 2,000 a month are included, and past that it is $0.20 an item. A 60-photo kitchen fire is about 57 items, so 2,000 is roughly 35 claims of that size in a month.'],
   ['What counts as a claim?',
    'One loss event \u2014 one insured, one date of loss, one address. On Pro it doesn\'t matter: claims are unlimited, so run as many as you need.'],
   ['Do I pay extra for photos or items?',
-   'No. Pro includes unlimited photos and items on every claim, with 500 GB of active photo storage on the account \u2014 no per-claim caps.'],
+   'Photos, no \u2014 upload as many as you like, with 500 GB of active storage on the account. Items, only past the 2,000 a month included, and then $0.20 each. The count is in Settings \u2192 Billing before it costs anything, and going over never locks a claim.'],
   ['Are pricing comps included or extra?',
    'Included. Every RCV cell gets top-3 retailer comps. We don\'t charge per comp or per refresh.'],
   ['Is the AI included, or is it extra?',
-   'Included \u2014 all of it. Vision identification, live retail comps, depreciation, and every future model improvement ship inside the flat price. No add-ons, no tier upgrades, no per-item AI fees.'],
+   'Included — all of it. Vision identification, live retail comps, depreciation, and every future model improvement ship inside the price. No add-ons and no tier upgrades; the AI is never billed separately from your item allowance.'],
   ['Who owns my data \u2014 and how long do you keep it?',
    'You do, and forever. Claims get audited years after they settle, so nothing is ever deleted \u2014 closed claims move to slower archived storage but stay fully accessible, and you can export everything at any time.'],
   ['Does this work for estate sales?',
-   'Yes. Pro includes estate sale mode \u2014 catalog a whole home, track condition and disposition, and export a clean inventory PDF. Same flat price.'],
+   'Yes, but it is priced separately. Estate sales are $249 per estate — one price for the whole job, billed per engagement rather than per month, because an estate runs hundreds to thousands of items. Estate mode catalogs a whole home, tracks condition and disposition, and exports a client-ready PDF.'],
 ];
 
 const Pricing = () => (
@@ -85,7 +86,7 @@ const Pricing = () => (
           One subscription. Unlimited claims.
         </h1>
         <p style={{ fontSize: 16, color: 'var(--k-fg-2)', lineHeight: 1.55, margin: 0, maxWidth: 560, marginLeft: 'auto', marginRight: 'auto' }}>
-          A flat monthly price, the way you already pay for Xactimate. No per-seat math, no per-photo charges, no surprises. Pricing comps are always included, and every account starts with a 7-day free trial.
+          A flat monthly price, the way you already pay for Xactimate. $249 covers 2,000 line items a month — more claims than most adjusters write — and anything past that is $0.20 an item. No per-seat math, no per-claim fee, and every account starts with a 7-day free trial.
         </p>
       </section>
 
@@ -153,7 +154,7 @@ const Pricing = () => (
           </div>
           <div className="k-stat-card">
             <div className="k-stat-n">$249</div>
-            <div className="k-stat-l">flat, unlimited claims</div>
+            <div className="k-stat-l">a month · 2,000 items included</div>
             <div className="k-stat-s">At $150/hr, 1.7 recovered hours pays for the month</div>
           </div>
         </div>

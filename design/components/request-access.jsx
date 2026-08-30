@@ -55,7 +55,7 @@ const RequestAccess = () => {
             Volume licensing for agencies, carriers and TPAs — every adjuster on one bill, with shared carrier profiles and depreciation schedules so two people on the same desk price a claim the same way. Tell us how your team works and we will quote it.
           </p>
           <p style={{ fontSize: 13, color: 'var(--k-fg-3)', lineHeight: 1.5, margin: '0 0 32px', maxWidth: 460 }}>
-            One adjuster? You don't need this — <a className="k-link" href="58-Account-create.html">start on Pro</a> at $249/mo flat, unlimited claims, 7-day free trial.
+            One adjuster? You don't need this — <a className="k-link" href="58-Account-create.html">start on Pro</a> at $249/mo, unlimited claims with 2,000 line items a month included, 7-day free trial.
           </p>
 
           <div className="k-req-bullets">

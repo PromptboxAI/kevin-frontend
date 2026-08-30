@@ -881,11 +881,20 @@ The totals bar breaks the inventory down by status, all on fair-market basis so 
 
 ## Storage & fair use
 
-_Unlimited claims, generous storage, nothing ever deleted._
+_Unlimited claims, a generous item allowance, nothing ever deleted._
 
-Claims are unlimited on every plan. Photograph storage is the one metered dimension, because it is the one real variable cost — but it never gets in the way of work.
+Claims are unlimited on every plan — run as many as you like, with no per-claim fee. Two things are metered, because they are the two real variable costs: the line items Kevin prices for you, and the photographs it stores. Neither ever gets in the way of work.
 
-### The policy
+### Line items
+
+- Pro includes 2,000 line items per billing month.
+- Additional items are $0.20 each, added to the following invoice.
+- A 60-photo kitchen fire is roughly 57 items, so 2,000 covers about thirty-five claims that size in a month.
+- Going over never locks a claim or blocks an export — the work finishes, the overage bills after.
+
+> Estate sales are priced separately at $249 per estate rather than against the monthly allowance, because a single estate can run to thousands of items.
+
+### Storage
 
 - Pro includes 500 GB of active storage.
 - Closed claims move to archived storage after ninety days. Still fully accessible, marginally slower on first load.
@@ -896,7 +905,7 @@ Claims are unlimited on every plan. Photograph storage is the one metered dimens
 
 ### Where to see it
 
-Billing settings shows storage used against the pool, derived from the actual photograph count on your account rather than an estimate.
+Billing settings shows both meters — items used against the monthly allowance, and storage used against the pool — the latter derived from the actual photograph count on your account rather than an estimate.
 
 ## Billing & plans
 

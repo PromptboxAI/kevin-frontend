@@ -224,6 +224,7 @@ const ForAdjusters = () => (
         </h2>
         <p style={{ fontSize: 15, color: 'var(--k-fg-3)', margin: '0 0 28px', maxWidth: 480, textAlign: 'center' }}>
           7-day free trial — full product, real claims. Carrier profile pre-loaded for the major ones.
+          $249/mo after that: unlimited claims, 2,000 line items a month included, no per-seat fee.
         </p>
         <div className="k-hero-actions" style={{ marginTop: 0 }}>
           <a className="k-btn k-btn--lg" href="58-Account-create.html">Start a claim →</a>
@@ -476,7 +477,7 @@ const ForLiquidators = () => (
       {/* — CTA — */}
       <section className="k-mkt-cta">
         <h2 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 44, letterSpacing: '-0.028em', margin: '0 0 14px', lineHeight: 1.05, textAlign: 'center' }}>
-          Try Kevin on your next estate.
+          Try Kevin on your next estate sale.
         </h2>
         <p style={{ fontSize: 15, color: 'var(--k-fg-3)', margin: '0 0 28px', maxWidth: 500, textAlign: 'center' }}>
           <strong>$249 per estate.</strong> One price for the whole job, however many rooms and however

@@ -220,7 +220,7 @@ const ProductOverview = () => {
           <h2 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 44, letterSpacing: '-0.028em', margin: '0 0 14px', lineHeight: 1.05, textAlign: 'center' }}>
             Try it on a real claim.
           </h2>
-          <p style={{ fontSize: 15, color: 'var(--k-fg-3)', margin: '0 0 28px', maxWidth: 480, textAlign: 'center' }}>Seven days, the full product, your own claims. $249/mo flat after that — unlimited claims, no per-seat or per-claim fees.</p>
+          <p style={{ fontSize: 15, color: 'var(--k-fg-3)', margin: '0 0 28px', maxWidth: 480, textAlign: 'center' }}>Seven days, the full product, your own claims. $249/mo after that — unlimited claims, 2,000 line items a month included, no per-seat fee.</p>
           <div className="k-hero-actions" style={{ marginTop: 0 }}>
             <a className="k-btn k-btn--lg" href="58-Account-create.html">Start your 7-day free trial →</a>
             <a className="k-btn k-btn--ghost k-btn--lg" href="48-Sample-claim.html">See a finished claim</a>
@@ -442,7 +442,7 @@ const About = () => (
               ['2025', 'Beta on real losses',
                '310+ claims processed across 12 carriers \u2014 actual pack-outs and actual photographs, not a demo set.'],
               ['2026', 'Open to any adjuster',
-               'Pro at $249/mo flat, unlimited claims, seven-day free trial. No per-seat maths and no per-claim fee.'],
+               'Pro at $249/mo, unlimited claims with 2,000 line items a month included, seven-day free trial. No per-seat maths and no per-claim fee.'],
             ].map(([year, t, d], i) => (
               <li key={i} className="k-about-time-item">
                 <div className="k-about-time-year">{year}</div>
