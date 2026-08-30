@@ -4062,3 +4062,30 @@
        enough separation from it. */
     .k-dfy-quote-sec { padding: 72px 40px 26px; }
     @media (max-width: 900px) { .k-dfy-quote-sec { padding: 44px 20px 22px; } }
+
+    /* — Estate: "Before the contract". Three numbered steps on a hairline rail.
+         Deliberately not the k-seg-work card grid below it — this is the page's
+         argument, not another feature list, and it should not look like one. — */
+    .k-est-win { max-width: 1080px; margin: 0 auto; padding: 56px 40px 48px; }
+    .k-est-win-hd { margin-bottom: 34px; }
+    .k-est-win-steps {
+      list-style: none; margin: 0; padding: 0;
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px;
+    }
+    .k-est-win-step { position: relative; padding-top: 22px; border-top: 1px solid var(--k-line); }
+    .k-est-win-n {
+      font-family: var(--k-font-mono); font-size: 11.5px; font-weight: 700;
+      color: var(--k-accent); letter-spacing: 0.05em;
+    }
+    .k-est-win-t {
+      font-family: var(--k-font-display); font-size: 21px; letter-spacing: -0.018em;
+      line-height: 1.25; margin: 8px 0 8px; text-wrap: balance;
+    }
+    .k-est-win-d { font-size: 13.5px; color: var(--k-fg-3); line-height: 1.6; margin: 0; text-wrap: pretty; }
+    @media (max-width: 900px) {
+      .k-est-win { padding: 36px 20px 32px; }
+      .k-est-win-hd { margin-bottom: 22px; }
+      .k-est-win-steps { grid-template-columns: minmax(0, 1fr); gap: 0; }
+      .k-est-win-step { padding: 18px 0; }
+      .k-est-win-t { font-size: 19px; }
+    }

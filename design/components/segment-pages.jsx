@@ -311,10 +311,11 @@ const ForLiquidators = () => (
         <div className="k-seg-hero-l">
           <Badge tone="accent" dot={true}>For estate liquidators &amp; trust officers</Badge>
           <h1 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 64, letterSpacing: '-0.028em', margin: '20px 0 18px', lineHeight: 1.02 }}>
-            Catalog an entire estate in an afternoon.
+            <span className="k-h1-line">Win the estate</span><br />
+            <span className="k-h1-line">before you discount.</span>
           </h1>
           <p style={{ fontSize: 17, color: 'var(--k-fg-2)', lineHeight: 1.5, margin: 0, maxWidth: 530 }}>
-            Walk every room with your phone. Kevin builds the inventory: brand-matched, fair-market-valued, categorized into estate-friendly classes — ready to print, share, or take to auction.
+            Walk the house once with your phone. Before you leave the driveway Kevin has the inventory — photographed, brand-matched, priced — and you hand the family a document. The other two callers are still quoting a percentage.
           </p>
           <div className="k-hero-actions" style={{ marginTop: 32 }}>
             <a className="k-btn k-btn--lg" href="58-Account-create.html">Start an estate →</a>
@@ -340,6 +341,38 @@ const ForLiquidators = () => (
             </div>
           </div>
         </div>
+      </section>
+
+      {/* — The pitch. This is the page's real argument: the inventory is a
+            SALES asset before it is an operational one. A family choosing a
+            liquidator is choosing between three phone calls; the one who leaves
+            a priced, photographed document behind is not competing on
+            percentage any more. — */}
+      <section className="k-est-win">
+        <div className="k-est-win-hd">
+          <div style={{ fontFamily: 'var(--k-font-mono)', fontSize: 11, color: 'var(--k-fg-4)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Before the contract</div>
+          <h2 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 38, letterSpacing: '-0.025em', margin: '8px 0 10px', lineHeight: 1.1 }}>
+            Turn the first walkthrough into the proposal.
+          </h2>
+          <p style={{ fontSize: 15, color: 'var(--k-fg-3)', lineHeight: 1.6, margin: 0, maxWidth: 640 }}>
+            Most estates go to whoever the family trusts first, and trust is hard to win with a verbal
+            estimate and a commission rate. Walk the house, run it through Kevin, and leave a priced
+            inventory with a photo on every line — the same afternoon.
+          </p>
+        </div>
+        <ol className="k-est-win-steps">
+          {[
+            ['Walk it once', 'Photograph room by room on your phone. No assistant, no clipboard, no second visit to fill gaps.'],
+            ['Hand them a number', 'A photographed, priced inventory with a value on every line — not a range, not a guess, and not a promise to follow up next week.'],
+            ['Win on evidence', 'You are no longer the cheapest percentage. You are the one who already did the work, and the family can see exactly what their things are worth.'],
+          ].map(([t, d], i) => (
+            <li key={i} className="k-est-win-step">
+              <div className="k-est-win-n">{String(i + 1).padStart(2, '0')}</div>
+              <div className="k-est-win-t">{t}</div>
+              <p className="k-est-win-d">{d}</p>
+            </li>
+          ))}
+        </ol>
       </section>
 
       {/* — Estate-specific value props — */}
@@ -446,7 +479,9 @@ const ForLiquidators = () => (
           Try Kevin on your next estate.
         </h2>
         <p style={{ fontSize: 15, color: 'var(--k-fg-3)', margin: '0 0 28px', maxWidth: 500, textAlign: 'center' }}>
-          Seven days, the full product, a real estate end to end. $249/mo flat after that — unlimited estates, no per-item or per-seat fees.
+          <strong>$249 per estate.</strong> One price for the whole job, however many rooms and however
+          many items — billed per estate, not per month, so a quiet quarter costs you nothing. No seats,
+          no subscription, no percentage of the sale.
         </p>
         <div className="k-hero-actions" style={{ marginTop: 0 }}>
           <a className="k-btn k-btn--lg" href="58-Account-create.html">Start your first estate →</a>
