@@ -72,7 +72,7 @@ const FAQS = [
   ['Who owns my data \u2014 and how long do you keep it?',
    'You do, and forever. Claims get audited years after they settle, so nothing is ever deleted \u2014 closed claims move to slower archived storage but stay fully accessible, and you can export everything at any time.'],
   ['Does this work for estate sales?',
-   'Yes, but it is priced separately. Estate sales are $249 per estate — one price for the whole job, billed per engagement rather than per month, because an estate runs hundreds to thousands of items. Estate mode catalogs a whole home, tracks condition and disposition, and exports a client-ready PDF.'],
+   'Yes, but it is priced separately. Your first estate is free; after that estate sales are $249 per estate — one price for the whole job, billed per engagement rather than per month, because an estate runs hundreds to thousands of items and would swallow a monthly allowance whole. Estate mode catalogs a whole home, tracks condition and disposition, and exports a client-ready PDF.'],
 ];
 
 const Pricing = () => (

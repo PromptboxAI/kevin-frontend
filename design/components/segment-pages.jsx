@@ -480,9 +480,10 @@ const ForLiquidators = () => (
           Try Kevin on your next estate sale.
         </h2>
         <p style={{ fontSize: 15, color: 'var(--k-fg-3)', margin: '0 0 28px', maxWidth: 500, textAlign: 'center' }}>
-          <strong>$249 per estate.</strong> One price for the whole job, however many rooms and however
-          many items — billed per estate, not per month, so a quiet quarter costs you nothing. No seats,
-          no subscription, no percentage of the sale.
+          <strong>Your first estate is free</strong> — run a real one end to end before you pay us anything.
+          After that it is <strong>$249 per estate</strong>: one price for the whole job, however many rooms
+          and however many items, billed per estate rather than per month, so a quiet quarter costs you
+          nothing. No seats, no subscription, no percentage of the sale.
         </p>
         <div className="k-hero-actions" style={{ marginTop: 0 }}>
           <a className="k-btn k-btn--lg" href="58-Account-create.html">Start your first estate →</a>
