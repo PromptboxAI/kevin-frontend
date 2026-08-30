@@ -395,8 +395,9 @@ const ClaimTruncationAlert = ({ trunc, onAddCredits }) => {
       <div className="k-trunc-body">
         <div className="k-trunc-h">You hit your limit — {n.toLocaleString()} items were not processed.</div>
         <p className="k-trunc-p">
-          <strong>{trunc.claim_name}</strong> reached your item allowance {trunc.occurred}. Kevin priced
-          the first {trunc.processed_count.toLocaleString()} items and stopped there.
+          <strong>{trunc.claim_name}</strong> reached your {trunc.allowance.toLocaleString()}-item
+          allowance {trunc.occurred}. Kevin priced {trunc.processed_count.toLocaleString()} of the
+          {' '}{trunc.attempted.toLocaleString()} it found and stopped at your limit.
         </p>
         <p className="k-trunc-p k-trunc-p--calm">
           Nothing was deleted. The photos behind them are still on the claim, unprocessed — add credits

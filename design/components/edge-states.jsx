@@ -223,6 +223,23 @@ const EdgeStates = () => (
             <div style={{ marginTop: 14, fontSize: 11.5, color: 'var(--k-fg-4)' }}>Resuming charges the card on file and unlocks the account immediately — a fresh billing cycle starts today.</div>
           </div>
         </StatePanel>
+
+        {/* Quota truncation (rule 9c). It lives here rather than seeded onto the
+            claims dashboard because the canonical demo account (Pro, 921 of
+            2,000) has 1,079 items of headroom and cannot truncate -- staging it
+            there would print numbers contradicting both the meter and the claim
+            rows. This is the case that actually occurs: a FREE-tier adjuster,
+            250 items, 57 already spent, dropping a 300-photo whole-house shoot.
+            The component is the same one the dashboard renders. */}
+        <StatePanel label="09 · Quota truncation" title="Claims · allowance reached mid-upload">
+          <window.ClaimTruncationAlert trunc={window.TRUNCATION_DEMO} onAddCredits={() => {}} />
+          <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', lineHeight: 1.55 }}>
+            The backend truncates rather than rejecting: it prices up to the remaining allowance and
+            holds the rest, returning <code>truncated</code> and <code>dropped_count</code>. Held photos
+            stay on the claim and produce no line items, so the claim's counts are untouched until
+            quota is restored. The alert is not dismissible — it clears by being fixed.
+          </div>
+        </StatePanel>
       </div>
     </div>
   </div>

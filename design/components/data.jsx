@@ -741,32 +741,53 @@ const buildItemUsage = (planId, creditsBought) => {
 const KEVIN_ITEM_USAGE = buildItemUsage('pro', 0);
 
 // Quota truncation (rule 9c). When a batch would run past the remaining
-// allowance the backend does NOT reject the upload -- it processes exactly up
-// to the limit and drops the rest, answering with `truncated` and
-// `dropped_count`. This object stands in for that slice of the ingest response.
+// allowance the backend does NOT reject it -- it produces exactly up to the
+// limit and holds the rest, answering with `truncated` and `dropped_count`.
 //
-// The held photos are NOT deleted (rule 22: evidence is excluded, never
-// destroyed) and they produce NO line items, so the claim's counts are
-// untouched -- which is why the demo claim still reads 60 photos / 57 items
-// (rule 1) with this alert on screen. dropped_count is therefore derived from
-// the pending session-2 photos, not typed in.
-//
-// DEMO CAVEAT: the seeded account is Mariana's Pro account, whose meter reads
-// 921 of 2,000. A Pro account with that much headroom would not truncate; this
-// is seeded truthy so the state is REVIEWABLE, the way the edge-states page
-// shows conditions the happy-path demo never reaches. In production read
-// `truncated` off the ingest response and never infer it by comparing counts.
-const CLAIM_TRUNCATION = (() => {
-  const held = CLAIM_INGEST.pendingPhotos;
+// DERIVED, never typed: processed = min(attempted, remaining) and dropped is
+// the remainder. An earlier seed hard-set these to CLAIM_INGEST.items (57) and
+// CLAIM_INGEST.pendingPhotos (300), which was wrong twice over -- 57 was
+// session 1's completed item count, unrelated to any quota stop, and 300 was a
+// PHOTO count rendered as items. Build the numbers, do not pick them.
+const buildTruncation = ({ claim_id, claim_name, allowance, usedBefore, attempted, occurred }) => {
+  const remaining = Math.max(allowance - usedBefore, 0);
+  const processed = Math.min(attempted, remaining);   // priced up to the limit
+  const dropped = attempted - processed;              // held, not deleted
   return {
-    claim_id: 'CLM-2026-04412',
-    claim_name: 'Godfrey — Kitchen fire',
-    truncated: held > 0,
-    dropped_count: held,
-    processed_count: CLAIM_INGEST.items,
-    occurred: '18m ago',
+    claim_id, claim_name, occurred,
+    allowance, used_before: usedBefore, attempted,
+    truncated: dropped > 0,
+    processed_count: processed,
+    dropped_count: dropped,
   };
-})();
+};
+
+// The canonical demo account (Mariana, Pro) sums to 921 items against a 2,000
+// allowance, so it has 1,079 of headroom and CANNOT truncate. Seeding the alert
+// truthy here would print numbers that contradict both the meter and the claim
+// rows, so it is correctly false and the dashboard alert stays hidden.
+// Flip TRUNCATION_DEMO into the dashboard (or raise the roster) to stage it.
+const CLAIM_TRUNCATION = buildTruncation({
+  claim_id: 'CLM-2026-04412',
+  claim_name: 'Godfrey — Kitchen fire',
+  allowance: ITEM_PLANS.pro.included,
+  usedBefore: KEVIN_CLAIMS.reduce((a, c) => a + c.items, 0),
+  attempted: CLAIM_INGEST.pendingPhotos,
+  occurred: '18m ago',
+});
+
+// The state as a FREE-tier adjuster meets it, which is the case that actually
+// happens: 250 items, 57 already spent on session 1, then a 300-photo
+// whole-house shoot. Kevin prices 193 and holds 107. Rendered on the
+// edge-states page, where conditions the happy path never reaches live.
+const TRUNCATION_DEMO = buildTruncation({
+  claim_id: 'CLM-2026-04412',
+  claim_name: 'Godfrey — Kitchen fire',
+  allowance: ITEM_PLANS.free.included,
+  usedBefore: CLAIM_INGEST.items,
+  attempted: CLAIM_INGEST.pendingPhotos,
+  occurred: '18m ago',
+});
 
 // Storage & fair use. Photo storage is Kevin's real variable cost, so the number
 // is DERIVED from the account's actual photo counts — never typed in.
@@ -1387,4 +1408,4 @@ function settledRecoverable(r, claimed, k) {
 
 const claimTaxPct = () => (CLAIM_TAX.rate * 100).toFixed(3).replace(/\.?0+$/, '') + '%';
 
-Object.assign(window, { KEVIN_ITEM_USAGE, buildItemUsage, CLAIM_TRUNCATION, ITEM_PLANS, ITEM_CREDIT_BLOCKS, buildSettledRows, WRITTEN_SAMPLE_ROWS, STAGE_UNGROUPED, MANUAL_KIND, MANUAL_CAPACITY_COPY, isCapacityWait, US_STATES, CLAIM_SESSIONS, CLAIM_INGEST, NOTE_MAX, mergeUserNotes, claimTaxPct, CLAIM_TAX, buildFmvSources, fmvHaircut, KevinAPI, buildDepMeta, MANUAL_DEP_META, KEVIN_CLAIMS, KEVIN_STORAGE, CLAIM_PP_LIMIT, PCS_CATEGORIES, SPECIAL_LIMITS, SAMPLE_BASE, buildWorksheetRows, THUMB_TONES, DEP_TABLE, getDepFor, depBracket, ROOM_OPTIONS, CLASS_TO_ROOM, USEFUL_LIFE, PCS_CODE, DEP_BRACKET_LABELS, depExplain, REYES_TOTALS });
+Object.assign(window, { KEVIN_ITEM_USAGE, buildItemUsage, CLAIM_TRUNCATION, TRUNCATION_DEMO, buildTruncation, ITEM_PLANS, ITEM_CREDIT_BLOCKS, buildSettledRows, WRITTEN_SAMPLE_ROWS, STAGE_UNGROUPED, MANUAL_KIND, MANUAL_CAPACITY_COPY, isCapacityWait, US_STATES, CLAIM_SESSIONS, CLAIM_INGEST, NOTE_MAX, mergeUserNotes, claimTaxPct, CLAIM_TAX, buildFmvSources, fmvHaircut, KevinAPI, buildDepMeta, MANUAL_DEP_META, KEVIN_CLAIMS, KEVIN_STORAGE, CLAIM_PP_LIMIT, PCS_CATEGORIES, SPECIAL_LIMITS, SAMPLE_BASE, buildWorksheetRows, THUMB_TONES, DEP_TABLE, getDepFor, depBracket, ROOM_OPTIONS, CLASS_TO_ROOM, USEFUL_LIFE, PCS_CODE, DEP_BRACKET_LABELS, depExplain, REYES_TOTALS });
