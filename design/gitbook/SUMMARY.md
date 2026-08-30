@@ -38,6 +38,7 @@
 * [The audit log](claims-and-policies/audit-log.md)
 * [The Photos tab](claims-and-policies/photos-tab.md)
 * [Archiving & deleting claims](claims-and-policies/archive-delete.md)
+* [Recovering your holdback](claims-and-policies/holdback-recovery.md)
 
 ## In the field
 

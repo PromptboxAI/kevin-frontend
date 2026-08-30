@@ -6,7 +6,7 @@ Uploads are resumable, so a stalled batch usually finishes itself once whatever 
 
 ## Check these first
 
-- File size. A single upload is capped at 2 GB, and any one photo at 15 MB. Split a very large folder into two batches.
+- File size. Any one photo is capped at 15 MB; there is no total-size cap — Kevin uploads big drops in batches automatically.
 - File type. JPG, PNG, and HEIC. A .mov or a RAW file will be rejected.
 - A .zip inside a .zip. Only the outer archive is opened.
 - Signal. On a phone, photos cache locally and upload when service returns — you can keep shooting.

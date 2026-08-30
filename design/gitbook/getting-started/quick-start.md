@@ -7,14 +7,14 @@ Kevin turns a folder of photographs into a defensible personal-property inventor
 ## The five steps
 
 1. Start a claim. Claim and policy numbers, date and cause of loss, the insured, the loss address, and the contents coverage limit.
-2. Drop the photos. A folder, a phone dump, or a .zip up to 2 GB. Duplicates are removed as they arrive.
-3. Review the photo sets. Kevin groups shots taken seconds apart into one item. Merge, split, or skip before anything is identified.
+2. Drop the photos. A folder, a phone dump, or a whole .zip — no total-size cap, up to 15 MB per photo. Duplicates are removed as they arrive.
+3. Review the photo sets. Kevin groups shots taken seconds apart into one set. Merge, split, or exclude before anything is identified.
 4. Let Kevin work. Identification, make and model, content class, three live price comps per item, depreciation from the claim schedule.
 5. Review and export. Every cell is editable. Export the Xactimate spreadsheet, a client PDF, or the full bundle.
 
 ## How long it takes
 
-| Step | A 142-item claim |
+| Step | A 44-item claim |
 | --- | --- |
 | Intake | About a minute |
 | Upload + staging | A minute or two for 50 photos |
@@ -22,4 +22,4 @@ Kevin turns a folder of photographs into a defensible personal-property inventor
 | Your review | Twenty to forty minutes |
 | Export | Under a minute |
 
-> Every account starts with 250 free line items — full product, real claims, no time limit.
+> Every account starts with 250 free line items — full product, real claims, no time limit. Card verified at signup, not charged until you start Pro.

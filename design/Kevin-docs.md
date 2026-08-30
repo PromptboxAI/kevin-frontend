@@ -1,7 +1,7 @@
 # Kevin — Documentation
 
 Help documentation for Kevin: photo-to-inventory for insurance content adjusters and
-estate-sale professionals. 44 articles across 8 sections.
+estate-sale professionals. 45 articles across 8 sections.
 
 ---
 
@@ -45,6 +45,7 @@ estate-sale professionals. 44 articles across 8 sections.
 - [The audit log](#the-audit-log)
 - [The Photos tab](#the-photos-tab)
 - [Archiving & deleting claims](#archiving-deleting-claims)
+- [Recovering your holdback](#recovering-your-holdback)
 
 **In the field**
 
@@ -88,14 +89,14 @@ Kevin turns a folder of photographs into a defensible personal-property inventor
 ### The five steps
 
 1. Start a claim. Claim and policy numbers, date and cause of loss, the insured, the loss address, and the contents coverage limit.
-2. Drop the photos. A folder, a phone dump, or a .zip up to 2 GB. Duplicates are removed as they arrive.
-3. Review the photo sets. Kevin groups shots taken seconds apart into one item. Merge, split, or skip before anything is identified.
+2. Drop the photos. A folder, a phone dump, or a whole .zip — no total-size cap, up to 15 MB per photo. Duplicates are removed as they arrive.
+3. Review the photo sets. Kevin groups shots taken seconds apart into one set. Merge, split, or exclude before anything is identified.
 4. Let Kevin work. Identification, make and model, content class, three live price comps per item, depreciation from the claim schedule.
 5. Review and export. Every cell is editable. Export the Xactimate spreadsheet, a client PDF, or the full bundle.
 
 ### How long it takes
 
-| Step | A 142-item claim |
+| Step | A 44-item claim |
 | --- | --- |
 | Intake | About a minute |
 | Upload + staging | A minute or two for 50 photos |
@@ -103,7 +104,7 @@ Kevin turns a folder of photographs into a defensible personal-property inventor
 | Your review | Twenty to forty minutes |
 | Export | Under a minute |
 
-> Every account starts with 250 free line items — full product, real claims, no time limit.
+> Every account starts with 250 free line items — full product, real claims, no time limit. Card verified at signup, not charged until you start Pro.
 
 ## Creating your first claim
 
@@ -137,7 +138,7 @@ Policies name contents coverage differently — Coverage C, Personal Property, C
 
 _Formats, size limits, dedupe, and how to shoot so Kevin reads well._
 
-Drag any combination of JPG, PNG, or HEIC files, a folder, or a single .zip up to 2 GB. iPhone HEIC files are converted on arrival — you do not need to change your camera settings.
+Drag any combination of JPG, PNG, or HEIC files, a folder, or a whole .zip — no total-size cap, up to 15 MB per photo. iPhone HEIC files are converted on arrival — you do not need to change your camera settings.
 
 ### Duplicates
 
@@ -526,7 +527,7 @@ The bundle is a single .zip containing the spreadsheet, the PDF inventory, every
 
 ### Size
 
-Photographs dominate the size. A 162-photo claim lands somewhere around 340 MB, and a single export is capped at 2 GB. If you only need the numbers, take the spreadsheet instead.
+Photographs dominate the size. A large photo claim can land in the hundreds of MB, and a single export is capped at 2 GB. If you only need the numbers, take the spreadsheet instead.
 
 > The audit log is the part that makes a bundle worth keeping. Two years on it shows exactly what changed and who changed it.
 
@@ -711,6 +712,38 @@ Permanent, and requires typing DELETE to confirm. Everything goes, including the
 
 Kevin never removes your data to reclaim storage. Closed claims move to archived storage after ninety days, which is slower on first load and nothing else. It is your data.
 
+## Recovering your holdback
+
+_Turn replaced items into a recovery request the carrier desk can pay._
+
+On an RCV policy the carrier pays ACV up front and holds back the depreciation. When the insured actually replaces an item, that holdback becomes recoverable. Kevin tracks it per line and builds the request document for you.
+
+### How it works
+
+1. Open Recovery — from the claim overview, open the Recovery tab. Every line from the worksheet is there with its holdback amount already computed.
+2. Enter the actual cost — what the insured actually paid. For multi-unit lines, set how many of the units were replaced; Kevin prorates the recoverable amount per unit.
+3. Attach the receipt — one per line. A line with a cost but no receipt still exports; it prints MISSING in amber so the desk sees the gap instead of a silently dropped line.
+4. Export the request — as an .xlsx or a PDF RCV Report, with or without the receipt files. Send it the way you send everything else — download or share link.
+
+### What the recoverable amount is
+
+Per line, recovery is capped at the smaller of the withheld depreciation and what was actually spent. Replace a $1,200 item for $900 and the request claims the holdback up to $900 — the carrier never pays out more than the insured spent. These caps come from the backend; the sheet shows them per line as “Back to insured.”
+
+### Batches are normal
+
+Insureds replace items over months. Export a recovery request whenever there is something new to claim — each export is a fresh snapshot of every line with an actual cost entered. Nothing forces you to wait until everything is replaced.
+
+### What the exports contain
+
+| Export | Contents |
+| --- | --- |
+| RCV Report · .xlsx | Static-value spreadsheet of claimed lines — row #, item, holdback, actual cost, claimed amount, receipt filename. |
+| RCV Report · PDF | The same request as a formatted document, with an appendix indexing each receipt by worksheet row number. |
+| Receipts · .zip | Just the receipt files, named by row (receipt_0001.pdf), for a desk that already has the request. |
+| Worksheet + receipts · .zip | The request document plus the receipt files as separate originals beside it — the PDF’s appendix is the index. |
+
+> Receipts are never merged into one flattened PDF — originals travel as separate files so their metadata and quality survive.
+
 ---
 
 # In the field
@@ -768,7 +801,7 @@ Email and password, Google, or a passkey — the same three options as the deskt
 
 _Telling Kevin what it is looking at before it looks._
 
-While shooting you can attach a short note to the set you are capturing — up to 120 characters. It steers identification when Kevin processes the batch.
+While shooting you can attach a short note to the set you are capturing — up to 300 characters of additional identification Kevin reads when it processes the batch.
 
 ### What a good note looks like
 
@@ -917,7 +950,7 @@ Kevin is a flat monthly subscription, the way you already pay for Xactimate. The
 
 | Plan | For | Price |
 | --- | --- | --- |
-| Pro | Content inventory specialists, IAs and public adjusters | $249 / month, unlimited claims |
+| Pro | Content inventory specialists, IAs and public adjusters | $249 / month · unlimited claims · 2,000 line items, then $0.20 an item |
 | Enterprise | Carriers, TPAs, and multi-adjuster teams | Custom, volume licensing on one invoice |
 
 ### The free tier
@@ -1021,7 +1054,7 @@ Uploads are resumable, so a stalled batch usually finishes itself once whatever 
 
 ### Check these first
 
-- File size. A single upload is capped at 2 GB. Split a very large folder into two batches.
+- File size. Any one photo is capped at 15 MB; there is no total-size cap — Kevin uploads big drops in batches automatically.
 - File type. JPG, PNG, and HEIC. A .mov or a RAW file will be rejected.
 - A .zip inside a .zip. Only the outer archive is opened.
 - Signal. On a phone, photos cache locally and upload when service returns — you can keep shooting.
@@ -1093,6 +1126,7 @@ Kevin notifies you about its own work — processing finishing, exports completi
 | Export ready | The file finished generating |
 | Share link opened | Someone received what you sent |
 | Export failed | With a reference ID and a retry |
+| Special-limits flagged | Items the policy may cap, worth checking before you export |
 | Storage nearing the pool | An email first, never a lockout |
 | Payment problem | Before anything is interrupted |
 
@@ -1156,39 +1190,3 @@ Kevin is used by insurance adjusters and by estate-sale professionals, and each 
 | Condition grade | Your assessment of the object, from excellent to poor. Set by you, not calculated. |
 | Status | Where an item ended up: for sale, sold, keep, or donate. |
 | Realized | What items actually sold for, against the fair market estimate. |
-
----
-
----
-
-## Recovering your holdback
-
-_Turn replaced items into a recovery request the carrier desk can pay._
-
-On an RCV policy the carrier pays ACV up front and holds back the depreciation. When the insured actually replaces an item, that holdback becomes recoverable. Kevin tracks it per line and builds the request document for you.
-
-### How it works
-
-1. **Open Recovery** — from the claim overview, open the Recovery tab. Every worksheet line is there with its holdback amount computed.
-2. **Enter the actual cost** — what the insured actually paid. For multi-unit lines, set how many units were replaced; Kevin prorates per unit.
-3. **Attach the receipt** — one per line. A line with a cost but no receipt still exports; it prints MISSING in amber.
-4. **Export the request** — .xlsx or PDF RCV Report, with or without receipt files.
-
-### What the recoverable amount is
-
-Per line, recovery is capped at the smaller of the withheld depreciation and what was actually spent — the carrier never pays out more than the insured spent.
-
-### Batches are normal
-
-Export a recovery request whenever there is something new to claim — each export is a fresh snapshot of every line with an actual cost entered.
-
-### What the exports contain
-
-| Export | Contents |
-|---|---|
-| RCV Report · .xlsx | Static-value spreadsheet of claimed lines — row #, item, holdback, actual cost, claimed amount, receipt filename. |
-| RCV Report · PDF | The request as a formatted document, with an appendix indexing each receipt by worksheet row number. |
-| Receipts · .zip | Just the receipt files, named by row (receipt_0001.pdf). |
-| Worksheet + receipts · .zip | The request document plus the receipts as separate originals beside it — the PDF's appendix is the index. |
-
-> Receipts are never merged into one flattened PDF — originals travel as separate files.

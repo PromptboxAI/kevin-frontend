@@ -2,7 +2,7 @@
 
 _Formats, size limits, dedupe, and how to shoot so Kevin reads well._
 
-Drag any combination of JPG, PNG, or HEIC files, a folder, or a single .zip up to 2 GB. iPhone HEIC files are converted on arrival — you do not need to change your camera settings.
+Drag any combination of JPG, PNG, or HEIC files, a folder, or a whole .zip — no total-size cap, up to 15 MB per photo. iPhone HEIC files are converted on arrival — you do not need to change your camera settings.
 
 ## Duplicates
 

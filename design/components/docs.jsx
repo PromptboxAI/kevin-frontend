@@ -1,7 +1,9 @@
-// Docs — 44 articles across 8 sections, rendered from block data in
+// Docs — 45 articles across 8 sections, rendered from block data in
 // docs-articles.jsx + docs-articles-2.jsx + docs-articles-3.jsx (parts 1-3).
 // Every nav item resolves to an article; no dead links.
-// Content is DATA on purpose: it lifts into GitBook or a CMS untouched.
+// Content is DATA on purpose: it lifts into GitBook or a CMS untouched —
+// `node build-docs-exports.cjs` renders it into Kevin-docs.md and gitbook/,
+// which are GENERATED. Edit the articles, never those files.
 
 const { KevinWordmark, Icon, I, Badge } = window;
 

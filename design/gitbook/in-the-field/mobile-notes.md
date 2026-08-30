@@ -2,7 +2,7 @@
 
 _Telling Kevin what it is looking at before it looks._
 
-While shooting you can attach a short note to the set you are capturing — up to 120 characters. It steers identification when Kevin processes the batch.
+While shooting you can attach a short note to the set you are capturing — up to 300 characters of additional identification Kevin reads when it processes the batch.
 
 ## What a good note looks like
 

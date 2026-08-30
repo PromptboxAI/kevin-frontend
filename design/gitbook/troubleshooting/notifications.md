@@ -12,6 +12,7 @@ Kevin notifies you about its own work — processing finishing, exports completi
 | Export ready | The file finished generating |
 | Share link opened | Someone received what you sent |
 | Export failed | With a reference ID and a retry |
+| Special-limits flagged | Items the policy may cap, worth checking before you export |
 | Storage nearing the pool | An email first, never a lockout |
 | Payment problem | Before anything is interrupted |
 

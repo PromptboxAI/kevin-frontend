@@ -154,6 +154,15 @@ Claude Code will NOT infer intent for an undocumented static control — an iner
 
 ## Conventions when editing
 
+- **`Kevin-docs.md` and `gitbook/` are GENERATED — never hand-edit them.** The 45
+  docs articles live once, in `components/docs-articles*.jsx`; `node build-docs-exports.cjs`
+  renders both exports from that source (`--check` verifies without writing and exits 1
+  when they are behind, so it can gate CI). Run it whenever an article changes.
+  Editing an export directly is silently discarded on the next run. This exists because
+  the same articles were maintained by hand in three places and drifted: `gitbook/` still
+  said 120-character notes (rule 23 says 300) and “.zip up to 2 GB” (rule 21: 15 MB a
+  photo, no total cap), and `Kevin-docs.md` was missing a whole article. Nothing fails
+  when a doc is wrong — same reason `check-domain-rules.py` exists.
 - **Run `python check-domain-rules.py` before handing work off.** It greps the shipping
   surfaces for language the domain rules above scrapped — per-seat pricing, the free
   first claim, SOC 2, Xactimate XML, sold-comp provenance — and exits 1 on a hit. Copy

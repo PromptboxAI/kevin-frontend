@@ -13,6 +13,6 @@ The bundle is a single .zip containing the spreadsheet, the PDF inventory, every
 
 ## Size
 
-Photographs dominate the size. A 162-photo claim lands somewhere around 340 MB, and a single export is capped at 2 GB. If you only need the numbers, take the spreadsheet instead.
+Photographs dominate the size. A large photo claim can land in the hundreds of MB, and a single export is capped at 2 GB. If you only need the numbers, take the spreadsheet instead.
 
 > The audit log is the part that makes a bundle worth keeping. Two years on it shows exactly what changed and who changed it.

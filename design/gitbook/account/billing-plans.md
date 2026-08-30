@@ -8,7 +8,7 @@ Kevin is a flat monthly subscription, the way you already pay for Xactimate. The
 
 | Plan | For | Price |
 | --- | --- | --- |
-| Pro | Content inventory specialists, IAs and public adjusters | $249 / month, unlimited claims |
+| Pro | Content inventory specialists, IAs and public adjusters | $249 / month · unlimited claims · 2,000 line items, then $0.20 an item |
 | Enterprise | Carriers, TPAs, and multi-adjuster teams | Custom, volume licensing on one invoice |
 
 ## The free tier
