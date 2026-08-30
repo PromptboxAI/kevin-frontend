@@ -879,6 +879,60 @@ const MANUAL_CAPACITY_COPY = {
 const isCapacityWait = (row) => MANUAL_KIND[row && row.manual_reason] === 'capacity';
 
 const KevinAPI = {
+
+  // ─── Billing checkouts ────────────────────────────────────────────
+  // The only part of KevinAPI that talks to a REAL backend rather than a mock.
+  // All three mint a Stripe-hosted Checkout/Portal session and return `{ url }`;
+  // the browser is then redirected there, so no card data ever reaches Kevin —
+  // the same promise the signup disclosure already makes.
+  //
+  //   POST /v1/billing/checkout          -> Pro subscription
+  //   POST /v1/billing/credits/checkout  -> one-time block of item credits
+  //   POST /v1/billing/portal            -> manage card / cancel / invoices
+  //
+  // ⚠ CONTRACT TO CONFIRM: the credits body is sent as { items: <n> }. The
+  // backend named the endpoint but not the field; if it expects `quantity`,
+  // `credits` or a Stripe price id, change it HERE and nowhere else.
+  //
+  // Idempotency is the caller's job in the UI (buttons disable while in
+  // flight). Double-posting mints two sessions, and a customer who completes
+  // both is charged twice — the backend should also key on an idempotency
+  // header before the end-to-end run.
+  //
+  // success_url / cancel_url are set SERVER-side; the client never supplies a
+  // redirect target, so a tampered link cannot bounce a paying customer to a
+  // page of someone else's choosing.
+  billing: {
+    checkout()        { return KevinAPI.billing._session('/v1/billing/checkout'); },
+    credits(items)    { return KevinAPI.billing._session('/v1/billing/credits/checkout', { items }); },
+    portal()          { return KevinAPI.billing._session('/v1/billing/portal'); },
+
+    async _session(path, body) {
+      let res;
+      try {
+        res = await fetch(path, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify(body || {}),
+        });
+      } catch (e) {
+        // Network/CORS failure, and the case you hit in the prototype where no
+        // backend is listening. Surface it — a dead Buy button that logs
+        // nothing is how a broken checkout ships.
+        throw new Error('Could not reach billing. Check your connection and try again.');
+      }
+      if (!res.ok) {
+        let detail = '';
+        try { detail = (await res.json()).detail || ''; } catch (e) { /* non-JSON error body */ }
+        throw new Error(detail || `Billing returned ${res.status}. Try again, or contact support if it persists.`);
+      }
+      const data = await res.json();
+      if (!data || !data.url) throw new Error('Billing did not return a checkout link.');
+      window.location.assign(data.url);
+      return data;
+    },
+  },
   // PATCH /v1/claims/{id}/settled-items/{row_id} { claimed_rcv, replaced_qty } —
   // returns the recomputed recoverable. replaced_qty: null = all units,
   // 0 = none (line drops from the export), k = pro-rate. UI applies verbatim.

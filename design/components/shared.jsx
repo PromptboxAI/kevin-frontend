@@ -209,4 +209,31 @@ const ClaimTabs = ({ active, sample }) => {
   );
 };
 
-Object.assign(window, { GoogleG, fmtUSD, fmtUSDshort, KevinMark, KevinWordmark, Icon, I, Thumb, ConfPip, Badge, PRODUCT_IMG, productImgFor, ClaimTabs });
+// Starts the Pro subscription checkout. Shared because the same action is
+// offered from the usage meter and from the quota-truncation alert, and an
+// in-app upgrade must go straight to Stripe rather than bouncing an already
+// signed-in adjuster back to the marketing pricing page to start over.
+// Disabled in flight: a second click mints a second Stripe session.
+const UpgradeProButton = ({ className, label }) => {
+  const [busy, setBusy] = React.useState(false);
+  const [err, setErr] = React.useState(null);
+  const go = async () => {
+    if (busy) return;
+    setBusy(true); setErr(null);
+    try {
+      await window.KevinAPI.billing.checkout();   // redirects to Stripe on success
+    } catch (e) {
+      setErr(e.message); setBusy(false);
+    }
+  };
+  return (
+    <span style={{ display: 'inline-flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
+      <button className={className || 'k-btn'} onClick={go} disabled={busy}>
+        {busy ? 'Redirecting…' : (label || 'Upgrade to Pro')}
+      </button>
+      {err && <span style={{ fontSize: 11.5, color: 'var(--k-danger)', lineHeight: 1.4, maxWidth: 260 }}>{err}</span>}
+    </span>
+  );
+};
+
+Object.assign(window, { GoogleG, fmtUSD, fmtUSDshort, KevinMark, KevinWordmark, Icon, I, Thumb, ConfPip, Badge, PRODUCT_IMG, productImgFor, ClaimTabs, UpgradeProButton });

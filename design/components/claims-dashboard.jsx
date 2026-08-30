@@ -406,7 +406,7 @@ const ClaimTruncationAlert = ({ trunc, onAddCredits }) => {
       </div>
       <div className="k-trunc-actions">
         <button className="k-btn" onClick={onAddCredits}>Add credits</button>
-        <a className="k-btn k-btn--ghost" href="21-Pricing.html">Upgrade to Pro</a>
+        <window.UpgradeProButton className="k-btn k-btn--ghost" />
       </div>
     </section>
   );

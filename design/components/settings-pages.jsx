@@ -607,6 +607,19 @@ const AddCreditsModal = ({ usage, onClose }) => {
   const blocks = (usage && usage.blocks) || [250, 500, 1000, 2500];
   const price = (usage && usage.overagePrice) || 0.2;
   const [pick, setPick] = React.useState(blocks[1]);
+  // Disabled while in flight: a second click mints a second Stripe session,
+  // and a customer who completes both is charged twice.
+  const [busy, setBusy] = React.useState(false);
+  const [err, setErr] = React.useState(null);
+  const buy = async () => {
+    if (busy) return;
+    setBusy(true); setErr(null);
+    try {
+      await window.KevinAPI.billing.credits(pick);   // redirects to Stripe on success
+    } catch (e) {
+      setErr(e.message); setBusy(false);
+    }
+  };
   React.useEffect(() => {
     const esc = (e) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', esc);
@@ -649,9 +662,16 @@ const AddCreditsModal = ({ usage, onClose }) => {
             month. Buying credits does not change your plan or your renewal date.
           </div>
         </div>
+        {err && (
+          <div style={{ margin: '0 24px 4px', padding: '10px 12px', borderRadius: 8, background: 'oklch(0.58 0.19 25 / 0.07)', border: '1px solid oklch(0.58 0.19 25 / 0.3)', fontSize: 12.5, color: 'var(--k-fg-2)', lineHeight: 1.5 }}>
+            {err}
+          </div>
+        )}
         <div style={{ padding: '14px 24px', borderTop: '1px solid var(--k-line)', background: 'var(--k-bg-2)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-          <button className="k-btn k-btn--ghost" onClick={onClose}>Cancel</button>
-          <button className="k-btn">Add {pick.toLocaleString()} items — ${(pick * price).toFixed(2)}</button>
+          <button className="k-btn k-btn--ghost" onClick={onClose} disabled={busy}>Cancel</button>
+          <button className="k-btn" onClick={buy} disabled={busy}>
+            {busy ? 'Redirecting to Stripe…' : `Add ${pick.toLocaleString()} items — $${(pick * price).toFixed(2)}`}
+          </button>
         </div>
       </div>
     </div>
@@ -719,7 +739,7 @@ const ItemUsageCard = ({ plan, included, credits, note, onAddCredits }) => {
         {onAddCredits && (
           <div className="k-usage-actions">
             <button className="k-btn k-btn--ghost k-btn--sm" onClick={onAddCredits}>Add credits</button>
-            {free && <a className="k-btn k-btn--sm" href="21-Pricing.html">Upgrade to Pro</a>}
+            {free && <window.UpgradeProButton className="k-btn k-btn--sm" />}
           </div>
         )}
       </div>
@@ -818,6 +838,20 @@ const SettingsBilling = ({ plan = 'pro' }) => {
   // Credits are bought from the usage card here and from the truncation alert
   // on the claim dashboard; both open the same modal.
   const [credits, setCredits] = React.useState(false);
+  // Manage subscription / Cancel plan / Update card are all ONE Stripe-hosted
+  // portal session -- the portal owns card updates, cancellation and invoice
+  // history, so Kevin does not rebuild any of them.
+  const [portalBusy, setPortalBusy] = React.useState(false);
+  const [portalErr, setPortalErr] = React.useState(null);
+  const portal = async () => {
+    if (portalBusy) return;
+    setPortalBusy(true); setPortalErr(null);
+    try {
+      await window.KevinAPI.billing.portal();   // redirects to Stripe on success
+    } catch (e) {
+      setPortalErr(e.message); setPortalBusy(false);
+    }
+  };
   const usage = KIU(P.itemPlan, 0);
   return (
   <SettingsShell activeId="billing" title="Billing" save={false} eyebrow={[P.name, P.showPayment && 'payment', P.invoices.length && 'invoices'].filter(Boolean).join(' · ')}>
@@ -826,7 +860,7 @@ const SettingsBilling = ({ plan = 'pro' }) => {
         <h1 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 28, letterSpacing: '-0.022em', margin: '4px 0 4px' }}>{P.heading}</h1>
         <p style={{ fontSize: 13, color: 'var(--k-fg-3)', margin: 0 }}>{P.nextLine}</p>
       </div>
-      {plan === 'pro' && <button className="k-btn">Manage subscription</button>}
+      {plan === 'pro' && <button className="k-btn" onClick={portal} disabled={portalBusy}>{portalBusy ? 'Redirecting…' : 'Manage subscription'}</button>}
     </div>
 
     {plan === 'comped' && (
@@ -858,7 +892,7 @@ const SettingsBilling = ({ plan = 'pro' }) => {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, fontSize: 12 }}>
           <span style={{ color: 'var(--k-fg-3)', maxWidth: 460 }}>{P.blurb}</span>
           <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-            {P.showCancel && <button className="k-btn k-btn--ghost">Cancel plan</button>}
+            {P.showCancel && <button className="k-btn k-btn--ghost" onClick={portal} disabled={portalBusy}>Cancel plan</button>}
             {plan === 'pro' && <a className="k-btn" href="15-Request-access.html">Talk to us about Enterprise</a>}
             {plan !== 'pro' && <a className="k-btn k-btn--ghost" href="38-Contact.html">Contact us</a>}
           </div>
@@ -866,6 +900,9 @@ const SettingsBilling = ({ plan = 'pro' }) => {
       </div>
     </section>
 
+    {portalErr && (
+      <div style={{ margin: '0 0 14px', padding: '10px 12px', borderRadius: 8, background: 'oklch(0.58 0.19 25 / 0.07)', border: '1px solid oklch(0.58 0.19 25 / 0.3)', fontSize: 12.5, color: 'var(--k-fg-2)' }}>{portalErr}</div>
+    )}
     <ItemUsageCard plan={P.itemPlan} included={P.itemsIncluded} note={P.itemsNote} onAddCredits={() => setCredits(true)} />
     {credits && <AddCreditsModal usage={usage} onClose={() => setCredits(false)} />}
     <StorageUsageCard includedGB={P.storageGB} note={P.storageNote} />
@@ -886,7 +923,7 @@ const SettingsBilling = ({ plan = 'pro' }) => {
               <div style={{ fontSize: 13, fontWeight: 600 }}>Visa ending in 4242</div>
               <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', marginTop: 2 }}>Expires 12/2028 · Billing address on file in Hauppauge, NY</div>
             </div>
-            <button className="k-btn k-btn--ghost">Update</button>
+            <button className="k-btn k-btn--ghost" onClick={portal} disabled={portalBusy}>Update</button>
           </div>
         </div>
       </section>

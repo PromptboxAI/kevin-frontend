@@ -58,6 +58,94 @@ Two things to get right when wiring:
   outcomes.
 
 
+## Billing — Stripe events and the UI state they produce
+
+The contract for the end-to-end run. Written frontend-side so both halves test
+against the same document; anything here the backend disagrees with should be
+corrected **here first**, not worked around in a component.
+
+Three endpoints, all minting a Stripe-hosted session and returning `{ url }`
+that the client redirects to. `KevinAPI.billing` in `data.jsx` is the only
+place they are called:
+
+| Action | Endpoint | Body |
+|---|---|---|
+| Start Pro | `POST /v1/billing/checkout` | `{}` |
+| Buy credits | `POST /v1/billing/credits/checkout` | `{ items: <n> }` ⚠ field name unconfirmed |
+| Manage card / cancel / invoices | `POST /v1/billing/portal` | `{}` |
+
+`success_url` / `cancel_url` are set **server-side**. The client never supplies
+a redirect target, so a tampered link cannot bounce a paying customer somewhere
+of an attacker's choosing.
+
+### The rule that matters most
+
+**A redirect back from Stripe is not proof of anything.** The customer can beat
+the webhook back to the app, hit Back, refresh, or close the tab mid-flow. The
+UI therefore reads billing state from `GET /v1/me` **only**, and never infers it
+from having landed on `success_url` — same discipline as rule 20 everywhere
+else: the frontend renders the state the payload carries.
+
+That means the success page must render a **pending** state gracefully. If
+`GET /v1/me` still says `free` a second after checkout, that is normal and not
+an error; poll or re-fetch, and never show "payment failed" for it.
+
+Webhooks are also **retried** by Stripe and can arrive **out of order**. The
+item counter is append-only (rule 9c), so a credit block applied twice is real
+money the customer did not buy. Key every grant on the Stripe event id.
+
+### What `GET /v1/me` must carry
+
+The UI reads exactly these; nothing else is derived client-side.
+
+| Field | Values | Drives |
+|---|---|---|
+| `plan` | `free` · `pro` · `enterprise` · `comped` | `ItemUsageCard` allowance (250 vs 2,000), `SettingsBilling` plan card, whether **Upgrade to Pro** renders |
+| `items.included` | int | The plan's allowance. Free = 250 one-time (no reset); Pro = 2,000 per billing month |
+| `items.credits` | int | Purchased credits still unspent. **Added to** `included`, never replacing it |
+| `items.used` | int | Append-only count of items PRODUCED. Never decreases — not on delete, not on claim delete |
+| `billing_state` | `active` · `past_due` · `canceled` · `suspended` | Dunning banners and the suspended edge state |
+| `period_end` | ISO date, `null` on free | "Next invoice" line; also when `items.used` resets on Pro |
+
+### Event → state
+
+| Stripe event | Backend does | `GET /v1/me` becomes | UI result |
+|---|---|---|---|
+| `checkout.session.completed` (mode `subscription`) | Create the subscription; move the account to Pro | `plan: "pro"`, `billing_state: "active"`, `items.included: 2000`, `period_end` set | Meter flips 250 → 2,000 and drops the "free tier" label; **Upgrade to Pro** disappears; truncation alert clears once the held photos are re-run |
+| `checkout.session.completed` (mode `payment`) | Grant the credit block, keyed on the event id | `items.credits` += block | Meter shows `included + credits`; **not** a plan change — `plan` is untouched, and this must stay out of upgrade metrics (fire `credits_purchased`, not `plan_upgraded`) |
+| `invoice.paid` (renewal) | Roll the period | `period_end` advances; `items.used` resets to 0 | Meter resets. **`items.credits` does NOT reset** — credits are bought, not granted, so they carry over |
+| `invoice.payment_failed` | Start dunning; do not cut access yet | `billing_state: "past_due"` | Warning banner. Work continues — never lock a claim mid-edit over billing |
+| `customer.subscription.deleted` (dunning exhausted or cancelled) | End the subscription | `plan: "free"`, `billing_state: "canceled"`, `items.included: 250` | Account returns to the free tier. **Nothing is deleted** (rule 15) — claims, worksheets and exports stay downloadable |
+| Credit checkout abandoned or card declined | Nothing. No session completion, no grant | unchanged | Nothing happens. A failed **one-time** purchase must never touch `plan`, `billing_state`, or the subscription |
+
+### The distinction the test needs to prove
+
+A failed **subscription** payment and a failed **credit** purchase are not the
+same failure and must not share a code path:
+
+- **Subscription failure is a relationship problem.** It has dunning, it emails
+  (`emails/09-payment-failed.html`), it degrades the account after retries, and
+  it eventually changes `plan`. It is never silent.
+- **Credit-purchase failure is a transaction problem.** There is no dunning, no
+  email, no account change, and no effect on Pro. The customer simply did not
+  buy credits; the modal shows the error and they can retry. If a declined
+  credit card ever moves `billing_state`, that is a bug.
+
+### Already-hit edges worth asserting in the run
+
+1. **Credits bought while already over the allowance.** `items.used` may exceed
+   `included + credits` at the moment of purchase; the meter must show the new
+   allowance and the reduced overage, not clamp to 100% or go negative.
+2. **Upgrade while truncated.** Held photos do not re-run themselves. Either the
+   backend resumes them on `plan` change or the UI needs a "process held photos"
+   action — decide before the run; today the alert promises Kevin "picks up
+   exactly where it stopped".
+3. **Comped accounts** (`plan: "comped"`) receive no Stripe events at all. They
+   must not fall into any dunning or downgrade path.
+4. **Double-submit.** Both checkout buttons disable in flight, but the backend
+   should key on an idempotency header too — two completed sessions is two real
+   charges.
+
 ## Global chrome (all authenticated pages)
 | Control | State | Production behavior |
 |---|---|---|
@@ -101,8 +189,8 @@ Two things to get right when wiring:
 | 01 My claims | Open → | ➡️ | Open claim (worksheet/processing per status) |
 | 01 My claims | **Quota truncation alert** (`ClaimTruncationAlert`) | ✅ renders from payload | Shown whenever the ingest response carries `truncated: true`; reads `dropped_count` / `processed_count` verbatim (rule 9c). **Non-dismissible by design** — it clears when quota is restored and the held photos process, not when the adjuster acknowledges it. Never infer truncation by comparing counts. **Hidden on the demo dashboard**: the canonical account is Pro at 921 of 2,000, so it has 1,079 items of headroom and cannot truncate — seeding it there would print numbers contradicting the meter and the claim rows. |
 | 20 Edge states | Panel **09 · Quota truncation** | ✅ | The same component, fed the case that actually occurs: free tier, 250 allowance, 57 already spent, a 300-photo shoot → 193 priced, 107 held. Numbers are DERIVED by `buildTruncation()` (`processed = min(attempted, remaining)`), never picked. |
-| 01 My claims | Alert **Add credits** | ✅ opens `AddCreditsModal` | Same modal as Billing. Production: Stripe one-time charge for the block, then re-run the held photos. |
-| 01 My claims | Alert **Upgrade to Pro** | ➡️ 21-Pricing | Production: in-app upgrade → `POST /v1/billing/subscription`, then re-run the held photos. |
+| 01 My claims | Alert **Add credits** | ✅ LIVE | Same modal as Billing. Production: Stripe one-time charge for the block, then re-run the held photos. |
+| 01 My claims | Alert **Upgrade to Pro** (`UpgradeProButton`) | ✅ LIVE | Production: in-app upgrade → `POST /v1/billing/checkout`, then re-run the held photos. |
 | 01 | Row ⋯ (Open/Preview/Duplicate/Export/Print) | ✅ (Duplicate+Export modals) / 🔌 rest | Duplicate=new claim w/ new name; Export=save-as .pdf/.xlsx; Print |
 | 01 | **Mark closed** / **Reopen claim** | ✅ LIVE | Toggles `closed` ↔ `open` in the roster. Hidden entirely while the claim is archived — unarchive is the move that brings it back, and offering both reads as two ways to do one thing. Disabled while work is in flight. |
 | 01 | **Archive** → confirm modal | ✅ LIVE | Sets `archived`; the claim leaves the active list and stays reachable under the **Archived** filter with everything intact (rule 15). Confirm was previously inert — the button had no handler at all. |
@@ -223,13 +311,13 @@ Two things to get right when wiring:
 | 40 Pricing-source | Stat strip — **two scopes, each labeled**: comps fetched today + items priced this month are PER-ACCOUNT; match rate + avg variance are PLATFORM-wide 30d rolling (one account is too small a sample to be meaningful). Keep the scope label on every cell | 🔌 | Read-only diagnostics from the comp-source health endpoint. **No config controls here** — valuation behavior is set once in Settings → Pricing so the two screens cannot disagree. Per-item comp history lives on the item drawer, not here |
 | 36 Settings-API | **Enterprise-gated.** Pro renders a locked state (→ 15-Request-access / 21-Pricing); `plan="enterprise"` renders keys + webhooks. Rotate / Revoke / Create key / Add webhook / Logs / Edit | 🔌 | `/v1/api-keys`, `/v1/webhooks`. Events are Kevin lifecycle only — **no carrier submit endpoint** (rule 4). Do not offer API on Pro |
 | 35 Settings-billing | **Plan-aware** — renders `plan="pro"` (flat $249), `"enterprise"` (invoiced, no card/cancel), or `"comped"` ($0, banner, no card/cancel). Never hardcode Pro/$249: the admin console can comp an account | 🔌 | Read the account's billing state; `BILLING_PLANS` in `settings-pages.jsx` stands in for it |
-| 35 Settings-billing | **Manage subscription** / **Cancel plan** / **Update** card | 🔌 | Stripe (or equivalent) customer portal session. Cancel keeps access through the paid period |
+| 35 Settings-billing | **Manage subscription** / **Cancel plan** / **Update** card | ✅ LIVE | All three mint ONE `POST /v1/billing/portal` session and redirect; the portal owns card updates, cancellation and invoice history, so Kevin does not rebuild them. Disabled in flight; failures surface above the cards. Was: Stripe (or equivalent) customer portal session. Cancel keeps access through the paid period |
 | 35 Settings-billing | Invoice row **download** | 🔌 | `GET /v1/invoices/:id.pdf` |
 | 35 Settings-billing | **Line items** meter (`ItemUsageCard`) | ✅ derived | Used count is DERIVED from the claim roster, never typed in. `plan` selects the pool — `free` = 250 one-time (no reset, no clock), `pro` = 2,000 a billing month; `included` overrides for an Enterprise contract. Production: `GET /v1/usage/items`. |
 | 35 Settings-billing | Meter **append-only note** | ✅ static copy | Rule 9c. States that deleting an item does not return quota. Do not remove — it is the cheapest support-ticket deflection on the page. |
-| 35 Settings-billing | **Add credits** → `AddCreditsModal` | ✅ opens / 🔌 checkout | Blocks of 250/500/1,000/2,500 at $0.20 an item (same rate as Pro overage). Buying credits is NOT a plan change — keep it out of upgrade metrics; fire `credits_purchased`. Production: `POST /v1/billing/credits`. |
+| 35 Settings-billing | **Add credits** → `AddCreditsModal` | ✅ LIVE | Blocks of 250/500/1,000/2,500 at $0.20 an item (same rate as Pro overage). Buying credits is NOT a plan change — keep it out of upgrade metrics; fire `credits_purchased`. Production: `POST /v1/billing/credits/checkout`. |
 | 35 Settings-billing | Credits modal **Cancel** / scrim / Esc | ✅ | All three close the modal. |
-| 35 Settings-billing | **Upgrade to Pro** (free tier only) | ➡️ 21-Pricing | Only rendered when the account is on the free tier. |
+| 35 Settings-billing | **Upgrade to Pro** (free tier only, `UpgradeProButton`) | ✅ LIVE | `POST /v1/billing/checkout` → redirect. Goes straight to Stripe rather than bouncing a signed-in adjuster to the marketing pricing page. Only rendered on the free tier. Shared with the truncation alert so there is one implementation. |
 | 35 Settings-billing | **Talk to us about Enterprise** / **Contact us** | ✅ | `href` → 15-Request-access / 38-Contact |
 | 34 Settings-Xactimate | **Talk to us about Enterprise** / **See API docs** | ✅ | `href` → 15-Request-access / 24-Docs |
 | 34 Settings-Xactimate | **Download sample** (xlsx / pdf / csv) | 🔌 | `GET /v1/samples/:format` — a small fixture inventory so a user can test their import before running a real claim. No OAuth, no connect flow: Kevin has no Xactimate integration (rule 2, rule 4) |
