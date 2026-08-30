@@ -26,3 +26,4 @@ npm-debug.log*
 
 # Windows shortcuts
 *.lnk
+__pycache__/
