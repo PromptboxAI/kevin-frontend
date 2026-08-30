@@ -311,11 +311,10 @@ const ForLiquidators = () => (
         <div className="k-seg-hero-l">
           <Badge tone="accent" dot={true}>For estate liquidators &amp; trust officers</Badge>
           <h1 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 64, letterSpacing: '-0.028em', margin: '20px 0 18px', lineHeight: 1.02 }}>
-            <span className="k-h1-line">Win the estate</span><br />
-            <span className="k-h1-line">before you discount.</span>
+            Catalog an entire estate in an afternoon.
           </h1>
           <p style={{ fontSize: 17, color: 'var(--k-fg-2)', lineHeight: 1.5, margin: 0, maxWidth: 530 }}>
-            Walk the house once with your phone. Before you leave the driveway Kevin has the inventory — photographed, brand-matched, priced — and you hand the family a document. The other two callers are still quoting a percentage.
+            Walk every room with your phone. Kevin builds the inventory: brand-matched, fair-market-valued, categorized into estate-friendly classes — ready to print, share, or take to auction.
           </p>
           <div className="k-hero-actions" style={{ marginTop: 32 }}>
             <a className="k-btn k-btn--lg" href="58-Account-create.html">Start an estate →</a>
@@ -356,14 +355,15 @@ const ForLiquidators = () => (
           </h2>
           <p style={{ fontSize: 15, color: 'var(--k-fg-3)', lineHeight: 1.6, margin: 0, maxWidth: 640 }}>
             Most estates go to whoever the family trusts first, and trust is hard to win with a verbal
-            estimate and a commission rate. Walk the house, run it through Kevin, and leave a priced
-            inventory with a photo on every line — the same afternoon.
+            estimate and a commission rate. Photograph the house on the walkthrough, run it through
+            Kevin afterwards, and send a priced inventory with a photo on every line — while the other
+            callers are still promising to get back to them.
           </p>
         </div>
         <ol className="k-est-win-steps">
           {[
-            ['Walk it once', 'Photograph room by room on your phone. No assistant, no clipboard, no second visit to fill gaps.'],
-            ['Hand them a number', 'A photographed, priced inventory with a value on every line — not a range, not a guess, and not a promise to follow up next week.'],
+            ['Photograph the walkthrough', 'Room by room on your phone, on the visit you were making anyway. No assistant, no clipboard, no second trip to fill gaps.'],
+            ['Send a real number', 'Back at your desk it is a priced inventory with a photo on every line — not a range, not a guess, and not a promise to follow up next week.'],
             ['Win on evidence', 'You are no longer the cheapest percentage. You are the one who already did the work, and the family can see exactly what their things are worth.'],
           ].map(([t, d], i) => (
             <li key={i} className="k-est-win-step">
