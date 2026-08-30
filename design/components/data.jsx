@@ -685,6 +685,42 @@ const KEVIN_CLAIMS = [
   { id: 'CLM-2026-04342', name: 'Bauer Trust',     cause: 'Estate liquidation',    loc: 'Fredericksburg TX', carrier: 'Bauer Trust',       items: 280, photos: 318, rcv: 198330, status: 'closed',   dol: 'Mar 28',  age: '4w ago',  flags: 0,  exported: true  },
 ];
 
+// Line-item allowance (CLAUDE.md rule 9). Items are the second metered
+// dimension: Pro includes 2,000 per billing month, then $0.20 each. Like
+// storage, the used figure is DERIVED from the claim roster — never typed in —
+// so changing a claim's item count moves the meter.
+//
+// ⚠ PROTOTYPE SEAM: the roster carries relative ages ('3d ago', '2w ago')
+// rather than timestamps, so the cycle window is resolved by parsing those.
+// In production this is a SERVER-side count of items promoted between the
+// period's start and end dates; the client renders the number, it does not
+// compute eligibility. Do not port this parser.
+const ITEM_INCLUDED = 2000;
+const ITEM_OVERAGE_PRICE = 0.20;
+const ITEM_CYCLE_DAYS = 30;
+const ageToDays = (age) => {
+  const m = /^(\d+)\s*([hdwm])/.exec(String(age || ''));
+  if (/yesterday/i.test(age)) return 1;
+  if (!m) return Infinity;
+  const n = Number(m[1]);
+  return { h: n / 24, d: n, w: n * 7, m: n / 60 / 24 }[m[2]];  // 'm' is minutes here, not months
+};
+const KEVIN_ITEM_USAGE = (() => {
+  const inCycle = KEVIN_CLAIMS.filter((c) => ageToDays(c.age) <= ITEM_CYCLE_DAYS);
+  const used = inCycle.reduce((a, c) => a + c.items, 0);
+  const over = Math.max(used - ITEM_INCLUDED, 0);
+  return {
+    included: ITEM_INCLUDED,
+    overagePrice: ITEM_OVERAGE_PRICE,
+    cycleDays: ITEM_CYCLE_DAYS,
+    used,
+    claims: inCycle.length,
+    over,
+    overageCost: Math.round(over * ITEM_OVERAGE_PRICE * 100) / 100,
+    pct: Math.min(Math.round((used / ITEM_INCLUDED) * 1000) / 10, 100),
+  };
+})();
+
 // Storage & fair use. Photo storage is Kevin's real variable cost, so the number
 // is DERIVED from the account's actual photo counts — never typed in.
 //   • Pro includes a generous active pool; nothing is ever deleted to reclaim space.
@@ -1304,4 +1340,4 @@ function settledRecoverable(r, claimed, k) {
 
 const claimTaxPct = () => (CLAIM_TAX.rate * 100).toFixed(3).replace(/\.?0+$/, '') + '%';
 
-Object.assign(window, { buildSettledRows, WRITTEN_SAMPLE_ROWS, STAGE_UNGROUPED, MANUAL_KIND, MANUAL_CAPACITY_COPY, isCapacityWait, US_STATES, CLAIM_SESSIONS, CLAIM_INGEST, NOTE_MAX, mergeUserNotes, claimTaxPct, CLAIM_TAX, buildFmvSources, fmvHaircut, KevinAPI, buildDepMeta, MANUAL_DEP_META, KEVIN_CLAIMS, KEVIN_STORAGE, CLAIM_PP_LIMIT, PCS_CATEGORIES, SPECIAL_LIMITS, SAMPLE_BASE, buildWorksheetRows, THUMB_TONES, DEP_TABLE, getDepFor, depBracket, ROOM_OPTIONS, CLASS_TO_ROOM, USEFUL_LIFE, PCS_CODE, DEP_BRACKET_LABELS, depExplain, REYES_TOTALS });
+Object.assign(window, { KEVIN_ITEM_USAGE, buildSettledRows, WRITTEN_SAMPLE_ROWS, STAGE_UNGROUPED, MANUAL_KIND, MANUAL_CAPACITY_COPY, isCapacityWait, US_STATES, CLAIM_SESSIONS, CLAIM_INGEST, NOTE_MAX, mergeUserNotes, claimTaxPct, CLAIM_TAX, buildFmvSources, fmvHaircut, KevinAPI, buildDepMeta, MANUAL_DEP_META, KEVIN_CLAIMS, KEVIN_STORAGE, CLAIM_PP_LIMIT, PCS_CATEGORIES, SPECIAL_LIMITS, SAMPLE_BASE, buildWorksheetRows, THUMB_TONES, DEP_TABLE, getDepFor, depBracket, ROOM_OPTIONS, CLASS_TO_ROOM, USEFUL_LIFE, PCS_CODE, DEP_BRACKET_LABELS, depExplain, REYES_TOTALS });

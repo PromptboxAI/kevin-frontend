@@ -593,6 +593,49 @@ const KS = () => window.KEVIN_STORAGE;
 const fmtGB = (n) => (n >= 10 ? n.toFixed(0) : n.toFixed(1)) + ' GB';
 const fmtPool = (n) => (n >= 1000 ? (n / 1000) + ' TB' : n + ' GB');
 
+const KIU = () => (typeof window !== 'undefined' ? window.KEVIN_ITEM_USAGE : null);
+
+// Line items used this billing month. Mirrors StorageUsageCard: the number is
+// DERIVED from the claim roster, never typed in. Included allowance is a prop
+// because an Enterprise contract carries its own.
+const ItemUsageCard = ({ included, note }) => {
+  const base = KIU();
+  if (!base) return null;
+  const u = included
+    ? { ...base, included, over: Math.max(base.used - included, 0), pct: Math.min(Math.round((base.used / included) * 1000) / 10, 100) }
+    : base;
+  const over = u.over > 0;
+  return (
+    <section className="k-set-card">
+      <div className="k-set-card-hd">Line items</div>
+      <div className="k-set-card-body">
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
+          <div style={{ fontSize: 13, color: 'var(--k-fg-3)' }}>
+            <strong style={{ color: 'var(--k-fg)', fontFamily: 'var(--k-font-mono)', fontSize: 15 }}>{u.used.toLocaleString()}</strong>
+            <span> of {u.included.toLocaleString()} included</span>
+          </div>
+          <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', fontFamily: 'var(--k-font-mono)' }}>{u.pct}%</div>
+        </div>
+        <div className="k-store-track">
+          <div className={'k-store-fill ' + (over ? 'k-store-fill--cold' : 'k-store-fill--warm')} style={{ width: Math.max(u.pct, 0.6) + '%' }}></div>
+        </div>
+        <div className="k-store-keys">
+          <span className="k-store-key"><i className={'k-store-dot ' + (over ? 'k-store-dot--cold' : 'k-store-dot--warm')}></i>{u.used.toLocaleString()} items · {u.claims} claims this cycle</span>
+          <span className="k-store-key" style={{ color: 'var(--k-fg-4)' }}>
+            {over
+              ? u.over.toLocaleString() + ' over · $' + u.overageCost.toFixed(2) + ' on the next invoice'
+              : (u.included - u.used).toLocaleString() + ' remaining'}
+          </span>
+        </div>
+        <div className="k-store-note">
+          <p><strong>Going over never locks a claim.</strong> The work finishes and the overage bills after — items past {u.included.toLocaleString()} are ${u.overagePrice.toFixed(2)} each.</p>
+          <p>{note || 'Claims stay unlimited on Pro. Estate sales are billed per estate rather than against this allowance.'}</p>
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const StorageUsageCard = ({ includedGB, note }) => {
   const base = KS();
   if (!base) return null;
@@ -640,6 +683,7 @@ const BILLING_PLANS = {
     kpis: [['Current plan', 'Pro', 'Flat monthly'], ['Claims', 'Unlimited', 'No per-claim charges'], ['This month', '$249.00', 'Auto-renews Sep 1']],
     blurb: <React.Fragment>You're on <strong style={{ color: 'var(--k-fg-2)' }}>Kevin Pro</strong> — one flat price, unlimited claims, 2,000 line items a month included, cancel anytime. Running a desk or a team? Enterprise gives you volume licensing on one invoice.</React.Fragment>,
     showCancel: true, showPayment: true, showBillingEmail: true, storageGB: null, storageNote: null,
+    itemsIncluded: null, itemsNote: null,
     invoices: [
       ['INV-2026-008', 'Aug 01, 2026', 'Pro · monthly', '$249.00'],
       ['INV-2026-007', 'Jul 01, 2026', 'Pro · monthly', '$249.00'],
@@ -655,6 +699,8 @@ const BILLING_PLANS = {
     blurb: <React.Fragment>You're on <strong style={{ color: 'var(--k-fg-2)' }}>Enterprise</strong> — volume licensing on one invoice, with API access, webhooks and team roles included. Changes go through your account contact.</React.Fragment>,
     showCancel: false, showPayment: false, showBillingEmail: true, storageGB: 5000,
     storageNote: 'Your contract includes 5 TB of active storage across all users. Additional storage is negotiated at renewal rather than billed automatically — talk to your account contact.',
+    itemsIncluded: 25000,
+    itemsNote: 'Your contract sets the monthly item allowance across all users. Overage is reconciled on the annual invoice rather than charged per item — talk to your account contact.',
     invoices: [
       ['INV-2026-Q3', 'Jul 01, 2026', 'Enterprise · Q3 2026', '$7,200.00'],
       ['INV-2026-Q2', 'Apr 01, 2026', 'Enterprise · Q2 2026', '$7,200.00'],
@@ -669,6 +715,8 @@ const BILLING_PLANS = {
     blurb: <React.Fragment>Your account has <strong style={{ color: 'var(--k-fg-2)' }}>complimentary Pro access</strong> — every feature, nothing billed. If it is set to expire you will hear from us well before it does.</React.Fragment>,
     showCancel: false, showPayment: false, showBillingEmail: false, invoices: [], storageGB: null,
     storageNote: 'Complimentary accounts get the same 500 GB of active storage as Pro, and nothing is billed if you exceed it — we will simply get in touch.',
+    itemsIncluded: null,
+    itemsNote: 'Complimentary accounts get the same 2,000 items a month as Pro, and nothing is billed if you exceed it — we will simply get in touch.',
   },
 };
 
@@ -721,6 +769,7 @@ const SettingsBilling = ({ plan = 'pro' }) => {
       </div>
     </section>
 
+    <ItemUsageCard included={P.itemsIncluded} note={P.itemsNote} />
     <StorageUsageCard includedGB={P.storageGB} note={P.storageNote} />
 
     {P.showPayment && (
@@ -936,5 +985,5 @@ curl https://api.kevin.co/v1/claims \\
 
 Object.assign(window, {
   SettingsProfile, SettingsAgency, SettingsExport,
-  SettingsIntegrations, SettingsBilling, SettingsApi, StorageUsageCard,
+  SettingsIntegrations, SettingsBilling, SettingsApi, StorageUsageCard, ItemUsageCard,
 });
