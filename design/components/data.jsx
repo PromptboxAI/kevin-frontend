@@ -776,15 +776,17 @@ const CLAIM_TRUNCATION = buildTruncation({
   occurred: '18m ago',
 });
 
-// The state as a FREE-tier adjuster meets it, which is the case that actually
-// happens: 250 items, 57 already spent on session 1, then a 300-photo
-// whole-house shoot. Kevin prices 193 and holds 107. Rendered on the
-// edge-states page, where conditions the happy path never reaches live.
+// The state as a FREE-tier adjuster meets it, and deliberately the FIRST-RUN
+// version of it: a brand-new account (nothing spent yet) drops a 300-photo
+// whole-house pack-out, watches 250 items price cleanly, and hits the wall with
+// the job unfinished. usedBefore is 0 on purpose -- seeding it from session 1
+// would show 193 priced and blunt the moment. Rendered on the edge-states page,
+// where conditions the happy path never reaches live.
 const TRUNCATION_DEMO = buildTruncation({
   claim_id: 'CLM-2026-04412',
   claim_name: 'Godfrey — Kitchen fire',
   allowance: ITEM_PLANS.free.included,
-  usedBefore: CLAIM_INGEST.items,
+  usedBefore: 0,
   attempted: CLAIM_INGEST.pendingPhotos,
   occurred: '18m ago',
 });
