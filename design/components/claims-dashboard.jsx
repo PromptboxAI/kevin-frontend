@@ -94,6 +94,9 @@ const STATUS_BADGE = {
   review:     { tone: 'ok',     label: 'In review' },
   open:       { tone: 'quiet',  label: 'Open' },
   closed:     { tone: 'quiet',  label: 'Closed' },
+  // Archived was unreachable until the archive action was wired, so the row
+  // rendered the raw key. It outranks every other derived status.
+  archived:   { tone: 'quiet',  label: 'Archived' },
 };
 // A claim stays OPEN through draft → processing → review → exported. Exporting is
 // not closing — adjusters routinely export, get carrier feedback, and revise.
@@ -148,7 +151,7 @@ const DuplicateClaimModal = ({ claim, onClose }) => {
 // Archiving is reversible and the claim stays reachable under the Archived
 // filter; delete is permanent. It's the customer's account — both are always
 // available, never blocked.
-const ClaimArchiveModal = ({ claim, mode, onClose }) => {
+const ClaimArchiveModal = ({ claim, mode, onClose, onConfirm }) => {
   const del = mode === 'delete';
   const [typed, setTyped] = React.useState('');
   const ok = !del || typed.trim().toUpperCase() === 'DELETE';
@@ -175,7 +178,7 @@ const ClaimArchiveModal = ({ claim, mode, onClose }) => {
         </div>
         <div style={{ padding: '14px 24px', borderTop: '1px solid var(--k-line)', background: 'var(--k-bg-2)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
           <button className="k-btn k-btn--ghost" onClick={onClose}>Cancel</button>
-          <button className="k-btn" disabled={!ok} style={del ? { background: 'var(--k-danger)', borderColor: 'var(--k-danger)' } : undefined}>
+          <button className="k-btn" disabled={!ok} onClick={() => { if (!ok) return; onConfirm && onConfirm(); onClose(); }} style={del ? { background: 'var(--k-danger)', borderColor: 'var(--k-danger)' } : undefined}>
             <Icon d={del ? I.trash : I.box} size={12} /> {del ? 'Delete permanently' : 'Archive claim'}
           </button>
         </div>
@@ -287,7 +290,7 @@ const ClaimStatusPicker = ({ status, status_counts, onStatus }) => {
 };
 
 // ─── Per-row action menu — mirrors Xactimate's claim actions ─────
-const ClaimRowMenu = ({ claim, onStatus }) => {
+const ClaimRowMenu = ({ claim, onStatus, onDelete }) => {
   const [open, setOpen] = React.useState(false);
   const [modal, setModal] = React.useState(null);
   const ref = React.useRef(null);
@@ -302,6 +305,7 @@ const ClaimRowMenu = ({ claim, onStatus }) => {
   // closed claim with lines still pricing (closed outranks processing).
   // status_counts.processing rides every claim row and survives close/archive.
   const busy = claim && (claim.status === 'processing' || ((claim.status_counts && claim.status_counts.processing) || 0) > 0);
+  const archived = claim && claim.status === 'archived';
   const items = [
     { icon: I.expand,   label: 'Open', act: 'open' },
     { icon: I.eye,      label: 'Preview', act: 'open' },
@@ -310,8 +314,15 @@ const ClaimRowMenu = ({ claim, onStatus }) => {
     { icon: I.download, label: 'Export…',   act: 'export', disabled: busy, why: 'Available when processing finishes' },
     { icon: I.printer,  label: 'Print' },
     { kind: 'div' },
-    { icon: I.check,    label: claim && CLOSED_STATUSES.includes(claim.status) ? 'Reopen claim' : 'Mark closed', act: 'close', disabled: busy, why: 'Available when processing finishes' },
-    { icon: I.box,      label: 'Archive', act: 'archive', disabled: busy, why: 'Available when processing finishes' },
+    // Close/Reopen is hidden while archived: unarchiving is the move that
+    // brings the claim back, and offering both reads as two ways to do one
+    // thing. Reopen returns a CLOSED claim to open work.
+    ...(archived ? [] : [{ icon: I.check, label: claim && claim.status === 'closed' ? 'Reopen claim' : 'Mark closed', act: 'close', disabled: busy, why: 'Available when processing finishes' }]),
+    // Unarchive is reversible and additive, so it needs no confirm -- unlike
+    // archive, which changes what the adjuster's active list shows.
+    archived
+      ? { icon: I.box, label: 'Unarchive', act: 'unarchive' }
+      : { icon: I.box, label: 'Archive', act: 'archive', disabled: busy, why: 'Available when processing finishes' },
     // Delete stays LIVE mid-processing (not unsafe — no corruption) but is not
     // free: the cascade fails in-flight pricing jobs and wastes spent SerpApi
     // quota. The confirm surfaces it instead of gating.
@@ -336,7 +347,7 @@ const ClaimRowMenu = ({ claim, onStatus }) => {
             {items.map((it, i) => it.kind === 'div'
               ? <div key={`d-${i}`} className="k-avatar-menu-div" />
               : (
-                <button key={i} className={`k-menu-item ${it.danger ? 'k-menu-item--danger' : ''}`} disabled={it.disabled} title={it.disabled ? it.why : undefined} onClick={() => { if (it.disabled) return; setOpen(false); if (it.act === 'open') { window.location.href = '12-Claim-overview.html'; return; } if (it.act === 'close') onStatus(CLOSED_STATUSES.includes(claim.status) ? 'open' : 'closed'); else if (it.act) setModal(it.act); }} role="menuitem" style={{ width: '100%', justifyContent: 'flex-start', ...(it.disabled ? { opacity: 0.45, cursor: 'default' } : null) }}>
+                <button key={i} className={`k-menu-item ${it.danger ? 'k-menu-item--danger' : ''}`} disabled={it.disabled} title={it.disabled ? it.why : undefined} onClick={() => { if (it.disabled) return; setOpen(false); if (it.act === 'open') { window.location.href = '12-Claim-overview.html'; return; } if (it.act === 'close') onStatus(claim.status === 'closed' ? 'open' : 'closed'); else if (it.act === 'unarchive') onStatus('open'); else if (it.act) setModal(it.act); }} role="menuitem" style={{ width: '100%', justifyContent: 'flex-start', ...(it.disabled ? { opacity: 0.45, cursor: 'default' } : null) }}>
                   <span style={{ display: 'inline-grid', width: 14, color: it.danger ? 'inherit' : 'var(--k-fg-4)' }}><Icon d={it.icon} size={12} /></span>
                   <span style={{ marginLeft: 8 }}>{it.label}</span>
                 </button>
@@ -347,7 +358,14 @@ const ClaimRowMenu = ({ claim, onStatus }) => {
       )}
       {modal === 'duplicate' && <DuplicateClaimModal claim={claim} onClose={() => setModal(null)} />}
       {modal === 'export' && <ExportClaimModal claim={claim} onClose={() => setModal(null)} />}
-      {(modal === 'archive' || modal === 'delete') && <ClaimArchiveModal claim={claim} mode={modal} onClose={() => setModal(null)} />}
+      {(modal === 'archive' || modal === 'delete') && (
+        <ClaimArchiveModal
+          claim={claim}
+          mode={modal}
+          onClose={() => setModal(null)}
+          onConfirm={() => (modal === 'delete' ? onDelete && onDelete() : onStatus('archived'))}
+        />
+      )}
     </div>
   );
 };
@@ -402,6 +420,9 @@ const Claims = () => {
   const [credits, setCredits] = React.useState(false);
   const trunc = window.CLAIM_TRUNCATION;
   const setStatus = (id, next) => setClaims(cs => cs.map(c => c.id === id ? { ...c, status: next } : c));
+  // Rule 15: delete is permanent and always available -- it is the customer's
+  // account. The confirm (type DELETE) is the guard, not a policy gate.
+  const removeClaim = (id) => setClaims(cs => cs.filter(c => c.id !== id));
   // A claim stays open until the adjuster marks it Closed (or archives it) —
   // exported claims are still open work and still count toward workload.
   const open = claims.filter(c => !CLOSED_STATUSES.includes(c.status));
@@ -495,7 +516,7 @@ const Claims = () => {
                 )}
                 {c.flags > 0 && <Badge tone="warn">{c.flags} flag{c.flags > 1 ? 's' : ''}</Badge>}
               </div>
-              <ClaimRowMenu claim={c} onStatus={(s) => setStatus(c.id, s)} />
+              <ClaimRowMenu claim={c} onStatus={(s) => setStatus(c.id, s)} onDelete={() => removeClaim(c.id)} />
             </div>
           ))}
         </section>

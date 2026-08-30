@@ -102,7 +102,13 @@ Two things to get right when wiring:
 | 01 My claims | **Quota truncation alert** (`ClaimTruncationAlert`) | ✅ renders from payload | Shown whenever the ingest response carries `truncated: true`; reads `dropped_count` / `processed_count` verbatim (rule 9c). **Non-dismissible by design** — it clears when quota is restored and the held photos process, not when the adjuster acknowledges it. Never infer truncation by comparing counts. |
 | 01 My claims | Alert **Add credits** | ✅ opens `AddCreditsModal` | Same modal as Billing. Production: Stripe one-time charge for the block, then re-run the held photos. |
 | 01 My claims | Alert **Upgrade to Pro** | ➡️ 21-Pricing | Production: in-app upgrade → `POST /v1/billing/subscription`, then re-run the held photos. |
-| 01 | Row ⋯ (Open/Preview/Duplicate/Export/Print/Delete) | ✅ (Duplicate+Export modals) / 🔌 rest | Duplicate=new claim w/ new name; Export=save-as .pdf/.xlsx; Print; Delete |
+| 01 | Row ⋯ (Open/Preview/Duplicate/Export/Print) | ✅ (Duplicate+Export modals) / 🔌 rest | Duplicate=new claim w/ new name; Export=save-as .pdf/.xlsx; Print |
+| 01 | **Mark closed** / **Reopen claim** | ✅ LIVE | Toggles `closed` ↔ `open` in the roster. Hidden entirely while the claim is archived — unarchive is the move that brings it back, and offering both reads as two ways to do one thing. Disabled while work is in flight. |
+| 01 | **Archive** → confirm modal | ✅ LIVE | Sets `archived`; the claim leaves the active list and stays reachable under the **Archived** filter with everything intact (rule 15). Confirm was previously inert — the button had no handler at all. |
+| 01 | **Unarchive** | ✅ LIVE | Returns an archived claim to `open`. **No confirm** — it is reversible and additive, unlike archive, which changes what the active list shows. Only rendered when the claim is archived. |
+| 01 | **Delete** → type-DELETE confirm | ✅ LIVE | Removes the claim from the roster. Permanent and always available — it is the customer's account (rule 15); the typed confirm is the guard, not a policy gate. Confirm was previously inert. |
+| 01 | Status badge picker | ✅ LIVE | Offers processing/review/open/closed only. `archived` is deliberately NOT in the picker — archiving is an action with a confirm, not a status you slide to. |
+| — | **Production contract for all four** | 🔌 | Close/reopen/archive/unarchive are **idempotent no-body POSTs**; the response carries the derived status AFTER the change. Apply it verbatim — never re-derive the status client-side. `?status=archived` reaches archived claims. |
 | 03 Intake | Begin processing | ➡️ | → Photo staging |
 | 03 | Depreciation schedule dropdown + "Add new" modal | ✅ | Persist schedule to claim; add to library |
 | 03 | Add-schedule modal — editable class×age rate grid (24 classes × 6 brackets, prefilled from standard, "Reset to standard") | ✅ | Persist full custom rate table to schedule library |
