@@ -375,31 +375,6 @@ const ForLiquidators = () => (
         </ol>
       </section>
 
-      {/* — Estate-specific value props — */}
-      <section className="k-seg-work">
-        <div style={{ textAlign: 'center', maxWidth: 720, margin: '0 auto 48px' }}>
-          <div style={{ fontFamily: 'var(--k-font-mono)', fontSize: 11, color: 'var(--k-fg-4)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Built for the estate workflow</div>
-          <h2 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 42, letterSpacing: '-0.025em', margin: '8px 0 14px', lineHeight: 1.05 }}>
-            Built for the way an estate actually gets cleared.
-          </h2>
-        </div>
-        <div className="k-seg-work-grid">
-          {[
-            ['01', 'Walk &amp; capture',  'One person, one phone, one estate. Room-by-room labeling, no field assistant needed.', 'Avg 2.6s / photo'],
-            ['02', 'Priced, with the receipt', 'Every line is priced against live retail comps and carries a dated link to the listing it came from. Jewelry, fine arts, firearms and furs stay manual for your appraiser.', 'Live comps · dated source on every line'],
-            ['03', 'Sorted for the split', 'Every item lands in a content class, so the list groups cleanly for heirs, accountants and consignment. Filter by room, class or value.', '24 content classes'],
-            ['04', 'A list you can hand over', 'Numbered inventory, a photo on every line, signature block at the foot. Or a spreadsheet for the accountant.', 'Print, share, sign'],
-          ].map(([n, t, body, sub], i) => (
-            <div key={i} className="k-workstep">
-              <div className="k-workstep-n">{n}</div>
-              <div className="k-workstep-t" dangerouslySetInnerHTML={{__html: t}} />
-              <p className="k-workstep-b" dangerouslySetInnerHTML={{__html: body}} />
-              <div className="k-workstep-s">{sub}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* — Visual proof. The estate equivalents of the adjusters two-up: the
             estate worksheet and the client PDF, NOT the Xactimate export -- an
             estate professional never touches XactContents. — */}
@@ -427,6 +402,31 @@ const ForLiquidators = () => (
           ratio="1632 / 970"
           caption="Numbered, a photo on every line, signature block at the foot — the document you hand to heirs, an accountant or a consignor."
         />
+      </section>
+
+      {/* — Estate-specific value props — */}
+      <section className="k-seg-work">
+        <div style={{ textAlign: 'center', maxWidth: 720, margin: '0 auto 48px' }}>
+          <div style={{ fontFamily: 'var(--k-font-mono)', fontSize: 11, color: 'var(--k-fg-4)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Built for the estate workflow</div>
+          <h2 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 42, letterSpacing: '-0.025em', margin: '8px 0 14px', lineHeight: 1.05 }}>
+            Built for the way an estate actually gets cleared.
+          </h2>
+        </div>
+        <div className="k-seg-work-grid">
+          {[
+            ['01', 'Walk &amp; capture',  'One person, one phone, one estate. Room-by-room labeling, no field assistant needed.', 'Avg 2.6s / photo'],
+            ['02', 'Priced, with the receipt', 'Every line is priced against live retail comps and carries a dated link to the listing it came from. Jewelry, fine arts, firearms and furs stay manual for your appraiser.', 'Live comps · dated source on every line'],
+            ['03', 'Sorted for the split', 'Every item lands in a content class, so the list groups cleanly for heirs, accountants and consignment. Filter by room, class or value.', '24 content classes'],
+            ['04', 'A list you can hand over', 'Numbered inventory, a photo on every line, signature block at the foot. Or a spreadsheet for the accountant.', 'Print, share, sign'],
+          ].map(([n, t, body, sub], i) => (
+            <div key={i} className="k-workstep">
+              <div className="k-workstep-n">{n}</div>
+              <div className="k-workstep-t" dangerouslySetInnerHTML={{__html: t}} />
+              <p className="k-workstep-b" dangerouslySetInnerHTML={{__html: body}} />
+              <div className="k-workstep-s">{sub}</div>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* — Side-by-side estate example — */}
