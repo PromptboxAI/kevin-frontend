@@ -99,6 +99,9 @@ Two things to get right when wiring:
 | Page | Control | State | Production behavior |
 |---|---|---|---|
 | 01 My claims | Open → | ➡️ | Open claim (worksheet/processing per status) |
+| 01 My claims | **Quota truncation alert** (`ClaimTruncationAlert`) | ✅ renders from payload | Shown whenever the ingest response carries `truncated: true`; reads `dropped_count` / `processed_count` verbatim (rule 9c). **Non-dismissible by design** — it clears when quota is restored and the held photos process, not when the adjuster acknowledges it. Never infer truncation by comparing counts. |
+| 01 My claims | Alert **Add credits** | ✅ opens `AddCreditsModal` | Same modal as Billing. Production: Stripe one-time charge for the block, then re-run the held photos. |
+| 01 My claims | Alert **Upgrade to Pro** | ➡️ 21-Pricing | Production: in-app upgrade → `POST /v1/billing/subscription`, then re-run the held photos. |
 | 01 | Row ⋯ (Open/Preview/Duplicate/Export/Print/Delete) | ✅ (Duplicate+Export modals) / 🔌 rest | Duplicate=new claim w/ new name; Export=save-as .pdf/.xlsx; Print; Delete |
 | 03 Intake | Begin processing | ➡️ | → Photo staging |
 | 03 | Depreciation schedule dropdown + "Add new" modal | ✅ | Persist schedule to claim; add to library |
@@ -212,9 +215,14 @@ Two things to get right when wiring:
 | 40 Pricing-source | **Back to Pricing** · "Settings → Pricing" link | ✅ | `href` → 14-Settings-pricing.html |
 | 40 Pricing-source | Stat strip — **two scopes, each labeled**: comps fetched today + items priced this month are PER-ACCOUNT; match rate + avg variance are PLATFORM-wide 30d rolling (one account is too small a sample to be meaningful). Keep the scope label on every cell | 🔌 | Read-only diagnostics from the comp-source health endpoint. **No config controls here** — valuation behavior is set once in Settings → Pricing so the two screens cannot disagree. Per-item comp history lives on the item drawer, not here |
 | 36 Settings-API | **Enterprise-gated.** Pro renders a locked state (→ 15-Request-access / 21-Pricing); `plan="enterprise"` renders keys + webhooks. Rotate / Revoke / Create key / Add webhook / Logs / Edit | 🔌 | `/v1/api-keys`, `/v1/webhooks`. Events are Kevin lifecycle only — **no carrier submit endpoint** (rule 4). Do not offer API on Pro |
-| 35 Settings-billing | **Plan-aware** — renders `plan="pro"` (flat $199), `"enterprise"` (invoiced, no card/cancel), or `"comped"` ($0, banner, no card/cancel). Never hardcode Pro/$199: the admin console can comp an account | 🔌 | Read the account's billing state; `BILLING_PLANS` in `settings-pages.jsx` stands in for it |
+| 35 Settings-billing | **Plan-aware** — renders `plan="pro"` (flat $249), `"enterprise"` (invoiced, no card/cancel), or `"comped"` ($0, banner, no card/cancel). Never hardcode Pro/$249: the admin console can comp an account | 🔌 | Read the account's billing state; `BILLING_PLANS` in `settings-pages.jsx` stands in for it |
 | 35 Settings-billing | **Manage subscription** / **Cancel plan** / **Update** card | 🔌 | Stripe (or equivalent) customer portal session. Cancel keeps access through the paid period |
 | 35 Settings-billing | Invoice row **download** | 🔌 | `GET /v1/invoices/:id.pdf` |
+| 35 Settings-billing | **Line items** meter (`ItemUsageCard`) | ✅ derived | Used count is DERIVED from the claim roster, never typed in. `plan` selects the pool — `free` = 250 one-time (no reset, no clock), `pro` = 2,000 a billing month; `included` overrides for an Enterprise contract. Production: `GET /v1/usage/items`. |
+| 35 Settings-billing | Meter **append-only note** | ✅ static copy | Rule 9c. States that deleting an item does not return quota. Do not remove — it is the cheapest support-ticket deflection on the page. |
+| 35 Settings-billing | **Add credits** → `AddCreditsModal` | ✅ opens / 🔌 checkout | Blocks of 250/500/1,000/2,500 at $0.20 an item (same rate as Pro overage). Buying credits is NOT a plan change — keep it out of upgrade metrics; fire `credits_purchased`. Production: `POST /v1/billing/credits`. |
+| 35 Settings-billing | Credits modal **Cancel** / scrim / Esc | ✅ | All three close the modal. |
+| 35 Settings-billing | **Upgrade to Pro** (free tier only) | ➡️ 21-Pricing | Only rendered when the account is on the free tier. |
 | 35 Settings-billing | **Talk to us about Enterprise** / **Contact us** | ✅ | `href` → 15-Request-access / 38-Contact |
 | 34 Settings-Xactimate | **Talk to us about Enterprise** / **See API docs** | ✅ | `href` → 15-Request-access / 24-Docs |
 | 34 Settings-Xactimate | **Download sample** (xlsx / pdf / csv) | 🔌 | `GET /v1/samples/:format` — a small fixture inventory so a user can test their import before running a real claim. No OAuth, no connect flow: Kevin has no Xactimate integration (rule 2, rule 4) |

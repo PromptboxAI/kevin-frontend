@@ -685,19 +685,34 @@ const KEVIN_CLAIMS = [
   { id: 'CLM-2026-04342', name: 'Bauer Trust',     cause: 'Estate liquidation',    loc: 'Fredericksburg TX', carrier: 'Bauer Trust',       items: 280, photos: 318, rcv: 198330, status: 'closed',   dol: 'Mar 28',  age: '4w ago',  flags: 0,  exported: true  },
 ];
 
-// Line-item allowance (CLAUDE.md rule 9). Items are the second metered
-// dimension: Pro includes 2,000 per billing month, then $0.20 each. Like
-// storage, the used figure is DERIVED from the claim roster — never typed in —
-// so changing a claim's item count moves the meter.
+// Line-item allowance (CLAUDE.md rules 9, 9b, 9c). Items are the second metered
+// dimension. Two tiers: the FREE tier gets 250 items once (a metered trial, not
+// a timed one — there is no clock and no expiry), and Pro gets 2,000 per billing
+// month, then $0.20 an item. Like storage, the used figure is DERIVED from the
+// claim roster — never typed in — so changing a claim's item count moves it.
+//
+// The counter is APPEND-ONLY (rule 9c): it records items PRODUCED, not items
+// kept, because the pricing lookups behind a row are already paid for by the
+// time the row appears. Deleting a line never gives quota back, and every meter
+// says so — that sentence is the cheapest support ticket we will ever avoid.
 //
 // ⚠ PROTOTYPE SEAM: the roster carries relative ages ('3d ago', '2w ago')
 // rather than timestamps, so the cycle window is resolved by parsing those.
 // In production this is a SERVER-side count of items promoted between the
 // period's start and end dates; the client renders the number, it does not
 // compute eligibility. Do not port this parser.
-const ITEM_INCLUDED = 2000;
+const ITEM_PLANS = {
+  // `cycle` false = a one-time pool that does not reset. The free tier is not a
+  // monthly allowance; it is 250 items for the life of the account.
+  free: { included: 250,  cycle: false, label: 'Free tier' },
+  pro:  { included: 2000, cycle: true,  label: 'Pro' },
+};
+const ITEM_INCLUDED = ITEM_PLANS.pro.included;
 const ITEM_OVERAGE_PRICE = 0.20;
 const ITEM_CYCLE_DAYS = 30;
+// Credit blocks sold against overage, at the SAME price as Pro overage (rule 9c)
+// -- buying credits is never a plan change and never a discount.
+const ITEM_CREDIT_BLOCKS = [250, 500, 1000, 2500];
 const ageToDays = (age) => {
   const m = /^(\d+)\s*([hdwm])/.exec(String(age || ''));
   if (/yesterday/i.test(age)) return 1;
@@ -705,19 +720,51 @@ const ageToDays = (age) => {
   const n = Number(m[1]);
   return { h: n / 24, d: n, w: n * 7, m: n / 60 / 24 }[m[2]];  // 'm' is minutes here, not months
 };
-const KEVIN_ITEM_USAGE = (() => {
-  const inCycle = KEVIN_CLAIMS.filter((c) => ageToDays(c.age) <= ITEM_CYCLE_DAYS);
-  const used = inCycle.reduce((a, c) => a + c.items, 0);
-  const over = Math.max(used - ITEM_INCLUDED, 0);
+const buildItemUsage = (planId, creditsBought) => {
+  const plan = ITEM_PLANS[planId] || ITEM_PLANS.pro;
+  // A cycle plan counts this period's claims; a one-time pool counts them all.
+  const scope = plan.cycle ? KEVIN_CLAIMS.filter((c) => ageToDays(c.age) <= ITEM_CYCLE_DAYS) : KEVIN_CLAIMS;
+  const used = scope.reduce((a, c) => a + c.items, 0);
+  const credits = creditsBought || 0;
+  const allowance = plan.included + credits;
+  const over = Math.max(used - allowance, 0);
   return {
-    included: ITEM_INCLUDED,
-    overagePrice: ITEM_OVERAGE_PRICE,
-    cycleDays: ITEM_CYCLE_DAYS,
-    used,
-    claims: inCycle.length,
-    over,
+    plan: planId, planLabel: plan.label, cycle: plan.cycle,
+    included: plan.included, credits, allowance,
+    overagePrice: ITEM_OVERAGE_PRICE, cycleDays: ITEM_CYCLE_DAYS, blocks: ITEM_CREDIT_BLOCKS,
+    used, claims: scope.length, over,
+    remaining: Math.max(allowance - used, 0),
     overageCost: Math.round(over * ITEM_OVERAGE_PRICE * 100) / 100,
-    pct: Math.min(Math.round((used / ITEM_INCLUDED) * 1000) / 10, 100),
+    pct: Math.min(Math.round((used / allowance) * 1000) / 10, 100),
+  };
+};
+const KEVIN_ITEM_USAGE = buildItemUsage('pro', 0);
+
+// Quota truncation (rule 9c). When a batch would run past the remaining
+// allowance the backend does NOT reject the upload -- it processes exactly up
+// to the limit and drops the rest, answering with `truncated` and
+// `dropped_count`. This object stands in for that slice of the ingest response.
+//
+// The held photos are NOT deleted (rule 22: evidence is excluded, never
+// destroyed) and they produce NO line items, so the claim's counts are
+// untouched -- which is why the demo claim still reads 60 photos / 57 items
+// (rule 1) with this alert on screen. dropped_count is therefore derived from
+// the pending session-2 photos, not typed in.
+//
+// DEMO CAVEAT: the seeded account is Mariana's Pro account, whose meter reads
+// 921 of 2,000. A Pro account with that much headroom would not truncate; this
+// is seeded truthy so the state is REVIEWABLE, the way the edge-states page
+// shows conditions the happy-path demo never reaches. In production read
+// `truncated` off the ingest response and never infer it by comparing counts.
+const CLAIM_TRUNCATION = (() => {
+  const held = CLAIM_INGEST.pendingPhotos;
+  return {
+    claim_id: 'CLM-2026-04412',
+    claim_name: 'Godfrey — Kitchen fire',
+    truncated: held > 0,
+    dropped_count: held,
+    processed_count: CLAIM_INGEST.items,
+    occurred: '18m ago',
   };
 })();
 
@@ -1340,4 +1387,4 @@ function settledRecoverable(r, claimed, k) {
 
 const claimTaxPct = () => (CLAIM_TAX.rate * 100).toFixed(3).replace(/\.?0+$/, '') + '%';
 
-Object.assign(window, { KEVIN_ITEM_USAGE, buildSettledRows, WRITTEN_SAMPLE_ROWS, STAGE_UNGROUPED, MANUAL_KIND, MANUAL_CAPACITY_COPY, isCapacityWait, US_STATES, CLAIM_SESSIONS, CLAIM_INGEST, NOTE_MAX, mergeUserNotes, claimTaxPct, CLAIM_TAX, buildFmvSources, fmvHaircut, KevinAPI, buildDepMeta, MANUAL_DEP_META, KEVIN_CLAIMS, KEVIN_STORAGE, CLAIM_PP_LIMIT, PCS_CATEGORIES, SPECIAL_LIMITS, SAMPLE_BASE, buildWorksheetRows, THUMB_TONES, DEP_TABLE, getDepFor, depBracket, ROOM_OPTIONS, CLASS_TO_ROOM, USEFUL_LIFE, PCS_CODE, DEP_BRACKET_LABELS, depExplain, REYES_TOTALS });
+Object.assign(window, { KEVIN_ITEM_USAGE, buildItemUsage, CLAIM_TRUNCATION, ITEM_PLANS, ITEM_CREDIT_BLOCKS, buildSettledRows, WRITTEN_SAMPLE_ROWS, STAGE_UNGROUPED, MANUAL_KIND, MANUAL_CAPACITY_COPY, isCapacityWait, US_STATES, CLAIM_SESSIONS, CLAIM_INGEST, NOTE_MAX, mergeUserNotes, claimTaxPct, CLAIM_TAX, buildFmvSources, fmvHaircut, KevinAPI, buildDepMeta, MANUAL_DEP_META, KEVIN_CLAIMS, KEVIN_STORAGE, CLAIM_PP_LIMIT, PCS_CATEGORIES, SPECIAL_LIMITS, SAMPLE_BASE, buildWorksheetRows, THUMB_TONES, DEP_TABLE, getDepFor, depBracket, ROOM_OPTIONS, CLASS_TO_ROOM, USEFUL_LIFE, PCS_CODE, DEP_BRACKET_LABELS, depExplain, REYES_TOTALS });

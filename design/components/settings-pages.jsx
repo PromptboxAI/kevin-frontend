@@ -593,26 +593,96 @@ const KS = () => window.KEVIN_STORAGE;
 const fmtGB = (n) => (n >= 10 ? n.toFixed(0) : n.toFixed(1)) + ' GB';
 const fmtPool = (n) => (n >= 1000 ? (n / 1000) + ' TB' : n + ' GB');
 
-const KIU = () => (typeof window !== 'undefined' ? window.KEVIN_ITEM_USAGE : null);
+const KIU = (planId, credits) => {
+  if (typeof window === 'undefined') return null;
+  return window.buildItemUsage ? window.buildItemUsage(planId || 'pro', credits || 0) : window.KEVIN_ITEM_USAGE;
+};
 
-// Line items used this billing month. Mirrors StorageUsageCard: the number is
-// DERIVED from the claim roster, never typed in. Included allowance is a prop
-// because an Enterprise contract carries its own.
-const ItemUsageCard = ({ included, note }) => {
-  const base = KIU();
+// Blocks of overage credits at the same $0.20 an item as Pro overage (rule 9c).
+// Buying credits is NEVER a plan change, so this must not read as an upgrade
+// path — no plan comparison, no "best value" nudge, just a quantity and a price.
+// Built from the export-modal primitives and the k-volume option grid rather
+// than new ones. Static by design: engineering wires the checkout.
+const AddCreditsModal = ({ usage, onClose }) => {
+  const blocks = (usage && usage.blocks) || [250, 500, 1000, 2500];
+  const price = (usage && usage.overagePrice) || 0.2;
+  const [pick, setPick] = React.useState(blocks[1]);
+  React.useEffect(() => {
+    const esc = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', esc);
+    return () => window.removeEventListener('keydown', esc);
+  }, [onClose]);
+  return (
+    <div className="k-export-stage" style={{ position: 'fixed', inset: 0, background: 'transparent', height: '100%', zIndex: 100 }}>
+      <div className="k-export-scrim" onClick={onClose} />
+      <div className="k-export-modal" style={{ maxWidth: 520 }} role="dialog" aria-modal="true" aria-label="Add item credits">
+        <div className="k-export-hd">
+          <div>
+            <div style={{ fontFamily: 'var(--k-font-mono)', fontSize: 11, color: 'var(--k-fg-4)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>Item credits</div>
+            <div style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 22, letterSpacing: '-0.02em', marginTop: 2 }}>Add credits</div>
+          </div>
+          <button className="k-btn k-btn--ghost" onClick={onClose} style={{ padding: 6, lineHeight: 0 }} aria-label="Close">
+            <span style={{ display: 'inline-flex', transform: 'rotate(45deg)' }}><Icon d={I.plus} size={16} /></span>
+          </button>
+        </div>
+        <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="k-volume-grid">
+            {blocks.map((n) => (
+              <button key={n} type="button" onClick={() => setPick(n)} className={`k-volume ${pick === n ? 'k-volume--on' : ''}`} aria-pressed={pick === n}>
+                <div style={{ fontSize: 14, fontWeight: 600 }}>{n.toLocaleString()}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', fontFamily: 'var(--k-font-mono)', marginTop: 4 }}>${(n * price).toFixed(2)}</div>
+              </button>
+            ))}
+          </div>
+          <div style={{ background: 'var(--k-bg-2)', border: '1px solid var(--k-line)', borderRadius: 8, padding: '12px 14px', fontSize: 12.5, color: 'var(--k-fg-3)', lineHeight: 1.55 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>{pick.toLocaleString()} items × ${price.toFixed(2)}</span>
+              <span className="k-mono" style={{ color: 'var(--k-fg-2)' }}>${(pick * price).toFixed(2)}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--k-line)', fontWeight: 600 }}>
+              <span style={{ color: 'var(--k-fg-2)' }}>Charged today</span>
+              <span className="k-mono" style={{ color: 'var(--k-fg)' }}>${(pick * price).toFixed(2)}</span>
+            </div>
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--k-fg-4)', lineHeight: 1.55 }}>
+            Credits are used only after your included allowance runs out, and they carry over month to
+            month. Buying credits does not change your plan or your renewal date.
+          </div>
+        </div>
+        <div style={{ padding: '14px 24px', borderTop: '1px solid var(--k-line)', background: 'var(--k-bg-2)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+          <button className="k-btn k-btn--ghost" onClick={onClose}>Cancel</button>
+          <button className="k-btn">Add {pick.toLocaleString()} items — ${(pick * price).toFixed(2)}</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Line items used. Mirrors StorageUsageCard: the number is DERIVED from the
+// claim roster, never typed in. `plan` picks the allowance — 'free' is the
+// 250-item metered trial (one pool, no reset, no clock) and 'pro' is 2,000 a
+// billing month; `included` still overrides for an Enterprise contract.
+const ItemUsageCard = ({ plan, included, credits, note, onAddCredits }) => {
+  const base = KIU(plan, credits);
   if (!base) return null;
   const u = included
-    ? { ...base, included, over: Math.max(base.used - included, 0), pct: Math.min(Math.round((base.used / included) * 1000) / 10, 100) }
+    ? { ...base, included, allowance: included + (base.credits || 0),
+        over: Math.max(base.used - (included + (base.credits || 0)), 0),
+        remaining: Math.max((included + (base.credits || 0)) - base.used, 0),
+        pct: Math.min(Math.round((base.used / (included + (base.credits || 0))) * 1000) / 10, 100) }
     : base;
   const over = u.over > 0;
+  const tight = !over && u.remaining <= u.allowance * 0.2;
+  const free = u.plan === 'free';
   return (
     <section className="k-set-card">
-      <div className="k-set-card-hd">Line items</div>
+      <div className="k-set-card-hd">Line items{free ? ' · free tier' : ''}</div>
       <div className="k-set-card-body">
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
           <div style={{ fontSize: 13, color: 'var(--k-fg-3)' }}>
             <strong style={{ color: 'var(--k-fg)', fontFamily: 'var(--k-font-mono)', fontSize: 15 }}>{u.used.toLocaleString()}</strong>
-            <span> of {u.included.toLocaleString()} included</span>
+            <span> of {u.allowance.toLocaleString()} {free ? 'free items' : 'included'}</span>
+            {u.credits > 0 && <span style={{ color: 'var(--k-fg-4)' }}> ({u.included.toLocaleString()} + {u.credits.toLocaleString()} credits)</span>}
           </div>
           <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', fontFamily: 'var(--k-font-mono)' }}>{u.pct}%</div>
         </div>
@@ -620,17 +690,38 @@ const ItemUsageCard = ({ included, note }) => {
           <div className={'k-store-fill ' + (over ? 'k-store-fill--cold' : 'k-store-fill--warm')} style={{ width: Math.max(u.pct, 0.6) + '%' }}></div>
         </div>
         <div className="k-store-keys">
-          <span className="k-store-key"><i className={'k-store-dot ' + (over ? 'k-store-dot--cold' : 'k-store-dot--warm')}></i>{u.used.toLocaleString()} items · {u.claims} claims this cycle</span>
-          <span className="k-store-key" style={{ color: 'var(--k-fg-4)' }}>
+          <span className="k-store-key">
+            <i className={'k-store-dot ' + (over ? 'k-store-dot--cold' : 'k-store-dot--warm')}></i>
+            {u.used.toLocaleString()} items · {u.claims} claims{u.cycle ? ' this cycle' : ''}
+          </span>
+          <span className="k-store-key" style={{ color: (over || tight) ? 'var(--k-warn)' : 'var(--k-fg-4)' }}>
             {over
               ? u.over.toLocaleString() + ' over · $' + u.overageCost.toFixed(2) + ' on the next invoice'
-              : (u.included - u.used).toLocaleString() + ' remaining'}
+              : u.remaining.toLocaleString() + ' remaining'}
           </span>
         </div>
         <div className="k-store-note">
-          <p><strong>Going over never locks a claim.</strong> The work finishes and the overage bills after — items past {u.included.toLocaleString()} are ${u.overagePrice.toFixed(2)} each.</p>
-          <p>{note || 'Claims stay unlimited on Pro. Estate sales are billed per estate rather than against this allowance.'}</p>
+          {free ? (
+            <p><strong>No clock on the free tier.</strong> Your {u.included.toLocaleString()} items last as long as you need them — take a week or take three months. Kevin asks you to start Pro when they run out, not before.</p>
+          ) : (
+            <p><strong>Going over never locks a claim.</strong> The work finishes and the overage bills after — items past {u.allowance.toLocaleString()} are ${u.overagePrice.toFixed(2)} each.</p>
+          )}
+          {/* Rule 9c. The likeliest support ticket, answered on the meter itself. */}
+          <p className="k-usage-fine">
+            <strong>Deleting an item does not give the quota back.</strong> The count records items Kevin
+            produced, not items you kept — the pricing lookups behind a row are already paid for by the
+            time it appears.
+          </p>
+          <p>{note || (free
+            ? 'Claims are unlimited even on the free tier. Estate sales are billed per estate rather than against these items.'
+            : 'Claims stay unlimited on Pro. Estate sales are billed per estate rather than against this allowance.')}</p>
         </div>
+        {onAddCredits && (
+          <div className="k-usage-actions">
+            <button className="k-btn k-btn--ghost k-btn--sm" onClick={onAddCredits}>Add credits</button>
+            {free && <a className="k-btn k-btn--sm" href="21-Pricing.html">Upgrade to Pro</a>}
+          </div>
+        )}
       </div>
     </section>
   );
@@ -683,7 +774,7 @@ const BILLING_PLANS = {
     kpis: [['Current plan', 'Pro', 'Flat monthly'], ['Claims', 'Unlimited', 'No per-claim charges'], ['This month', '$249.00', 'Auto-renews Sep 1']],
     blurb: <React.Fragment>You're on <strong style={{ color: 'var(--k-fg-2)' }}>Kevin Pro</strong> — one flat price, unlimited claims, 2,000 line items a month included, cancel anytime. Running a desk or a team? Enterprise gives you volume licensing on one invoice.</React.Fragment>,
     showCancel: true, showPayment: true, showBillingEmail: true, storageGB: null, storageNote: null,
-    itemsIncluded: null, itemsNote: null,
+    itemPlan: 'pro', itemsIncluded: null, itemsNote: null,
     invoices: [
       ['INV-2026-008', 'Aug 01, 2026', 'Pro · monthly', '$249.00'],
       ['INV-2026-007', 'Jul 01, 2026', 'Pro · monthly', '$249.00'],
@@ -699,6 +790,7 @@ const BILLING_PLANS = {
     blurb: <React.Fragment>You're on <strong style={{ color: 'var(--k-fg-2)' }}>Enterprise</strong> — volume licensing on one invoice, with API access, webhooks and team roles included. Changes go through your account contact.</React.Fragment>,
     showCancel: false, showPayment: false, showBillingEmail: true, storageGB: 5000,
     storageNote: 'Your contract includes 5 TB of active storage across all users. Additional storage is negotiated at renewal rather than billed automatically — talk to your account contact.',
+    itemPlan: 'pro',
     itemsIncluded: 25000,
     itemsNote: 'Your contract sets the monthly item allowance across all users. Overage is reconciled on the annual invoice rather than charged per item — talk to your account contact.',
     invoices: [
@@ -715,6 +807,7 @@ const BILLING_PLANS = {
     blurb: <React.Fragment>Your account has <strong style={{ color: 'var(--k-fg-2)' }}>complimentary Pro access</strong> — every feature, nothing billed. If it is set to expire you will hear from us well before it does.</React.Fragment>,
     showCancel: false, showPayment: false, showBillingEmail: false, invoices: [], storageGB: null,
     storageNote: 'Complimentary accounts get the same 500 GB of active storage as Pro, and nothing is billed if you exceed it — we will simply get in touch.',
+    itemPlan: 'pro',
     itemsIncluded: null,
     itemsNote: 'Complimentary accounts get the same 2,000 items a month as Pro, and nothing is billed if you exceed it — we will simply get in touch.',
   },
@@ -722,6 +815,10 @@ const BILLING_PLANS = {
 
 const SettingsBilling = ({ plan = 'pro' }) => {
   const P = BILLING_PLANS[plan] || BILLING_PLANS.pro;
+  // Credits are bought from the usage card here and from the truncation alert
+  // on the claim dashboard; both open the same modal.
+  const [credits, setCredits] = React.useState(false);
+  const usage = KIU(P.itemPlan, 0);
   return (
   <SettingsShell activeId="billing" title="Billing" save={false} eyebrow={[P.name, P.showPayment && 'payment', P.invoices.length && 'invoices'].filter(Boolean).join(' · ')}>
     <div style={{ marginBottom: 22, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
@@ -769,7 +866,8 @@ const SettingsBilling = ({ plan = 'pro' }) => {
       </div>
     </section>
 
-    <ItemUsageCard included={P.itemsIncluded} note={P.itemsNote} />
+    <ItemUsageCard plan={P.itemPlan} included={P.itemsIncluded} note={P.itemsNote} onAddCredits={() => setCredits(true)} />
+    {credits && <AddCreditsModal usage={usage} onClose={() => setCredits(false)} />}
     <StorageUsageCard includedGB={P.storageGB} note={P.storageNote} />
 
     {P.showPayment && (
@@ -985,5 +1083,5 @@ curl https://api.kevin.co/v1/claims \\
 
 Object.assign(window, {
   SettingsProfile, SettingsAgency, SettingsExport,
-  SettingsIntegrations, SettingsBilling, SettingsApi, StorageUsageCard, ItemUsageCard,
+  SettingsIntegrations, SettingsBilling, SettingsApi, StorageUsageCard, ItemUsageCard, AddCreditsModal,
 });

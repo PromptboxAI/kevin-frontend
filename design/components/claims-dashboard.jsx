@@ -352,10 +352,55 @@ const ClaimRowMenu = ({ claim, onStatus }) => {
   );
 };
 
+// ─── Quota truncation alert (rule 9c) ────────────────────────────
+// The backend truncates rather than rejects: it processes up to the remaining
+// allowance and drops the rest, flagging `truncated` / `dropped_count`. That is
+// the ONE sanctioned exception to rule 21's "a failed photo is never silently
+// dropped" — sanctioned only because this alert makes it loud.
+//
+// Deliberately NOT dismissible. A dismiss control turns "63 items are missing
+// from your inventory" into something an adjuster can wave away at 6pm and
+// rediscover after the claim is exported to the carrier. It clears when the
+// quota is restored and the held photos process — i.e. by fixing it, not by
+// acknowledging it.
+//
+// The reassurance line is load-bearing too: the photos are NOT deleted (rule
+// 22), so the inventory is late, not lost. Without that sentence this alert
+// reads as data loss and generates exactly the panicked support ticket the
+// truncation design was meant to avoid.
+const ClaimTruncationAlert = ({ trunc, onAddCredits }) => {
+  if (!trunc || !trunc.truncated) return null;
+  const n = trunc.dropped_count;
+  return (
+    <section className="k-trunc" role="alert">
+      <div className="k-trunc-icon"><Icon d={I.warn} size={18} /></div>
+      <div className="k-trunc-body">
+        <div className="k-trunc-h">You hit your limit — {n.toLocaleString()} items were not processed.</div>
+        <p className="k-trunc-p">
+          <strong>{trunc.claim_name}</strong> reached your item allowance {trunc.occurred}. Kevin priced
+          the first {trunc.processed_count.toLocaleString()} items and stopped there.
+        </p>
+        <p className="k-trunc-p k-trunc-p--calm">
+          Nothing was deleted. The photos behind them are still on the claim, unprocessed — add credits
+          or start Pro and Kevin picks up exactly where it stopped.
+        </p>
+      </div>
+      <div className="k-trunc-actions">
+        <button className="k-btn" onClick={onAddCredits}>Add credits</button>
+        <a className="k-btn k-btn--ghost" href="21-Pricing.html">Upgrade to Pro</a>
+      </div>
+    </section>
+  );
+};
+
 const Claims = () => {
   // One source of truth for status: the badge picker writes here, so the header
   // stats and every row menu recompute from the same list.
   const [claims, setClaims] = React.useState(CLAIMS);
+  // Truncation arrives on the ingest response; the dashboard is where the
+  // adjuster will actually see it, so it is read here rather than in intake.
+  const [credits, setCredits] = React.useState(false);
+  const trunc = window.CLAIM_TRUNCATION;
   const setStatus = (id, next) => setClaims(cs => cs.map(c => c.id === id ? { ...c, status: next } : c));
   // A claim stays open until the adjuster marks it Closed (or archives it) —
   // exported claims are still open work and still count toward workload.
@@ -383,6 +428,8 @@ const Claims = () => {
       </header>
 
       <div className="k-claims-body">
+        <ClaimTruncationAlert trunc={trunc} onAddCredits={() => setCredits(true)} />
+        {credits && window.AddCreditsModal && <window.AddCreditsModal usage={window.KEVIN_ITEM_USAGE} onClose={() => setCredits(false)} />}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
             <h1 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 32, letterSpacing: '-0.025em', margin: 0, lineHeight: 1.05 }}>Good morning, Mariana.</h1>
@@ -457,4 +504,4 @@ const Claims = () => {
   );
 };
 
-Object.assign(window, { SignIn, Claims });
+Object.assign(window, { SignIn, Claims, ClaimTruncationAlert });
