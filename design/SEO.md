@@ -23,7 +23,7 @@ Rules:
 | 00-Sign-in.html | /signin | Sign in — Kevin | Sign in to your Kevin account. |
 | 02-Landing.html | / | Kevin — Photos in. Inventory out. | Drop your claim photos and Kevin builds a defensible, Xactimate-ready contents inventory: identified items, live retail comps, depreciation, and ACV — reviewed by you. |
 | 15-Request-access.html | /request-access | Kevin for Teams — Enterprise | Volume licensing for carriers, TPAs, and multi-adjuster agencies. One invoice, custom terms. |
-| 21-Pricing.html | /pricing | Pricing — Kevin | $249/mo for content inventory specialists, IAs and public adjusters. Unlimited claims, 2,000 items a month included, no per-seat fee. 7-day free trial. |
+| 21-Pricing.html | /pricing | Pricing — Kevin | $249/mo for content inventory specialists, IAs and public adjusters. Unlimited claims, 2,000 items a month included, no per-seat fee. First 250 items free. |
 | 22-For-Adjusters.html | /for-adjusters | Kevin for Insurance Adjusters | Turn pack-out photo dumps into priced, defensible contents inventories that import straight into Xactimate and XactContents. |
 | 23-For-Estate-Liquidators.html | /for-estate-liquidators | Kevin for Estate Sale Professionals | Photograph an estate, get a fair-market-value inventory with sold comps, conditions, and statuses — ready to hand a client. |
 | 24-Docs.html | /docs | Documentation — Kevin | Guides for every step: uploading photos, staging and grouping, the review worksheet, pricing, depreciation, and exporting to Xactimate. |
@@ -47,10 +47,15 @@ Every other page in `pages/` carries noindex (58 pages). The app lives behind au
 - favicon / apple-touch-icon set
 - ~~sitemap.xml + robots.txt~~ DONE — `deploy/sitemap.xml` + `deploy/robots.txt` (serve from the site root; update lastmod on content changes)
 - ~~JSON-LD~~ DONE — Organization + SoftwareApplication on landing, FAQPage on pricing.
-  **Re-sync the FAQPage block whenever `pricing.jsx` FAQS changes.** It drifted once and
+  **Re-sync the FAQPage block whenever `pricing.jsx` FAQS changes.** Rebuild it by
+  PARSING `const FAQS` out of `pricing.jsx` and emitting the JSON — that is the same
+  array the page renders from, so the two cannot disagree, and unlike scraping the
+  rendered DOM it needs no browser. Verify afterwards by comparing the block against
+  `.k-faq-q` / `.k-faq-a` in the page.
+ It drifted once and
   went unnoticed because JSON-LD is invisible on the page: the markup still carried
   "What about the free first claim?" — the offer domain rule 9 scrapped — months after the
-  page itself moved to the 7-day trial, and had 9 questions against the page's 12. Google
+  page itself moved on, and had 9 questions against the page's 12. Google
   requires FAQ markup to mirror visible content, so a mismatch risks a manual action as
   well as advertising an offer that does not exist. Regenerate from the RENDERED DOM
   (`.k-faq-q` / `.k-faq-a`), not from source, so it cannot disagree with what a visitor sees.

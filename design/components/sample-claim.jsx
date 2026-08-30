@@ -61,7 +61,7 @@ const SampleClaim = ({ onStartClaim, density = 'comfortable' }) => {
       <div className="k-sample-floor">
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ fontSize: 13, fontWeight: 600 }}>Liked the grid?</div>
-          <div style={{ fontSize: 12, color: 'var(--k-fg-3)' }}>Try Kevin free for 7 days — full product, real claims.</div>
+          <div style={{ fontSize: 12, color: 'var(--k-fg-3)' }}>Your first 250 items are free — full product, real claims.</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <a className="k-btn k-btn--ghost" href="51-Book-call.html">Book a call</a>

@@ -213,11 +213,11 @@ const Landing = ({ onStartClaim, onSampleClaim, onStartTrial }) => {
             and three live pricing comps per line. Hundreds of items reviewed in one grid — not one at a time.
           </p>
           <div className="k-hero-actions">
-            <button className="k-btn k-btn--lg" onClick={startTrial}>Start your 7-day free trial →</button>
+            <button className="k-btn k-btn--lg" onClick={startTrial}>Start free — 250 items →</button>
             <button className="k-btn k-btn--ghost k-btn--lg" onClick={onSampleClaim}>See a finished claim</button>
           </div>
           <div className="k-trust">
-            <span>7-day free trial</span>
+            <span>250 free items, no deadline</span>
             <span className="k-trust-dot">·</span>
             <span>$249/mo · 2,000 items included</span>
             <span className="k-trust-dot">·</span>
@@ -627,17 +627,17 @@ const Landing = ({ onStartClaim, onSampleClaim, onStartTrial }) => {
       {/* — Final CTA band — */}
       <section className="k-cta">
         <div className="k-cta-inner">
-          <div className="k-cta-eyebrow">Try Kevin free for 7 days</div>
+          <div className="k-cta-eyebrow">Your first 250 items are free</div>
           <h2 className="k-cta-h">Stop typing. Start adjusting.</h2>
           <p className="k-cta-sub">
-            Bring a real loss. Run it end to end on the free trial — and if you want company, we'll walk the worksheet with you on a 30-minute call.
+            Bring a real loss. Your first 250 line items are free with no clock running — and if you want company, we'll walk the worksheet with you on a 30-minute call.
           </p>
           <div className="k-cta-actions">
-            <button className="k-cta-primary" onClick={startTrial}>Start your free trial →</button>
+            <button className="k-cta-primary" onClick={startTrial}>Start free — 250 items →</button>
             <a className="k-cta-secondary" href="51-Book-call.html">Book a 30-min call</a>
           </div>
           <div className="k-cta-trust">
-            <span>7-day free trial</span>
+            <span>250 free items</span>
             <span className="k-cta-dot">·</span>
             <span>Encrypted at rest</span>
             <span className="k-cta-dot">·</span>

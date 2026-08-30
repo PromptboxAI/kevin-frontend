@@ -195,7 +195,7 @@ const WatchDemo = () => (
       </section>
 
       <section className="k-mkt-cta" style={{ marginTop: 44 }}>
-        <h2 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 40, letterSpacing: '-0.028em', margin: '0 0 14px', lineHeight: 1.05, textAlign: 'center' }}>Your 7-day free trial starts now.</h2>
+        <h2 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 40, letterSpacing: '-0.028em', margin: '0 0 14px', lineHeight: 1.05, textAlign: 'center' }}>Your first 250 items are free.</h2>
         <div className="k-hero-actions" style={{ marginTop: 0 }}>
           <a className="k-btn k-btn--lg" href="58-Account-create.html">Start a new claim →</a>
           <a className="k-btn k-btn--ghost k-btn--lg" href="48-Sample-claim.html">Open the sample claim</a>

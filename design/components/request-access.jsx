@@ -77,7 +77,7 @@ const RequestAccess = () => {
               <span className="k-req-step">3</span>
               <div>
                 <div style={{ fontSize: 13.5, fontWeight: 600 }}>Pilot on your own losses</div>
-                <div style={{ fontSize: 12, color: 'var(--k-fg-3)', marginTop: 2 }}>Your whole team on the 7-day trial, real claims, before a contract exists</div>
+                <div style={{ fontSize: 12, color: 'var(--k-fg-3)', marginTop: 2 }}>Your whole team on the free tier, real claims, before a contract exists</div>
               </div>
             </div>
           </div>

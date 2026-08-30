@@ -9,7 +9,7 @@ const TIERS = [
     id: 'pro', name: 'Pro', tag: 'One adjuster. Unlimited claims.',
     price: 249, suffix: '/mo',
     blurb: 'One flat monthly subscription. Unlimited claims, 2,000 items a month included, then $0.20 an item. Cancel anytime.',
-    cta: 'Start 7-day free trial',
+    cta: 'Start with 250 free items',
     primary: true,
     features: [
       ['Photo-dump ingest — hundreds of photos, auto-grouped into item sets', true],
@@ -49,14 +49,14 @@ const TIERS = [
 ];
 
 const FAQS = [
-  ['Do I need a credit card to start the trial?',
-   "Yes. We verify your card at signup, but you're not charged during the 7-day trial."],
-  ['What does the 7-day free trial include?',
-   'Everything in Pro \u2014 real claims, full exports, live comps. Run an actual loss through Kevin end-to-end before your subscription starts.'],
-  ['What happens when the trial ends?',
-   "Your Pro subscription starts automatically and your card is charged $249. We email you at signup and again 3 days before, so it's never a surprise."],
+  ['Do I need a credit card to start?',
+   "Yes. We verify your card at signup so we know you are a real adjuster, but nothing is charged until you choose to start Pro or pass your 250 free items."],
+  ['What does the free tier include?',
+   'Everything in Pro — real claims, full exports, live comps — for your first 250 line items. That is roughly four 60-photo claims, and there is no clock: take a week or take three months.'],
+  ['What happens when I use up the 250 items?',
+   'Kevin stops producing new line items and asks you to start Pro or add credits. Nothing you have already built goes away, and no claim is deleted — the photos you have not processed yet simply wait until you have quota again.'],
   ['Am I locked in? Can I cancel?',
-   "No contract, month to month. Cancel in one click in Settings \u2192 Billing \u2014 before your charge date and you're never charged at all; after it, you keep access through the period you've paid for. No cancellation fee, no notice period, no phone call."],
+   "No contract, month to month. Cancel in one click in Settings → Billing. On the free tier there is nothing to cancel and nothing is owed; on Pro you keep access through the period you have already paid for. No cancellation fee, no notice period, no phone call."],
   ['Do I lose my work if I cancel?',
    'No. Your claims, worksheets and exports stay available to download.'],
   ['Is \u201cunlimited claims\u201d really unlimited?',
@@ -65,6 +65,8 @@ const FAQS = [
    'One loss event \u2014 one insured, one date of loss, one address. On Pro it doesn\'t matter: claims are unlimited, so run as many as you need.'],
   ['Do I pay extra for photos or items?',
    'Photos, no \u2014 upload as many as you like, with 500 GB of active storage on the account. Items, only past the 2,000 a month included, and then $0.20 each. The count is in Settings \u2192 Billing before it costs anything, and going over never locks a claim.'],
+  ['If I delete an item, do I get the quota back?',
+   'No, and this is the one part of the meter worth knowing up front. The count records items Kevin produced, not items you kept, because the pricing lookups are already paid for by the time the row appears. Delete a duplicate and the row goes away; the count does not move.'],
   ['Are pricing comps included or extra?',
    'Included. Every RCV cell gets top-3 retailer comps. We don\'t charge per comp or per refresh.'],
   ['Is the AI included, or is it extra?',
@@ -72,7 +74,7 @@ const FAQS = [
   ['Who owns my data \u2014 and how long do you keep it?',
    'You do, and forever. Claims get audited years after they settle, so nothing is ever deleted \u2014 closed claims move to slower archived storage but stay fully accessible, and you can export everything at any time.'],
   ['Does this work for estate sales?',
-   'Yes, but it is priced separately. Your first estate is free; after that estate sales are $249 per estate — one price for the whole job, billed per engagement rather than per month, because an estate runs hundreds to thousands of items and would swallow a monthly allowance whole. Estate mode catalogs a whole home, tracks condition and disposition, and exports a client-ready PDF.'],
+   'Yes, but it is priced separately. Estate sales are $249 per estate from the first one — one price for the whole job, billed per engagement rather than per month, because an estate runs hundreds to thousands of items and would swallow a monthly allowance whole. Estate mode catalogs a whole home, tracks condition and disposition, and exports a client-ready PDF.'],
 ];
 
 const Pricing = () => (
@@ -115,7 +117,7 @@ const Pricing = () => (
             {/* The card question is THE objection for cold traffic. Answer it at
                 the button, not 15 FAQ rows below the fold. */}
             {t.primary && (
-              <div className="k-tier-trial">Card verified at signup · not charged for 7 days · one-click cancel in Settings → Billing</div>
+              <div className="k-tier-trial">Card verified at signup · not charged until you pass 250 items · one-click cancel in Settings → Billing</div>
             )}
             <div className="k-tier-features">
               {t.features.map(([label, on, hint], i) => (
@@ -183,13 +185,13 @@ const Pricing = () => (
       {/* — CTA — */}
       <section className="k-mkt-cta">
         <h2 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 44, letterSpacing: '-0.028em', margin: '0 0 14px', lineHeight: 1.05 }}>
-          Try Kevin free for 7 days.
+          Your first 250 items are free.
         </h2>
         <p style={{ fontSize: 15, color: 'var(--k-fg-3)', margin: '0 0 28px', maxWidth: 480, textAlign: 'center' }}>
           Bring a real loss. We'll get you set up and walk you through the worksheet in a 30-minute call.
         </p>
         <div className="k-hero-actions" style={{ marginTop: 0 }}>
-          <a className="k-btn k-btn--lg" href="58-Account-create.html">Start your free trial →</a>
+          <a className="k-btn k-btn--lg" href="58-Account-create.html">Start free — 250 items →</a>
           <a className="k-btn k-btn--ghost k-btn--lg" href="38-Contact.html">Talk to sales</a>
         </div>
       </section>

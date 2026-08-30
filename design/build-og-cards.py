@@ -69,7 +69,7 @@ CARDS = [
     ("og-landing",   ["The contents", "estimate writes itself."],
      "Drop the pack-out photos. Kevin identifies, prices and depreciates every line.", "kevin.co"),
     ("og-pricing",   ["One subscription.", "Unlimited claims."],
-     "$249/mo flat. No per-seat math, no per-claim fees. 7-day free trial.", "kevin.co/pricing"),
+     "$249/mo. No per-seat math, no per-claim fees. First 250 items free.", "kevin.co/pricing"),
     ("og-adjusters", ["Stop typing.", "Start adjusting."],
      "Photo dump to XactContents-ready .xlsx, with a dated comp behind every price.", "kevin.co/for-adjusters"),
     ("og-estate",    ["Catalog an estate", "in an afternoon."],

@@ -27,7 +27,7 @@ const DOC_ARTICLES_A = {
         ['Your review', 'Twenty to forty minutes'],
         ['Export', 'Under a minute'],
       ]],
-      ['note', 'Every account starts with a 7-day free trial — full product, real claims. Card verified at signup, never charged during the trial.'],
+      ['note', 'Every account starts with 250 free line items — full product, real claims, no time limit. Card verified at signup, not charged until you start Pro.'],
     ],
   },
 

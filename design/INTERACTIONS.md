@@ -37,20 +37,23 @@ of them.
 
 | Event | Fires when | Where | Notes |
 |---|---|---|---|
-| `trial_start` | Step 1 submitted — name, email and a password meeting the rules | `58` → `AccountCreate` step 0 → 1 | Top of funnel. An email exists; nothing is billable yet. |
+| `signup_started` | Step 1 submitted — name, email and a password meeting the rules | `58` → `AccountCreate` step 0 → 1 | Top of funnel. An email exists; nothing is billable yet. Renamed from `trial_start` when the timed trial was scrapped — if the old name is already live in the ads account, alias it rather than breaking history. |
 | `account_created` | Step 2 submitted — verification code accepted | `58` → step 1 → 2 | The account exists. Still no card. |
-| `card_added` / `trial_activated` | Step 3 SetupIntent succeeds | `58` → step 2 complete | **THE ads conversion event.** Card attached, 7-day trial running, $249/mo begins at day 7 unless cancelled. Fire once; do not re-fire if the user revisits. |
+| `card_added` | Step 3 SetupIntent succeeds | `58` → step 2 complete | **THE ads conversion event.** Card attached and the 250 free items unlock. Nothing is charged and no subscription exists yet — under the metered trial (rule 9b) there is no timer to start, so `trial_activated` was dropped as a synonym. Fire once; do not re-fire if the user revisits. |
+| `quota_exhausted` | The 250th free item is produced | app — wherever processing completes | The real intent signal on a metered trial: the adjuster has used the product enough to run out. Worth optimising toward, and worth an email. |
+| `plan_upgraded` | Pro subscription created — by choosing it or by passing 250 items | `35-Settings-billing` / quota wall | **The revenue event.** This is what `trial_activated` used to approximate on day 7; now it is an explicit act. |
+| `credits_purchased` | Add-credits checkout succeeds | `35-Settings-billing` / truncation alert | Overage block bought at $0.20/item. Not a plan change — keep it out of the upgrade count. |
 | `enterprise_quote_submitted` | **Request a quote** submitted | `15-Request-access` | Enterprise lead. Distinct from a trial — it is sales-qualified, not self-serve, so keep it out of the trial conversion count. |
 | `contact_submitted` | Contact form submitted | `38-Contact` | General enquiry. |
 | `sample_claim_viewed` | Page reaches the sample claim | `48-Sample-claim` | Engagement, not conversion. Public and unauthenticated, so it is also the one event a bot can trigger — do not optimise against it. |
 
 Two things to get right when wiring:
 
-- **De-duplicate `trial_activated`.** It is a state change, not a navigation, so
+- **De-duplicate `card_added`.** It is a state change, not a navigation, so
   a re-render or a back-and-forward can fire it twice and inflate the conversion
   count the bidding algorithm trains on.
-- **Do not attach events to the marketing CTAs themselves.** `Start your 7-day
-  free trial` on landing, pricing, product and both segment pages all route to
+- **Do not attach events to the marketing CTAs themselves.** `Start free — 250
+  items` on landing, pricing, product and both segment pages all route to
   `58`; counting the click counts intent, not outcome. The events above are the
   outcomes.
 
@@ -148,7 +151,7 @@ Two things to get right when wiring:
 ## Recurring patterns (apply to EVERY page that has them)
 | Pattern | Where | State | Production behavior |
 |---|---|---|---|
-| 02 Landing **Start your 7-day free trial** (hero + final CTA) | landing | ✅ wired | Prototype → `58-Account-create.html` via the `onStartTrial` prop (falls back to `onStartClaim` when a host doesn't pass it, so the design canvas is unaffected). The trial CTA is the paid-ads conversion event — capture the account before any work starts, never route it to a claim surface. The header's **Start a new claim** stays on `onStartClaim` → `00-Sign-in.html` for returning adjusters. Superseded note: PRODUCTION: if a session exists, go straight to `/claim/new` (intake); if not, sign-in → (new users) account create + onboarding → intake. Claims are auth-gated; the sample claim is the only unauthenticated claim surface. |
+| 02 Landing **Start free — 250 items** (hero + final CTA) | landing | ✅ wired | Prototype → `58-Account-create.html` via the `onStartTrial` prop (falls back to `onStartClaim` when a host doesn't pass it, so the design canvas is unaffected). The trial CTA is the paid-ads conversion event — capture the account before any work starts, never route it to a claim surface. The header's **Start a new claim** stays on `onStartClaim` → `00-Sign-in.html` for returning adjusters. Superseded note: PRODUCTION: if a session exists, go straight to `/claim/new` (intake); if not, sign-in → (new users) account create + onboarding → intake. Claims are auth-gated; the sample claim is the only unauthenticated claim surface. |
 | 02 Landing **See a finished claim** (hero) | landing | ✅ wired | → `48-Sample-claim.html` — public, no auth. Relabelled from "Open a sample claim" in the Aug 2026 funnel pass; same handler. |
 | 02 Landing **MktShot** screenshot slots (×3) | landing | — static (visual) | Not a control. Presentational frame in the visual-proof section; renders a labeled drop target when `src` is absent or 404s. All three filled: `staging-sets-2x.webp`, `worksheet-review-2x.webp`, `export-modal-2x.webp` — 1740px WebP downscaled from the ~3156px PNG originals, which are kept alongside. Frames take each image's own aspect ratio so nothing crops. |
 | 58 Account-create — 3-step trial signup (account → verify email → add card) | signup | ✅ wired | Step 1: name/email/password/firm/worktype → `POST /v1/auth/signup`. Step 2: 6-digit code or magic link. Step 3 (legally load-bearing): disclosure block ABOVE the card field, Stripe Elements SetupIntent (card saved, $0 charged), TWO separate unchecked consents (auto-renewal · terms+privacy) stored as a consent record; Subscription created with trial_period_days=8; EMAIL 1 fires immediately → 59-Onboarding, app shows "Free trial · N days left · Manage" banner. Day 4 EMAIL 2 reminder; day 8 charge $249 → EMAIL 3 receipt; failure → EMAIL 4 + 3 retries over 7 days → suspend. |
@@ -182,15 +185,15 @@ Two things to get right when wiring:
 ## Marketing
 | Page | Control | State | Production behavior |
 |---|---|---|---|
-| 02 Landing | Hero **Start your 7-day free trial** / **See a finished claim** | ✅ | onStartClaim → intake; onSampleClaim → sample claim. PRODUCTION: the trial CTA is the paid-ads conversion event — point it at account-create (`58`), not intake. |
+| 02 Landing | Hero **Start free — 250 items** / **See a finished claim** | ✅ | onStartClaim → intake; onSampleClaim → sample claim. PRODUCTION: the trial CTA is the paid-ads conversion event — point it at account-create (`58`), not intake. |
 | 02 | Final CTA **Start your first claim** / **Book a 30-min call** | ✅ / 🔌 | first→intake; Book→ `51-Book-call.html` |
 | 15 Request-access | **Request a quote** (primary) | ✅ | Submits the Enterprise form (`type="submit"`, prevented in-prototype). PRODUCTION: `POST` the lead to the CRM, then confirm on-page. It previously read "Request access" while pointing at `51-Book-call.html`, so the primary action skipped the form the page exists to collect. |
 | 15 Request-access | **Book a call instead** (secondary) | ✅ | → `51-Book-call.html` |
-| 21 Pricing | **Start 7-day free trial** (Pro tier) | ✅ | → `58-Account-create.html`. Trial terms strip sits under the button — card verified, 7 days, one-click cancel. |
+| 21 Pricing | **Start with 250 free items** (Pro tier) | ✅ | → `58-Account-create.html`. Trial terms strip sits under the button — card verified, 7 days, one-click cancel. |
 | 21 Pricing | **Talk to us about your desk** (Enterprise tier) | ✅ | → `38-Contact.html`. Relabelled from "Contact sales", which reads heavyweight to a small regional firm. |
 | 21 Pricing | **MktSocialProof** / **MktROISection** | — shared render | Both defined in `landing.jsx`, exported on `window`, consumed by landing and pricing so testimonials, the settled-with roster and the ROI math cannot drift between pages. Pricing's wrapper loads `landing.jsx` before `pricing.jsx`. |
-| 20 Product (37) | Hero **Start your 7-day free trial** / **See pricing** | ✅ | → `58-Account-create.html` / `21-Pricing.html`. The trial CTA is the paid-ads conversion event — account-create, never intake. |
-| 20 Product (37) | Footer CTA **Start your 7-day free trial** / **See a finished claim** | ✅ | → `58-Account-create.html` / `48-Sample-claim.html` |
+| 20 Product (37) | Hero **Start free — 250 items** / **See pricing** | ✅ | → `58-Account-create.html` / `21-Pricing.html`. The trial CTA is the paid-ads conversion event — account-create, never intake. |
+| 20 Product (37) | Footer CTA **Start free — 250 items** / **See a finished claim** | ✅ | → `58-Account-create.html` / `48-Sample-claim.html` |
 | 22 For-Adjusters | **MktShot** two-up | — static (visual) | `worksheet-review-2x.webp` + `export-modal-2x.webp`. Page also renders the shared `MktSocialProof` and `MktROISection` from `landing.jsx`. |
 | 23 For-Estate-Liquidators | **MktShot** two-up | — static (visual) | `estate-worksheet-2x.webp` + `estate-pdf-sheet-2x.webp` — the estate worksheet and the client PDF, NOT the Xactimate export: an estate professional never touches XactContents. Social proof is `MktEstateProof` (defined in `segment-pages.jsx`), NOT the shared `MktSocialProof`, whose quotes and "Settled with" carrier roster are insurance-only. |
 | 23 For-Estate-Liquidators | **MktEstateProof** (testimonials + "Used for" band) | — static (visual) | Defined in `segment-pages.jsx`, rendered only here. NOT the shared `MktSocialProof`: those quotes are insurance-only and sit under a "Settled with" carrier roster, which means nothing to a liquidator or a trust officer. The three quotes are PLACEHOLDER personas, accepted as such — replace before they carry ad traffic. The band deliberately lists WORK TYPES (probate, downsizing, consignment) rather than named auction houses or firms: a roster of third-party names would be an unverifiable claim about relationships, the same reason domain rule 3 bans invented carriers. |

@@ -42,10 +42,13 @@ const fmtExpiry = (v) => {
 const AccountCreate = () => {
   // Signup per the locked flow: 1 CREATE ACCOUNT (name/email/password/firm) →
   // 2 VERIFY EMAIL (6-digit code) → 3 ADD CARD (disclosure ABOVE the field,
-  // Stripe Elements, two separate unchecked consents) → app with trial banner.
-  // Stripe SetupIntent saves the card at $0; subscription trial_period_days = 8;
-  // consent record stored; EMAIL 1 fires on completion. Day 4 reminder, day 8
-  // charge $249 → receipt; card failure → 3 retries over 7 days → suspend.
+  // Stripe Elements, two separate unchecked consents) → app on the free tier.
+  // Stripe SetupIntent saves the card at $0 and NOTHING is scheduled: the trial
+  // is metered, not timed (CLAUDE.md rule 9b), so there is no trial_period_days,
+  // no charge date and no reminder email. The subscription is created only when
+  // the adjuster starts Pro or passes 250 free items. Card failure at that point
+  // → 3 retries → the account drops back to the free tier rather than suspending,
+  // because there is no paid period to suspend.
   const [step, setStep]   = React.useState(0);
   const [email, setEmail] = React.useState('');
   const [name, setName]   = React.useState('');
@@ -65,7 +68,6 @@ const AccountCreate = () => {
   const meets = pw.length >= 7 && /[A-Z]/.test(pw) && /\d/.test(pw);
   const codeOk = code.replace(/\D/g, '').length === 6;
   const cardOk = card.replace(/\s/g, '').length >= 15 && /^\d{2}\s*\/\s*\d{2}$/.test(exp) && cvc.length >= 3;
-  const chargeDate = new Date(Date.now() + 8 * 864e5).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   return (
     <div className="k-onb-page">
       <header className="k-onb-top">
@@ -75,12 +77,12 @@ const AccountCreate = () => {
 
       <main className="k-onb-col" style={{ maxWidth: 560 }}>
         <div className="k-onb-card">
-        <div className="k-onb-eyebrow">Start your 7-day free trial · step {step + 1} of 3</div>
+        <div className="k-onb-eyebrow">Start free · 250 items · step {step + 1} of 3</div>
         <div className="k-onb-dots" style={{ marginBottom: 18 }}>{[0,1,2].map(i => <span key={i} className={`k-onb-dot ${i < step ? 'k-onb-dot--done' : i === step ? 'k-onb-dot--on' : ''}`} />)}</div>
 
         {step === 0 && (<>
           <h1 className="k-onb-h">Create your account.</h1>
-          <p className="k-onb-sub">Full access for 7 days — real claims, real exports. No charge until the trial ends.</p>
+          <p className="k-onb-sub">Full access for your first 250 line items — real claims, real exports. No deadline and no charge until you start Pro.</p>
           <form className="k-auth-form" onSubmit={(e) => { e.preventDefault(); if (emailOk && name.trim() && meets) setStep(1); }} style={{ marginTop: 22, gap: 18 }}>
             <AccField label="Your name"><input className="k-insp-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="First and last name" autoFocus style={ACC_INPUT} /></AccField>
             <AccField label="Work email"><input className="k-insp-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" style={ACC_INPUT} /></AccField>
@@ -127,10 +129,10 @@ const AccountCreate = () => {
         </>)}
 
         {step === 2 && (<>
-          <h1 className="k-onb-h">Add a card to start your trial.</h1>
+          <h1 className="k-onb-h">Add a card to finish signing up.</h1>
           {/* Disclosure ABOVE the card field — the legally load-bearing block. */}
           <div style={{ background: 'var(--k-accent-soft)', border: '1px solid oklch(0.45 0.13 255 / 0.25)', borderRadius: 10, padding: '14px 16px', margin: '18px 0 4px', fontSize: 13, lineHeight: 1.65, color: 'var(--k-fg)', maxWidth: 480 }}>
-            <strong style={{ fontWeight: 700 }}>Your card is not charged today.</strong> Your 7-day free trial starts now. Unless you cancel before <strong style={{ fontWeight: 700 }}>{chargeDate}</strong>, your subscription begins automatically and this card is charged <strong style={{ fontWeight: 700 }}>$249/month</strong>. We email you today and again 3 days before the charge. Cancel any time in Settings → Billing.
+            <strong style={{ fontWeight: 700 }}>Your card is not charged today, and there is no countdown.</strong> Your first <strong style={{ fontWeight: 700 }}>250 line items</strong> are free. This card is charged <strong style={{ fontWeight: 700 }}>$249/month</strong> only when you start Pro — either by choosing it yourself or by continuing past those 250 items. We email you before that happens and again at 200 items. Cancel any time in Settings → Billing.
           </div>
           <form className="k-auth-form" onSubmit={(e) => e.preventDefault()} style={{ marginTop: 18, gap: 18 }}>
             <AccField label="Card number"><input className="k-insp-input" inputMode="numeric" value={card} onChange={(e) => setCard(fmtCardNum(e.target.value))} placeholder="1234 5678 9012 3456" autoFocus style={{ ...ACC_INPUT, fontFamily: 'var(--k-font-mono)' }} /></AccField>
@@ -144,7 +146,7 @@ const AccountCreate = () => {
             {/* Two SEPARATE consents, both unchecked by default. */}
             <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 12.5, lineHeight: 1.55, color: 'var(--k-fg-2)', cursor: 'pointer' }}>
               <input type="checkbox" checked={consentRenew} onChange={(e) => setConsentRenew(e.target.checked)} style={{ marginTop: 2 }} />
-              <span>I understand my subscription auto-renews at $249/month after the free trial, and I can cancel any time.</span>
+              <span>I understand that once I start Pro — by choosing it or by passing my 250 free items — my subscription auto-renews at $249/month, and I can cancel any time.</span>
             </label>
             <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start', fontSize: 12.5, lineHeight: 1.55, color: 'var(--k-fg-2)', cursor: 'pointer' }}>
               <input type="checkbox" checked={consentTerms} onChange={(e) => setConsentTerms(e.target.checked)} style={{ marginTop: 2 }} />
@@ -152,7 +154,7 @@ const AccountCreate = () => {
             </label>
             <a className={`k-btn k-btn--lg ${(!cardOk || !consentRenew || !consentTerms) ? '' : ''}`} href="59-Onboarding.html"
                style={{ width: '100%', justifyContent: 'center', pointerEvents: (cardOk && consentRenew && consentTerms) ? 'auto' : 'none', opacity: (cardOk && consentRenew && consentTerms) ? 1 : 0.45 }}>
-              Start free trial →
+              Start free — 250 items →
             </a>
             <button type="button" className="k-link" onClick={() => setStep(1)} style={{ background: 'none', border: 0, cursor: 'pointer', fontSize: 12.5 }}>← Back</button>
           </form>
@@ -278,7 +280,7 @@ const OnboardingWizard = () => {
         <div style={{ textAlign: 'center', padding: '20px 0' }}>
           <div className="k-onb-done-burst"><Icon d={I.check} size={34} stroke={2.5} /></div>
           <h1 className="k-onb-h" style={{ marginTop: 18 }}>You're all set.</h1>
-          <p className="k-onb-sub" style={{ margin: '8px auto 0', maxWidth: 380 }}>Pricing region set · export default chosen. Your 7-day free trial is running.</p>
+          <p className="k-onb-sub" style={{ margin: '8px auto 0', maxWidth: 380 }}>Pricing region set · export default chosen. Your 250 free items are ready.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 28 }}>
             <button className="k-btn k-btn--lg" style={{ width: '100%', justifyContent: 'center' }}>Start your first claim →</button>
             <a className="k-btn k-btn--ghost k-btn--lg" style={{ width: '100%', justifyContent: 'center' }} href="48-Sample-claim.html">Explore a sample claim first</a>

@@ -56,7 +56,7 @@ const EdgeStates = () => (
             <div style={{ marginTop: 24, paddingTop: 18, borderTop: '1px solid var(--k-line)', fontSize: 11.5, color: 'var(--k-fg-4)', display: 'flex', gap: 14, justifyContent: 'center' }}>
               <span>Loss ZIP sets the tax rate</span>
               <span>·</span>
-              <span>7-day free trial active</span>
+              <span>Free tier · 250 items</span>
             </div>
           </div>
         </StatePanel>

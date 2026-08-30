@@ -223,7 +223,7 @@ const ForAdjusters = () => (
           Try Kevin on your next claim.
         </h2>
         <p style={{ fontSize: 15, color: 'var(--k-fg-3)', margin: '0 0 28px', maxWidth: 480, textAlign: 'center' }}>
-          7-day free trial — full product, real claims. Carrier profile pre-loaded for the major ones.
+          Your first 250 line items are free — full product, real claims, no deadline. Carrier profile pre-loaded for the major ones.
           $249/mo after that: unlimited claims, 2,000 line items a month included, no per-seat fee.
         </p>
         <div className="k-hero-actions" style={{ marginTop: 0 }}>
@@ -480,10 +480,9 @@ const ForLiquidators = () => (
           Try Kevin on your next estate sale.
         </h2>
         <p style={{ fontSize: 15, color: 'var(--k-fg-3)', margin: '0 0 28px', maxWidth: 500, textAlign: 'center' }}>
-          <strong>Your first estate is free</strong> — run a real one end to end before you pay us anything.
-          After that it is <strong>$249 per estate</strong>: one price for the whole job, however many rooms
-          and however many items, billed per estate rather than per month, so a quiet quarter costs you
-          nothing. No seats, no subscription, no percentage of the sale.
+          <strong>$249 per estate.</strong> One price for the whole job, however many rooms and however
+          many items — billed per estate rather than per month, so a quiet quarter costs you nothing. No
+          seats, no subscription, no percentage of the sale.
         </p>
         <div className="k-hero-actions" style={{ marginTop: 0 }}>
           <a className="k-btn k-btn--lg" href="58-Account-create.html">Start your first estate →</a>

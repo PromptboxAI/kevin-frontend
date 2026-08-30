@@ -87,7 +87,7 @@ const AdminRevenue = () => {
               {[
                 ['Cunningham Loss Consulting', 'Payment failed · $249 · retrying', 'warn'],
                 ['Three Rivers Adjusting', 'Canceled 31 days ago · win-back?', 'quiet'],
-                ['Brightwater Estate Sales', 'Trial ends in 3 days', 'accent'],
+                ['Brightwater Estate Sales', 'Trial · 232 of 250 items used', 'accent'],
               ].map(([who, what, tone], i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderBottom: i < 2 ? '1px solid var(--k-line)' : 0 }}>
                   <span style={{ width: 8, height: 8, borderRadius: 99, background: tone === 'warn' ? 'var(--k-warn)' : tone === 'accent' ? 'var(--k-accent)' : 'var(--k-fg-4)', flex: '0 0 auto' }} />

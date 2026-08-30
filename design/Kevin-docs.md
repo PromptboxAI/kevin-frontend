@@ -103,7 +103,7 @@ Kevin turns a folder of photographs into a defensible personal-property inventor
 | Your review | Twenty to forty minutes |
 | Export | Under a minute |
 
-> Every account starts with a 7-day free trial — full product, real claims.
+> Every account starts with 250 free line items — full product, real claims, no time limit.
 
 ## Creating your first claim
 
@@ -909,7 +909,7 @@ Billing settings shows both meters — items used against the monthly allowance,
 
 ## Billing & plans
 
-_Two plans, flat monthly, 7-day free trial._
+_Two plans, flat monthly, and 250 free items to start._
 
 Kevin is a flat monthly subscription, the way you already pay for Xactimate. There is no per-claim charge, no per-seat charge, no per-photo charge, and comps are always included.
 
@@ -920,9 +920,11 @@ Kevin is a flat monthly subscription, the way you already pay for Xactimate. The
 | Pro | Content inventory specialists, IAs and public adjusters | $249 / month, unlimited claims |
 | Enterprise | Carriers, TPAs, and multi-adjuster teams | Custom, volume licensing on one invoice |
 
-### The 7-day free trial
+### The free tier
 
-Every account starts with a 7-day free trial of the full product. Card verified at signup, never charged during the trial; the subscription starts automatically when it ends, with reminder emails. Cancel any time in Settings → Billing.
+Every account starts with 250 free line items — the full product, on real claims, with no time limit. Your card is verified at signup but not charged. Kevin bills you only when you start Pro, either by choosing it in Billing or by continuing past those 250 items; we email you first, and again at 200 items so it is never a surprise.
+
+> The item count is append-only. Deleting a line does not give the quota back, because the pricing lookups behind it are already paid for by the time the row appears.
 
 ### Managing it
 

@@ -22,4 +22,4 @@ Kevin turns a folder of photographs into a defensible personal-property inventor
 | Your review | Twenty to forty minutes |
 | Export | Under a minute |
 
-> Every account starts with a 7-day free trial — full product, real claims.
+> Every account starts with 250 free line items — full product, real claims, no time limit.

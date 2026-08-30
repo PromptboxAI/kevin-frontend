@@ -18,6 +18,14 @@ the obvious cases; judge the rest against the rule named on the line.
 """
 import io, os, re, sys, glob
 
+# Flagged lines are real UI copy, so they carry arrows, em-dashes and curly
+# quotes. On a cp1252 console printing one raised UnicodeEncodeError and killed
+# the run mid-report -- the checker has to survive the characters it inspects.
+try:
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+except Exception:
+    pass
+
 BASE = os.path.dirname(os.path.abspath(__file__))
 
 # (rule, what it bans, pattern). Rule numbers refer to CLAUDE.md "Domain rules".
@@ -31,6 +39,12 @@ RULES = [
     ("9",  "per-claim SUBSCRIPTION pricing",     r"\$49\s*/\s*claim|\$449|per[- ]claim\s+(fee|subscription)"),
     ("9",  "the scrapped free-first-claim offer", r"free\s+first\s+claim|first\s+claim\s+free|one\s+claim\s+free|\bon\s+us[.!]"),
     ("9",  "a three-tier table",                 r"three[- ]tier|3[- ]tier"),
+    # Rule 9b. The trial is metered (250 items), never timed. A day count is the
+    # whole thing we scrapped, so any calendar framing of the trial is a hit.
+    ("9b", "the scrapped time-based trial",     r"\b(7|seven)[- ]day\s+(free\s+)?trial|free\s+(for\s+)?(7|seven)\s+days|trial\s+(ends|expires)\s+(in|on)\b|trial_period_days|days\s+(left|remaining)\s+in\s+(your\s+)?trial"),
+    ("9b", "the scrapped free-first-estate promo", r"free\s+first\s+estate|first\s+estate\s+(is\s+)?free"),
+    # The trial cap is 250 items. Any OTHER number of free items is drift.
+    ("9b", "a trial cap other than 250 items",  r"\b(?!250\b)[\d,]{2,7}\s+free\s+items\b(?!\s+(left|remaining|used))"),
     ("10", "per-retailer sources / store list",  r"per[- ](retailer|store)\s+(integration|scraper|adapter)|18\s+stores|toggleable\s+stores"),
     ("10", "domain allowlist / blocklist",       r"(domain|strict)\s+(allow|block)list|allowlists?\s+govern"),
     ("11", "the removed comparable-sale path",   r"comparable[- ]sale|marketComp|back[- ]solve|resale\s+market\s+decides|RCV\s+equals\s+the\s+market\s+comp"),

@@ -261,7 +261,7 @@ const DOC_ARTICLES_B = {
 
   'billing-plans': {
     title: 'Billing & plans',
-    summary: 'Two plans, flat monthly, 7-day free trial.',
+    summary: 'Two plans, flat monthly, and 250 free items to start.',
     blocks: [
       ['p', 'Kevin is a flat monthly subscription, the way you already pay for Xactimate. There is no per-claim charge, no per-seat charge, no per-photo charge, and comps are always included.'],
       ['h2', 'The plans'],
@@ -270,8 +270,9 @@ const DOC_ARTICLES_B = {
         ['Pro', 'Content inventory specialists, IAs and public adjusters', '$249 / month · unlimited claims · 2,000 line items, then $0.20 an item'],
         ['Enterprise', 'Carriers, TPAs, and multi-adjuster teams', 'Custom, volume licensing on one invoice'],
       ]],
-      ['h2', 'The 7-day free trial'],
-      ['p', 'Every account starts with a 7-day free trial of the full product. Your card is verified at signup but not charged; the subscription starts automatically when the trial ends, with an email at signup and again 3 days before the charge. Cancel any time in Settings → Billing.'],
+      ['h2', 'The free tier'],
+            ['p', 'Every account starts with 250 free line items — the full product, on real claims, with no time limit. Your card is verified at signup but not charged. Kevin bills you only when you start Pro, either by choosing it in Billing or by continuing past those 250 items; we email you first, and again at 200 items so it is never a surprise.'],
+      ['note', 'The item count is append-only. Deleting a line does not give the quota back, because the pricing lookups behind it are already paid for by the time the row appears.'],
       ['h2', 'Managing it'],
       ['ul', [
         'Update the card or billing email in Billing settings.',

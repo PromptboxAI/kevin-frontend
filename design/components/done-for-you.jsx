@@ -176,7 +176,7 @@ const DoneForYou = () => (
 
       <section style={{ maxWidth: 780, margin: '0 auto', padding: '10px 40px 64px', textAlign: 'center' }}>
         <h2 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 26, letterSpacing: '-0.02em', margin: '32px 0 6px' }}>Rather run it yourself?</h2>
-        <p style={{ fontSize: 13.5, color: 'var(--k-fg-3)', margin: '0 0 18px', lineHeight: 1.6 }}>The full product is $249/mo with a 7-day free trial — most adjusters who send us one claim run the next one themselves.</p>
+        <p style={{ fontSize: 13.5, color: 'var(--k-fg-3)', margin: '0 0 18px', lineHeight: 1.6 }}>The full product is $249/mo and your first 250 line items are free — most adjusters who send us one claim run the next one themselves.</p>
         <div className="k-hero-actions" style={{ justifyContent: 'center', marginTop: 0 }}>
           <a className="k-btn" href="21-Pricing.html">See pricing →</a>
           <a className="k-btn k-btn--ghost" href="48-Sample-claim.html">Open the sample claim</a>
