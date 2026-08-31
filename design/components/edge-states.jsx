@@ -232,7 +232,9 @@ const EdgeStates = () => (
             250 items, 57 already spent, dropping a 300-photo whole-house shoot.
             The component is the same one the dashboard renders. */}
         <StatePanel label="09 · Quota truncation" title="Claims · allowance reached mid-upload">
-          <window.ClaimTruncationAlert trunc={window.TRUNCATION_DEMO} onAddCredits={() => {}} />
+          <window.ClaimTruncationAlert trunc={window.TRUNCATION_DEMO} usage={{ remaining: 0 }} onAddCredits={() => {}} />
+          <div style={{ height: 10 }} />
+          <window.ClaimTruncationAlert trunc={window.TRUNCATION_DEMO} usage={{ remaining: 500 }} onAddCredits={() => {}} />
           <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', lineHeight: 1.55 }}>
             The backend truncates rather than rejecting: it prices up to the remaining allowance and
             holds the rest, returning <code>truncated</code> and <code>dropped_count</code>. Held photos

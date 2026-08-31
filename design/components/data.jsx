@@ -1260,6 +1260,11 @@ const KevinAPI = {
     return new Promise((resolve) => setTimeout(() => resolve({ ok: true, group_key: setKey, skip }), 120));
   },
   // POST /v1/claims/{id}/staging/process — NO BODY. Promotes the saved state.
+  // RESUMABLE: calling it again on the same session skips the photos already
+  // promoted and processes only the remainder. That makes this one endpoint
+  // both the first Process and the resume path after a quota truncation
+  // (rule 9c) — do NOT add a second 'resume' endpoint, and do not pass a list
+  // of held photos; the backend already knows which ones it skipped.
   stagingProcess(claimId) {
     return new Promise((resolve) => setTimeout(() => resolve({ ok: true, claim_id: claimId, status: 'processing' }), 200));
   },

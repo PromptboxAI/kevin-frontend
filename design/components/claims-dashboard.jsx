@@ -386,9 +386,52 @@ const ClaimRowMenu = ({ claim, onStatus, onDelete }) => {
 // 22), so the inventory is late, not lost. Without that sentence this alert
 // reads as data loss and generates exactly the panicked support ticket the
 // truncation design was meant to avoid.
-const ClaimTruncationAlert = ({ trunc, onAddCredits }) => {
+const ClaimTruncationAlert = ({ trunc, usage, onAddCredits }) => {
+  const u = usage || (typeof window !== 'undefined' ? window.KEVIN_ITEM_USAGE : null);
+  const [busy, setBusy] = React.useState(false);
+  const [done, setDone] = React.useState(false);
+  const [err, setErr] = React.useState(null);
   if (!trunc || !trunc.truncated) return null;
   const n = trunc.dropped_count;
+
+  // Headroom is what changes the ask. With none, the only useful action is to
+  // buy some; with it, the useful action is to finish the job. Showing "Process
+  // remaining" to someone at zero quota would just fail on them.
+  const headroom = u ? u.remaining : 0;
+  const enough = headroom >= n;
+
+  // Re-fires the SAME promote call (KevinAPI.stagingProcess, no body). The
+  // session is resumable: the backend skips what it already promoted and
+  // processes only the remainder, so there is no resume endpoint and no list of
+  // held photos to send — it already knows which ones it skipped.
+  const resume = async () => {
+    if (busy) return;
+    setBusy(true); setErr(null);
+    try {
+      await window.KevinAPI.stagingProcess(trunc.claim_id);
+      setDone(true);
+    } catch (e) {
+      setErr('Could not start processing. Try again in a moment.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (done) {
+    return (
+      <section className="k-trunc k-trunc--ok" role="status">
+        <div className="k-trunc-icon"><Icon d={I.check} size={18} /></div>
+        <div className="k-trunc-body">
+          <div className="k-trunc-h">Processing the remaining photos.</div>
+          <p className="k-trunc-p">
+            Kevin picked up where it stopped and is working through what it held. The claim's item
+            count will climb as they land.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="k-trunc" role="alert">
       <div className="k-trunc-icon"><Icon d={I.warn} size={18} /></div>
@@ -399,14 +442,29 @@ const ClaimTruncationAlert = ({ trunc, onAddCredits }) => {
           allowance {trunc.occurred}. Kevin priced {trunc.processed_count.toLocaleString()} of the
           {' '}{trunc.attempted.toLocaleString()} it found and stopped at your limit.
         </p>
-        <p className="k-trunc-p k-trunc-p--calm">
-          Nothing was deleted. The photos behind them are still on the claim, unprocessed — add credits
-          or start Pro and Kevin picks up exactly where it stopped.
-        </p>
+        {headroom > 0 ? (
+          <p className="k-trunc-p k-trunc-p--calm">
+            You have {headroom.toLocaleString()} items of room now
+            {enough
+              ? ' — enough to finish this claim.'
+              : `, which covers ${headroom.toLocaleString()} of the ${n.toLocaleString()} held. Kevin will process what fits and hold the rest.`}
+          </p>
+        ) : (
+          <p className="k-trunc-p k-trunc-p--calm">
+            Nothing was deleted. The photos behind them are still on the claim, unprocessed — add
+            credits or start Pro and Kevin picks up exactly where it stopped.
+          </p>
+        )}
+        {err && <p className="k-trunc-p" style={{ color: 'var(--k-danger)', marginTop: 6 }}>{err}</p>}
       </div>
       <div className="k-trunc-actions">
-        <button className="k-btn" onClick={onAddCredits}>Add credits</button>
-        <window.UpgradeProButton className="k-btn k-btn--ghost" />
+        {headroom > 0 && (
+          <button className="k-btn" onClick={resume} disabled={busy}>
+            {busy ? 'Starting…' : 'Process remaining photos'}
+          </button>
+        )}
+        <button className={headroom > 0 ? 'k-btn k-btn--ghost' : 'k-btn'} onClick={onAddCredits}>Add credits</button>
+        {headroom === 0 && <window.UpgradeProButton className="k-btn k-btn--ghost" />}
       </div>
     </section>
   );

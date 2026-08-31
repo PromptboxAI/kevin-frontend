@@ -4132,3 +4132,11 @@
       .k-trunc { flex-wrap: wrap; }
       .k-trunc-actions { width: 100%; padding-left: 32px; }
     }
+
+    /* Resume confirmation — the same block in its resolved state. */
+    .k-trunc--ok {
+      background: oklch(0.72 0.13 165 / 0.07);
+      border-color: oklch(0.72 0.13 165 / 0.32);
+      border-left-color: var(--k-ok);
+    }
+    .k-trunc--ok .k-trunc-icon { color: var(--k-ok); }

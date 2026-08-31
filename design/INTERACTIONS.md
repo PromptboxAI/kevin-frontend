@@ -136,10 +136,13 @@ same failure and must not share a code path:
 1. **Credits bought while already over the allowance.** `items.used` may exceed
    `included + credits` at the moment of purchase; the meter must show the new
    allowance and the reduced overage, not clamp to 100% or go negative.
-2. **Upgrade while truncated.** Held photos do not re-run themselves. Either the
-   backend resumes them on `plan` change or the UI needs a "process held photos"
-   action — decide before the run; today the alert promises Kevin "picks up
-   exactly where it stopped".
+2. **Upgrade while truncated.** RESOLVED: the promote session is resumable, so
+   the UI drives it. Once the account has headroom the alert offers **Process
+   remaining photos**, which re-fires the SAME `POST /v1/claims/{id}/staging/process`
+   with no body; the backend skips what it already promoted and processes the
+   remainder. No resume endpoint, and no list of held photos is sent. Assert in
+   the run that a partial headroom (fewer items of room than are held) processes
+   what fits and re-truncates cleanly rather than erroring.
 3. **Comped accounts** (`plan: "comped"`) receive no Stripe events at all. They
    must not fall into any dunning or downgrade path.
 4. **Double-submit.** Both checkout buttons disable in flight, but the backend
@@ -189,6 +192,7 @@ same failure and must not share a code path:
 | 01 My claims | Open → | ➡️ | Open claim (worksheet/processing per status) |
 | 01 My claims | **Quota truncation alert** (`ClaimTruncationAlert`) | ✅ renders from payload | Shown whenever the ingest response carries `truncated: true`; reads `dropped_count` / `processed_count` verbatim (rule 9c). **Non-dismissible by design** — it clears when quota is restored and the held photos process, not when the adjuster acknowledges it. Never infer truncation by comparing counts. **Hidden on the demo dashboard**: the canonical account is Pro at 921 of 2,000, so it has 1,079 items of headroom and cannot truncate — seeding it there would print numbers contradicting the meter and the claim rows. |
 | 20 Edge states | Panel **09 · Quota truncation** | ✅ | The same component, fed the case that actually occurs: free tier, 250 allowance, 57 already spent, a 300-photo shoot → 193 priced, 107 held. Numbers are DERIVED by `buildTruncation()` (`processed = min(attempted, remaining)`), never picked. |
+| 01 My claims | Alert **Process remaining photos** | ✅ LIVE | Appears only once the account has headroom (`items` remaining > 0) — offering it at zero quota would just fail on the adjuster. Re-fires `KevinAPI.stagingProcess(claim_id)` → `POST /v1/claims/{id}/staging/process`, **no body**: the session is resumable and the backend already knows which photos it skipped. On success the alert flips to a mint confirmation (`role="status"`). |
 | 01 My claims | Alert **Add credits** | ✅ LIVE | Same modal as Billing. Production: Stripe one-time charge for the block, then re-run the held photos. |
 | 01 My claims | Alert **Upgrade to Pro** (`UpgradeProButton`) | ✅ LIVE | Production: in-app upgrade → `POST /v1/billing/checkout`, then re-run the held photos. |
 | 01 | Row ⋯ (Open/Preview/Duplicate/Export/Print) | ✅ (Duplicate+Export modals) / 🔌 rest | Duplicate=new claim w/ new name; Export=save-as .pdf/.xlsx; Print |
