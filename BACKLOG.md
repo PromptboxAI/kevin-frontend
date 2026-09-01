@@ -115,11 +115,41 @@ is worse than one saying "status changed", because the gap is invisible.
 `lkq` and `bucket_used` are surfaced here deliberately: adjuster-facing IN THE
 APP, never in an export. The export builder has no access to this endpoint.
 
-## 5. Row-level evidence
+## 5. ~~Row-level evidence~~ — BUILT (photos + receipt + holdback)
 
-`POST /claim_items/{id}/photo` · `/photos` · `DELETE /photos` · `/receipt`.
-The item drawer shows photos but cannot attach or detach one, and cannot take
-a receipt. Receipts matter for holdback recovery (`claimed_rcv`).
+`ItemEvidence` in the drawer, beside the history panel.
+
+**The receipt does NOT set `claimed_rcv`.** The route "touches no valuation
+field" by design -- the schedule is what the carrier reconciles the holdback
+against, so it must not move because a file arrived. The file proves the spend;
+the numbers claim it; they are separate actions and the copy says so, or an
+adjuster attaches a PDF, sees nothing change, and concludes it is broken.
+
+**PDFs are accepted here and nowhere else in the API** -- forwarded email
+invoices arrive as PDFs, and the image pipeline cannot decode one. HEIC is
+normalised server-side with EXIF stripped, which matters more on a receipt
+(photographed at home) than on contents evidence.
+
+**Holdback is gated to closed/archived claims.** It is post-settlement by
+definition, and showing it during the estimating pass invites receipts attached
+before anyone has been paid.
+
+`claimed_rcv` and `replaced_qty` are always PAIRED, and the count pre-fills
+from the line quantity: an amount without a count computes $0 recoverable on
+money genuinely owed. `recoverable` is the server's figure applied verbatim --
+`services/holdback.py` owns the formula and nothing here recomputes it.
+
+Photo detach says "Unlink", because "Remove" beside a claim's only evidence
+reads as destruction when the route explicitly does not delete.
+
+### Unverified: commit-on-blur delivery
+
+The commit LOGIC is verified against live data (claimed $60 on a line
+scheduled $71.84 / paid $43.10 -> recoverable $16.90, count auto-filled). But
+the browser pane would not composite this session, and a backgrounded page
+dispatches no focus events -- a native blur listener recorded zero on a real
+focus move. So blur DELIVERY could not be exercised. Enter was added as a
+second path for the same reason. Worth 30 seconds with the pane displayed.
 
 ## 6. Written import — the second intake path
 

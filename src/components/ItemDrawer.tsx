@@ -1,4 +1,5 @@
 import ItemHistory from './ItemHistory'
+import ItemEvidence from './ItemEvidence'
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Badge from './Badge'
@@ -8,7 +9,7 @@ import { fmtCompPrice, fmtConfidence, fmtPct, fmtUSD } from '../lib/format'
 import { editDisplayLine, overrideItem, repriceItem } from '../lib/mutations'
 import { QUERY_MAX, composeQuery, isQueryValid, trimQuery } from '../lib/query'
 import { CAPACITY_REASONS } from '../lib/types'
-import type { ClaimItemDetail, Comp, ThumbnailsResponse } from '../lib/types'
+import type { ClaimItemDetail, ClaimSummary, Comp, ThumbnailsResponse } from '../lib/types'
 
 /** Adjuster-facing copy for why a row is unpriced. */
 const MANUAL_COPY: Record<string, string> = {
@@ -81,6 +82,19 @@ export default function ItemDrawer({
     // row sits in `processing`, then stop. Never poll a terminal row.
     refetchInterval: (q) =>
       (q.state.data as ClaimItemDetail | undefined)?.status === 'processing' ? 2000 : false,
+  })
+
+  /**
+   * The claim, only for its STATUS: holdback recovery is post-settlement and
+   * stays hidden during the estimating pass. The id arrives on the item, so
+   * this waits for it -- and it shares the worksheet's cache key, so in
+   * practice it is a hit rather than a request.
+   */
+  const claim = useQuery({
+    queryKey: ['claim', data?.claim_id],
+    queryFn: () => api.get<ClaimSummary>(`/v1/claims/${encodeURIComponent(data!.claim_id)}`),
+    enabled: !!data?.claim_id,
+    staleTime: 60_000,
   })
 
   const photos = data?.photos ?? []
@@ -501,6 +515,7 @@ export default function ItemDrawer({
 
                 {/* The audit trail. Lazy: nothing is fetched until asked, and
                     most rows are never asked about. */}
+                <ItemEvidence item={data} claimStatus={claim.data?.status} />
                 <ItemHistory rowId={rowId} />
               </div>
             </>

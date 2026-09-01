@@ -105,6 +105,19 @@ export type ClaimItem = {
   model_number: string | null
   description: string | null
   quantity: number
+  /**
+   * HOLDBACK RECOVERY, post-settlement. `claimed_rcv` is what the insured
+   * actually spent replacing the item and `replaced_qty` how many units --
+   * PAIRED, because an amount without a count computes $0 recoverable on money
+   * genuinely owed. `recoverable` is SERVER-computed
+   * (max(0, min(rcv_total_incl, claimed_rcv) - acv_total_incl), with a partial
+   * ratio); never derive it here.
+   */
+  claimed_rcv?: number | null
+  replaced_qty?: number | null
+  recoverable?: number
+  /** The replacement receipt. One per line; re-upload replaces the pointer. */
+  receipt_url?: string | null
   /** PER-UNIT, PRE-TAX. The worksheet money columns are the *_incl fields. */
   rcv: number | null
   acv: number | null
