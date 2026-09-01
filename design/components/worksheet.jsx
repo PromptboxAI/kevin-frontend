@@ -26,7 +26,7 @@ const ExtLink = ({ a, className, children }) => (
     : <div className={className} title={`${a.title || ''} — no direct listing resolved`} style={{ cursor: 'default' }}>{children}</div>
 );
 
-const lineTotals = (r) => ({
+const wsLineTotals = (r) => ({
   subtotal: r.rcv_total_incl,
   tax: r.tax,
   dep: r.depreciation_amount,
@@ -440,7 +440,7 @@ const SourceLinkCell = ({ row, onUpdate }) => {
 
 // ---------- Row (memoized for virtualization perf) --------------------------
 const Row = React.memo(({ row, idx, selected, onSelect, onUpdate, onLightbox, density, active, onRowClick }) => {
-  const { dep, tax, acv, unpriced } = lineTotals(row);
+  const { dep, tax, acv, unpriced } = wsLineTotals(row);
   const rowHeight = density === 'compact' ? 34 : 42;
   // While the inspector is docked the whole row is the target — but a click on a
   // field, button, link or menu belongs to that control, not to row selection.
@@ -593,7 +593,7 @@ const Lightbox = ({ row, index, total, onNav, onClose, onUpdate, docked, onToggl
     return () => document.removeEventListener('keydown', onKey);
   }, [editing, docked, onNav, onClose]);
 
-  const { dep, tax, acv } = lineTotals(row);
+  const { dep, tax, acv } = wsLineTotals(row);
   const refined = !!row.is_manually_queried;
   // A hand-added row was never seen by Vision and never priced — comps, "recheck"
   // and "re-price" all describe work that never happened for it.
@@ -1225,7 +1225,7 @@ const Worksheet = ({ density = 'comfortable', sample = false, focusItem = null }
   };
 
   const totals = React.useMemo(() => rows.reduce((acc, r) => {
-    const { subtotal, dep, tax, acv } = lineTotals(r);
+    const { subtotal, dep, tax, acv } = wsLineTotals(r);
     acc.rcv += subtotal; acc.tax += tax; acc.acv += acv; acc.dep += dep;
     return acc;
   }, { rcv: 0, tax: 0, acv: 0, dep: 0 }), [rows]);
@@ -1470,7 +1470,7 @@ const Worksheet = ({ density = 'comfortable', sample = false, focusItem = null }
                 let globalIdx = -1;
                 return groups.map(([cat, items]) => {
                   const sum = items.reduce((a, r) => {
-                    const { subtotal, acv } = lineTotals(r);
+                    const { subtotal, acv } = wsLineTotals(r);
                     a.rcv += subtotal; a.acv += acv;
                     return a;
                   }, { rcv: 0, acv: 0 });
@@ -1564,4 +1564,4 @@ const Worksheet = ({ density = 'comfortable', sample = false, focusItem = null }
 
 window.Worksheet = Worksheet;
 // Expose primitives so worksheet variants can reuse them
-Object.assign(window, { TextCell, CategoryCell, RCVCell, RCVPopover, SourceLinkCell, Lightbox, Row, lineTotals, HEADERS, PolicyLimitMeter });
+Object.assign(window, { TextCell, CategoryCell, RCVCell, RCVPopover, SourceLinkCell, Lightbox, Row, wsLineTotals, HEADERS, PolicyLimitMeter });

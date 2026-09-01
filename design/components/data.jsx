@@ -882,32 +882,40 @@ const KevinAPI = {
 
   // ─── Billing checkouts ────────────────────────────────────────────
   // The only part of KevinAPI that talks to a REAL backend rather than a mock.
-  // All three mint a Stripe-hosted Checkout/Portal session and return `{ url }`;
-  // the browser is then redirected there, so no card data ever reaches Kevin —
-  // the same promise the signup disclosure already makes.
+  // All three mint a Stripe-hosted session and answer
+  // `{ checkout_url, session_id }`; the browser is then redirected there, so no
+  // card data ever reaches Kevin — the promise the signup disclosure makes.
   //
   //   POST /v1/billing/checkout          -> Pro subscription
-  //   POST /v1/billing/credits/checkout  -> one-time block of item credits
+  //   POST /v1/billing/credits/checkout  -> { items: <int> }, one-time block
   //   POST /v1/billing/portal            -> manage card / cancel / invoices
   //
-  // ⚠ CONTRACT TO CONFIRM: the credits body is sent as { items: <n> }. The
-  // backend named the endpoint but not the field; if it expects `quantity`,
-  // `credits` or a Stripe price id, change it HERE and nowhere else.
+  // The client NEVER sends a price_id. The server holds the price so a tampered
+  // request cannot buy 2,000 items for the price of 50 — same reason
+  // success_url / cancel_url are server-side and never supplied here.
   //
   // Idempotency is the caller's job in the UI (buttons disable while in
-  // flight). Double-posting mints two sessions, and a customer who completes
-  // both is charged twice — the backend should also key on an idempotency
-  // header before the end-to-end run.
-  //
-  // success_url / cancel_url are set SERVER-side; the client never supplies a
-  // redirect target, so a tampered link cannot bounce a paying customer to a
-  // page of someone else's choosing.
+  // flight); the backend additionally keys credit grants on the Stripe event id
+  // with a unique index, so a webhook replay grants nothing.
   billing: {
-    checkout()        { return KevinAPI.billing._session('/v1/billing/checkout'); },
-    credits(items)    { return KevinAPI.billing._session('/v1/billing/credits/checkout', { items }); },
-    portal()          { return KevinAPI.billing._session('/v1/billing/portal'); },
+    // Server bounds: integer, 50..20,000. Mirrored here so a bad call fails
+    // immediately with a readable message instead of a 422 mid-checkout.
+    ITEMS_MIN: 50,
+    ITEMS_MAX: 20000,
 
-    async _session(path, body) {
+    checkout(expect) { return KevinAPI.billing._session('/v1/billing/checkout', null, expect); },
+    portal()         { return KevinAPI.billing._session('/v1/billing/portal'); },
+    credits(items, expect) {
+      const n = Number(items);
+      if (!Number.isInteger(n) || n < KevinAPI.billing.ITEMS_MIN || n > KevinAPI.billing.ITEMS_MAX) {
+        return Promise.reject(new Error(
+          `Credit blocks must be a whole number between ${KevinAPI.billing.ITEMS_MIN} and ${KevinAPI.billing.ITEMS_MAX.toLocaleString()} items.`
+        ));
+      }
+      return KevinAPI.billing._session('/v1/billing/credits/checkout', { items: n }, expect);
+    },
+
+    async _session(path, body, expect) {
       let res;
       try {
         res = await fetch(path, {
@@ -917,7 +925,7 @@ const KevinAPI = {
           body: JSON.stringify(body || {}),
         });
       } catch (e) {
-        // Network/CORS failure, and the case you hit in the prototype where no
+        // Network/CORS failure, and the case hit in the prototype where no
         // backend is listening. Surface it — a dead Buy button that logs
         // nothing is how a broken checkout ships.
         throw new Error('Could not reach billing. Check your connection and try again.');
@@ -928,10 +936,47 @@ const KevinAPI = {
         throw new Error(detail || `Billing returned ${res.status}. Try again, or contact support if it persists.`);
       }
       const data = await res.json();
-      if (!data || !data.url) throw new Error('Billing did not return a checkout link.');
-      window.location.assign(data.url);
+      const url = data && (data.checkout_url || data.url);
+      if (!url) throw new Error('Billing did not return a checkout link.');
+      // Remember which session we sent them to, so the return leg can poll for
+      // THAT session resolving rather than guessing that any state change is
+      // ours. Session storage, not local: it is per-tab and dies with the flow.
+      try {
+        sessionStorage.setItem('kevin.checkout', JSON.stringify({
+          session_id: data.session_id || null, path, ...(expect || {}),
+        }));
+      } catch (e) { /* private mode — the page simply will not show the confirming banner */ }
+      window.location.assign(url);
       return data;
     },
+  },
+
+  // GET /v1/me — the ONLY source of billing state (rule 20). Never infer a plan
+  // from having landed on success_url.
+  me() {
+    return fetch('/v1/me', { credentials: 'same-origin' }).then((r) => {
+      if (!r.ok) throw new Error(`/v1/me returned ${r.status}`);
+      return r.json();
+    });
+  },
+
+  // Returning from Stripe races the webhook: the customer can beat the event
+  // home, so /v1/me may still report the OLD plan for a beat. Poll briefly and
+  // resolve when `settled(me)` says the change landed.
+  //
+  // A timeout is NOT a failure — the money may be fine and the webhook merely
+  // slow. Callers must say "still confirming", never "payment failed"; the
+  // resolved value reports which happened rather than throwing.
+  async pollMe(settled, { tries = 8, intervalMs = 1200 } = {}) {
+    let last = null;
+    for (let i = 0; i < tries; i++) {
+      try {
+        last = await KevinAPI.me();
+        if (settled(last)) return { settled: true, me: last, waitedMs: i * intervalMs };
+      } catch (e) { /* transient — keep polling, the deadline is the guard */ }
+      await new Promise((r) => setTimeout(r, intervalMs));
+    }
+    return { settled: false, me: last, waitedMs: tries * intervalMs };
   },
   // PATCH /v1/claims/{id}/settled-items/{row_id} { claimed_rcv, replaced_qty } —
   // returns the recomputed recoverable. replaced_qty: null = all units,

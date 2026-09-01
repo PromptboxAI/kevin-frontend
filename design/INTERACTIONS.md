@@ -71,12 +71,29 @@ place they are called:
 | Action | Endpoint | Body |
 |---|---|---|
 | Start Pro | `POST /v1/billing/checkout` | `{}` |
-| Buy credits | `POST /v1/billing/credits/checkout` | `{ items: <n> }` ⚠ field name unconfirmed |
+| Buy credits | `POST /v1/billing/credits/checkout` | `{ items: <int> }` — confirmed; integer, **50–20,000** |
 | Manage card / cancel / invoices | `POST /v1/billing/portal` | `{}` |
 
-`success_url` / `cancel_url` are set **server-side**. The client never supplies
-a redirect target, so a tampered link cannot bounce a paying customer somewhere
-of an attacker's choosing.
+All three answer **`{ checkout_url, session_id }`** — note `checkout_url`, not
+`url`. `success_url` / `cancel_url` are set **server-side**, and the client never
+sends a `price_id`: the server holds the price, so a tampered request cannot buy
+20,000 items for the price of 50, and a tampered link cannot bounce a paying
+customer somewhere of an attacker's choosing. The 50–20,000 bound is mirrored in
+`KevinAPI.billing` so a bad call fails immediately with a readable message
+instead of a 422 mid-checkout.
+
+### Returning from checkout — the polling leg
+
+`_session` stashes the pending session in `sessionStorage` (`kevin.checkout`)
+along with **what the caller expects to change** — `plan_before` for an upgrade,
+`credits_before` for a credit block. On mount, Billing reads that, shows
+**“Confirming your payment…”**, and calls `KevinAPI.pollMe(settled)`: `GET /v1/me`
+up to 8 times at 1.2s, resolving as soon as the expected field actually moves.
+
+**A timeout is not a failure.** The money may be fine and the webhook merely
+slow, so the copy degrades to “Still confirming with Stripe” and explicitly says
+nothing is charged twice by waiting. It must never say the payment failed — the
+UI does not know that, and only `GET /v1/me` ever will.
 
 ### The rule that matters most
 

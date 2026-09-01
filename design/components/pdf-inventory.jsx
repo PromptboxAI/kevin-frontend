@@ -10,7 +10,7 @@ const { fmtUSD, fmtUSDshort, buildWorksheetRows, KevinWordmark, Icon, I } = wind
 // Reads the server's tax-inclusive line totals. Defined locally on purpose —
 // relying on worksheet.jsx's copy via shared Babel scope silently couples this
 // document to another file's internals.
-const lineTotals = (r) => ({
+const pdfLineTotals = (r) => ({
   subtotal: r.rcv == null ? null : Math.round(r.rcv * r.qty * 100) / 100,   // Ext. Cost, PRE-tax (§5b)
   tax: r.tax,
   rcvIncl: r.rcv_total_incl,
@@ -73,7 +73,7 @@ const PdfInventory = ({ method = 'straight_line' }) => {
 
   if (!rows) return <div className="pdf-loading">Rendering inventory…</div>;
   const totals = rows.reduce((a, r) => {
-    const { subtotal, dep, tax, acv } = lineTotals(r);
+    const { subtotal, dep, tax, acv } = pdfLineTotals(r);
     a.rcv += subtotal || 0; a.dep += dep || 0; a.tax += tax || 0; a.acv += acv || 0; a.qty += r.qty;
     return a;
   }, { rcv: 0, dep: 0, tax: 0, acv: 0, qty: 0 });
@@ -165,7 +165,7 @@ const PdfInventory = ({ method = 'straight_line' }) => {
         </thead>
         <tbody>
           {rows.map((r, i) => {
-            const { subtotal, dep, tax, acv, rcvIncl, unpriced } = lineTotals(r);
+            const { subtotal, dep, tax, acv, rcvIncl, unpriced } = pdfLineTotals(r);
             return (
               <tr key={r.id} className={r.special_limits ? 'pdf-row-sl' : ''}>
                 <td className="pdf-c-num pdf-mono">{String(i + 1).padStart(3, '0')}</td>

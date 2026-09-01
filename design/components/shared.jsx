@@ -221,7 +221,9 @@ const UpgradeProButton = ({ className, label }) => {
     if (busy) return;
     setBusy(true); setErr(null);
     try {
-      await window.KevinAPI.billing.checkout();   // redirects to Stripe on success
+      // Record the plan being left so the return leg knows what changed.
+      const u = window.KEVIN_ITEM_USAGE;
+      await window.KevinAPI.billing.checkout({ kind: 'plan', plan_before: (u && u.plan) || 'free' });
     } catch (e) {
       setErr(e.message); setBusy(false);
     }

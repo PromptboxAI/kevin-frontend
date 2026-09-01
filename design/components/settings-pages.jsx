@@ -615,7 +615,9 @@ const AddCreditsModal = ({ usage, onClose }) => {
     if (busy) return;
     setBusy(true); setErr(null);
     try {
-      await window.KevinAPI.billing.credits(pick);   // redirects to Stripe on success
+      // Record the pre-checkout credit balance so the return leg knows what it
+      // is waiting for (the webhook races the redirect home).
+      await window.KevinAPI.billing.credits(pick, { kind: 'credits', credits_before: (usage && usage.credits) || 0 });
     } catch (e) {
       setErr(e.message); setBusy(false);
     }
@@ -841,6 +843,25 @@ const SettingsBilling = ({ plan = 'pro' }) => {
   // Manage subscription / Cancel plan / Update card are all ONE Stripe-hosted
   // portal session -- the portal owns card updates, cancellation and invoice
   // history, so Kevin does not rebuild any of them.
+  // RETURN FROM STRIPE. The redirect is not proof of payment: the customer can
+  // beat the webhook home. So the page never trusts having landed here — it
+  // polls GET /v1/me until the change it is waiting for actually lands.
+  // A timeout is NOT a failure: the money may be fine and the webhook merely
+  // slow, so the copy says 'still confirming', never 'payment failed'.
+  const [confirming, setConfirming] = React.useState(null);
+  React.useEffect(() => {
+    let pending;
+    try { pending = JSON.parse(sessionStorage.getItem('kevin.checkout') || 'null'); } catch (e) { pending = null; }
+    if (!pending) return;
+    setConfirming('waiting');
+    const settled = (me) => (pending.kind === 'credits'
+      ? ((me.items && me.items.credits) || 0) !== pending.credits_before
+      : me.plan !== pending.plan_before);
+    window.KevinAPI.pollMe(settled).then((res) => {
+      try { sessionStorage.removeItem('kevin.checkout'); } catch (e) {}
+      setConfirming(res.settled ? null : 'slow');
+    });
+  }, []);
   const [portalBusy, setPortalBusy] = React.useState(false);
   const [portalErr, setPortalErr] = React.useState(null);
   const portal = async () => {
@@ -900,6 +921,13 @@ const SettingsBilling = ({ plan = 'pro' }) => {
       </div>
     </section>
 
+    {confirming && (
+      <div style={{ margin: '0 0 14px', padding: '12px 14px', borderRadius: 8, background: 'var(--k-accent-soft)', border: '1px solid oklch(0.45 0.13 255 / 0.25)', fontSize: 13, color: 'var(--k-fg-2)', lineHeight: 1.55 }}>
+        {confirming === 'waiting'
+          ? <><strong>Confirming your payment…</strong> This usually takes a few seconds.</>
+          : <><strong>Still confirming with Stripe.</strong> Your payment may well have gone through — this page updates as soon as it lands, and nothing is charged twice if you wait. Refresh in a moment, or check Invoice history below.</>}
+      </div>
+    )}
     {portalErr && (
       <div style={{ margin: '0 0 14px', padding: '10px 12px', borderRadius: 8, background: 'oklch(0.58 0.19 25 / 0.07)', border: '1px solid oklch(0.58 0.19 25 / 0.3)', fontSize: 12.5, color: 'var(--k-fg-2)' }}>{portalErr}</div>
     )}
