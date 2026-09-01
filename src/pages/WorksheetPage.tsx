@@ -13,6 +13,15 @@ import ProposalsPanel from '../components/ProposalsPanel'
 import ClaimStateMenu from '../components/ClaimStateMenu'
 import { I, Icon } from '../components/Icon'
 import { ApiError, api, downloadExport } from '../lib/api'
+import {
+  DEPR_ERROR_COPY,
+  deprCellValue,
+  deprChanged,
+  deprEditable,
+  deprOverrideBody,
+  isManualDepr,
+  parseDeprPercent,
+} from '../lib/depr-rules'
 import { fmtDate, fmtInt, fmtPct, fmtUSD } from '../lib/format'
 import {
   bulkSetCategory,
@@ -1008,6 +1017,7 @@ export default function WorksheetPage() {
                       pendingField={pending.get(item.id) ?? null}
                       categories={rules.data?.categories ?? []}
                       depRules={rules.data?.rules}
+                      onNotice={setNotice}
                       onOverride={(body) => override.mutate({ id: item.id, body })}
                       onEditLine={(body) => editLine.mutate({ id: item.id, body })}
                       onSaveSource={(url) => saveSource.mutateAsync({ id: item.id, url })}
@@ -1032,6 +1042,7 @@ export default function WorksheetPage() {
                     pendingField={pending.get(item.id) ?? null}
                     categories={rules.data?.categories ?? []}
                     depRules={rules.data?.rules}
+                    onNotice={setNotice}
                     onOverride={(body) => override.mutate({ id: item.id, body })}
                     onEditLine={(body) => editLine.mutate({ id: item.id, body })}
                     onSaveSource={(url) => saveSource.mutateAsync({ id: item.id, url })}
@@ -1213,10 +1224,13 @@ export default function WorksheetPage() {
 function DepExplainer({
   item,
   depRules,
+  onRelease,
   onClose,
 }: {
   item: NumberedItem
   depRules?: Record<string, unknown>
+  /** Drop the adjuster's rate and go back to the schedule. */
+  onRelease: () => void
   onClose: () => void
 }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -1256,6 +1270,37 @@ function DepExplainer({
             ))
           : null}
       </dl>
+      {/* "Why is this 55%" and "how do I put it back" are the same question,
+          so the release lives here rather than behind a gesture.
+
+          It is a BUTTON, not "clear the cell": focusing a numeric cell blanks
+          it, so there is nothing left to delete and blur restores the old value
+          -- an adjuster trying to clear their way out would find the rate
+          springing back with no explanation. */}
+      <div className="k-dep-foot">
+        {isManualDepr(item) ? (
+          <>
+            <p style={{ margin: '0 0 8px' }}>
+              This rate is yours, not the schedule’s. It is held through later
+              class and age changes.
+            </p>
+            <button
+              type="button"
+              className="k-btn k-btn--ghost k-btn--sm"
+              onClick={() => {
+                onRelease()
+                onClose()
+              }}
+            >
+              Back to the schedule
+            </button>
+          </>
+        ) : (
+          <p style={{ margin: 0 }}>
+            Type a percentage into the cell to override the schedule on this line.
+          </p>
+        )}
+      </div>
     </div>
   )
 }
@@ -1403,6 +1448,7 @@ function Row({
   onEditLine,
   onSaveSource,
   onAppend,
+  onNotice,
   isNew,
 }: {
   item: NumberedItem
@@ -1421,6 +1467,8 @@ function Row({
   onOverride: (body: OverrideBody) => void
   onEditLine: (body: Record<string, string | null>) => void
   onSaveSource: (url: string | null) => Promise<unknown>
+  /** Client-side rejects (a rate outside 0-100) report the same way as 422s. */
+  onNotice: (message: string) => void
   /** Set only on the last row: Enter there appends a new line. */
   onAppend?: () => void
   /** Just created in this session -- highlighted with the header grey. */
@@ -1447,7 +1495,12 @@ function Row({
   const depAmount = item.depreciation_amount
   // Depreciation is server-owned, so it spins only while age or class -- the
   // two inputs that drive it -- are actually in flight.
-  const depRecalculating = pendingField === 'age_years' || pendingField === 'category'
+  const depRecalculating =
+    pendingField === 'age_years' ||
+    pendingField === 'category' ||
+    pendingField === 'dep_manual' ||
+    pendingField === 'depreciation_method'
+  const deprManual = isManualDepr(item)
   /**
    * The four server-derived money cells while a write is in flight. They keep
    * their last values -- blanking them was the old flash -- but read as
@@ -1628,17 +1681,42 @@ function Row({
         />
       </div>
 
-      {/* Depreciation is NEVER computed here -- spinner until the server answers. */}
+      {/* Depreciation is NEVER computed here. The adjuster may override the
+          RATE, but $ Depr. and ACV come back from the server -- spinner until
+          they do. Clearing the cell releases the lock back to the schedule. */}
       <div
-        className={`k-c k-c--dep k-mono${depRecalculating ? ' k-cell--pending' : ''}`}
+        className={`k-c k-c--dep k-mono${depRecalculating ? ' k-cell--pending' : ''}${
+          deprManual ? ' k-c--depmanual' : ''
+        }`}
         style={{ position: 'relative' }}
       >
         {depRecalculating ? (
           <span className="k-dep-spin" title="Recalculating on the server…" />
-        ) : item.depreciation_pct === null ? (
-          <Dash />
         ) : (
-          <span>{fmtPct(item.depreciation_pct)}</span>
+          <EditableCell
+            value={deprCellValue(item.depreciation_pct)}
+            numeric
+            align="right"
+            mono
+            placeholder="—"
+            disabled={!deprEditable(item)}
+            title={
+              !deprEditable(item)
+                ? 'Unpriced — set a price before entering a rate'
+                : deprManual
+                  ? 'Your rate, held against later class and age changes. Use “How this was calculated” to put it back on the schedule.'
+                  : 'Type a percentage to override the schedule (55 for 55%). The server recalculates $ Depr. and ACV.'
+            }
+            onCommit={(next) => {
+              const entry = parseDeprPercent(next)
+              if (!entry.ok) {
+                onNotice(DEPR_ERROR_COPY[entry.reason])
+                return
+              }
+              if (!deprChanged(item, entry.fraction)) return
+              onOverride(deprOverrideBody(entry.fraction))
+            }}
+          />
         )}
         {!depRecalculating && item.depreciation_pct !== null ? (
           <>
@@ -1654,7 +1732,12 @@ function Row({
               <Icon d={I.info} size={11} />
             </button>
             {depOpen ? (
-              <DepExplainer item={item} depRules={depRules} onClose={() => setDepOpen(false)} />
+              <DepExplainer
+                item={item}
+                depRules={depRules}
+                onRelease={() => onOverride(deprOverrideBody(null))}
+                onClose={() => setDepOpen(false)}
+              />
             ) : null}
           </>
         ) : null}

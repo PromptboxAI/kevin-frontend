@@ -260,6 +260,16 @@
 
     /* Depr. cell awaiting the server's authoritative value (rule 20). */
     .k-cell--pending { opacity: 0.75; }
+    /* ── The adjuster's own depreciation rate ────────────────────
+       NEW, with no design precedent: the prototype's % Depr. cell was
+       read-only, so there was nothing to mark. Deliberately quiet -- an
+       override is a normal thing for an adjuster to do, not a warning -- and
+       deliberately NOT amber, which is reserved for special limits (rule 6).
+       No extra DOM: the value itself carries the signal, so the cell keeps
+       room for the spinner and the how-was-this-calculated button. */
+    .k-c--depmanual input { color: var(--k-accent); font-weight: 600; }
+    .k-dep-foot { padding: 10px 12px 12px; font-size: 11.5px; line-height: 1.5; color: var(--k-fg-3); border-top: 1px solid var(--k-line); }
+
     .k-dep-spin { width: 11px; height: 11px; flex-shrink: 0; border-radius: 50%; border: 1.5px solid var(--k-line-2); border-top-color: var(--k-accent); animation: k-dep-spin 0.7s linear infinite; display: inline-block; vertical-align: -1px; }
     @keyframes k-dep-spin { to { transform: rotate(360deg); } }
 
