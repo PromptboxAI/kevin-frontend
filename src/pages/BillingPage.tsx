@@ -49,6 +49,12 @@ export default function BillingPage() {
     queryKey: ['me'],
     queryFn: () => api.get<MeResponse>('/v1/me'),
     staleTime: Infinity,
+    // The shared ['me'] query is staleTime: Infinity and AppHeader has usually
+    // already cached it, so without this Billing would render whatever was
+    // fetched before checkout and never ask again -- the page just sits there
+    // showing the old balance. This is the ONE surface where /v1/me changing
+    // underneath us is the whole point, so it always refetches on mount.
+    refetchOnMount: 'always',
   })
 
   /**
@@ -68,7 +74,14 @@ export default function BillingPage() {
 
   useEffect(() => {
     const pending = readPending()
-    if (!pending) return
+    if (!pending) {
+      // No marker. It can genuinely go missing -- sessionStorage is per-tab and
+      // per-origin, so a checkout finished in another tab, or returned to a
+      // different host than it started from, comes back with nothing stored.
+      // The refetchOnMount above still pulls fresh state, so the page is
+      // correct; it simply shows the result without narrating the wait.
+      return
+    }
     let cancelled = false
     void pollMe(pending).then((result) => {
       if (cancelled) return
