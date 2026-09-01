@@ -240,15 +240,26 @@ What the live payload changed, versus the prototype:
 Both screens read one claim record and one item fetch, so the header stats,
 class rollup and gallery captions cannot disagree.
 
-### Unverified: thumbnail rendering
+### Verified with the pane displayed
 
-The thumbnail ENDPOINT is verified (3/3 signed URLs, each fetching 200
-`image/jpeg`) and `useThumb` is the same implementation staging renders with.
-But the browser pane would not composite this session, so
-`document.visibilityState` stayed `hidden` and the IntersectionObserver never
-fired — zero `<img>` elements in the grid. Worth 30 seconds with the pane
-displayed, alongside the `ItemEvidence` blur check that is waiting for the same
-thing.
+Thumbnails render — the IntersectionObserver fires and the grid fills as it
+scrolls. Two layout defects only a real viewport could show, both now fixed:
+
+- **The page did not fill the viewport.** `.k-photos` is
+  `height: 100%; overflow: hidden` and scrolls INSIDE itself, so with no height
+  on the shell it collapsed to content height: 1845px tall, sidebar stretched
+  to 1753px, and the document scrolled instead of the grid. The design opts
+  into a full-height shell per page — 05, 12, 16 and 17 each carry
+  `html, body { height: 100% }` + `#root { height: 100% }` in their wrapper,
+  and that never got ported. Added as a `:has()`-scoped rule, because the other
+  73 design pages deliberately scroll the document.
+- **The detail panel was a reserved empty column.** Its 360px track is held by
+  the grid whether or not anything is focused, so an unfocused gallery rendered
+  a quarter of the screen as blank paper. It now opens on the first photo, as
+  the design does.
+
+The `ItemEvidence` blur check is still outstanding — it needs a focus move the
+pane can report, not just compositing.
 
 ## 8. Rooms
 

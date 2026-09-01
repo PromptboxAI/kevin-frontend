@@ -21,7 +21,15 @@ import type { Quota } from '../lib/types'
  * forever, so the total alone would drop on renewal day with nothing to explain
  * it, and the parts alone made them do arithmetic. Both, total first.
  *
- * Spend order is cycle-first; credits are drawn once the cycle hits 0.
+ * Spend order is cycle-first; credits are drawn once the cycle hits 0. That
+ * is stated ON SCREEN, not just here: the first person to read this page
+ * guessed it the other way round, and getting it backwards changes what a
+ * customer thinks they are buying.
+ *
+ * PROVENANCE: `credit_balance` is a bare number -- the payload carries no
+ * source field. "Purchased" is accurate because buying is currently the only
+ * way credits are minted; if the backend ever grants them (a comp, a goodwill
+ * credit), this needs a real field rather than a hardcoded word.
  */
 export default function ItemUsageCard({
   quota,
@@ -115,10 +123,17 @@ export default function ItemUsageCard({
               <li>
                 <span className="k-usage-bd-n">{credits.toLocaleString()}</span> rollover credits{' '}
                 <span className="k-usage-bd-q">
-                  {onCredits ? '(in use now — never expire)' : '(never expire)'}
+                  {onCredits ? '(purchased · in use now · never expire)' : '(purchased · never expire)'}
                 </span>
               </li>
             </ul>
+            {/* Spend order was only ever in a code comment, and the first person
+                to read this screen guessed it backwards -- so it is on screen
+                now. Cycle first, credits after: that is what makes the rollover
+                worth having, since unspent credits survive the reset. */}
+            <p className="k-usage-order">
+              Your cycle allowance is used first — credits are only drawn once it reaches zero.
+            </p>
           </div>
         ) : (
           <div className="k-store-keys">

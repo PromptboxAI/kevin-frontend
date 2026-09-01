@@ -1660,6 +1660,23 @@
     }
 
     /* ── Single-claim overview ──────────────────────────────────── */
+    /* ── Full-height app shells ──────────────────────────────────
+       The design opts into this PER PAGE: 05 (worksheet), 12 (claim
+       overview), 16 (claim photos) and 17 (audit log) each carry
+       `html, body { height: 100% }` + `#root { height: 100% }` in their
+       wrapper, because those screens scroll INSIDE themselves rather than
+       scrolling the document. `.k-photos` is height:100%/overflow:hidden and
+       collapses to content height without it -- the sidebar stretches to
+       1753px and the grid's own scroll never engages.
+
+       Scoped rather than global: the marketing, auth and settings pages are
+       document-scrolled by design, and 73 of the 77 design pages deliberately
+       do not set this. */
+    html:has(.k-photos), body:has(.k-photos), #root:has(.k-photos),
+    html:has(.k-claim-ov), body:has(.k-claim-ov), #root:has(.k-claim-ov) {
+      height: 100%;
+    }
+
     .k-claim-ov { width: 100%; min-height: 100%; display: flex; flex-direction: column; background: var(--k-bg); }
     .k-claim-ov-hd {
       padding: 24px 32px 22px; border-bottom: 1px solid var(--k-line);
@@ -4142,3 +4159,10 @@
       font-variant-numeric: tabular-nums;
     }
     .k-usage-bd-q { color: var(--k-fg-4); opacity: 0.85; }
+
+    /* Spend order, stated under the breakdown. Quiet, but present: which pool
+       drains first is the thing readers guess wrong. */
+    .k-usage-order {
+      margin: 6px 0 0; font-size: 11.5px; line-height: 1.5;
+      color: var(--k-fg-4);
+    }

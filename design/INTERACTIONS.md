@@ -269,6 +269,8 @@ same failure and must not share a code path:
 | 16 | Detail panel | ✅ LIVE | Joins the photo to its line for description, make/model, confidence and tax-inclusive RCV (`—` when unpriced, rule 12). *Frame N of M* and *Session N* only render when they have a value. |
 | 16 | **Unlink from this line** | ✅ LIVE | `DELETE /v1/claim_items/{row_id}/photos`. Replaces the design's **Delete photo** + "deleting is permanent" modal, which describes something the API does not do: there is no delete for a promoted photo, and in a property claim evidence is excluded, never destroyed (rule 22). Verified live — primary thumbnail preserved, RCV untouched. Only rendered on a photo that backs a line. |
 | 16 | Full-screen viewer | ✅ LIVE | ←/→/Esc plus the header arrows, paging within the current filter. |
+| 12 / 16 | **Full-height shell** | ✅ | `.k-photos` is `height:100%; overflow:hidden` and scrolls inside itself. The design opts into this per page — 05, 12, 16, 17 each carry `html, body { height: 100% }` + `#root { height: 100% }` in their wrapper. Ported as a `:has()`-scoped rule; the other 73 design pages scroll the document on purpose, so it must NOT be made global. |
+| 16 | Detail panel default | ✅ | Opens focused on the first photo. Its 360px track is reserved by the grid whether or not anything is focused, so an unfocused gallery renders a quarter of the screen as blank paper. |
 | 03 Intake | Begin processing | ➡️ | → Photo staging |
 | 03 | Depreciation schedule dropdown + "Add new" modal | ✅ | Persist schedule to claim; add to library |
 | 03 | Add-schedule modal — editable class×age rate grid (24 classes × 6 brackets, prefilled from standard, "Reset to standard") | ✅ | Persist full custom rate table to schedule library |
