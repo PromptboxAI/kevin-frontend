@@ -175,12 +175,31 @@ parser then justified:
 - Resume restarts at the failed chunk; the route has no idempotency key.
 - Spend quoted in searches (2 per priced item), not rows.
 
-### Not yet exercised
+### Chunk boundary and resume — EXERCISED LIVE
 
-The 500-row chunk boundary and the resume path have unit tests but no live
-run -- the test file was 7 rows, and a real multi-chunk import spends vendor
-budget. Worth one deliberate run on a throwaway claim with `price:false`, which
-creates rows without spending anything.
+1,200-row CSV, section headings every 200 rows, `price:false` so no vendor
+budget was touched. Both paths hold.
+
+- **Chunking.** Parsed 1,200 / 6 headings flagged. Preview: 1,194 will price,
+  0 needs-your-price. Spend line read "about 2,388 vendor searches" and
+  unticking price changed it to "No vendor searches" — the estimate tracks the
+  toggle rather than being computed once. Three chunks ran (500 / 500 / 194)
+  and the claim finished at exactly **1,194** items.
+- **Resume.** With a throw forced on chunk index 1, the wizard stopped at 500
+  created and offered "Resume from batch 2". Resuming climbed 866 → 1,038 →
+  1,194 — **exact, no duplicates**. Restarting from zero would have written
+  500 phantom lines, which is the whole reason `resumeFrom` exists.
+
+`suggested_mapping.description` again came back as the `Item` number column on
+a second, differently-shaped file. That is now twice out of two. The mapping
+step earns its place.
+
+**One thing this run cost.** The harness — a deliberate `throw` on chunk 2 —
+reached `main`. A commit from the parallel billing session picked up my
+in-flight `ImportPage.tsx` along with its own files, and every multi-chunk
+import on that build would have stopped at 500 rows. Removed in `c10a0bc`.
+A test that fails on purpose does not belong in a file another session may
+sweep; next time it goes behind a query param, or on a branch.
 
 ## 7. Claim overview + Photos tab
 
