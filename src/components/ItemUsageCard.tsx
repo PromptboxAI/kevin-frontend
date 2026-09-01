@@ -15,13 +15,13 @@ import type { Quota } from '../lib/types'
  * indicator on an account that has produced nothing implies consumption that
  * did not happen, and this is a billing surface.
  *
- * Credits are a quiet SECONDARY line beneath the meter -- kept out of the cycle
- * number because the cycle RESETS at period_end and credits ROLL OVER forever,
- * so a combined figure would collapse on renewal day with nothing on screen to
- * explain it. That separation is a fact to state, not a reason to shout: an
- * earlier pass gave it a heavy panel that competed with the meter it was
- * annotating. Spend order is cycle-first; credits are drawn once the cycle
- * hits 0.
+ * Below the bar: TOTAL AVAILABLE, then the two pools it is made of. The
+ * customer's actual question is "how much can I run right now?", and the answer
+ * spans both -- but the cycle RESETS at period_end while credits ROLL OVER
+ * forever, so the total alone would drop on renewal day with nothing to explain
+ * it, and the parts alone made them do arithmetic. Both, total first.
+ *
+ * Spend order is cycle-first; credits are drawn once the cycle hits 0.
  */
 export default function ItemUsageCard({
   quota,
@@ -48,6 +48,8 @@ export default function ItemUsageCard({
   const overageCost = Math.round(over * OVERAGE_PRICE * 100) / 100
   const tight = over === 0 && credits === 0 && cycleRemaining <= quota.included_items * 0.2
   const onCredits = cycleRemaining === 0 && credits > 0
+  // The question the customer arrives with: how much can I run right now?
+  const available = cycleRemaining + credits
 
   const resetsOn = quota.period_end
     ? new Date(quota.period_end).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
@@ -92,32 +94,50 @@ export default function ItemUsageCard({
           ) : null}
         </div>
 
-        <div className="k-store-keys">
-          <span className="k-store-key" style={{ color: tight ? 'var(--k-warn)' : 'var(--k-fg-4)' }}>
-            {cycleRemaining.toLocaleString()} left this cycle
-            {resetsOn && !free ? ` · resets ${resetsOn}` : ''}
-          </span>
-          {over > 0 ? (
+        {/* Below the bar: the TOTAL first, then what it is made of.
+            The bar tracks the cycle (the pool that resets, so the only one with
+            a meaningful "full"), but the question a customer actually arrives
+            with is "how much can I do right now?" -- and the answer is both
+            pools added. Showing only the parts made them do the arithmetic;
+            showing only the total hid the renewal-day drop. Both, in that
+            order, answers the question without losing the distinction. */}
+        {credits > 0 ? (
+          <div className="k-usage-total">
+            <div className="k-usage-total-hd">
+              <span>Total available</span>
+              <strong>{available.toLocaleString()} line items</strong>
+            </div>
+            <ul className="k-usage-breakdown">
+              <li>
+                <span className="k-usage-bd-n">{cycleRemaining.toLocaleString()}</span> left this
+                cycle <span className="k-usage-bd-q">(resets {resetsOn ?? 'at renewal'})</span>
+              </li>
+              <li>
+                <span className="k-usage-bd-n">{credits.toLocaleString()}</span> rollover credits{' '}
+                <span className="k-usage-bd-q">
+                  {onCredits ? '(in use now — never expire)' : '(never expire)'}
+                </span>
+              </li>
+            </ul>
+          </div>
+        ) : (
+          <div className="k-store-keys">
+            <span
+              className="k-store-key"
+              style={{ color: tight ? 'var(--k-warn)' : 'var(--k-fg-4)' }}
+            >
+              {cycleRemaining.toLocaleString()} left this cycle
+              {resetsOn && !free ? ` · resets ${resetsOn}` : ''}
+            </span>
+          </div>
+        )}
+
+        {over > 0 ? (
+          <div className="k-store-keys">
             <span className="k-store-key" style={{ color: 'var(--k-warn)' }}>
               {over.toLocaleString()} over · ${overageCost.toFixed(2)} on the next invoice
             </span>
-          ) : null}
-        </div>
-
-        {/* Credits are a SECONDARY metric: one quiet line under the meter, not
-            a block competing with it. Still logically separate from the cycle,
-            because the cycle resets and credits do not -- but that is a fact to
-            state, not a reason to shout. */}
-        {credits > 0 ? (
-          <p className="k-usage-credits">
-            <span className="k-usage-credits-k">Rollover credits</span>
-            <span className="k-usage-credits-v">{credits.toLocaleString()} available</span>
-            <span className="k-usage-credits-s">
-              {onCredits
-                ? '· in use now, your cycle allowance is spent'
-                : `· drawn after this cycle’s allowance, never expire`}
-            </span>
-          </p>
+          </div>
         ) : null}
 
         <div className="k-store-note">

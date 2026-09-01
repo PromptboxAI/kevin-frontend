@@ -4115,16 +4115,30 @@
       color: var(--k-fg-3);
     }
 
-    /* Rollover credits — a quiet secondary metric under the usage meter, not a
-       panel competing with it. Kept visually separate from the cycle figure
-       because the cycle resets and credits do not. */
-    .k-usage-credits {
-      display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px;
-      margin: 8px 0 0; font-size: 11.5px; line-height: 1.5;
+
+    /* Total available, then its two pools. The meter above tracks the cycle;
+       this answers "how much can I do right now" without making anyone add up
+       two numbers, while still naming which half resets. */
+    .k-usage-total { margin-top: 10px; }
+    .k-usage-total-hd {
+      display: flex; align-items: baseline; gap: 8px;
+      font-size: 12.5px; color: var(--k-fg-3);
     }
-    .k-usage-credits-k { color: var(--k-fg-3); font-weight: 600; }
-    .k-usage-credits-v {
-      font-family: var(--k-font-mono); color: var(--k-accent); font-weight: 700;
+    .k-usage-total-hd strong {
+      font-family: var(--k-font-mono); font-size: 13.5px; font-weight: 700;
+      color: var(--k-fg); font-variant-numeric: tabular-nums;
+    }
+    .k-usage-breakdown {
+      list-style: none; margin: 5px 0 0; padding: 0;
+      font-size: 11.5px; color: var(--k-fg-4); line-height: 1.65;
+    }
+    .k-usage-breakdown li { position: relative; padding-left: 13px; }
+    .k-usage-breakdown li::before {
+      content: ""; position: absolute; left: 3px; top: 7px;
+      width: 4px; height: 4px; border-radius: 99px; background: var(--k-fg-4);
+    }
+    .k-usage-bd-n {
+      font-family: var(--k-font-mono); color: var(--k-fg-2); font-weight: 600;
       font-variant-numeric: tabular-nums;
     }
-    .k-usage-credits-s { color: var(--k-fg-4); }
+    .k-usage-bd-q { color: var(--k-fg-4); opacity: 0.85; }
