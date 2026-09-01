@@ -19,9 +19,19 @@ export default function ItemUsageCard({
 }) {
   const free = quota.plan === 'free'
   const allowance = quota.included_items + quota.credit_balance
-  // `items_remaining` is SERVER-computed. Render it rather than deriving it, so
-  // the meter cannot disagree with the backend about how credits are consumed.
-  const remaining = quota.items_remaining
+  /**
+   * `items_remaining` is headroom against the PLAN ALLOWANCE ONLY -- purchased
+   * credits are a separate pool that sits on top of it, so total headroom is
+   * the two added.
+   *
+   * Reading items_remaining alone is the bug the backend warned about: an
+   * adjuster with 100 of their allowance left and 500 bought credits would see
+   * "100 remaining" and a nearly-full bar while holding 600 items of paid
+   * capacity. That is a support ticket, and a refund request.
+   *
+   * The identity holds: allowance - remaining === items_used.
+   */
+  const remaining = quota.items_remaining + quota.credit_balance
   const over = Math.max(quota.items_used - allowance, 0)
   const pct =
     allowance > 0 ? Math.min(Math.round((quota.items_used / allowance) * 1000) / 10, 100) : 100
