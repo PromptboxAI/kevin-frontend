@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import RequireAuth from './components/RequireAuth'
 import { AuthProvider } from './lib/auth'
+import BillingPage from './pages/BillingPage'
 import ClaimsPage from './pages/ClaimsPage'
 import IntakePage from './pages/IntakePage'
 import StagingPage from './pages/StagingPage'
@@ -63,6 +64,17 @@ export default function App() {
           element={
             <RequireAuth>
               <WorksheetPage />
+            </RequireAuth>
+          }
+        />
+
+        {/* Settings. Only Billing is built so far; the rest of the sidebar
+            renders inert rather than routing nowhere. */}
+        <Route
+          path="/settings/billing"
+          element={
+            <RequireAuth>
+              <BillingPage />
             </RequireAuth>
           }
         />

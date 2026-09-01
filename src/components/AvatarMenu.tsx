@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { I, Icon } from './Icon'
 import { useAuth } from '../lib/auth'
 
@@ -7,14 +8,15 @@ import { useAuth } from '../lib/auth'
  *
  * Two deliberate deviations from the prototype, both forced by real auth:
  *  - Sign out is a button calling supabase signOut, not a link to a static page.
- *  - The six destinations render inert until those settings screens exist, the
- *    same treatment ClaimTabs gives unbuilt tabs -- a visible label with a
- *    tooltip beats a link to nowhere.
+ *  - Destinations render inert until those settings screens exist, the same
+ *    treatment ClaimTabs gives unbuilt tabs -- a visible label with a tooltip
+ *    beats a link to nowhere. Billing is built, so it is a real link; the rest
+ *    stay inert until their screens land.
  */
-const ITEMS: ({ kind: 'div' } | { kind: 'link'; label: string })[] = [
+const ITEMS: ({ kind: 'div' } | { kind: 'link'; label: string; to?: string })[] = [
   { kind: 'link', label: 'My profile' },
   { kind: 'link', label: 'Business' },
-  { kind: 'link', label: 'Billing' },
+  { kind: 'link', label: 'Billing', to: '/settings/billing' },
   { kind: 'link', label: 'Security' },
   { kind: 'div' },
   { kind: 'link', label: 'Docs' },
@@ -95,6 +97,19 @@ export default function AvatarMenu({ email }: { email: string | null }) {
             {ITEMS.map((item, index) =>
               item.kind === 'div' ? (
                 <div key={`d-${index}`} className="k-avatar-menu-div" />
+              ) : item.to ? (
+                <Link
+                  key={item.label}
+                  to={item.to}
+                  className="k-avatar-menu-item"
+                  role="menuitem"
+                  onClick={() => setOpen(false)}
+                >
+                  <span style={{ display: 'inline-grid', width: 14, color: 'var(--k-fg-4)' }}>
+                    <Icon d={I.spark} size={12} />
+                  </span>
+                  <span>{item.label}</span>
+                </Link>
               ) : (
                 <span
                   key={item.label}

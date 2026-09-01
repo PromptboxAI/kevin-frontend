@@ -60,6 +60,20 @@ Two things to get right when wiring:
 
 ## Billing — Stripe events and the UI state they produce
 
+> **Now built in the production app** (`src/`), not just the prototype:
+> `/settings/billing` → `src/pages/BillingPage.tsx`, with
+> `src/lib/billing.ts` (checkout / credits / portal / pollMe),
+> `ItemUsageCard`, `AddCreditsModal` and `UpgradeProButton`. The avatar menu's
+> Billing entry is a real link; the other settings destinations stay inert
+> until their screens exist.
+>
+> **Blocked on the backend:** `GET /v1/me` does not yet return `plan`,
+> `items`, `billing_state` or `period_end`. Those fields are typed OPTIONAL,
+> so the page renders and says billing is unavailable rather than inventing a
+> plan (rule 20). The meter, the credit modal and the upgrade button appear
+> the moment the payload carries them — no frontend change needed.
+
+
 The contract for the end-to-end run. Written frontend-side so both halves test
 against the same document; anything here the backend disagrees with should be
 corrected **here first**, not worked around in a component.

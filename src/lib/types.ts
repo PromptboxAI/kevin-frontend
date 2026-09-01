@@ -1,10 +1,41 @@
 /** Mirrors kevin-backend schemas.py. Regenerate from /openapi.json when it drifts. */
 
+/** The plan an account is actually on. `comped` is granted from the admin
+ *  console: $0, full features, and it receives no Stripe events at all. */
+export type BillingPlan = 'free' | 'pro' | 'enterprise' | 'comped'
+
+/** Dunning state. Work is never blocked on it -- a past_due account keeps
+ *  editing; billing problems are surfaced, not enforced mid-claim. */
+export type BillingState = 'active' | 'past_due' | 'canceled' | 'suspended'
+
+/**
+ * Line items are the metered dimension (CLAUDE.md rule 9). The count is
+ * APPEND-ONLY: it records items PRODUCED, not items kept, so deleting a row
+ * never returns quota -- the pricing lookups behind it are already paid for.
+ */
+export type ItemUsage = {
+  /** The plan's allowance. Free = 250 one-time; Pro = 2,000 a billing month. */
+  included: number
+  /** Purchased credits still unspent. ADDED to `included`, never replacing it. */
+  credits: number
+  used: number
+}
+
 export type MeResponse = {
   id: string
   email: string | null
   roles: string[]
   is_admin: boolean
+  /**
+   * Billing fields are OPTIONAL because the backend may not be serving them
+   * yet. The UI renders what the payload carries (rule 20) and says plainly
+   * when billing is unavailable, rather than inventing a plan.
+   */
+  plan?: BillingPlan
+  items?: ItemUsage
+  billing_state?: BillingState
+  /** ISO date; null on the free tier, which has no billing period. */
+  period_end?: string | null
 }
 
 /** Derived by the backend from item states + an export marker -- never settable. */

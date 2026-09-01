@@ -4048,3 +4048,54 @@
     @media (max-width: 820px) { .k-roi-inner { grid-template-columns: minmax(0, 1fr); gap: 28px; } }
 
     .k-flags-band--one { grid-template-columns: 1fr; }
+
+    /* ── Item-allowance meter (rules 9b/9c) ─────────────────────────────
+       Two additions only; the meter itself reuses .k-store-* from the
+       storage card and the credit picker reuses .k-volume-grid. */
+    .k-usage-fine {
+      border-left: 2px solid var(--k-line-2);
+      padding-left: 10px; color: var(--k-fg-4);
+    }
+    .k-usage-actions {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      margin-top: 14px; padding-top: 14px;
+      border-top: 1px solid var(--k-line);
+    }
+
+    /* ── Quota truncation alert (rule 9c) ───────────────────────────────
+       Amber is reserved for special limits (rule 6), so this uses the
+       danger token: items missing from an inventory is a correctness
+       problem, not a coverage-cap cue. Non-dismissible by design. */
+    .k-trunc {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 16px 18px; margin: 0 0 22px;
+      background: oklch(0.58 0.19 25 / 0.06);
+      border: 1px solid oklch(0.58 0.19 25 / 0.3);
+      border-left: 3px solid var(--k-danger);
+      border-radius: 10px;
+    }
+    .k-trunc-icon { color: var(--k-danger); flex: none; margin-top: 1px; }
+    .k-trunc-body { flex: 1; min-width: 0; }
+    .k-trunc-h {
+      font-size: 15px; font-weight: 700; color: var(--k-fg);
+      letter-spacing: -0.01em; margin-bottom: 5px;
+    }
+    .k-trunc-p {
+      font-size: 13px; color: var(--k-fg-3);
+      line-height: 1.55; margin: 0;
+    }
+    .k-trunc-p + .k-trunc-p { margin-top: 6px; }
+    .k-trunc-p--calm { color: var(--k-fg-4); }
+    .k-trunc-actions { display: flex; gap: 8px; flex: none; align-items: center; }
+    @media (max-width: 820px) {
+      .k-trunc { flex-wrap: wrap; }
+      .k-trunc-actions { width: 100%; padding-left: 32px; }
+    }
+
+    /* Resume confirmation — the same block in its resolved state. */
+    .k-trunc--ok {
+      background: oklch(0.72 0.13 165 / 0.07);
+      border-color: oklch(0.72 0.13 165 / 0.32);
+      border-left-color: var(--k-ok);
+    }
+    .k-trunc--ok .k-trunc-icon { color: var(--k-ok); }
