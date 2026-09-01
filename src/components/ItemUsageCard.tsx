@@ -15,10 +15,13 @@ import type { Quota } from '../lib/types'
  * indicator on an account that has produced nothing implies consumption that
  * did not happen, and this is a billing surface.
  *
- * Credits stay a separate block below, not folded into the cycle number. The
- * cycle RESETS at period_end and credits ROLL OVER forever, so a combined
- * figure would collapse on renewal day with nothing on screen to explain it.
- * Spend order is cycle-first: credits are only drawn once the cycle hits 0.
+ * Credits are a quiet SECONDARY line beneath the meter -- kept out of the cycle
+ * number because the cycle RESETS at period_end and credits ROLL OVER forever,
+ * so a combined figure would collapse on renewal day with nothing on screen to
+ * explain it. That separation is a fact to state, not a reason to shout: an
+ * earlier pass gave it a heavy panel that competed with the meter it was
+ * annotating. Spend order is cycle-first; credits are drawn once the cycle
+ * hits 0.
  */
 export default function ItemUsageCard({
   quota,
@@ -101,22 +104,20 @@ export default function ItemUsageCard({
           ) : null}
         </div>
 
-        {/* Credits keep their own block: money the customer spent, and the first
-            thing they look for coming back from Stripe. */}
+        {/* Credits are a SECONDARY metric: one quiet line under the meter, not
+            a block competing with it. Still logically separate from the cycle,
+            because the cycle resets and credits do not -- but that is a fact to
+            state, not a reason to shout. */}
         {credits > 0 ? (
-          <div className={`k-credit-bal ${onCredits ? 'k-credit-bal--active' : ''}`}>
-            <div className="k-credit-bal-n">+{credits.toLocaleString()}</div>
-            <div className="k-credit-bal-t">
-              <strong>item credits{onCredits ? ' · in use now' : ''}</strong>
-              <span>
-                {onCredits
-                  ? 'Your cycle allowance is spent, so new items draw on these.'
-                  : `Drawn only once this cycle’s allowance runs out. They never expire${
-                      resetsOn && !free ? ` and the ${resetsOn} reset does not clear them` : ''
-                    }.`}
-              </span>
-            </div>
-          </div>
+          <p className="k-usage-credits">
+            <span className="k-usage-credits-k">Rollover credits</span>
+            <span className="k-usage-credits-v">{credits.toLocaleString()} available</span>
+            <span className="k-usage-credits-s">
+              {onCredits
+                ? '· in use now, your cycle allowance is spent'
+                : `· drawn after this cycle’s allowance, never expire`}
+            </span>
+          </p>
         ) : null}
 
         <div className="k-store-note">
