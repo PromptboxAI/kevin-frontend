@@ -462,3 +462,49 @@ from this browser as a native datalist, type-or-pick. That list is a
 convenience with no authority — the claim holds its own copy of whatever was
 submitted, so clearing it, editing it, or moving machines leaves every existing
 claim untouched. Which is the same property the per-claim decision is protecting.
+
+
+## 26. `unattached` never happens on a claim that staged its photos
+
+Not blocking — the frontend handles it — but the documented contract and the
+observed behaviour disagree, and the doc is the one I would have trusted.
+
+`FRONTEND.md` on `?state=unattached`: *"This is where a photo goes when its
+line item is deleted — nothing is destroyed, so a wrong bulk-delete is
+recoverable."*
+
+Observed on `godfrey-kitchen-fire`, detaching one frame from item 5556:
+
+```
+DELETE /v1/claim_items/5556/photos  {"photo_ids":[3909]}
+
+photo 3909 →  { state: "staged", status: "promoted", session_id: 45, item_id: null }
+GET  …/photos?state=unattached  →  { count: 0 }
+```
+
+The photo still belongs to staging session 45, so `state` derives to `staged`
+rather than `unattached`, and the "re-use a photo" picker the doc describes
+comes back empty on exactly the claims that have photos to re-use. Since every
+photographed claim goes through staging, I think `unattached` may only ever be
+reachable for photos attached outside a session.
+
+`status` does separate the two cases cleanly, which is what I built on:
+
+| state | status | meaning |
+|---|---|---|
+| `staged` | `clustered` | never processed — genuinely waiting |
+| `staged` | `promoted` | its session ran; unlinked from a line, or promoted to nothing |
+
+So the gallery derives a bucket rather than reading `state`, and an unlinked
+photo is labelled *Backing nothing* instead of being sent back to a session
+that already ran.
+
+Two questions, whichever is cheaper:
+
+1. Should `state` derive to `unattached` whenever `item_id IS NULL AND
+   status = 'promoted'`, regardless of `session_id`? That would make
+   `?state=unattached` mean what the doc says and let the picker work.
+2. Or is the session tie deliberate, and the doc line the thing to correct?
+
+Either answer is fine — I only need to know which, before the "re-use a photo"
+picker gets built on `?state=unattached` and quietly returns nothing.

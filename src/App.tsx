@@ -8,6 +8,8 @@ import StagingPage from './pages/StagingPage'
 import ProcessingPage from './pages/ProcessingPage'
 import ImportPage from './pages/ImportPage'
 import NotFoundPage from './pages/NotFoundPage'
+import OverviewPage from './pages/OverviewPage'
+import PhotosPage from './pages/PhotosPage'
 import PortalPage from './pages/PortalPage'
 import SignInPage from './pages/SignInPage'
 import WorksheetPage from './pages/WorksheetPage'
@@ -65,6 +67,24 @@ export default function App() {
           element={
             <RequireAuth>
               <ImportPage />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/claims/:claimId/overview"
+          element={
+            <RequireAuth>
+              <OverviewPage />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/claims/:claimId/photos"
+          element={
+            <RequireAuth>
+              <PhotosPage />
             </RequireAuth>
           }
         />

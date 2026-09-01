@@ -7,8 +7,10 @@ type Tab = 'Overview' | 'Photos' | 'Worksheet' | 'Notes & audit' | 'Export'
  * Surfaces not built yet render as disabled spans rather than dead links.
  */
 const TABS: [Tab, string | null][] = [
-  ['Overview', null],
-  ['Photos', 'staging'],
+  ['Overview', 'overview'],
+  // The gallery, not staging. Staging is one INGEST SESSION; this is every
+  // photo on the claim, including the ones a session already promoted.
+  ['Photos', 'photos'],
   ['Worksheet', 'worksheet'],
   // There is no claim-wide audit feed and none should be built: the trail is
   // per item, and it lives in the item drawer's History panel. The tab points
@@ -62,7 +64,7 @@ export default function ClaimTabs({
           <Link
             key={label}
             className="k-claim-tab"
-            to={slug === 'staging' ? `/claims/${claimId}/staging` : `/claims/${claimId}`}
+            to={slug === 'worksheet' ? `/claims/${claimId}` : `/claims/${claimId}/${slug}`}
             title={
               label === 'Notes & audit'
                 ? "Open any row to see that item's history"

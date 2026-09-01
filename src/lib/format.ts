@@ -92,3 +92,14 @@ export function greetingFor(hour: number): string {
   if (hour < 17) return 'Good afternoon'
   return 'Good evening'
 }
+
+/**
+ * Whole dollars, for rollup cards where cents are noise.
+ *
+ * Never for a money column an adjuster reconciles -- those print two decimals
+ * via fmtUSD, because a rounded figure that does not foot reads as a bug.
+ */
+export function fmtUSDshort(value: number | null | undefined): string {
+  if (value == null || Number.isNaN(value)) return '—'
+  return '$' + Math.round(value).toLocaleString('en-US')
+}

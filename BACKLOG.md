@@ -201,10 +201,54 @@ import on that build would have stopped at 500 rows. Removed in `c10a0bc`.
 A test that fails on purpose does not belong in a file another session may
 sweep; next time it goes behind a query param, or on a branch.
 
-## 7. Claim overview + Photos tab
+## 7. ~~Claim overview + Photos tab~~ — BUILT
 
-`Overview` is inert; `Photos` currently routes to staging as a stand-in.
-`GET /claims/{id}/photos` is live. Design screens `12` and `16`.
+`/claims/:id/overview` and `/claims/:id/photos`. The Photos tab no longer
+routes to staging as a stand-in: staging is ONE ingest session, this is every
+photo on the claim including the ones a session already promoted.
+
+Rules in `photo-rules.ts`, import-free, 32 cases. `useThumb` was lifted out of
+`StagingPage` into `lib/thumbnails.ts` — two caches would mean two round-trips
+for the same photo the moment an adjuster moved between the screens.
+
+What the live payload changed, versus the prototype:
+
+- **`state` alone is ambiguous.** Unlinking a photo from a row leaves it
+  `state: 'staged', status: 'promoted'` — NOT `unattached`, and
+  `?state=unattached` still answers 0. The contract's note ("this is where a
+  photo goes when its line item is deleted") only holds for a photo with no
+  staging session. `bucketOf()` splits *Waiting in staging* (`clustered`, never
+  processed) from *Backing nothing*, so nobody is sent to a session that has
+  already run. Filed as ask 26.
+- **The attention strip was crying wolf.** Counting missing model numbers, as
+  the prototype did, read "51 of 52 items need your attention" on a finished
+  claim — because 50 of those lines are belts, sandals and handbags, which have
+  no model number to be missing. It now counts unpriced lines only (1), and
+  model coverage is a neutral row in *Where this claim stands* (2 of 52).
+- **"Photos by room" is not ported.** Every photo comes back `room: null`, and
+  the prototype filled that card by distributing the claim's photo count across
+  rooms by largest remainder. Plausible-looking fiction on a document an
+  adjuster defends.
+- **No filename, timestamp, device or GPS** on the payload. Timeline and Map
+  stay disabled, as designed; the detail panel shows what is known rather than
+  three em dashes.
+- **"Delete photo" became "Unlink from this line."** There is no delete for a
+  promoted photo, and rule 22 says evidence is excluded, never destroyed.
+  Verified live on item 5556: 3 frames → 2, primary preserved, RCV unchanged at
+  $54.26, then re-attached and confirmed byte-identical.
+
+Both screens read one claim record and one item fetch, so the header stats,
+class rollup and gallery captions cannot disagree.
+
+### Unverified: thumbnail rendering
+
+The thumbnail ENDPOINT is verified (3/3 signed URLs, each fetching 200
+`image/jpeg`) and `useThumb` is the same implementation staging renders with.
+But the browser pane would not composite this session, so
+`document.visibilityState` stayed `hidden` and the IntersectionObserver never
+fired — zero `<img>` elements in the grid. Worth 30 seconds with the pane
+displayed, alongside the `ItemEvidence` blur check that is waiting for the same
+thing.
 
 ## 8. Rooms
 
@@ -213,7 +257,10 @@ plus `PATCH /claim_items/assign-room` for bulk assignment. The worksheet has a
 free-text room field and no way to manage the set or bulk-assign.
 
 Note: nothing currently sends the per-batch `room` at upload, which is why
-every row on the demo claim reads `—`.
+every row on the demo claim reads `—` — and why the photo gallery's room facet
+renders an explanation instead of a filter. Confirmed live: all 60 photos and
+all 52 items on Godfrey come back `room: null`. This is now the single largest
+piece of missing signal in the product.
 
 ## 9. ~~Bulk row delete~~ — NOT A GAP
 
