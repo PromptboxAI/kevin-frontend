@@ -4099,3 +4099,18 @@
       border-left-color: var(--k-ok);
     }
     .k-trunc--ok .k-trunc-icon { color: var(--k-ok); }
+
+    /* Dunning notice. A failed card is orthogonal to the plan (rule: billing
+       state never locks work mid-claim), so this warns in amber-adjacent
+       danger tone without any blocking affordance. */
+    .k-dunning {
+      margin-top: 10px; padding: 10px 12px; border-radius: 8px;
+      background: oklch(0.58 0.19 25 / 0.06);
+      border: 1px solid oklch(0.58 0.19 25 / 0.28);
+      font-size: 12.5px; color: var(--k-fg-2); line-height: 1.55;
+    }
+    .k-dunning--quiet {
+      background: var(--k-bg-2);
+      border-color: var(--k-line);
+      color: var(--k-fg-3);
+    }

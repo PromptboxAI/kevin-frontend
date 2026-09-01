@@ -4,21 +4,36 @@
  *  console: $0, full features, and it receives no Stripe events at all. */
 export type BillingPlan = 'free' | 'pro' | 'enterprise' | 'comped'
 
-/** Dunning state. Work is never blocked on it -- a past_due account keeps
- *  editing; billing problems are surfaced, not enforced mid-claim. */
-export type BillingState = 'active' | 'past_due' | 'canceled' | 'suspended'
+/**
+ * Dunning state, and deliberately ORTHOGONAL to `plan`: a card failure leaves
+ * an account on `pro` and moves it to `past_due`, so the UI warns without
+ * locking anyone out mid-claim. Never infer one from the other.
+ */
+export type BillingState = 'trial' | 'active' | 'past_due' | 'canceled'
 
 /**
- * Line items are the metered dimension (CLAUDE.md rule 9). The count is
- * APPEND-ONLY: it records items PRODUCED, not items kept, so deleting a row
- * never returns quota -- the pricing lookups behind it are already paid for.
+ * The metered dimension (CLAUDE.md rule 9), nested under `quota` on /v1/me.
+ *
+ * `items_remaining` is SERVER-COMPUTED headroom. Render it; do not recompute it
+ * from included + credits - used, which would silently disagree the moment the
+ * backend changes how credits are consumed (rule 20).
+ *
+ * The count is APPEND-ONLY: `items_used` records items PRODUCED, not items
+ * kept, so deleting a row never returns quota -- the pricing lookups behind it
+ * are already paid for.
  */
-export type ItemUsage = {
+export type Quota = {
+  plan: BillingPlan
+  billing_state: BillingState
   /** The plan's allowance. Free = 250 one-time; Pro = 2,000 a billing month. */
-  included: number
-  /** Purchased credits still unspent. ADDED to `included`, never replacing it. */
-  credits: number
-  used: number
+  included_items: number
+  items_used: number
+  items_remaining: number
+  /** Purchased credits still unspent. ADDED to the allowance, never replacing it. */
+  credit_balance: number
+  period_start?: string | null
+  /** null on a plan with no billing period. */
+  period_end?: string | null
 }
 
 export type MeResponse = {
@@ -27,15 +42,11 @@ export type MeResponse = {
   roles: string[]
   is_admin: boolean
   /**
-   * Billing fields are OPTIONAL because the backend may not be serving them
-   * yet. The UI renders what the payload carries (rule 20) and says plainly
-   * when billing is unavailable, rather than inventing a plan.
+   * Optional because an older backend may not serve it. The UI renders what the
+   * payload carries and says billing is unavailable rather than inventing a
+   * plan (rule 20).
    */
-  plan?: BillingPlan
-  items?: ItemUsage
-  billing_state?: BillingState
-  /** ISO date; null on the free tier, which has no billing period. */
-  period_end?: string | null
+  quota?: Quota
 }
 
 /** Derived by the backend from item states + an export marker -- never settable. */

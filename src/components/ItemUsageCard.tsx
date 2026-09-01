@@ -1,5 +1,5 @@
 import { OVERAGE_PRICE } from '../lib/billing'
-import type { ItemUsage } from '../lib/types'
+import type { Quota } from '../lib/types'
 
 /**
  * Ported from design/components/settings-pages.jsx (ItemUsageCard).
@@ -9,21 +9,22 @@ import type { ItemUsage } from '../lib/types'
  * allowance is derived here (rule 20).
  */
 export default function ItemUsageCard({
-  plan,
-  items,
+  quota,
   onAddCredits,
   onUpgrade,
 }: {
-  plan: string
-  items: ItemUsage
+  quota: Quota
   onAddCredits: () => void
   onUpgrade?: React.ReactNode
 }) {
-  const free = plan === 'free'
-  const allowance = items.included + items.credits
-  const over = Math.max(items.used - allowance, 0)
-  const remaining = Math.max(allowance - items.used, 0)
-  const pct = allowance > 0 ? Math.min(Math.round((items.used / allowance) * 1000) / 10, 100) : 100
+  const free = quota.plan === 'free'
+  const allowance = quota.included_items + quota.credit_balance
+  // `items_remaining` is SERVER-computed. Render it rather than deriving it, so
+  // the meter cannot disagree with the backend about how credits are consumed.
+  const remaining = quota.items_remaining
+  const over = Math.max(quota.items_used - allowance, 0)
+  const pct =
+    allowance > 0 ? Math.min(Math.round((quota.items_used / allowance) * 1000) / 10, 100) : 100
   const overageCost = Math.round(over * OVERAGE_PRICE * 100) / 100
   // Warn on the last fifth, so running out is never a surprise.
   const tight = over === 0 && remaining <= allowance * 0.2
@@ -44,16 +45,16 @@ export default function ItemUsageCard({
             <strong
               style={{ color: 'var(--k-fg)', fontFamily: 'var(--k-font-mono)', fontSize: 15 }}
             >
-              {items.used.toLocaleString()}
+              {quota.items_used.toLocaleString()}
             </strong>
             <span>
               {' '}
               of {allowance.toLocaleString()} {free ? 'free items' : 'included'}
             </span>
-            {items.credits > 0 ? (
+            {quota.credit_balance > 0 ? (
               <span style={{ color: 'var(--k-fg-4)' }}>
                 {' '}
-                ({items.included.toLocaleString()} + {items.credits.toLocaleString()} credits)
+                ({quota.included_items.toLocaleString()} + {quota.credit_balance.toLocaleString()} credits)
               </span>
             ) : null}
           </div>
@@ -74,7 +75,7 @@ export default function ItemUsageCard({
         <div className="k-store-keys">
           <span className="k-store-key">
             <i className={`k-store-dot ${over > 0 ? 'k-store-dot--cold' : 'k-store-dot--warm'}`} />
-            {items.used.toLocaleString()} items produced
+            {quota.items_used.toLocaleString()} items produced
           </span>
           <span
             className="k-store-key"
@@ -89,7 +90,7 @@ export default function ItemUsageCard({
         <div className="k-store-note">
           {free ? (
             <p>
-              <strong>No clock on the free tier.</strong> Your {items.included.toLocaleString()}{' '}
+              <strong>No clock on the free tier.</strong> Your {quota.included_items.toLocaleString()}{' '}
               items last as long as you need them — take a week or take three months. Kevin asks you
               to start Pro when they run out, not before.
             </p>

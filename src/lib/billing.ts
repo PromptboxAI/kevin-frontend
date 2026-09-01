@@ -116,11 +116,19 @@ export async function openBillingPortal() {
   return session
 }
 
-/** Has the thing we were waiting for actually landed? */
+/**
+ * Has the thing we were waiting for actually landed?
+ *
+ * Credits settle on `credit_balance` rather than `items_remaining`: remaining
+ * also moves when items are produced, so it would report a purchase that never
+ * happened if a claim finished processing while the customer was at Stripe.
+ */
 export function hasSettled(pending: PendingCheckout, me: MeResponse): boolean {
+  const quota = me.quota
+  if (!quota) return false
   return pending.kind === 'plan'
-    ? me.plan !== pending.plan_before
-    : (me.items?.credits ?? 0) !== pending.credits_before
+    ? quota.plan !== pending.plan_before
+    : quota.credit_balance !== pending.credits_before
 }
 
 export type PollResult = { settled: boolean; me: MeResponse | null }

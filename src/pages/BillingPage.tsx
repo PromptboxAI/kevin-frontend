@@ -102,8 +102,12 @@ export default function BillingPage() {
     }
   }
 
-  const plan = me?.plan
-  const items = me?.items
+  const quota = me?.quota
+  const plan = quota?.plan
+  // Dunning is ORTHOGONAL to plan: a failed card leaves the account on Pro and
+  // moves billing_state to past_due, so we warn without locking anyone out.
+  const dunning = quota?.billing_state === 'past_due'
+  const canceled = quota?.billing_state === 'canceled'
   const showPortal = plan === 'pro' || plan === 'enterprise'
 
   return (
@@ -247,17 +251,25 @@ export default function BillingPage() {
                         {plan === 'comped' ? ' — nothing is billed and no card is required.' : null}
                         {plan === 'enterprise' ? ' — billed under your order form.' : null}
                       </div>
-                      {me?.billing_state && me.billing_state !== 'active' ? (
-                        <div
-                          style={{
-                            marginTop: 10,
-                            fontSize: 12.5,
-                            color: 'var(--k-warn)',
-                            lineHeight: 1.5,
-                          }}
-                        >
-                          Billing status: <strong>{me.billing_state}</strong>. Your work is not
-                          interrupted — update your card in the billing portal.
+                      {dunning ? (
+                        <div className="k-dunning">
+                          <strong>Your last payment didn't go through.</strong> You are still on{' '}
+                          {PLAN_NAME[plan] ?? plan} and nothing is interrupted — claims, exports and
+                          your item allowance all keep working. Update your card and Stripe retries
+                          automatically.
+                        </div>
+                      ) : null}
+                      {canceled ? (
+                        <div className="k-dunning k-dunning--quiet">
+                          <strong>Your subscription is cancelled.</strong> Everything you have built
+                          stays downloadable — nothing is deleted (rule 15). Start Pro again whenever
+                          you need it.
+                        </div>
+                      ) : null}
+                      {quota?.period_end && plan === 'pro' && !canceled ? (
+                        <div style={{ marginTop: 8, fontSize: 12.5, color: 'var(--k-fg-4)' }}>
+                          Renews {new Date(quota.period_end).toLocaleDateString()} · your item
+                          allowance resets then.
                         </div>
                       ) : null}
                       <div className="k-usage-actions">
@@ -279,19 +291,18 @@ export default function BillingPage() {
                        rather than inventing a plan the account may not be on. */
                     <div style={{ fontSize: 13, color: 'var(--k-fg-3)', lineHeight: 1.6 }}>
                       Billing details aren't available on this account yet. Once{' '}
-                      <code>GET /v1/me</code> returns <code>plan</code> and <code>items</code>, your
-                      plan and usage appear here.
+                      <code>GET /v1/me</code> returns its <code>quota</code> object, your plan and
+                      usage appear here.
                     </div>
                   )}
                 </div>
               </section>
 
-              {items && plan ? (
+              {quota ? (
                 <ItemUsageCard
-                  plan={plan}
-                  items={items}
+                  quota={quota}
                   onAddCredits={() => setCredits(true)}
-                  onUpgrade={<UpgradeProButton planBefore={plan} className="k-btn k-btn--sm" />}
+                  onUpgrade={<UpgradeProButton planBefore={quota.plan} className="k-btn k-btn--sm" />}
                 />
               ) : null}
             </>
@@ -301,7 +312,7 @@ export default function BillingPage() {
 
       {credits ? (
         <AddCreditsModal
-          creditsBefore={items?.credits ?? 0}
+          creditsBefore={quota?.credit_balance ?? 0}
           onClose={() => setCredits(false)}
         />
       ) : null}

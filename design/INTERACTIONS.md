@@ -125,18 +125,39 @@ Webhooks are also **retried** by Stripe and can arrive **out of order**. The
 item counter is append-only (rule 9c), so a credit block applied twice is real
 money the customer did not buy. Key every grant on the Stripe event id.
 
-### What `GET /v1/me` must carry
+### What `GET /v1/me` carries
 
-The UI reads exactly these; nothing else is derived client-side.
+Confirmed against the live backend. Everything billing-related is nested under
+**`quota`** — there are no top-level `plan` / `items` fields.
+
+```json
+{ "id": "…", "email": "…", "roles": [], "is_admin": false,
+  "quota": { "plan": "pro", "billing_state": "active",
+             "included_items": 2000, "items_used": 0, "items_remaining": 2000,
+             "credit_balance": 0,
+             "period_start": "2026-09-01T15:31:51+00:00",
+             "period_end": "2026-10-01T15:31:51+00:00" } }
+```
 
 | Field | Values | Drives |
 |---|---|---|
-| `plan` | `free` · `pro` · `enterprise` · `comped` | `ItemUsageCard` allowance (250 vs 2,000), `SettingsBilling` plan card, whether **Upgrade to Pro** renders |
-| `items.included` | int | The plan's allowance. Free = 250 one-time (no reset); Pro = 2,000 per billing month |
-| `items.credits` | int | Purchased credits still unspent. **Added to** `included`, never replacing it |
-| `items.used` | int | Append-only count of items PRODUCED. Never decreases — not on delete, not on claim delete |
-| `billing_state` | `active` · `past_due` · `canceled` · `suspended` | Dunning banners and the suspended edge state |
-| `period_end` | ISO date, `null` on free | "Next invoice" line; also when `items.used` resets on Pro |
+| `quota.plan` | `free` · `pro` · `enterprise` · `comped` | The allowance shown, and whether **Upgrade to Pro** renders |
+| `quota.billing_state` | `trial` · `active` · `past_due` · `canceled` | Dunning banners. **Orthogonal to `plan`** — see below |
+| `quota.included_items` | int | The plan's allowance before credits |
+| `quota.credit_balance` | int | Purchased credits still unspent. **Added to** the allowance |
+| `quota.items_used` | int | Append-only count of items PRODUCED. Never decreases — not on delete |
+| `quota.items_remaining` | int | **Server-computed headroom.** Render it; do NOT recompute it from included + credits − used, or the meter will disagree with the backend the moment credit consumption changes |
+| `quota.period_end` | ISO date | “Renews…” line; also when `items_used` resets |
+
+**`billing_state` is orthogonal to `plan`, and that is the point.** A failed card
+leaves the account on `pro` and moves it to `past_due`, so the UI warns and
+nothing locks: claims, exports and the item allowance all keep working while
+Stripe retries. Never infer one field from the other, and never gate work on
+`billing_state`.
+
+**Settling a credit purchase reads `credit_balance`, not `items_remaining`.**
+Remaining also moves when items are produced, so a claim finishing while the
+customer was at Stripe would report a purchase that never happened.
 
 ### Event → state
 
