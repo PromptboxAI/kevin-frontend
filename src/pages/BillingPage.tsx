@@ -216,6 +216,22 @@ export default function BillingPage() {
             </div>
           ) : null}
 
+          {portalBusy ? (
+            <div
+              style={{
+                margin: '0 0 14px',
+                padding: '10px 12px',
+                borderRadius: 8,
+                background: 'var(--k-accent-soft)',
+                border: '1px solid oklch(0.45 0.13 255 / 0.25)',
+                fontSize: 12.5,
+                color: 'var(--k-fg-2)',
+              }}
+            >
+              Opening the Stripe billing portal…
+            </div>
+          ) : null}
+
           {portalError ? (
             <div
               style={{
@@ -232,14 +248,29 @@ export default function BillingPage() {
             </div>
           ) : null}
 
-          {isPending ? (
+          {/* A BACKGROUND refetch failure must never destroy this surface.
+              React Query keeps `data` and sets `error` on a failed refetch, and
+              the previous order checked error first -- so any transient failure
+              swapped the whole card, Manage subscription included, for an error
+              panel. Clicking that button is itself a trigger: the redirect
+              aborts the in-flight /v1/me request, which lands as an error, so
+              the button greyed and then vanished before the navigation showed.
+              Error state now only replaces the page when there is nothing to
+              show; otherwise it is a quiet line above intact content. */}
+          {error && me ? (
+            <div style={{ margin: '0 0 14px', fontSize: 12, color: 'var(--k-fg-4)' }}>
+              Couldn&rsquo;t refresh your billing details just now — showing the last known state.
+            </div>
+          ) : null}
+
+          {!me && isPending ? (
             <section className="k-set-card">
               <div className="k-set-card-hd">Your plan</div>
               <div className="k-set-card-body" style={{ color: 'var(--k-fg-4)', fontSize: 13 }}>
                 Loading your account…
               </div>
             </section>
-          ) : error ? (
+          ) : !me ? (
             <section className="k-set-card">
               <div className="k-set-card-hd">Your plan</div>
               <div className="k-set-card-body" style={{ fontSize: 13, color: 'var(--k-fg-3)' }}>
