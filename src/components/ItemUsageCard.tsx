@@ -4,19 +4,20 @@ import type { Quota } from '../lib/types'
 /**
  * Ported from design/components/settings-pages.jsx (ItemUsageCard).
  *
- * ONE capacity number, TWO visible pools.
+ * Standard SaaS usage meter: ONE paradigm throughout, and that paradigm is
+ * CONSUMPTION. The headline counts what has been used, the bar fills
+ * left-to-right as it is used, and the percentage is of the same thing. An
+ * earlier pass mixed them -- a headline counting what was left above a
+ * percentage counting what was spent -- which made a brand-new account read as
+ * both completely full and completely empty at the same time.
  *
- * The adjuster's actual question is "how many items can I run?", and the answer
- * is cycle + credits -- so that total is the headline. But the two halves are
- * not interchangeable: the cycle RESETS at period_end and credits ROLL OVER
- * forever, so a bare "2,500" would collapse to 500 on renewal day with nothing
- * on screen to explain it.
+ * At zero used the bar is genuinely EMPTY. No minimum-width sliver: a visible
+ * indicator on an account that has produced nothing implies consumption that
+ * did not happen, and this is a billing surface.
  *
- * Both are true at once, so the meter shows the total and splits the track into
- * the two pools -- the same one-track-two-segments pattern the storage card
- * uses for active vs archived. The reset date is attached to the cycle segment,
- * so what will change and what will not is legible before it happens.
- *
+ * Credits stay a separate block below, not folded into the cycle number. The
+ * cycle RESETS at period_end and credits ROLL OVER forever, so a combined
+ * figure would collapse on renewal day with nothing on screen to explain it.
  * Spend order is cycle-first: credits are only drawn once the cycle hits 0.
  */
 export default function ItemUsageCard({
@@ -31,17 +32,18 @@ export default function ItemUsageCard({
   const free = quota.plan === 'free'
   const credits = quota.credit_balance
   const cycleRemaining = quota.items_remaining
-  const available = cycleRemaining + credits
 
-  // Track widths are shares of the account's full capacity, so the bar shrinks
-  // as items are produced rather than always looking full.
-  const capacity = quota.included_items + credits
-  const pctOf = (n: number) => (capacity > 0 ? (n / capacity) * 100 : 0)
+  // Everything below is CONSUMPTION against the cycle allowance.
+  const cycleUsed = Math.min(quota.items_used, quota.included_items)
+  const pct =
+    quota.included_items > 0
+      ? Math.min(Math.round((cycleUsed / quota.included_items) * 1000) / 10, 100)
+      : 0
 
   // Billable overage begins only once BOTH pools are empty.
-  const over = Math.max(quota.items_used - capacity, 0)
+  const over = Math.max(quota.items_used - (quota.included_items + credits), 0)
   const overageCost = Math.round(over * OVERAGE_PRICE * 100) / 100
-  const tight = over === 0 && available > 0 && available <= capacity * 0.2
+  const tight = over === 0 && credits === 0 && cycleRemaining <= quota.included_items * 0.2
   const onCredits = cycleRemaining === 0 && credits > 0
 
   const resetsOn = quota.period_end
@@ -64,65 +66,61 @@ export default function ItemUsageCard({
             <strong
               style={{ color: 'var(--k-fg)', fontFamily: 'var(--k-font-mono)', fontSize: 15 }}
             >
-              {available.toLocaleString()}
+              {quota.items_used.toLocaleString()}
             </strong>
-            <span> items available</span>
-            {credits > 0 ? (
-              <span style={{ color: 'var(--k-fg-4)' }}>
-                {' '}
-                — {cycleRemaining.toLocaleString()} this cycle + {credits.toLocaleString()} credits
-              </span>
-            ) : null}
+            <span>
+              {' '}
+              of {quota.included_items.toLocaleString()} used{free ? '' : ' this cycle'}
+            </span>
           </div>
           <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', fontFamily: 'var(--k-font-mono)' }}>
-            {quota.items_used.toLocaleString()} used
+            {pct}%
           </div>
         </div>
 
-        {/* One track, two pools. Cycle in accent, credits in their own tone --
-            deliberately NOT the storage card's greyed "archived" fill, which
-            would make paid capacity read as the lesser half. */}
+        {/* Fills left-to-right with usage. Width is exactly pct -- at 0 used the
+            track is empty, with no sliver implying work that never happened. */}
         <div className="k-store-track">
-          <div className="k-store-fill k-store-fill--warm" style={{ width: `${pctOf(cycleRemaining)}%` }} />
-          {credits > 0 ? (
-            <div className="k-store-fill k-store-fill--credit" style={{ width: `${pctOf(credits)}%` }} />
+          {pct > 0 ? (
+            <div
+              className={`k-store-fill ${over > 0 ? 'k-store-fill--cold' : 'k-store-fill--warm'}`}
+              style={{ width: `${pct}%` }}
+            />
           ) : null}
         </div>
 
         <div className="k-store-keys">
-          <span className="k-store-key">
-            <i className="k-store-dot k-store-dot--warm" />
-            {cycleRemaining.toLocaleString()} this cycle
+          <span className="k-store-key" style={{ color: tight ? 'var(--k-warn)' : 'var(--k-fg-4)' }}>
+            {cycleRemaining.toLocaleString()} left this cycle
             {resetsOn && !free ? ` · resets ${resetsOn}` : ''}
           </span>
-          {credits > 0 ? (
-            <span className="k-store-key">
-              <i className="k-store-dot k-store-dot--credit" />
-              {credits.toLocaleString()} credits · never expire
-              {onCredits ? ' · in use now' : ''}
-            </span>
-          ) : null}
           {over > 0 ? (
             <span className="k-store-key" style={{ color: 'var(--k-warn)' }}>
               {over.toLocaleString()} over · ${overageCost.toFixed(2)} on the next invoice
             </span>
-          ) : tight ? (
-            <span className="k-store-key" style={{ color: 'var(--k-warn)' }}>
-              running low
-            </span>
           ) : null}
         </div>
 
+        {/* Credits keep their own block: money the customer spent, and the first
+            thing they look for coming back from Stripe. */}
+        {credits > 0 ? (
+          <div className={`k-credit-bal ${onCredits ? 'k-credit-bal--active' : ''}`}>
+            <div className="k-credit-bal-n">+{credits.toLocaleString()}</div>
+            <div className="k-credit-bal-t">
+              <strong>item credits{onCredits ? ' · in use now' : ''}</strong>
+              <span>
+                {onCredits
+                  ? 'Your cycle allowance is spent, so new items draw on these.'
+                  : `Drawn only once this cycle’s allowance runs out. They never expire${
+                      resetsOn && !free ? ` and the ${resetsOn} reset does not clear them` : ''
+                    }.`}
+              </span>
+            </div>
+          </div>
+        ) : null}
+
         <div className="k-store-note">
-          {credits > 0 ? (
-            <p>
-              <strong>Your cycle allowance is spent first.</strong> Credits are only drawn once this
-              cycle&rsquo;s {quota.included_items.toLocaleString()} run out
-              {onCredits ? ' — which is where you are now' : ''}. The cycle resets
-              {resetsOn && !free ? ` on ${resetsOn}` : ''}; your{' '}
-              {credits.toLocaleString()} credits carry over and are not reset by it.
-            </p>
-          ) : free ? (
+          {free ? (
             <p>
               <strong>No clock on the free tier.</strong> Your{' '}
               {quota.included_items.toLocaleString()} items last as long as you need them — take a
@@ -131,8 +129,8 @@ export default function ItemUsageCard({
           ) : (
             <p>
               <strong>Going over never locks a claim.</strong> The work finishes and the overage
-              bills after — items past your allowance and credits are ${OVERAGE_PRICE.toFixed(2)}{' '}
-              each.
+              bills after — items past your allowance{credits > 0 ? ' and credits' : ''} are $
+              {OVERAGE_PRICE.toFixed(2)} each.
             </p>
           )}
           {/* Rule 9c. The likeliest support ticket, answered on the meter itself. */}

@@ -4115,9 +4115,22 @@
       color: var(--k-fg-3);
     }
 
-    /* Credits segment of the item meter. Deliberately NOT the storage card's
-       greyed --cold fill: credits are PAID capacity, and rendering them as the
-       faded half would read as the lesser pool. Lighter accent keeps them
-       distinct from the cycle without demoting them. */
-    .k-store-fill--credit { background: var(--k-accent); opacity: 0.42; }
-    .k-store-dot--credit { background: var(--k-accent); opacity: 0.42; }
+    /* Purchased item credits. Their own block, not folded into the cycle
+       number: the cycle resets and credits do not, so combining them would
+       collapse on renewal day. This is also money the customer just spent and
+       the first thing they look for coming back from Stripe. */
+    .k-credit-bal {
+      display: flex; align-items: center; gap: 12px;
+      margin-top: 12px; padding: 11px 13px; border-radius: 9px;
+      background: var(--k-accent-soft);
+      border: 1px solid oklch(0.45 0.13 255 / 0.25);
+    }
+    .k-credit-bal--active { border-color: var(--k-accent); }
+    .k-credit-bal-n {
+      font-family: var(--k-font-mono); font-size: 19px; font-weight: 700;
+      color: var(--k-accent); line-height: 1; flex: none;
+      font-variant-numeric: tabular-nums;
+    }
+    .k-credit-bal-t { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .k-credit-bal-t strong { font-size: 12.5px; color: var(--k-fg-2); font-weight: 600; }
+    .k-credit-bal-t span { font-size: 11.5px; color: var(--k-fg-4); line-height: 1.45; }
