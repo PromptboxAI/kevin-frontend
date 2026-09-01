@@ -119,11 +119,6 @@ export default function ImportPage() {
 
       for (let i = start; i < chunks.length; i += 1) {
         setProgress({ done: i, total: chunks.length, created })
-        // TEMP-RESUME-HARNESS: fail chunk 2 once. REVERTED IMMEDIATELY.
-        if (i === 1 && !(window as unknown as { __failed?: boolean }).__failed) {
-          ;(window as unknown as { __failed?: boolean }).__failed = true
-          throw new Error('Simulated network drop on batch 2')
-        }
         const ack = await importItems(claimId, chunks[i], price)
         created += ack.items_created
         ids.push(...ack.item_ids)
