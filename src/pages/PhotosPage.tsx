@@ -20,7 +20,12 @@ import {
 } from '../lib/photo-rules'
 import type { ClaimPhoto, PhotoBucket } from '../lib/photo-rules'
 import { useThumb } from '../lib/thumbnails'
-import type { ClaimItem, ClaimItemListResponse, ClaimSummary } from '../lib/types'
+import type {
+  ClaimItem,
+  ClaimItemDetail,
+  ClaimItemListResponse,
+  ClaimSummary,
+} from '../lib/types'
 
 /**
  * Screen 16 -- every photo on the claim, and what each one produced.
@@ -516,7 +521,7 @@ function PhotoDetail({
           type="button"
           className="k-icon-btn"
           onClick={onFull}
-          title="View full size"
+          title="Open larger"
           disabled={!src}
         >
           <Icon d={I.expand} size={13} />
@@ -664,6 +669,25 @@ function FullView({
   const { ref, src } = useThumb<HTMLDivElement>(photo.photo_id)
   const i = list.findIndex((p) => p.photo_id === photo.photo_id)
 
+  /**
+   * The ORIGINAL, when one is reachable.
+   *
+   * The thumbnails endpoint serves a 600x450 derivative -- fine in a grid, not
+   * fine on the screen an adjuster uses to read a model number off a plate.
+   * The 4000x3000 capture does exist, but the only route to it is the item
+   * detail's `image_url`, which is that line's PRIMARY photo. So: fetch the
+   * detail, use the original when this photo is the primary, and say so
+   * plainly when it is not, rather than captioning a thumbnail "full size".
+   */
+  const { data: detail } = useQuery({
+    queryKey: ['claim-item', photo.item_id],
+    queryFn: () => api.get<ClaimItemDetail>(`/v1/claim_items/${photo.item_id}`),
+    enabled: photo.item_id != null,
+  })
+  const isPrimary =
+    detail?.photos?.find((p) => p.photo_id === photo.photo_id)?.is_primary ?? false
+  const original = isPrimary ? (detail?.image_url ?? null) : null
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -681,6 +705,13 @@ function FullView({
           <span className="k-mono" style={{ fontSize: 12 }}>
             Photo {photo.photo_id}
           </span>
+          {!original ? (
+            <span style={{ fontSize: 11.5, color: 'var(--k-fg-4)' }}>
+              {photo.item_id == null
+                ? 'Preview — no full-size copy for a photo that backs no line'
+                : 'Preview — the original is only served for a line’s main photo'}
+            </span>
+          ) : null}
           <div style={{ flex: 1 }} />
           <span className="k-mono" style={{ fontSize: 11, color: 'var(--k-fg-4)' }}>
             {i + 1} of {list.length}
@@ -708,7 +739,9 @@ function FullView({
           </button>
         </div>
         <div ref={ref} style={{ minHeight: 0, display: 'grid' }}>
-          {src ? <img src={src} alt="" className="k-photo-full-img" /> : null}
+          {original ?? src ? (
+            <img src={original ?? src ?? undefined} alt="" className="k-photo-full-img" />
+          ) : null}
         </div>
       </div>
     </div>

@@ -215,7 +215,11 @@ export default function OverviewPage() {
           <section className="k-flags-band k-flags-band--one">
             <div className="k-flag-card">
               <Icon d={I.info} size={16} />
-              <div>
+              {/* flex:1 so the trailing link sits at the card's edge. The
+                  design's markup omits it because `.k-flags-band` is a
+                  3-column grid there; at `--one` the card is full width and
+                  the link would otherwise strand mid-row. */}
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 600 }}>
                   {flags.total} item{flags.total === 1 ? '' : 's'} waiting on your
                   price
@@ -238,7 +242,7 @@ export default function OverviewPage() {
           <section className="k-flags-band k-flags-band--one">
             <div className="k-flag-card">
               <Icon d={I.clock} size={16} />
-              <div>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 600 }}>
                   {pending} photo{pending === 1 ? '' : 's'} still in staging
                 </div>

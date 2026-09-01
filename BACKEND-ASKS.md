@@ -508,3 +508,47 @@ Two questions, whichever is cheaper:
 
 Either answer is fine — I only need to know which, before the "re-use a photo"
 picker gets built on `?state=unattached` and quietly returns nothing.
+
+
+## 27. Two small additions the photo gallery wants
+
+Screen 16 is built and working on `GET /v1/claims/{id}/photos`. Two gaps, both
+minor, neither blocking — I have shipped around both.
+
+### (a) No per-photo route to the original
+
+`GET /v1/staging/photos/thumbnails` is the only per-photo image route, and it
+serves the 600×450 derivative from `make_thumbnail`. The original is 4000×3000
+and it does exist in storage — the only way to reach it is
+`GET /v1/claim_items/{id}` → `image_url`, which is that line's **primary**
+photo.
+
+So on a screen whose job is examining evidence, "view full size" was showing a
+600px thumbnail. For a single-photo item I can use the item detail's
+`image_url` (48 of 52 items on the demo claim), but for the second and third
+frames of a merged set there is no route to the capture at all — and a model
+plate is exactly the kind of frame that is a second frame. The viewer now
+labels those *"Preview — the original is only served for a line's main photo"*
+rather than captioning a thumbnail as full size.
+
+A `?size=full` on the thumbnails endpoint, or any per-`photo_id` signed URL for
+the original, would close it. Same short TTL is fine.
+
+### (b) `filename` and `taken_at` are stored but not returned
+
+`main.py` writes both onto `staging_photos` at upload (`safe_filename`,
+`parse_capture_ts`), and `ClaimPhoto` in `schemas.py` exposes neither. Two
+consequences:
+
+- The gallery captions every tile `Photo 3886`. The adjuster's own filename is
+  what they recognise, and it is what they will quote in an email.
+- **Timeline view stays disabled.** It needs a capture timestamp, which is the
+  one thing `taken_at` is. Map stays disabled regardless — GPS is stripped at
+  upload by design, which is correct and I am not asking for it back.
+
+I know `taken_at` is the camera's clock and is often unset or wrong. Display
+and ordering only is exactly what it would be used for, and a photo with a null
+`taken_at` simply would not appear on the timeline.
+
+Both are additive fields on a response model, so nothing I have shipped breaks
+either way — happy to take them whenever they are convenient.

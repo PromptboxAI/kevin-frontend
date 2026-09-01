@@ -258,6 +258,19 @@ scrolls. Two layout defects only a real viewport could show, both now fixed:
   a quarter of the screen as blank paper. It now opens on the first photo, as
   the design does.
 
+Two more found with it open:
+
+- **The attention-strip links stranded mid-card.** The design's markup gives the
+  text block no `flex`, which reads fine in the 3-column `.k-flags-band` but
+  leaves the trailing link floating in the middle of a `--one` full-width card.
+- **"View full size" was showing a 600×450 thumbnail.** The thumbnails endpoint
+  is the only per-photo image route and serves a derivative; the 4000×3000
+  original is reachable only through the item detail's `image_url`, which is
+  that line's primary photo. The viewer now uses the original when the photo is
+  the primary (48 of 52 items are single-photo) and labels the rest *Preview*
+  rather than captioning a thumbnail as full size. Ask 27(a) would close it
+  properly.
+
 The `ItemEvidence` blur check is still outstanding — it needs a focus move the
 pane can report, not just compositing.
 
