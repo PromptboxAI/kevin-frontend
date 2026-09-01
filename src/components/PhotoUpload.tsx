@@ -249,6 +249,22 @@ export default function PhotoUpload({
             arrive.
           </div>
 
+          {/* The OTHER intake path. A total-loss list has no photographs, and
+              an adjuster holding one needs to find this here rather than
+              discover the app cannot take their file. */}
+          {claimId ? (
+            <div style={{ fontSize: 12.5, color: 'var(--k-fg-4)', marginTop: 10 }}>
+              No photos?{' '}
+              <a
+                href={`/claims/${claimId}/import`}
+                style={{ color: 'var(--k-accent)', fontWeight: 600, textDecoration: 'underline' }}
+              >
+                Import a typed or exported list
+              </a>{' '}
+              instead — PDF, CSV or Excel.
+            </div>
+          ) : null}
+
           <div style={{ display: 'flex', gap: 10, marginTop: 22, flexWrap: 'wrap', justifyContent: 'center' }}>
             <input
               ref={fileRef}

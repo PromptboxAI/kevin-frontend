@@ -151,15 +151,36 @@ dispatches no focus events -- a native blur listener recorded zero on a real
 focus move. So blur DELIVERY could not be exercised. Enter was added as a
 second path for the same reason. Worth 30 seconds with the pane displayed.
 
-## 6. Written import — the second intake path
+## 6. ~~Written import~~ — BUILT
 
-Total-loss lists arrive as PDF/CSV/XLSX with no photographs. Routes live:
-`items/parse` → `items/bulk/preview` → `items/bulk`. Design screen `75`.
+`/claims/:claimId/import`, reachable from the photo drop zone ("No photos?
+Import a typed or exported list"). parse -> map -> preview -> import, and the
+first three create nothing.
 
-Rule 24: parsing is server-side (real inventories are PDFs — never add a
-browser parser); the first three steps create nothing; `price:false` on `bulk`
-is NOT a dry run, it still inserts; capped at 500 rows per request; rows
-flagged `likely_heading` are pre-selected for removal, never auto-dropped.
+Rules live in `import-rules.ts`, import-free, 24 cases. Decisions the live
+parser then justified:
+
+- **The mapping step shows even when pre-filled**, and that is not politeness.
+  On a real CSV with an `Item` number column, `suggested_mapping.description`
+  came back as column 0 -- the row number. Every other field was right. Auto-
+  advancing would have searched "2", "4", "7" and priced a total-loss claim off
+  row numbers.
+- **Review shows the COMPOSED description**, not just counts. The preview
+  reported `priceable: 3` for both the wrong and the right mapping and would
+  have spent 6 searches either way. Counts cannot catch a mis-mapped column;
+  reading "Whirlpool WRF535SWHZ French door refrigerator" can.
+- Headings pre-deselected, never dropped. Both were flagged correctly on the
+  test file.
+- Room never folds into the description -- it IS the search query here.
+- Resume restarts at the failed chunk; the route has no idempotency key.
+- Spend quoted in searches (2 per priced item), not rows.
+
+### Not yet exercised
+
+The 500-row chunk boundary and the resume path have unit tests but no live
+run -- the test file was 7 rows, and a real multi-chunk import spends vendor
+budget. Worth one deliberate run on a throwaway claim with `price:false`, which
+creates rows without spending anything.
 
 ## 7. Claim overview + Photos tab
 
