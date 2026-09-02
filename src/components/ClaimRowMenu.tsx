@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { I, Icon } from './Icon'
@@ -22,16 +23,87 @@ export default function ClaimRowMenu({
   const [open, setOpen] = useState(false)
   const [modal, setModal] = useState<Modal>(null)
   const ref = useRef<HTMLDivElement>(null)
+  const btnRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  /**
+   * The menu is PORTALLED to the body and positioned in viewport coordinates.
+   *
+   * It used to be `position: absolute` inside the row, which cannot escape an
+   * overflow ancestor -- and `.k-claims-list` is an `overflow: auto` box sized
+   * to its rows, so on an account with one or two claims the box is ~107px tall
+   * and the menu was clipped to a sliver you had to scroll inside to read. A
+   * dropdown that opens off-screen is not a dropdown.
+   */
+  const [at, setAt] = useState<{ top: number; left: number } | null>(null)
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+
+  const MENU_W = 210
+  /**
+   * Only the FIRST paint's guess. The real height is measured below and the
+   * position corrected, because the menu is not a fixed size -- an archived
+   * claim offers fewer actions, and a constant would flip a short menu
+   * upward for room it never needed.
+   */
+  const MENU_H_GUESS = 300
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setAt(null)
+      return
+    }
+    const place = () => {
+      const b = btnRef.current?.getBoundingClientRect()
+      if (!b) return
+      const h = menuRef.current?.offsetHeight || MENU_H_GUESS
+      // Right-aligned to the trigger, like the absolute version was.
+      const left = Math.max(8, Math.min(b.right - MENU_W, window.innerWidth - MENU_W - 8))
+      // Below by default; above when the viewport has no room there -- the
+      // last row of a full list is where this menu is most often opened.
+      // Either way it is clamped to stay wholly on screen: a menu that opens
+      // half off the bottom is the bug this whole change exists to fix.
+      const below = window.innerHeight - b.bottom - 6
+      const top =
+        h <= below || b.top - 6 < h
+          ? Math.min(b.bottom + 6, Math.max(8, window.innerHeight - h - 8))
+          : b.top - 6 - h
+      // Only when it actually moved: this runs on every scroll frame, and a
+      // setState per frame would re-render the menu the whole way down a list.
+      setAt((prev) => (prev && prev.top === top && prev.left === left ? prev : { top, left }))
+    }
+    place()
+    // Second pass once the menu exists: `place` above used a guess for the
+    // height on the very first call, and now it can read the real one.
+    const raf = requestAnimationFrame(place)
+    // A fixed menu anchored to a scrolled row detaches from it; reposition
+    // rather than leaving it floating over unrelated rows.
+    window.addEventListener('scroll', place, true)
+    window.addEventListener('resize', place)
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('scroll', place, true)
+      window.removeEventListener('resize', place)
+    }
+  }, [open])
 
   useEffect(() => {
     if (!open) return
     const close = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      const t = e.target as Node
+      // The menu is portalled, so it is NOT inside `ref` -- without this the
+      // first click on any menu item would close it before the item fired.
+      if (ref.current?.contains(t) || menuRef.current?.contains(t)) return
+      setOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
     }
     document.addEventListener('mousedown', close)
-    return () => document.removeEventListener('mousedown', close)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', close)
+      document.removeEventListener('keydown', onKey)
+    }
   }, [open])
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['claims'] })
@@ -84,8 +156,11 @@ export default function ClaimRowMenu({
         Open →
       </button>
       <button
+        ref={btnRef}
         type="button"
         className="k-icon-btn"
+        aria-haspopup="menu"
+        aria-expanded={open}
         onClick={(e) => {
           e.stopPropagation()
           setOpen((o) => !o)
@@ -95,8 +170,14 @@ export default function ClaimRowMenu({
         <Icon d={I.more} size={14} />
       </button>
 
-      {open ? (
-        <div className="k-pop k-rowmenu" role="menu">
+      {open && at
+        ? createPortal(
+        <div
+          ref={menuRef}
+          className="k-pop k-rowmenu"
+          role="menu"
+          style={{ top: at.top, left: at.left }}
+        >
           <MenuItem icon={I.expand} label="Open" onClick={() => act(() => navigate(`/claims/${claim.claim_id}`))} />
           <MenuItem icon={I.eye} label="Preview" onClick={() => act(() => navigate(`/claims/${claim.claim_id}`))} />
           <MenuItem icon={I.copy} label="Duplicate" onClick={() => act(() => setModal('duplicate'))} />
@@ -147,8 +228,10 @@ export default function ClaimRowMenu({
             danger
             onClick={() => act(() => setModal('delete'))}
           />
-        </div>
-      ) : null}
+        </div>,
+            document.body,
+          )
+        : null}
 
       {modal === 'duplicate' ? (
         <DuplicateModal claim={claim} onClose={() => setModal(null)} onNotice={onNotice} />

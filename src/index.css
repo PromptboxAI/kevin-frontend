@@ -76,13 +76,17 @@
 }
 
 /* --- Row menu + modals --- */
+/* Portalled to <body> and positioned in viewport coordinates by
+   ClaimRowMenu. It was `position: absolute` inside the row, which cannot
+   escape an overflow ancestor -- and `.k-claims-list` is an `overflow: auto`
+   box sized to its rows, so on a short list the menu was clipped to a sliver
+   the adjuster had to scroll inside to read. `top`/`left` come from the
+   trigger's rect; the menu flips above it when the viewport has no room. */
 .k-rowmenu {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
+  position: fixed;
   width: 210px;
   padding: 4px;
-  z-index: 40;
+  z-index: 60;
 }
 
 .k-rowmenu .k-avatar-menu-item[disabled] {
