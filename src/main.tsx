@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import { API_BASE_URL, SUPABASE_URL } from './lib/env'
+import { registerServiceWorker } from './lib/register-sw'
 import './styles/kevin.css'
 import './index.css'
 
@@ -33,6 +34,15 @@ for (const origin of [API_BASE_URL, SUPABASE_URL]) {
   link.crossOrigin = 'anonymous'
   document.head.appendChild(link)
 }
+
+/**
+ * Offline shell for the phone.
+ *
+ * The capture queue already survives a reload -- but only if the page can be
+ * fetched. Without this, closing the tab in a basement means a browser error
+ * page over photos that are sitting right there in IndexedDB.
+ */
+registerServiceWorker()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

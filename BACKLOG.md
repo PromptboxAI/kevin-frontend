@@ -527,11 +527,44 @@ holds both** and the local queue clears only then. And a deliberately bad file
 now shows `failed`, stays on the phone, and names its reason, while the good
 photos stay stored.
 
+### Built: the offline shell (`public/sw.js`)
+
+`/capture` now LOADS with no signal. The queue already survived a reload, but
+only if the page could be fetched — closing the tab in a basement meant a
+browser error page over photos sitting right there in IndexedDB.
+
+A service worker is the one bug you cannot fix by shipping, so every rule in it
+exists to bound that:
+
+- **Same-origin GETs only.** The API is another origin and its responses are
+  per-credential and short-lived; caching any of it would be a way to serve one
+  adjuster another's data, or a signed URL after it expired. **Verified**: with
+  the local server stopped, an API call still reached the real network (401),
+  and the cache holds nothing but `localhost` — no `railway.app` entry at all.
+- **Navigations are network-first.** Fresh HTML whenever there is signal, so a
+  deploy lands on the next load rather than whenever a cache expires. The cache
+  is the fallback, which is the entire point.
+- **Hashed assets are cache-first.** Vite fingerprints them, so a URL's bytes
+  never change and a new build simply asks for new names.
+- **No `skipWaiting()`.** A new worker waits for every tab to close. Activating
+  mid-session would swap the JS bundle under someone holding queued photos, and
+  a faster rollout is not worth "the app changed while I was shooting".
+- **An escape hatch**: `__kevinUnregisterSW()` in the console unregisters and
+  clears caches, so a support call never has to say "clear your site data" —
+  which would also destroy the offline photo queue.
+- **Production only.** In dev, Vite serves unbundled modules over HMR and a
+  caching worker turns every edit into a debate about which code is running.
+  Testing it means `npm run build && vite preview`, which is also what ships.
+
+Verified against the production build: registered and activated, shell plus both
+hashed assets cached, then the preview server **stopped** — reload still
+rendered `/capture` from cache with the worker controlling.
+
 ### Still open
 
-An app-shell service worker, so `/capture` LOADS with no signal. Today the
-queue survives a reload, but only if the page can be fetched — a genuine gap
-for someone who closes the tab in a basement.
+Nothing on #10. The remaining phone work is the design's own deferred ideas
+(barcode scan, a live viewfinder), which need capabilities the web does not
+portably have.
 
 ## 11. Settings
 
