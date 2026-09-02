@@ -353,6 +353,117 @@ changes from the parallel session, timestamped before the filing).
 
 Claim restored afterwards: rooms deleted, nothing filed.
 
+## 9. ~~Bulk row delete~~ — ALREADY BUILT (verified), and a real finding underneath
+
+My earlier note said "the worksheet still has no delete CONTROL, which is worth
+building." It has one, and it works — the entry was stale, not the code. This
+is the second time I have filed something as missing that was already there
+(see #2), so I checked before writing a line.
+
+Verified live on a throwaway claim: select rows -> **Delete** arms a confirm
+("Photos stay on the claim." · Cancel · Delete 2) -> **Cancel changes nothing**
+-> confirm removes exactly those two, notice reads "Deleted 2 rows", and the
+server agrees. `DELETE /v1/claim_items` with `item_ids`, `photos_detached`
+surfaced in the notice when non-zero.
+
+### What the test actually turned up: deletes renumber the claim
+
+Line numbers are **positions**, not identities. `numberRows` is `index + 1` over
+id-ascending rows, and the export does the same thing
+(`enumerate(items, start=1)`, `services/export.py:135`). Nothing persists a
+line number.
+
+So deleting a row shifts every row beneath it. Four rows, delete #1 and #2, and
+the survivors that were #0003/#0004 come back as **#0001/#0002** — confirmed.
+Rule 22(b) says exactly this must not happen, because *"an export already sent
+to a carrier cites those numbers."*
+
+The frontend cannot fix it: there is no stored number to render, and inventing
+a stable one here would disagree with the export, which is worse than the
+current honest-but-shifting behaviour. Filed as **ask 29** (a `line_no` at
+creation). What shipped meanwhile is the confirmation telling the truth — on a
+claim with `exported_at` set it now reads "Lines below these renumber — the
+export you already sent cites the old numbers." Silent before the first export,
+where there is no document to contradict.
+
+## 10. Mobile capture — PAIRING + CAPTURE BUILT AND VERIFIED
+
+Split in two, because the handoff is the security-critical half and stands on
+its own: the desktop can hand a phone an upload-only credential and take it
+back. What that phone then *does* is the second half.
+
+### Built: the handoff (`PairPhoneModal`, on the claim overview)
+
+Two credentials, and conflating them is the mistake `pair-rules.ts` exists to
+prevent:
+
+| | lifetime | scope |
+|---|---|---|
+| **handoff token** (the QR) | ~2 min, single-use, burns on redemption | redeemable once |
+| **capture token** (what the phone keeps) | ~hours | ONE claim, upload only |
+
+- **The QR is real.** The design used `FauxQR`, a decorative grid, and a
+  `Math.random` token. Added `qrcode-generator` (1 dep, encoding only) and draw
+  its module grid as a single SVG path — no canvas, crisp at any size.
+- **The token rides in the URL FRAGMENT**, never the query string. A fragment
+  is not sent to servers, not logged, and not forwarded in a Referer — and this
+  value is a bearer credential for someone's claim photos.
+- **The countdown reads the wall clock**, not a decrementing counter: a
+  backgrounded tab stops firing timers, and resuming from where it paused would
+  show time the token does not have.
+- **Revoke is honest about its limits.** It kills paired PHONES; it cannot
+  recall a code nobody has redeemed yet — those die on their own in ~2 minutes,
+  and the zero-case copy says exactly that instead of implying a recall.
+- **One failure message.** The API returns the same `401` for unknown, expired
+  and already-used so a caller cannot probe; the UI does not invent a
+  distinction it was deliberately denied.
+
+Verified live end to end: 43-char token → `200` with a capture credential
+scoped to `godfrey-kitchen-fire` → **the same token again → `401`**, the
+atomic burn working, with the identical message an invented token gets. Revoke
+reported "Signed out 1 paired phone", and a second revoke reported the
+no-phones case as a normal answer rather than an error.
+
+### Built: the capture surface — VERIFIED END TO END (2026-09-02)
+
+`/pair` and `/capture`, both PUBLIC routes: the phone has no account, and
+requiring one is the friction the flow exists to remove.
+
+The CORS fix (`2c2d030`) landed and the whole path works. Verified against
+production on a throwaway claim:
+
+```
+pair          token in the fragment -> redeemed -> hash CLEARED from the URL
+upload        2 photos, room "Kitchen"          -> both stored
+room change   -> "Garage", 1 photo              -> batched separately, tagged Garage
+note          "Ashley Trinell 6-drawer dresser" -> saved on that photo only
+cross-claim   tmp-mob credential vs. godfrey    -> 403, "for a different claim"
+```
+
+The per-batch `room` now genuinely lands — the gap #8 left open, and the reason
+every row on a real claim read `—`.
+
+**A bug the live run caught, which no unit test could.** Photo ids were
+assigned by a counter incremented INSIDE a `setShots` updater. React invokes
+updaters more than once (StrictMode does it deliberately), so the counter ran
+past the end of `photo_ids`, every shot got `undefined`, and `notesToWrite`
+skipped them — **notes silently never saved**. The mapping is now computed
+before state is touched, so it is the same however many times the updater runs.
+
+It stayed invisible because the note failure was swallowed "so as not to
+block". It no longer is: nothing blocks and the photo is safe either way, but
+the screen says a note did not save. The adjuster typed that sentence standing
+in the room, and on a set Vision cannot name it is the only thing steering
+identification.
+
+What is deliberately NOT ported from the design's camera app, each because it
+would lie or cost something real: the live viewfinder (`getUserMedia` yields a
+downscaled frame, while `<input capture>` returns the full-resolution file with
+EXIF intact — and EXIF timestamps are what the clusterer groups on), flash and
+SCAN BARCODE (torch needs a live stream; `BarcodeDetector` is Chrome-only), the
+"queueing photos locally" banner (offline queueing is not built, so nothing
+claims it), and the artboards' fake status bar and battery.
+
 ### Built: review (screen 28)
 
 Reached from the camera ("Review N photos"), grouped by room, with the untagged
@@ -379,9 +490,48 @@ focus score nothing computes, and **Won't process** is a staging
 reclassification the capture credential cannot make. A pill that never lights
 is furniture; one that lies is worse.
 
+### Built: offline capture
+
+Photos are written to IndexedDB the moment they are taken and retried whenever
+the page is open and the network returns. They survive a reload, a crash and a
+lock screen — 40 photos queued in a basement are otherwise one accidental
+navigation from a second trip to the property.
+
+**Not Background Sync.** `SyncManager` would retry with the tab closed, but it
+does not exist on iOS Safari and adjusters carry iPhones — building on it would
+make a promise that is false for half the people who need it most. So the UI
+says exactly what is true: photos are saved on the phone, they send themselves
+when signal returns, and nothing uploads while the screen is closed.
+
+Backoff climbs 2s → 30s and stops: a phone on one bar should not re-push a 4 MB
+upload every second, and a walk-through lasts an hour, so it must not back off
+into never either. A dead credential, a wrong claim and an oversized file never
+auto-retry — they fail identically forever, so they stop and ask for a person.
+
+**Two bugs the live run caught, both of which destroyed evidence.**
+
+1. **A recovered photo lost its MIME type.** `new File([blob], name)` defaults
+   `type` to `''`, so every photo restored from IndexedDB was refused as
+   `unsupported_format`.
+2. **Success was assumed from the status code.** A `202` means the REQUEST was
+   accepted, not the photos. The code marked everything stored on a 2xx and
+   then deleted the local copy — so an entire queue the server had rejected was
+   reported as uploaded and erased. It now reads the ack: only files the server
+   did not refuse are treated as safe, a `duplicate` counts as landed (rule 21),
+   and anything refused stays on the phone.
+
+Together those two produced the exact failure the copy exists to prevent — a
+phone saying "2 photos uploaded" over a claim holding none. Verified fixed:
+offline → 2 failed and persisted → reload → recovered → uploaded → **server
+holds both** and the local queue clears only then. And a deliberately bad file
+now shows `failed`, stays on the phone, and names its reason, while the good
+photos stay stored.
+
 ### Still open
 
-Offline capture (service worker + IndexedDB) — its own run.
+An app-shell service worker, so `/capture` LOADS with no signal. Today the
+queue survives a reload, but only if the page can be fetched — a genuine gap
+for someone who closes the tab in a basement.
 
 ## 11. Settings
 

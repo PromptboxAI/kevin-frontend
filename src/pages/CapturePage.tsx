@@ -15,16 +15,27 @@ import {
   NOTE_MAX,
   batchByRoom,
   clampNote,
+  closeWarning,
   failureFor,
   notesToWrite,
+  offlineBanner,
   queueStatus,
+  retryDelayMs,
   safeToLeave,
+  shouldAutoRetry,
   tallyQueue,
 } from '../lib/capture-rules'
 import type { Shot } from '../lib/capture-rules'
 import { REJECT_COPY } from '../lib/upload'
 import type { RejectReason } from '../lib/upload'
 import type { CaptureToken } from '../lib/pair-rules'
+import {
+  bumpAttempts,
+  dropPending,
+  loadPending,
+  patchPending,
+  savePending,
+} from '../lib/capture-store'
 
 /**
  * Screen 11 — the phone, shooting.
@@ -64,9 +75,17 @@ export default function CapturePage() {
   const [reviewing, setReviewing] = useState(false)
   /** When set, the room sheet is fixing ONE stored photo rather than the batch. */
   const [roomFor, setRoomFor] = useState<string | null>(null)
+  const [online, setOnline] = useState(() => navigator.onLine)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const tally = tallyQueue(shots)
+  /** Only what is still ONLY on this phone -- stored photos are on the claim. */
+  const pendingShots = shots.filter((s) => s.state !== 'stored')
+  const banner = offlineBanner({
+    online,
+    pending: pendingShots.length,
+    pendingBytes: pendingShots.reduce((n, s) => n + s.size, 0),
+  })
 
   /** Object URLs are a leak if the page lives as long as a walk-through does. */
   useEffect(
@@ -78,16 +97,102 @@ export default function CapturePage() {
   )
 
   /**
+   * Resume the moment signal returns.
+   *
+   * This is the retry that matters, and the reason the feature works without
+   * Background Sync: someone walks out of the basement and the queue drains
+   * itself, with no tap and no thought.
+   */
+  useEffect(() => {
+    const up = () => {
+      setOnline(true)
+      setShots((prev) => {
+        const waiting = prev.filter((s) => s.state === 'failed' || s.state === 'queued')
+        if (waiting.length) void send(waiting.map((s) => ({ ...s, state: 'queued' as const })))
+        return prev
+      })
+    }
+    const down = () => setOnline(false)
+    window.addEventListener('online', up)
+    window.addEventListener('offline', down)
+    return () => {
+      window.removeEventListener('online', up)
+      window.removeEventListener('offline', down)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cred?.claim_id])
+
+  /** Timers must not outlive the screen. */
+  useEffect(
+    () => () => {
+      for (const t of timers.current.values()) clearTimeout(t)
+    },
+    [],
+  )
+
+  /**
    * Warn before leaving with anything unsent.
    *
    * The one moment this app can actually save someone a return trip.
    */
   useEffect(() => {
     if (safeToLeave(tally)) return
+    // Closing is the one action that genuinely strands photos: they survive a
+    // reload, but nothing uploads while the screen is shut.
     const warn = (e: BeforeUnloadEvent) => e.preventDefault()
     window.addEventListener('beforeunload', warn)
     return () => window.removeEventListener('beforeunload', warn)
   }, [tally])
+
+  /**
+   * The bytes, keyed by shot.
+   *
+   * A ref, not state: replacing this map must never re-render, and the upload
+   * loop reads it after awaits where a state snapshot would be stale.
+   * Populated when a photo is taken and when a queue is recovered from
+   * IndexedDB, so `send` never cares which it was.
+   */
+  const blobs = useRef(new Map<string, Blob>())
+  const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>())
+
+  /**
+   * Recover anything this phone still owes the claim.
+   *
+   * Photos that never uploaded survive a reload, a crash and a lock screen --
+   * which is the whole point: 40 photos queued in a basement are otherwise one
+   * accidental navigation away from a second trip to the property.
+   */
+  useEffect(() => {
+    if (!cred) return
+    let alive = true
+    void (async () => {
+      const pending = await loadPending(cred.claim_id)
+      if (!alive || pending.length === 0) return
+      const recovered: Shot[] = pending.map((p) => {
+        blobs.current.set(p.key, p.blob)
+        return {
+          key: p.key,
+          name: p.name,
+          size: p.size,
+          preview: URL.createObjectURL(p.blob),
+          room: p.room,
+          note: p.note,
+          takenAt: p.takenAt,
+          state: 'queued' as const,
+          attempts: p.attempts,
+        }
+      })
+      setShots((prev) => {
+        const known = new Set(prev.map((s) => s.key))
+        return [...prev, ...recovered.filter((s) => !known.has(s.key))]
+      })
+      void send(recovered)
+    })()
+    return () => {
+      alive = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cred?.claim_id])
 
   if (!cred) {
     return (
@@ -110,8 +215,9 @@ export default function CapturePage() {
   }
 
   const add = (files: FileList | null) => {
-    if (!files?.length) return
-    const next: Shot[] = [...files].map((file, i) => ({
+    if (!files?.length || !cred) return
+    const picked = [...files]
+    const next: Shot[] = picked.map((file, i) => ({
       key: `${Date.now()}-${i}-${file.name}`,
       name: file.name,
       size: file.size,
@@ -122,30 +228,61 @@ export default function CapturePage() {
       note: '',
       state: 'queued' as const,
       takenAt: file.lastModified,
+      attempts: 0,
     }))
+
+    // PERSIST FIRST, upload second. If the app dies between the two the photo
+    // is still on the phone; the other order loses it.
+    next.forEach((shot, i) => {
+      const file = picked[i]
+      blobs.current.set(shot.key, file)
+      void savePending({
+        key: shot.key,
+        claimId: cred.claim_id,
+        name: shot.name,
+        type: file.type,
+        size: shot.size,
+        room: shot.room,
+        note: '',
+        takenAt: shot.takenAt,
+        attempts: 0,
+        blob: file,
+      })
+    })
+
     setShots((prev) => [...prev, ...next])
-    void send(next, [...files])
+    void send(next)
   }
 
   /**
-   * Upload, one batch per room, then write the notes.
+   * Upload, one batch per room.
    *
    * Sequential rather than parallel: this is a phone on site data, and four
    * concurrent multipart posts on a weak signal fail more often than they
-   * finish.
+   * finish. Bytes come from the blob map, so a recovered queue and a freshly
+   * shot photo travel the identical path.
    */
-  const send = async (queued: Shot[], files: File[]) => {
-    const byKey = new Map(queued.map((s, i) => [s.key, files[i]]))
+  const send = async (queued: Shot[]) => {
+    if (!cred) return
     setFailure(null)
 
     for (const batch of batchByRoom(queued)) {
-      const keys = new Set(batch.shots.map((s) => s.key))
+      const usable = batch.shots.filter((s) => blobs.current.has(s.key))
+      if (!usable.length) continue
+      const keys = new Set(usable.map((s) => s.key))
       setShots((prev) => prev.map((s) => (keys.has(s.key) ? { ...s, state: 'uploading' } : s)))
 
       try {
         const ack = await captureUpload(
           cred,
-          batch.shots.map((s) => byKey.get(s.key) as File),
+          usable.map((s) => {
+            const blob = blobs.current.get(s.key) as Blob
+            // KEEP THE TYPE. `new File([blob], name)` defaults to '', and a
+            // recovered photo sent with no content type is rejected as
+            // `unsupported_format` -- which is how a whole basement's worth of
+            // photos got marked stored and deleted while the server held none.
+            return new File([blob], s.name, { type: blob.type || 'image/jpeg' })
+          }),
           batch.room,
         )
 
@@ -164,49 +301,93 @@ export default function CapturePage() {
         if (loud.length) setRejected((prev) => [...prev, ...loud])
 
         /**
-         * Pair ids to shots BEFORE touching state.
-         *
-         * This was a counter incremented inside the setShots updater, which is
-         * impure -- React invokes updaters more than once (StrictMode does it
-         * deliberately), so the counter ran past the end of `photo_ids` and
-         * every shot got `undefined`. Notes then silently never saved, because
-         * `notesToWrite` skips a shot with no id. Computed here, the mapping is
-         * the same however many times the updater runs.
+         * Pair ids to shots BEFORE touching state. This was a counter
+         * incremented inside the updater, which React may invoke more than
+         * once -- it ran past the end of `photo_ids` and every shot got
+         * `undefined`, so notes silently never saved.
          */
-        const ids = ack.photo_ids ?? []
-        const assigned = new Map(batch.shots.map((s, i) => [s.key, ids[i]]))
-        setShots((prev) =>
-          prev.map((s) =>
-            keys.has(s.key) ? { ...s, state: 'stored', photoId: assigned.get(s.key) } : s,
-          ),
+        /**
+         * Believe the ACK, not the status code.
+         *
+         * A 202 means the request was accepted, NOT that the photos were.
+         * Marking everything stored on a 2xx -- and then deleting the local
+         * copy -- destroyed a queue the server had rejected outright. The ack
+         * names every file that did not make it, so only the ones it did are
+         * treated as safe.
+         */
+        const refused = new Map(
+          (ack.rejected ?? []).map((r) => [r.filename, r.reason as RejectReason]),
         )
+        const landed = usable.filter((s) => {
+          const reason = refused.get(s.name)
+          // A duplicate IS on the server already (rule 21): a success.
+          return reason === undefined || REJECT_COPY[reason]?.stored === true
+        })
+        const ids = ack.photo_ids ?? []
+        const assigned = new Map(landed.map((s, i) => [s.key, ids[i]]))
+        const landedKeys = new Set(landed.map((s) => s.key))
+
+        setShots((prev) =>
+          prev.map((s) => {
+            if (!keys.has(s.key)) return s
+            if (landedKeys.has(s.key)) {
+              return { ...s, state: 'stored', photoId: assigned.get(s.key) }
+            }
+            // Refused: it is NOT on the claim, so it stays on the phone.
+            return { ...s, state: 'failed', error: refused.get(s.name) }
+          }),
+        )
+        // Only what actually landed stops being carried.
+        for (const s of landed) {
+          blobs.current.delete(s.key)
+          void dropPending(s.key)
+        }
       } catch (error) {
         const status = error instanceof ApiError ? error.status : undefined
         const kind = failureFor(status)
         setFailure(CAPTURE_FAILURE_COPY[kind])
-        // A dead credential is worth clearing: every later attempt would fail
-        // the same way, and the fix is a fresh scan.
         if (kind === 'expired') {
           clearCredential()
           setCred(null)
         }
-        setShots((prev) =>
-          prev.map((s) => (keys.has(s.key) ? { ...s, state: 'failed', error: kind } : s)),
-        )
+        for (const shot of usable) {
+          const attempts = await bumpAttempts(shot.key)
+          setShots((prev) =>
+            prev.map((s) =>
+              s.key === shot.key ? { ...s, state: 'failed', error: kind, attempts } : s,
+            ),
+          )
+          if (shouldAutoRetry(kind, attempts)) scheduleRetry(shot.key, attempts)
+        }
       }
     }
   }
 
   /**
-   * Notes are a second call, and only for shots that have one.
+   * Try one shot again, later.
    *
-   * A failure here does not block -- the photo is safe, which is the part that
-   * matters -- but it is SAID. Swallowing it is what let a silent
-   * never-saving note go unnoticed: the adjuster typed that sentence standing
-   * in the room, and it is the only thing steering identification on a set
-   * Vision cannot name.
+   * Backoff climbs to a 30s ceiling: a phone with one bar should not re-push a
+   * 4 MB upload every second, but a walk-through lasts an hour, so it must not
+   * back off into never either.
    */
+  const scheduleRetry = (key: string, attempts: number) => {
+    clearTimeout(timers.current.get(key))
+    timers.current.set(
+      key,
+      setTimeout(() => {
+        timers.current.delete(key)
+        setShots((prev) => {
+          const shot = prev.find((s) => s.key === key)
+          if (shot && blobs.current.has(key)) void send([{ ...shot, state: 'queued' }])
+          return prev
+        })
+      }, retryDelayMs(attempts)),
+    )
+  }
+
+  /** Notes are a second call, and only for shots that have one. */
   const flushNotes = async (current: Shot[]) => {
+    if (!cred) return
     let failed = 0
     for (const { photoId, note } of notesToWrite(current)) {
       try {
@@ -217,7 +398,7 @@ export default function CapturePage() {
     }
     if (failed > 0) {
       setFailure(
-        `${failed} note${failed === 1 ? '' : 's'} didn’t save. The photo${
+        `${failed} note${failed === 1 ? '' : 's'} did not save. The photo${
           failed === 1 ? '' : 's'
         } uploaded — reopen the note and save again.`,
       )
@@ -226,36 +407,52 @@ export default function CapturePage() {
 
   const saveNote = () => {
     if (!noteFor) return
-    const next = shots.map((s) => (s.key === noteFor ? { ...s, note: clampNote(noteDraft) } : s))
+    const text = clampNote(noteDraft)
+    const next = shots.map((s) => (s.key === noteFor ? { ...s, note: text } : s))
     setShots(next)
+    // Keep it with the bytes: a note typed offline must survive the reload too.
+    void patchPending(noteFor, { note: text })
     setNoteFor(null)
     void flushNotes(next)
   }
 
   /**
-   * Retag ONE stored photo from review.
+   * Retag ONE photo.
    *
-   * Writes the server first and only then updates the row: a room that reads
-   * "Kitchen" on screen while the photo is still tagged nothing is exactly the
-   * lie this screen exists to remove.
+   * Stored: writes the server first, then the row -- a row reading "Basement"
+   * over a photo still tagged nothing is the lie review exists to remove.
+   * Still pending: there is no server row yet, so it updates the local record
+   * and the room rides the upload when it finally goes.
    */
   const applyRoom = async (key: string, next: string | null) => {
     const shot = shots.find((s) => s.key === key)
-    if (!shot?.photoId) return
+    if (!shot) return
+    if (shot.photoId == null) {
+      void patchPending(key, { room: next })
+      setShots((prev) => prev.map((s) => (s.key === key ? { ...s, room: next } : s)))
+      return
+    }
+    if (!cred) return
     try {
       await captureRoom(cred, shot.photoId, next)
       setShots((prev) => prev.map((s) => (s.key === key ? { ...s, room: next } : s)))
     } catch {
-      setFailure('That room didn’t save. The photo is safe — try again.')
+      setFailure('That room did not save. The photo is safe — try again.')
     }
   }
 
+  /** A real retry now: the bytes are still here, so it re-sends them. */
   const retry = (shot: Shot) => {
-    // The File is gone once the handler returned, so a retry re-opens the
-    // camera rather than pretending it can resend bytes it no longer holds.
-    setShots((prev) => prev.filter((s) => s.key !== shot.key))
-    URL.revokeObjectURL(shot.preview)
-    fileRef.current?.click()
+    if (!blobs.current.has(shot.key)) {
+      // Nothing left to send -- already uploaded, or from a session before the
+      // photo was persisted. Re-open the camera rather than pretend.
+      setShots((prev) => prev.filter((s) => s.key !== shot.key))
+      URL.revokeObjectURL(shot.preview)
+      fileRef.current?.click()
+      return
+    }
+    setShots((prev) => prev.map((s) => (s.key === shot.key ? { ...s, state: 'queued' } : s)))
+    void send([{ ...shot, state: 'queued' }])
   }
 
   /**
@@ -392,6 +589,13 @@ export default function CapturePage() {
         </button>
       </header>
 
+      {banner ? (
+        <div className="k-cap-alert">
+          <Icon d={online ? I.clock : I.info} size={14} />
+          <span>{banner}</span>
+        </div>
+      ) : null}
+
       {failure ? (
         <div className="k-cap-alert">
           <Icon d={I.info} size={14} />
@@ -403,8 +607,10 @@ export default function CapturePage() {
         <div className="k-cap-alert">
           <Icon d={I.info} size={14} />
           <span>
-            {rejected.length} photo{rejected.length === 1 ? '' : 's'} were not
-            accepted: {rejected.map((r) => r.text).join(' · ')}
+            {rejected.length === 1
+              ? '1 photo was not accepted'
+              : `${rejected.length} photos were not accepted`}
+            : {rejected.map((r) => r.text).join(' · ')}
           </span>
         </div>
       ) : null}
@@ -467,7 +673,8 @@ export default function CapturePage() {
             ? tally.stored > 0
               ? 'All uploaded — safe to leave.'
               : ''
-            : 'Stay on this screen until everything has sent.'}
+            : (closeWarning(pendingShots.length) ??
+              'Stay on this screen until everything has sent.')}
         </div>
         {shots.length > 0 ? (
           <button type="button" className="k-cap-reviewlink" onClick={() => setReviewing(true)}>

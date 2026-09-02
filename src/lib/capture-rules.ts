@@ -37,6 +37,8 @@ export type Shot = {
    * a reviewer is trying to place.
    */
   takenAt?: number
+  /** Upload attempts so far. Persisted, so backoff survives a reload. */
+  attempts?: number
   photoId?: number
   error?: string
 }
@@ -240,4 +242,88 @@ export function reviewSummary(tally: QueueTally, rooms: number): string {
   if (rooms > 0) parts.push(`${rooms} room${rooms === 1 ? '' : 's'}`)
   if (tally.failed > 0) parts.push(`${tally.failed} still to retry`)
   return parts.join(' · ')
+}
+
+// --------------------------------------------------------------------------
+// Offline capture
+// --------------------------------------------------------------------------
+
+/**
+ * What "offline" can honestly mean here.
+ *
+ * NOT Background Sync. `SyncManager` would retry with the tab closed, but it
+ * does not exist on iOS Safari, and adjusters carry iPhones — building on it
+ * would make a promise that is false for half the people who need it most.
+ *
+ * So: the photo bytes are persisted in IndexedDB the moment they are taken, and
+ * retried whenever the page is open and the network comes back. That covers the
+ * shape the job actually has — someone walks a property with the page open,
+ * loses signal in the basement, keeps shooting, and gets it back upstairs.
+ *
+ * The one thing it does not cover is the tab being closed, and the UI says so
+ * rather than implying a background uploader that is not there.
+ */
+
+/** Attempts before a shot stops retrying on its own and asks for a tap. */
+export const MAX_AUTO_ATTEMPTS = 5
+
+/**
+ * How long to wait before the next automatic attempt.
+ *
+ * Exponential with a ceiling: a phone with one bar should not retry a 4 MB
+ * upload every second, and a walk-through can last an hour, so the ceiling
+ * keeps the retry useful rather than backing off into never.
+ */
+export function retryDelayMs(attempt: number): number {
+  return Math.min(30_000, 2_000 * 2 ** Math.max(0, attempt - 1))
+}
+
+/**
+ * Is this failure worth retrying by itself?
+ *
+ * A dead credential and a wrong claim will fail identically forever, so they
+ * stop and ask for a person. Only a transport problem is worth another go.
+ */
+export function shouldAutoRetry(kind: CaptureFailure, attempts: number): boolean {
+  if (kind === 'expired' || kind === 'wrong_claim' || kind === 'too_big') return false
+  return attempts < MAX_AUTO_ATTEMPTS
+}
+
+export type OfflineState = {
+  online: boolean
+  pending: number
+  /** Bytes still only on this phone. */
+  pendingBytes: number
+}
+
+/**
+ * The banner.
+ *
+ * Says where the photos ARE, which is the question, and never claims they will
+ * send while the app is closed.
+ */
+export function offlineBanner(state: OfflineState): string | null {
+  if (state.pending === 0) return null
+  const mb = state.pendingBytes / 1_000_000
+  const size = mb >= 1 ? ` (${mb.toFixed(1)} MB)` : ''
+  if (!state.online) {
+    return `No signal. ${state.pending} photo${
+      state.pending === 1 ? '' : 's'
+    }${size} saved on this phone — keep shooting. They send themselves when signal returns, as long as this screen stays open.`
+  }
+  return `Sending ${state.pending} saved photo${state.pending === 1 ? '' : 's'}${size}…`
+}
+
+/**
+ * The warning that earns its place.
+ *
+ * Closing the tab is the one action that genuinely strands photos, because
+ * there is no background uploader. Worth saying plainly, and only when it is
+ * actually true.
+ */
+export function closeWarning(pending: number): string | null {
+  if (pending === 0) return null
+  return `${pending} photo${
+    pending === 1 ? '' : 's'
+  } ${pending === 1 ? 'is' : 'are'} still only on this phone. They are saved and will survive a reload, but nothing uploads while this screen is closed.`
 }
