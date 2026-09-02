@@ -4,7 +4,7 @@ import { Link, useLocation } from 'react-router-dom'
 const TABS: [string, string | null][] = [
   ['New claim', '/claims/new'],
   ['My claims', '/claims'],
-  ['Exports', null],
+  ['Exports', '/exports'],
   ['Settings', null],
 ]
 

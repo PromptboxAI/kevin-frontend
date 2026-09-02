@@ -159,13 +159,12 @@ export const portal = {
  * Exports are server-generated binaries (xlsx | pdf) with a
  * Content-Disposition filename -- not JSON, so they bypass request().
  */
-export async function downloadExport(claimId: string, format: 'xlsx' | 'pdf' = 'xlsx') {
+async function downloadBinary(path: string, fallbackName: string) {
   const { data } = await (await import('./supabase')).getSupabase().auth.getSession()
   const token = data.session?.access_token
-  const response = await fetch(
-    `${API_BASE_URL}/v1/claims/${encodeURIComponent(claimId)}/export?format=${format}`,
-    { headers: token ? { Authorization: `Bearer ${token}` } : {} },
-  )
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
   if (!response.ok) {
     throw new ApiError(response.status, await response.text(), response.headers.get('X-Request-ID'))
   }
@@ -176,9 +175,31 @@ export async function downloadExport(claimId: string, format: 'xlsx' | 'pdf' = '
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
-  link.download = match?.[1] ?? `${claimId}-inventory.${format}`
+  link.download = match?.[1] ?? fallbackName
   document.body.appendChild(link)
   link.click()
   link.remove()
   URL.revokeObjectURL(url)
+}
+
+/** The Proof of Loss. STAMPS `exported_at` -- never call it for a preview. */
+export function downloadExport(claimId: string, format: 'xlsx' | 'pdf' = 'xlsx') {
+  return downloadBinary(
+    `/v1/claims/${encodeURIComponent(claimId)}/export?format=${format}`,
+    `${claimId}-inventory.${format}`,
+  )
+}
+
+/**
+ * The Depreciation Recovery Request -- a DIFFERENT document, not a variant.
+ *
+ * Does NOT stamp `exported_at`: that marker means the Proof of Loss went out
+ * and drives the claim's derived status, so this one is safe to call again and
+ * again as receipts arrive. `409` when no line carries a `claimed_rcv`.
+ */
+export function downloadRecovery(claimId: string, format: 'xlsx' | 'pdf' = 'xlsx') {
+  return downloadBinary(
+    `/v1/claims/${encodeURIComponent(claimId)}/holdback-export?format=${format}`,
+    `${claimId}-recovery-request.${format}`,
+  )
 }

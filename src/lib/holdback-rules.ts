@@ -93,3 +93,98 @@ export function parseQty(input: string): { ok: true; value: number | null } | { 
 export function holdbackApplies(claimStatus: string | undefined): boolean {
   return claimStatus === 'closed' || claimStatus === 'archived'
 }
+
+// --------------------------------------------------------------------------
+// The recovery screen: which lines belong on the request, and what it foots to
+// --------------------------------------------------------------------------
+
+export type RecoveryLine = {
+  id: number
+  description: string | null
+  room_area: string | null
+  quantity: number
+  rcv_total_incl: number | null
+  acv_total_incl: number | null
+  depreciation_amount: number | null
+  claimed_rcv?: number | null
+  replaced_qty?: number | null
+  recoverable?: number
+  receipt_url?: string | null
+}
+
+/**
+ * Does this line belong in a Depreciation Recovery Request?
+ *
+ * A mirror of `is_recoverable_line` in services/holdback.py, deliberately --
+ * the server 409s when nothing qualifies, and a client gate that disagreed
+ * would either offer a download that errors or hide one that would have worked.
+ *
+ * The subtle half is `replaced_qty`: NULL means "the whole line" (the default
+ * for every row that never sets it), while an explicit 0 means none of the
+ * units were replaced. So null qualifies and 0 does not.
+ */
+export function isRecoverableLine(line: RecoveryLine): boolean {
+  if (line.claimed_rcv == null) return false
+  return line.replaced_qty !== 0
+}
+
+export type RecoveryTotals = {
+  /** Withheld across the WHOLE settled schedule -- the ceiling. */
+  withheld: number
+  /** The server's per-line figures, summed. Never recomputed here. */
+  recoverable: number
+  /** Lines on the request, and how many of those still lack a receipt. */
+  claimedLines: number
+  missingReceipts: number
+  totalLines: number
+}
+
+/**
+ * What the header reports.
+ *
+ * `recoverable` is a SUM of the server's per-line values, never a formula --
+ * services/holdback.py owns the lesser-of math and this module computes no
+ * money. Summing the withheld column instead would over-request on every line
+ * replaced for less than the schedule, and an inflated request gets the whole
+ * package challenged rather than the one line.
+ */
+export function recoveryTotals(lines: RecoveryLine[]): RecoveryTotals {
+  const claimed = lines.filter(isRecoverableLine)
+  return {
+    withheld: lines.reduce((t, l) => t + (l.depreciation_amount ?? 0), 0),
+    recoverable: claimed.reduce((t, l) => t + (l.recoverable ?? 0), 0),
+    claimedLines: claimed.length,
+    missingReceipts: claimed.filter((l) => !l.receipt_url).length,
+    totalLines: lines.length,
+  }
+}
+
+/**
+ * Is the download worth offering?
+ *
+ * Matches the server's 409: no qualifying line means no document. Offering it
+ * anyway would spend a click to reach an error that explains nothing the screen
+ * could not have said first.
+ */
+export function canRequestRecovery(lines: RecoveryLine[]): boolean {
+  return lines.some(isRecoverableLine)
+}
+
+/** The only two the route accepts -- `receipts`/`zip` are a 422. */
+export const RECOVERY_FORMATS = ['xlsx', 'pdf'] as const
+export type RecoveryFormat = (typeof RECOVERY_FORMATS)[number]
+
+/**
+ * The warning that goes above the download.
+ *
+ * A claimed line with no receipt prints `MISSING` on the document -- by design,
+ * because it is the line a carrier will bounce. Better the adjuster reads it
+ * here than the carrier reads it there.
+ */
+export function missingReceiptWarning(totals: RecoveryTotals): string | null {
+  if (totals.missingReceipts === 0) return null
+  const n = totals.missingReceipts
+  return `${n} claimed ${n === 1 ? 'line has' : 'lines have'} no receipt attached. ${
+    n === 1 ? 'It prints' : 'They print'
+  } as MISSING on the request — the line a carrier bounces first.`
+}

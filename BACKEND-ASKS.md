@@ -636,3 +636,61 @@ continues, session 2 starts at #0045" behaviour rule 22(b) already describes
 for appends — would make both surfaces agree and survive deletes. Happy to
 render whatever you land on; mostly flagging that the rule and the
 implementation currently disagree.
+
+
+## 30. There is no exports history — only `exported_at`
+
+Not a bug; a scope question, raised because the design assumes otherwise.
+
+Screen 13 draws a ledger: an id per export (`EXP-2026-1138`), a version number,
+a file size, and a per-file status of downloaded / link shared / superseded.
+None of it exists. There are two export routes and no exports table:
+
+```
+@v1.get("/claims/{claim_id}/export")
+@v1.get("/claims/{claim_id}/holdback-export")
+```
+
+The only trace an export leaves is `claims.exported_at`, a single
+first-write-wins timestamp. Re-exporting overwrites nothing, because nothing
+was written the first time either.
+
+So the page I shipped lists **claims that have been exported**, with the date
+and the documents you can pull again. It does not invent versions or sizes — a
+screen that looks authoritative about a history nobody keeps is worse on this
+artifact than a smaller honest one.
+
+The gap that might matter: **a re-pulled document is rebuilt from the claim as
+it stands now**, so once a claim is edited after export, the file the adjuster
+downloads no longer matches the copy the carrier holds — and nothing anywhere
+says so. The page warns in words, which is the best it can do from here.
+
+If you want the design's ledger, it needs an `exports` row per generated file
+(id, format, generated_at, and ideally the stored artifact). If you would
+rather not store artifacts, a row per generation with a content hash would at
+least let the UI say "this differs from what you sent on the 2nd." Happy either
+way — flagging that the design and the API currently disagree about whether
+this history exists.
+
+## 31. `Content-Disposition` is not exposed to the browser
+
+Small and mechanical. Both export routes set a filename:
+
+> `Content-Disposition: attachment; filename="<claim>-inventory.<ext>"`
+
+but the CORS layer does not expose the header, so `fetch` cannot read it:
+
+```js
+[...response.headers.keys()]                  // ['content-length','content-type','x-request-id']
+response.headers.get('content-disposition')   // null
+response.headers.get('access-control-expose-headers')  // null
+```
+
+The client downloads via `fetch` + a blob (it needs the Authorization header,
+so a plain `<a href>` will not do), which means the server's filename is
+silently discarded and every file lands under a client-side fallback. Ours
+happen to match the documented shape, but that is us guessing in two places.
+
+Adding `Content-Disposition` to the CORS `expose_headers` list makes the
+server's name authoritative. `X-Request-ID` is already exposed, so the list
+exists — this is one entry.

@@ -3,6 +3,7 @@ import RequireAuth from './components/RequireAuth'
 import { AuthProvider } from './lib/auth'
 import BillingPage from './pages/BillingPage'
 import ClaimsPage from './pages/ClaimsPage'
+import ExportsPage from './pages/ExportsPage'
 import IntakePage from './pages/IntakePage'
 import StagingPage from './pages/StagingPage'
 import ProcessingPage from './pages/ProcessingPage'
@@ -11,6 +12,7 @@ import NotFoundPage from './pages/NotFoundPage'
 import OverviewPage from './pages/OverviewPage'
 import PhotosPage from './pages/PhotosPage'
 import PortalPage from './pages/PortalPage'
+import RecoveryPage from './pages/RecoveryPage'
 import SignInPage from './pages/SignInPage'
 import WorksheetPage from './pages/WorksheetPage'
 
@@ -67,6 +69,24 @@ export default function App() {
           element={
             <RequireAuth>
               <ImportPage />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/exports"
+          element={
+            <RequireAuth>
+              <ExportsPage />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/claims/:claimId/recovery"
+          element={
+            <RequireAuth>
+              <RecoveryPage />
             </RequireAuth>
           }
         />

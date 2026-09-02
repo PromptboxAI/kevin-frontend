@@ -400,9 +400,54 @@ integrations, billing, API), plus `10-Carrier-settings` and
 `14-Settings-pricing`. None built. `GET /v1/depreciation-rules` and
 `GET /v1/sources` feed these.
 
-## 12. Exports history · holdback recovery
+## 12. ~~Exports history · holdback recovery~~ — BUILT
 
-Design `13` and `77`. `GET /claims/{id}/holdback-export` is live.
+Two screens. One had a full contract; the other had almost no data.
+
+### Holdback recovery (77) — `/claims/:claimId/recovery`
+
+The post-settlement worksheet: every priced line with what was actually spent,
+how many units, the receipt, and the server's `recoverable`. Gated to
+closed/archived — before the carrier has paid there is no withheld
+depreciation, and the screen would invite receipts against money nobody has
+been given.
+
+The design says "NO export button here — the backend is building the dedicated
+Depreciation Recovery Request export concurrently." It exists now, so the
+button does: **`GET …/holdback-export`, in `xlsx` and `pdf` only.** The design's
+comment also names `format=receipts` and `format=zip`; both are **422** — the
+route accepts two formats and nothing else. Offering them would have been three
+dead buttons.
+
+`canRequestRecovery` mirrors `is_recoverable_line` in services/holdback.py
+exactly, including its subtle half: a NULL `replaced_qty` means the whole line
+and qualifies, an explicit `0` means none were replaced and does not. A gate
+that disagreed would either offer a download that 409s or hide one that would
+have worked.
+
+Verified live end to end: withheld $173.80 → claimed $400 on a $434.50 line
+paid at $304.15 → **recoverable $95.85**, units auto-filled to 2, header footing
+to "still on the table $77.95", the Request buttons appearing only once a line
+qualified, and both documents returning 200 with the right MIME. `exported_at`
+unchanged and status still `closed` afterwards — the recovery request must not
+rewrite the history of the Proof of Loss, and does not.
+
+### Exports (13) — `/exports`, and the nav tab is live
+
+**The designed ledger does not exist.** Screen 13 draws an id per export,
+a version number, a file size and a downloaded/shared/superseded status. There
+is no exports table and no exports endpoint — the only trace is
+`claims.exported_at`, one first-write-wins timestamp.
+
+So the page lists what is true: claims that have been exported, when, and the
+documents you can pull again. No invented versions or sizes. The real gap it
+names in words: **a re-pulled document is rebuilt from the claim as it stands
+now**, so a claim edited since going out no longer matches the carrier's copy.
+Filed as ask 30.
+
+Also found: `Content-Disposition` is not in the CORS `expose_headers`, so the
+server's filename never reaches the browser and every download uses the client
+fallback (ask 31).
 
 ---
 
