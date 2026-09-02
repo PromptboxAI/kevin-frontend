@@ -152,10 +152,22 @@ export default function CapturePage() {
         }
         if (loud.length) setRejected((prev) => [...prev, ...loud])
 
+        /**
+         * Pair ids to shots BEFORE touching state.
+         *
+         * This was a counter incremented inside the setShots updater, which is
+         * impure -- React invokes updaters more than once (StrictMode does it
+         * deliberately), so the counter ran past the end of `photo_ids` and
+         * every shot got `undefined`. Notes then silently never saved, because
+         * `notesToWrite` skips a shot with no id. Computed here, the mapping is
+         * the same however many times the updater runs.
+         */
         const ids = ack.photo_ids ?? []
-        let n = 0
+        const assigned = new Map(batch.shots.map((s, i) => [s.key, ids[i]]))
         setShots((prev) =>
-          prev.map((s) => (keys.has(s.key) ? { ...s, state: 'stored', photoId: ids[n++] } : s)),
+          prev.map((s) =>
+            keys.has(s.key) ? { ...s, state: 'stored', photoId: assigned.get(s.key) } : s,
+          ),
         )
       } catch (error) {
         const status = error instanceof ApiError ? error.status : undefined
@@ -174,15 +186,30 @@ export default function CapturePage() {
     }
   }
 
-  /** Notes are a second call, and only for shots that have one. */
+  /**
+   * Notes are a second call, and only for shots that have one.
+   *
+   * A failure here does not block -- the photo is safe, which is the part that
+   * matters -- but it is SAID. Swallowing it is what let a silent
+   * never-saving note go unnoticed: the adjuster typed that sentence standing
+   * in the room, and it is the only thing steering identification on a set
+   * Vision cannot name.
+   */
   const flushNotes = async (current: Shot[]) => {
+    let failed = 0
     for (const { photoId, note } of notesToWrite(current)) {
       try {
         await captureNote(cred, photoId, note)
       } catch {
-        // A note that did not save is not worth blocking on -- the photo is
-        // safe, which is the part that matters. It stays on screen either way.
+        failed += 1
       }
+    }
+    if (failed > 0) {
+      setFailure(
+        `${failed} note${failed === 1 ? '' : 's'} didn’t save. The photo${
+          failed === 1 ? '' : 's'
+        } uploaded — reopen the note and save again.`,
+      )
     }
   }
 

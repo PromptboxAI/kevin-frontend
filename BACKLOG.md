@@ -397,7 +397,7 @@ claim with `exported_at` set it now reads "Lines below these renumber — the
 export you already sent cites the old numbers." Silent before the first export,
 where there is no document to contradict.
 
-## 10. Mobile capture — BUILT, blocked on a one-line CORS fix
+## 10. Mobile capture — PAIRING + CAPTURE BUILT AND VERIFIED
 
 Split in two, because the handoff is the security-critical half and stands on
 its own: the desktop can hand a phone an upload-only credential and take it
@@ -435,60 +435,50 @@ atomic burn working, with the identical message an invented token gets. Revoke
 reported "Signed out 1 paired phone", and a second revoke reported the
 no-phones case as a normal answer rather than an error.
 
-### Built: the capture surface — BLOCKED on one CORS entry
+### Built: the capture surface — VERIFIED END TO END (2026-09-02)
 
 `/pair` and `/capture`, both PUBLIC routes: the phone has no account, and
 requiring one is the friction the flow exists to remove.
 
-**It cannot work until ask 32 lands.** `main.py:485` allows
-`Authorization, Content-Type, X-Request-ID` — `X-Capture-Token` is absent, so
-the preflight for any request carrying it is rejected and the upload never
-leaves the browser. Measured one header apart, same origin, same session:
+The CORS fix (`2c2d030`) landed and the whole path works. Verified against
+production on a throwaway claim:
 
 ```
-with X-Capture-Token   -> TypeError: Failed to fetch   (preflight rejected)
-without it             -> 401                          (reached the server)
+pair          token in the fragment -> redeemed -> hash CLEARED from the URL
+upload        2 photos, room "Kitchen"          -> both stored
+room change   -> "Garage", 1 photo              -> batched separately, tagged Garage
+note          "Ashley Trinell 6-drawer dresser" -> saved on that photo only
+cross-claim   tmp-mob credential vs. godfrey    -> 403, "for a different claim"
 ```
 
-That blocks both routes the credential is accepted on, which is the whole phone
-surface. One list entry fixes it; nothing changes on this side.
+The per-batch `room` now genuinely lands — the gap #8 left open, and the reason
+every row on a real claim read `—`.
 
-What is built and verified as far as it can be: pairing lands on `/pair`,
-auto-redeems the token from the fragment, **clears it out of the URL**, stores
-the credential in sessionStorage (not localStorage — it dies with the tab) and
-hands off to `/capture`, which showed the right claim and its empty state. The
-upload then failed exactly as designed: **the queue said so** — "2 didn't send —
-tap to retry. 0 safely uploaded" — rather than claiming success over photos
-that never left.
+**A bug the live run caught, which no unit test could.** Photo ids were
+assigned by a counter incremented INSIDE a `setShots` updater. React invokes
+updaters more than once (StrictMode does it deliberately), so the counter ran
+past the end of `photo_ids`, every shot got `undefined`, and `notesToWrite`
+skipped them — **notes silently never saved**. The mapping is now computed
+before state is touched, so it is the same however many times the updater runs.
+
+It stayed invisible because the note failure was swallowed "so as not to
+block". It no longer is: nothing blocks and the photo is safe either way, but
+the screen says a note did not save. The adjuster typed that sentence standing
+in the room, and on a set Vision cannot name it is the only thing steering
+identification.
 
 What is deliberately NOT ported from the design's camera app, each because it
-would lie or cost something real:
-
-- **No live viewfinder.** `getUserMedia` yields a downscaled video frame;
-  `<input capture="environment">` opens the phone's own camera and returns the
-  full-resolution file with EXIF intact — and EXIF timestamps are what the
-  clusterer groups on. A prettier viewfinder that costs the clustering signal
-  is a bad trade.
-- **No flash and no SCAN BARCODE.** Torch needs a live stream; `BarcodeDetector`
-  is Chrome-only, and a mode button that silently does nothing on an iPhone is
-  worse than no button.
-- **No "queueing photos locally" banner.** Offline queueing is a service worker
-  and IndexedDB, and is not built — so nothing claims it. A phone that says
-  "queued" over a photo held in a tab about to be evicted costs someone a
-  second trip.
-- **No fake phone chrome.** The design's artboards draw a status bar, a clock
-  and a battery because they sit on a design canvas. This runs inside a real
-  phone's browser.
-
-Also built here: the per-batch `room` — the gap #8 left open. Room is captured
-PER SHOT and batched on change, because `room` is one form field per request;
-changing rooms mid-walk cannot retag photos already queued under the old one.
+would lie or cost something real: the live viewfinder (`getUserMedia` yields a
+downscaled frame, while `<input capture>` returns the full-resolution file with
+EXIF intact — and EXIF timestamps are what the clusterer groups on), flash and
+SCAN BARCODE (torch needs a live stream; `BarcodeDetector` is Chrome-only), the
+"queueing photos locally" banner (offline queueing is not built, so nothing
+claims it), and the artboards' fake status bar and battery.
 
 ### Still open
 
-Offline capture (service worker + IndexedDB), and the review screen (28), which
-in the design re-orders and annotates before sending. Both are worth doing once
-photos can actually reach the server.
+Offline capture (service worker + IndexedDB) and the review screen (28). Both
+are now unblocked — photos reach the server.
 
 ## 11. Settings
 
