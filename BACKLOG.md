@@ -355,13 +355,38 @@ capture flow, so items continue to arrive unfiled. Rooms now give the adjuster
 a way to fix that after the fact; sending it at upload would mean they rarely
 had to. That belongs with #10 (mobile capture) and the intake drop zone.
 
-## 9. ~~Bulk row delete~~ — NOT A GAP
+## 9. ~~Bulk row delete~~ — ALREADY BUILT (verified), and a real finding underneath
 
-`DELETE /v1/claim_items` takes `item_ids`, documented at `FRONTEND.md:575`, and
-it is the consistent key across assign-room, staging process and bulk import.
-The 422 I hit was the API enforcing its contract, not an inconsistency. The
-worksheet still has no delete CONTROL, which is worth building, but there is
-nothing to reconcile.
+My earlier note said "the worksheet still has no delete CONTROL, which is worth
+building." It has one, and it works — the entry was stale, not the code. This
+is the second time I have filed something as missing that was already there
+(see #2), so I checked before writing a line.
+
+Verified live on a throwaway claim: select rows -> **Delete** arms a confirm
+("Photos stay on the claim." · Cancel · Delete 2) -> **Cancel changes nothing**
+-> confirm removes exactly those two, notice reads "Deleted 2 rows", and the
+server agrees. `DELETE /v1/claim_items` with `item_ids`, `photos_detached`
+surfaced in the notice when non-zero.
+
+### What the test actually turned up: deletes renumber the claim
+
+Line numbers are **positions**, not identities. `numberRows` is `index + 1` over
+id-ascending rows, and the export does the same thing
+(`enumerate(items, start=1)`, `services/export.py:135`). Nothing persists a
+line number.
+
+So deleting a row shifts every row beneath it. Four rows, delete #1 and #2, and
+the survivors that were #0003/#0004 come back as **#0001/#0002** — confirmed.
+Rule 22(b) says exactly this must not happen, because *"an export already sent
+to a carrier cites those numbers."*
+
+The frontend cannot fix it: there is no stored number to render, and inventing
+a stable one here would disagree with the export, which is worse than the
+current honest-but-shifting behaviour. Filed as **ask 29** (a `line_no` at
+creation). What shipped meanwhile is the confirmation telling the truth — on a
+claim with `exported_at` set it now reads "Lines below these renumber — the
+export you already sent cites the old numbers." Silent before the first export,
+where there is no document to contradict.
 
 ## 10. Mobile capture
 

@@ -4,13 +4,21 @@ import type { ClaimItem } from './types'
 export type NumberedItem = ClaimItem & { lineNo: number }
 
 /**
- * Assign each row its permanent line number, ONCE, at data level.
+ * Assign each row its line number, ONCE, at data level.
  *
  * The line number is the row's identity on a document a carrier has been sent
  * (rule 22b), so it can never be a function of viewport state. Numbering here
  * — before any filtering, grouping or windowing — means every downstream view
  * slices rows that already know their number, and the renderer never computes
  * one.
+ *
+ * It is NOT permanent, and cannot be from here: the number is this row's
+ * POSITION, so deleting an earlier row shifts every row beneath it up by one.
+ * The export does exactly the same thing (`enumerate(items, start=1)` in
+ * services/export.py), and nothing persists a line number, so a schedule
+ * already sent to a carrier can end up citing numbers that no longer point at
+ * the same items. The delete confirmation says so on an exported claim; ask 29
+ * is the durable fix.
  *
  * Order is by `id` ascending because GET /v1/claim_items is newest-first: a
  * row added today must APPEND, not land at the top and renumber everything

@@ -958,7 +958,19 @@ export default function WorksheetPage() {
             </select>
             {confirmDel ? (
               <>
-                <span className="k-claim-sub">Photos stay on the claim.</span>
+                {/* Two different promises. The photos line is reassurance --
+                    nothing is destroyed. The renumber line is a WARNING, and
+                    only on a claim that has actually been sent: line numbers
+                    are positions (here and in the export), so removing a row
+                    shifts every row beneath it, and the carrier's copy cites
+                    the old ones. Silent on an unexported claim, where there is
+                    no document to disagree with. */}
+                <span className="k-claim-sub">
+                  Photos stay on the claim.
+                  {claim.data?.exported_at
+                    ? ' Lines below these renumber — the export you already sent cites the old numbers.'
+                    : ''}
+                </span>
                 <button
                   type="button"
                   className="k-btn k-btn--sm k-btn--ghost"

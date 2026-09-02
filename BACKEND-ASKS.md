@@ -601,3 +601,38 @@ is for the **export** to fall back to the room's name when `room_area` is null
 split is the only shape that needs client-side syncing.
 
 Not blocking — shipped and tested as-is.
+
+
+## 29. Line numbers are positions, so a delete renumbers a sent schedule
+
+Rule 22(b) says line numbers are never reassigned, because *"an export already
+sent to a carrier cites those numbers."* Nothing currently persists one.
+
+Both sides derive it from position:
+
+```python
+# services/export.py:135
+built = [_item_row(it, tax_rate, n) for n, it in enumerate(items, start=1)]
+```
+
+and the worksheet does the same (`numberRows`, id-ascending, `index + 1`).
+There is no `line_no` column on `claim_items`.
+
+So deleting a row shifts every row beneath it up by one — verified live on a
+throwaway claim: four rows, deleted #1 and #2, and the survivors that were
+#0003 and #0004 came back as **#0001 and #0002**. Re-export that claim and the
+carrier is holding a schedule whose numbers point at different items.
+
+The window is narrow (it only matters after an export has gone out) but the
+consequence is a document mismatch on the one artifact the product exists to
+produce, and it is invisible — nothing on either side says the numbers moved.
+
+**The frontend cannot fix this.** There is no stored number to render; if the
+UI invented a stable one it would disagree with the export, which is worse. For
+now the delete confirmation warns when `exported_at` is set.
+
+A `line_no` assigned at item creation and never reused — the same "numbering
+continues, session 2 starts at #0045" behaviour rule 22(b) already describes
+for appends — would make both surfaces agree and survive deletes. Happy to
+render whatever you land on; mostly flagging that the rule and the
+implementation currently disagree.
