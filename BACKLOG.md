@@ -142,14 +142,35 @@ money genuinely owed. `recoverable` is the server's figure applied verbatim --
 Photo detach says "Unlink", because "Remove" beside a claim's only evidence
 reads as destruction when the route explicitly does not delete.
 
-### Unverified: commit-on-blur delivery
+### Commit-on-blur — VERIFIED (2026-09-02)
 
-The commit LOGIC is verified against live data (claimed $60 on a line
-scheduled $71.84 / paid $43.10 -> recoverable $16.90, count auto-filled). But
-the browser pane would not composite this session, and a backgrounded page
-dispatches no focus events -- a native blur listener recorded zero on a real
-focus move. So blur DELIVERY could not be exercised. Enter was added as a
-second path for the same reason. Worth 30 seconds with the pane displayed.
+Exercised on a closed `godfrey-kitchen-fire`, item 5543 (UGG sandal, scheduled
+$162.93 / paid $40.73). Typed `150` with real keystrokes, moved focus to the
+units field, and the blur committed on its own:
+
+```
+blur fired      -> true
+claimed_rcv     -> 150
+replaced_qty    -> 1        (auto-filled from the line quantity)
+recoverable     -> 109.27   = min(162.93, 150) - 40.73
+```
+
+So the panel's whole reason for existing holds end to end: the count filled
+itself rather than letting an amount-without-a-count silently recover $0 on
+money genuinely owed. The earlier "a native blur listener recorded zero" was
+the hidden tab, not the code.
+
+**Still untested: clearing a figure by blur.** The browser tooling delivers
+printable keys but not Delete or BackSpace, so the field could not be emptied
+by hand — only overwritten. The clear path went through the API instead
+(`{claimed_rcv: null, replaced_qty: null}` -> `recoverable: 0`), which proves
+the endpoint but not the component's empty-string branch. Note that `Holdback`
+uses raw inputs, NOT `EditableCell`, so it does not blank on focus and has no
+`untouched` guard -- the two behaviours that made "clear the cell" unworkable
+for the depreciation override do not apply here.
+
+Claim restored afterwards: figures cleared, claim reopened to `in_review`,
+`closed_at` back to null.
 
 ## 6. ~~Written import~~ — BUILT
 
