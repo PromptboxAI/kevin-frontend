@@ -10,6 +10,7 @@ import EditableCell from '../components/EditableCell'
 import ItemDrawer from '../components/ItemDrawer'
 import ShareSheet from '../components/ShareSheet'
 import ProposalsPanel from '../components/ProposalsPanel'
+import RoomsPopover from '../components/RoomsPopover'
 import ClaimStateMenu from '../components/ClaimStateMenu'
 import { I, Icon } from '../components/Icon'
 import { ApiError, api, downloadExport } from '../lib/api'
@@ -40,6 +41,8 @@ import type {
 } from '../lib/mutations'
 import { numberRows, rowInvariant, windowRange } from '../lib/rows'
 import { listProposals } from '../lib/proposals'
+import { assignRoom, listRooms, setRoomArea } from '../lib/rooms'
+import { assignPlan, assignSummary, planTextChunks } from '../lib/room-rules'
 import type { NumberedItem } from '../lib/rows'
 import { CAPACITY_REASONS } from '../lib/types'
 import type { ClaimItem, ClaimItemListResponse, ClaimSummary } from '../lib/types'
@@ -109,6 +112,14 @@ export default function WorksheetPage() {
   const [groupBy, setGroupBy] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
   const [selected, setSelected] = useState<Set<number>>(new Set())
+  /** null = every room; 'none' = the Unassigned bucket; a number = one room. */
+  const [roomFilter, setRoomFilter] = useState<number | null | 'none'>(null)
+  /** Shared cache key with RoomsPopover -- one fetch feeds both. */
+  const rooms = useQuery({
+    queryKey: ['rooms', claimId],
+    queryFn: () => listRooms(claimId),
+    enabled: !!claimId,
+  })
   const [docked, setDocked] = useState(false)
   /** Fixed internal setting: the design exposes no density control. */
   const density = 'comfortable' as 'comfortable' | 'compact'
@@ -448,6 +459,37 @@ export default function WorksheetPage() {
       setNotice(error instanceof Error ? error.message : 'Re-classify failed.'),
   })
 
+  /**
+   * File the selected lines in a room.
+   *
+   * TWO writes, because the API splits what the adjuster thinks of as one act:
+   * `assign-room` sets `room_id` (filtering and rollups) and touches nothing
+   * else, while the EXPORT prints `room_area` -- the free text. Assigning
+   * without the second half would let someone file all 52 lines and hand the
+   * carrier a schedule with a blank Room/Area column. See ask 28.
+   */
+  const fileInRoom = useMutation({
+    mutationFn: async ({ ids, roomId }: { ids: number[]; roomId: number | null }) => {
+      const chosen = items.filter((i) => ids.includes(i.id))
+      const room = roomId == null ? null : (rooms.data?.rooms ?? []).find((r) => r.id === roomId)
+      const plan = assignPlan(chosen, room ?? null)
+      await assignRoom(plan.itemIds, plan.roomId)
+      // Chunked: a 300-row selection must not open 300 sockets at once.
+      for (const chunk of planTextChunks(plan.textUpdates)) {
+        await Promise.all(chunk.map((u) => setRoomArea(u.id, u.room_area)))
+      }
+      return { plan, name: room?.name ?? null }
+    },
+    onSuccess: ({ plan, name }) => {
+      setSelected(new Set())
+      setNotice(assignSummary(plan, name))
+      void queryClient.invalidateQueries({ queryKey: ['rooms', claimId] })
+      refresh()
+    },
+    onError: (error) =>
+      setNotice(error instanceof Error ? error.message : 'Could not file those lines.'),
+  })
+
   const removeRows = useMutation({
     mutationFn: (ids: number[]) => deleteItems(ids),
     onSuccess: (result) => {
@@ -473,13 +515,16 @@ export default function WorksheetPage() {
 
   const visible = useMemo(() => {
     const term = search.trim().toLowerCase()
-    if (!term) return items
-    return items.filter((item) =>
+    let out = items
+    if (roomFilter === 'none') out = out.filter((item) => item.room_id == null)
+    else if (roomFilter != null) out = out.filter((item) => item.room_id === roomFilter)
+    if (!term) return out
+    return out.filter((item) =>
       [item.description, item.make_mfr, item.category, item.model_number, item.room_area]
         .filter(Boolean)
         .some((field) => String(field).toLowerCase().includes(term)),
     )
-  }, [items, search])
+  }, [items, search, roomFilter])
 
   /** Group headers aggregate the rows' own flags -- never re-derived from cat. */
   const groups = useMemo(() => {
@@ -782,6 +827,14 @@ export default function WorksheetPage() {
             ) : null}
           </div>
 
+          <RoomsPopover
+            claimId={claimId}
+            items={items}
+            roomFilter={roomFilter}
+            onFilter={setRoomFilter}
+            onNotice={setNotice}
+          />
+
           <button
             type="button"
             className={`k-btn k-btn--ghost ${groupBy ? 'k-btn--active' : ''}`}
@@ -863,6 +916,28 @@ export default function WorksheetPage() {
         <div className="k-ws-bar k-ws-bar--sel">
           <span>{selected.size} selected</span>
           <div style={{ display: 'flex', gap: 8 }}>
+            <select
+              className="k-insp-input"
+              style={{ width: 190 }}
+              defaultValue=""
+              disabled={fileInRoom.isPending}
+              title="Sets the room AND the Room/Area text the export prints"
+              onChange={(e) => {
+                const v = e.target.value
+                if (!v) return
+                fileInRoom.mutate({ ids: [...selected], roomId: v === 'none' ? null : Number(v) })
+                e.target.value = ''
+              }}
+            >
+              <option value="">{fileInRoom.isPending ? 'Filing…' : 'File in room…'}</option>
+              {(rooms.data?.rooms ?? []).map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+              <option value="none">— Unfile —</option>
+            </select>
+
             <select
               className="k-insp-input"
               style={{ width: 190 }}

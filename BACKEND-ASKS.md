@@ -552,3 +552,52 @@ and ordering only is exactly what it would be used for, and a photo with a null
 
 Both are additive fields on a response model, so nothing I have shipped breaks
 either way — happy to take them whenever they are convenient.
+
+
+## 28. `assign-room` should stamp `room_area` — the export only prints the text
+
+Rooms are built (backlog #8) and working, but the feature needs a two-step
+dance on the client that one line server-side would remove.
+
+An item carries two independent room fields, and `FRONTEND.md:455` says so
+plainly: `room_id` is the relational link, `room_area` is the free text. What
+that line does not say is which one matters at the end:
+
+```
+services/export.py:114   item.get("room_area") or ""      # .xlsx
+services/export.py:435   item.get("room_area") or ""      # PDF
+```
+
+**`room_id` never reaches the document.** And `assign-room` (main.py:6772)
+writes exactly one column:
+
+```python
+supabase.table("claim_items").update({"room_id": body.room_id})...
+```
+
+So filing items into a room — the whole point of rooms — changes nothing the
+carrier sees. An adjuster could sort all 52 lines into Kitchen / Garage /
+Master Bedroom, export, and hand over a schedule with a blank Room/Area
+column. Verified live: `assign-room` alone leaves `room_area` null.
+
+The frontend therefore does both halves — one `assign-room` call, then a
+`PATCH /claim_items/{id}` per row to set the text, chunked ten at a time. It
+works, and it is what shipped, but it has two costs:
+
+1. **N+1 writes.** Filing 40 lines is 1 + 40 calls. There is no bulk text
+   endpoint (`category` and `assign-room` are the only bulk ones).
+2. **It can drift.** Two fields kept in step by a client is a race with any
+   other writer, and a rename has to sweep the room's items a second time to
+   stop them exporting a name that no longer exists.
+
+Would you consider having `assign-room` set `room_area` to the room's name in
+the same update (and leave it alone on unassign, since the words are the
+adjuster's and are what exports)? That makes the two agree by construction and
+turns the whole operation back into one call.
+
+If you would rather they stay independent, the alternative that also closes it
+is for the **export** to fall back to the room's name when `room_area` is null
+— then the client can stop writing text at all. Either is fine; the current
+split is the only shape that needs client-side syncing.
+
+Not blocking — shipped and tested as-is.

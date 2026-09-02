@@ -295,17 +295,65 @@ Two more found with it open:
 The `ItemEvidence` blur check is still outstanding — it needs a focus move the
 pane can report, not just compositing.
 
-## 8. Rooms
+## 8. ~~Rooms~~ — BUILT
 
-Full CRUD live (`GET/POST /claims/{id}/rooms`, `PATCH/DELETE /rooms/{id}`)
-plus `PATCH /claim_items/assign-room` for bulk assignment. The worksheet has a
-free-text room field and no way to manage the set or bulk-assign.
+A **Rooms** control in the worksheet toolbar (filter by room, create, rename,
+remove) and **File in room…** on the selection bar. Rules in `room-rules.ts`,
+import-free, 26 cases.
 
-Note: nothing currently sends the per-batch `room` at upload, which is why
-every row on the demo claim reads `—` — and why the photo gallery's room facet
-renders an explanation instead of a filter. Confirmed live: all 60 photos and
-all 52 items on Godfrey come back `room: null`. This is now the single largest
-piece of missing signal in the product.
+### The thing that shaped the whole feature
+
+An item has **two independent room fields**, and only one of them reaches the
+carrier:
+
+| field | set by | reaches the export? |
+|---|---|---|
+| `room_id` | `PATCH /claim_items/assign-room` | **no** |
+| `room_area` | free text, `PATCH /claim_items/{id}` | **yes** — `export.py:114` (.xlsx) and `:435` (PDF) |
+
+`assign-room` writes one column (`main.py:6772`). So filing lines into a room —
+the entire point of rooms — changes nothing the carrier sees. Verified live:
+assign alone leaves `room_area` null. An adjuster could sort all 52 lines into
+rooms, export, and hand over a schedule with a blank Room/Area column.
+
+So **every assignment writes both**: one bulk `assign-room`, then a text PATCH
+per row that needs one, chunked ten at a time. `assignPlan` only queues the
+rows whose text actually disagrees, so re-filing rows already in a room costs
+one call rather than N+1. Filed as **ask 28** — one line server-side retires
+the dance.
+
+Decisions worth keeping:
+
+- **Unfiling clears the link but keeps the text.** Deleting the bucket an item
+  sits in is not a statement that it has no room; the words are the adjuster's
+  and they are what exports.
+- **Renaming sweeps the room's items**, but only rows still carrying the old
+  name — hand-typed text like "Kitchen counter" survives.
+- **Removing a room says what survived** ("its lines moved to Unassigned and
+  kept their Room/Area text"), because "delete" next to 40 line items reads as
+  destruction when the API explicitly keeps them.
+- **Unassigned is derived from the items**, not counted server-side, and is the
+  bucket that is actually full on a real claim — everything lands there from
+  processing.
+- Assignment is on the **selection bar**, not in the rooms popover: filing is
+  something you do to rows you picked, and putting it beside a delete control
+  invites removing a room while meaning to file into it.
+
+Verified live on `godfrey-kitchen-fire`: created Kitchen, filed 3 rows, and
+both fields landed (`room_id: 4` + `room_area: "Kitchen"`), the Room/Area
+column filled in, and the room rollup read 3 items / $102.19. Filing marks
+nothing `overridden` — proved by isolating each call, and by the audit trail
+(the filing logs as `edited`; the `overridden` events on those rows were price
+changes from the parallel session, timestamped before the filing).
+
+Claim restored afterwards: rooms deleted, nothing filed.
+
+### Still open: nothing sends `room` at upload
+
+The per-batch `room` field on `POST …/staging/photos` is still not sent by any
+capture flow, so items continue to arrive unfiled. Rooms now give the adjuster
+a way to fix that after the fact; sending it at upload would mean they rarely
+had to. That belongs with #10 (mobile capture) and the intake drop zone.
 
 ## 9. ~~Bulk row delete~~ — NOT A GAP
 
