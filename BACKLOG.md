@@ -26,7 +26,16 @@ Ordered by what breaks an adjuster's day, not by screen count.
 
 ---
 
-## 1. Client proposals have no adjuster side — IN PROGRESS
+## 1. ~~Client proposals have no adjuster side~~ — BUILT
+
+`ProposalsPanel`, opened from the worksheet header. Accept is the enrichment
+step (every field overridable), `price` defaults to false so accepting cannot
+silently spend vendor budget, and the `409` on a second decision is handled as
+"already decided" rather than an error — accepting twice would put the same
+item on the schedule twice.
+
+The header below was left reading IN PROGRESS after the work landed; the
+contract notes are kept because they are the reasoning, not a to-do.
 
 The portal lets an insured propose an item Kevin missed, and it lands in a
 queue nothing reads. A client can report the garage freezer and watch it
