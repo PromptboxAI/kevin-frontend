@@ -34,12 +34,8 @@ silently spend vendor budget, and the `409` on a second decision is handled as
 "already decided" rather than an error — accepting twice would put the same
 item on the schedule twice.
 
-The header below was left reading IN PROGRESS after the work landed; the
-contract notes are kept because they are the reasoning, not a to-do.
-
-The portal lets an insured propose an item Kevin missed, and it lands in a
-queue nothing reads. A client can report the garage freezer and watch it
-vanish. This is the only gap where a shipped feature actively misleads someone.
+The heading read IN PROGRESS long after the work landed. The contract notes
+below are kept because they are the reasoning, not a to-do.
 
 Routes: `GET /v1/claims/{id}/proposals` ·
 `POST /v1/proposals/{id}/accept` · `POST /v1/proposals/{id}/reject`
