@@ -71,8 +71,27 @@ export function captureUpload(
  * credential is accepted on.
  */
 export function captureNote(cred: CaptureToken, photoId: number, note: string) {
+  return capturePatch(cred, photoId, { note })
+}
+
+/**
+ * Fix one photo's room after it is stored.
+ *
+ * The same route as the note, and the reason review can DO something about a
+ * photo shot before a room was set: PATCH semantics leave an omitted field
+ * alone, so sending `{room}` cannot wipe a note typed on site.
+ */
+export function captureRoom(cred: CaptureToken, photoId: number, room: string | null) {
+  return capturePatch(cred, photoId, { room })
+}
+
+function capturePatch(
+  cred: CaptureToken,
+  photoId: number,
+  body: { note?: string; room?: string | null },
+) {
   return api.patch<unknown>(
     `/v1/claims/${encodeURIComponent(cred.claim_id)}/staging/photos/${photoId}`,
-    { json: { note }, headers: captureHeader(cred.capture_token) },
+    { json: body, headers: captureHeader(cred.capture_token) },
   )
 }

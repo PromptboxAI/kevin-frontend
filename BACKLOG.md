@@ -357,128 +357,35 @@ changes from the parallel session, timestamped before the filing).
 
 Claim restored afterwards: rooms deleted, nothing filed.
 
-### Still open: nothing sends `room` at upload
+### Built: review (screen 28)
 
-The per-batch `room` field on `POST …/staging/photos` is still not sent by any
-capture flow, so items continue to arrive unfiled. Rooms now give the adjuster
-a way to fix that after the fact; sending it at upload would mean they rarely
-had to. That belongs with #10 (mobile capture) and the intake drop zone.
+Reached from the camera ("Review N photos"), grouped by room, with the untagged
+bucket sorted LAST — it is the one that needs work, and burying it above the
+rooms that are already fine hides it.
 
-## 9. ~~Bulk row delete~~ — ALREADY BUILT (verified), and a real finding underneath
+**It reads local state, because it has to.** The capture credential is accepted
+on exactly two routes; `GET /claims/{id}/staging` needs a full session, so the
+phone cannot list what it sent. Review is therefore a view over this session's
+own shots, and the footer says so rather than implying it is the claim's whole
+staging set.
 
-My earlier note said "the worksheet still has no delete CONTROL, which is worth
-building." It has one, and it works — the entry was stale, not the code. This
-is the second time I have filed something as missing that was already there
-(see #2), so I checked before writing a line.
+The one genuinely new capability: **a room can be fixed after upload.** The
+per-photo PATCH takes `room` as well as `note`, which turns the design's "No
+room" pill from a complaint into a fix. Verified live — retagging an untagged
+photo to Basement wrote through to the server and regrouped the list.
 
-Verified live on a throwaway claim: select rows -> **Delete** arms a confirm
-("Photos stay on the claim." · Cancel · Delete 2) -> **Cancel changes nothing**
--> confirm removes exactly those two, notice reads "Deleted 2 rows", and the
-server agrees. `DELETE /v1/claim_items` with `item_ids`, `photos_detached`
-surfaced in the notice when non-zero.
+Capture time comes from the FILE's own `lastModified`, not the upload: on a
+walk-through those can be three rooms apart, and it is the capture moment a
+reviewer is placing.
 
-### What the test actually turned up: deletes renumber the claim
-
-Line numbers are **positions**, not identities. `numberRows` is `index + 1` over
-id-ascending rows, and the export does the same thing
-(`enumerate(items, start=1)`, `services/export.py:135`). Nothing persists a
-line number.
-
-So deleting a row shifts every row beneath it. Four rows, delete #1 and #2, and
-the survivors that were #0003/#0004 come back as **#0001/#0002** — confirmed.
-Rule 22(b) says exactly this must not happen, because *"an export already sent
-to a carrier cites those numbers."*
-
-The frontend cannot fix it: there is no stored number to render, and inventing
-a stable one here would disagree with the export, which is worse than the
-current honest-but-shifting behaviour. Filed as **ask 29** (a `line_no` at
-creation). What shipped meanwhile is the confirmation telling the truth — on a
-claim with `exported_at` set it now reads "Lines below these renumber — the
-export you already sent cites the old numbers." Silent before the first export,
-where there is no document to contradict.
-
-## 10. Mobile capture — PAIRING + CAPTURE BUILT AND VERIFIED
-
-Split in two, because the handoff is the security-critical half and stands on
-its own: the desktop can hand a phone an upload-only credential and take it
-back. What that phone then *does* is the second half.
-
-### Built: the handoff (`PairPhoneModal`, on the claim overview)
-
-Two credentials, and conflating them is the mistake `pair-rules.ts` exists to
-prevent:
-
-| | lifetime | scope |
-|---|---|---|
-| **handoff token** (the QR) | ~2 min, single-use, burns on redemption | redeemable once |
-| **capture token** (what the phone keeps) | ~hours | ONE claim, upload only |
-
-- **The QR is real.** The design used `FauxQR`, a decorative grid, and a
-  `Math.random` token. Added `qrcode-generator` (1 dep, encoding only) and draw
-  its module grid as a single SVG path — no canvas, crisp at any size.
-- **The token rides in the URL FRAGMENT**, never the query string. A fragment
-  is not sent to servers, not logged, and not forwarded in a Referer — and this
-  value is a bearer credential for someone's claim photos.
-- **The countdown reads the wall clock**, not a decrementing counter: a
-  backgrounded tab stops firing timers, and resuming from where it paused would
-  show time the token does not have.
-- **Revoke is honest about its limits.** It kills paired PHONES; it cannot
-  recall a code nobody has redeemed yet — those die on their own in ~2 minutes,
-  and the zero-case copy says exactly that instead of implying a recall.
-- **One failure message.** The API returns the same `401` for unknown, expired
-  and already-used so a caller cannot probe; the UI does not invent a
-  distinction it was deliberately denied.
-
-Verified live end to end: 43-char token → `200` with a capture credential
-scoped to `godfrey-kitchen-fire` → **the same token again → `401`**, the
-atomic burn working, with the identical message an invented token gets. Revoke
-reported "Signed out 1 paired phone", and a second revoke reported the
-no-phones case as a normal answer rather than an error.
-
-### Built: the capture surface — VERIFIED END TO END (2026-09-02)
-
-`/pair` and `/capture`, both PUBLIC routes: the phone has no account, and
-requiring one is the friction the flow exists to remove.
-
-The CORS fix (`2c2d030`) landed and the whole path works. Verified against
-production on a throwaway claim:
-
-```
-pair          token in the fragment -> redeemed -> hash CLEARED from the URL
-upload        2 photos, room "Kitchen"          -> both stored
-room change   -> "Garage", 1 photo              -> batched separately, tagged Garage
-note          "Ashley Trinell 6-drawer dresser" -> saved on that photo only
-cross-claim   tmp-mob credential vs. godfrey    -> 403, "for a different claim"
-```
-
-The per-batch `room` now genuinely lands — the gap #8 left open, and the reason
-every row on a real claim read `—`.
-
-**A bug the live run caught, which no unit test could.** Photo ids were
-assigned by a counter incremented INSIDE a `setShots` updater. React invokes
-updaters more than once (StrictMode does it deliberately), so the counter ran
-past the end of `photo_ids`, every shot got `undefined`, and `notesToWrite`
-skipped them — **notes silently never saved**. The mapping is now computed
-before state is touched, so it is the same however many times the updater runs.
-
-It stayed invisible because the note failure was swallowed "so as not to
-block". It no longer is: nothing blocks and the photo is safe either way, but
-the screen says a note did not save. The adjuster typed that sentence standing
-in the room, and on a set Vision cannot name it is the only thing steering
-identification.
-
-What is deliberately NOT ported from the design's camera app, each because it
-would lie or cost something real: the live viewfinder (`getUserMedia` yields a
-downscaled frame, while `<input capture>` returns the full-resolution file with
-EXIF intact — and EXIF timestamps are what the clusterer groups on), flash and
-SCAN BARCODE (torch needs a live stream; `BarcodeDetector` is Chrome-only), the
-"queueing photos locally" banner (offline queueing is not built, so nothing
-claims it), and the artboards' fake status bar and battery.
+Two pills from the design are deliberately absent. **Blurry?** is an on-device
+focus score nothing computes, and **Won't process** is a staging
+reclassification the capture credential cannot make. A pill that never lights
+is furniture; one that lies is worse.
 
 ### Still open
 
-Offline capture (service worker + IndexedDB) and the review screen (28). Both
-are now unblocked — photos reach the server.
+Offline capture (service worker + IndexedDB) — its own run.
 
 ## 11. Settings
 

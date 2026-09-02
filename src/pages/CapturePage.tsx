@@ -2,7 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { I, Icon } from '../components/Icon'
 import { ApiError } from '../lib/api'
-import { captureNote, captureUpload, clearCredential, loadCredential } from '../lib/capture'
+import CaptureReview from '../components/CaptureReview'
+import {
+  captureNote,
+  captureRoom,
+  captureUpload,
+  clearCredential,
+  loadCredential,
+} from '../lib/capture'
 import {
   CAPTURE_FAILURE_COPY,
   NOTE_MAX,
@@ -54,6 +61,9 @@ export default function CapturePage() {
   const [noteDraft, setNoteDraft] = useState('')
   const [failure, setFailure] = useState<string | null>(null)
   const [rejected, setRejected] = useState<{ filename: string; text: string }[]>([])
+  const [reviewing, setReviewing] = useState(false)
+  /** When set, the room sheet is fixing ONE stored photo rather than the batch. */
+  const [roomFor, setRoomFor] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const tally = tallyQueue(shots)
@@ -111,6 +121,7 @@ export default function CapturePage() {
       room,
       note: '',
       state: 'queued' as const,
+      takenAt: file.lastModified,
     }))
     setShots((prev) => [...prev, ...next])
     void send(next, [...files])
@@ -221,12 +232,145 @@ export default function CapturePage() {
     void flushNotes(next)
   }
 
+  /**
+   * Retag ONE stored photo from review.
+   *
+   * Writes the server first and only then updates the row: a room that reads
+   * "Kitchen" on screen while the photo is still tagged nothing is exactly the
+   * lie this screen exists to remove.
+   */
+  const applyRoom = async (key: string, next: string | null) => {
+    const shot = shots.find((s) => s.key === key)
+    if (!shot?.photoId) return
+    try {
+      await captureRoom(cred, shot.photoId, next)
+      setShots((prev) => prev.map((s) => (s.key === key ? { ...s, room: next } : s)))
+    } catch {
+      setFailure('That room didn’t save. The photo is safe — try again.')
+    }
+  }
+
   const retry = (shot: Shot) => {
     // The File is gone once the handler returned, so a retry re-opens the
     // camera rather than pretending it can resend bytes it no longer holds.
     setShots((prev) => prev.filter((s) => s.key !== shot.key))
     URL.revokeObjectURL(shot.preview)
     fileRef.current?.click()
+  }
+
+  /**
+   * The two bottom sheets, shared by the camera and review.
+   *
+   * Review reuses them rather than growing its own: the room sheet is
+   * the same question in both places, and a second copy would drift.
+   * `roomFor` is what tells it whether it is setting the batch room or
+   * fixing one already-stored photo.
+   */
+  const sheets = (
+    <>
+  {roomSheet ? (
+    <div className="k-cap-sheet-wrap" onClick={() => setRoomSheet(false)}>
+      <div className="k-cap-sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="k-cap-sheet-hd">Which room are you shooting?</div>
+        <input
+          className="k-cap-input"
+          autoFocus
+          value={roomDraft}
+          onChange={(e) => setRoomDraft(e.target.value)}
+          placeholder="e.g. Kitchen"
+        />
+        <div className="k-cap-chips">
+          {['Kitchen', 'Living room', 'Master bedroom', 'Garage', 'Basement'].map((r) => (
+            <button key={r} type="button" className="k-chip" onClick={() => setRoomDraft(r)}>
+              {r}
+            </button>
+          ))}
+        </div>
+        <p className="k-cap-hint">
+          The room tags the photos you take next, and lands in the
+          worksheet’s Room/Area column. Changing it doesn’t retag what you
+          already shot.
+        </p>
+        <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+          {room ? (
+            <button
+              type="button"
+              className="k-cap-secondary"
+              onClick={() => {
+                setRoom(null)
+                setRoomSheet(false)
+              }}
+            >
+              Clear
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className="k-cap-primary"
+            onClick={() => {
+              const next = roomDraft.trim() || null
+              if (roomFor) applyRoom(roomFor, next)
+              else setRoom(next)
+              setRoomFor(null)
+              setRoomSheet(false)
+            }}
+          >
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : null}
+
+  {noteFor ? (
+    <div className="k-cap-sheet-wrap" onClick={() => setNoteFor(null)}>
+      <div className="k-cap-sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="k-cap-sheet-hd">Additional identification</div>
+        <textarea
+          className="k-cap-input"
+          autoFocus
+          rows={3}
+          maxLength={NOTE_MAX}
+          value={noteDraft}
+          onChange={(e) => setNoteDraft(e.target.value)}
+          placeholder="e.g. Ashley Trinell 6-drawer dresser"
+        />
+        <p className="k-cap-hint">
+          {NOTE_MAX - noteDraft.length} left. This travels with the photo and
+          helps identify the item — it never sets a price.
+        </p>
+        <button type="button" className="k-cap-primary" onClick={saveNote}>
+          Save
+        </button>
+      </div>
+    </div>
+  ) : null}
+    </>
+  )
+
+  if (reviewing) {
+    return (
+      <>
+        <CaptureReview
+          shots={shots}
+          onBack={() => setReviewing(false)}
+          onEditNote={(key) => {
+            setNoteFor(key)
+            setNoteDraft(shots.find((s) => s.key === key)?.note ?? '')
+          }}
+          onFixRoom={(key) => {
+            setRoomFor(key)
+            setRoomDraft(shots.find((s) => s.key === key)?.room ?? '')
+            setRoomSheet(true)
+          }}
+          onRetry={(shot) => {
+            setReviewing(false)
+            retry(shot)
+          }}
+        />
+        {sheets}
+      </>
+    )
   }
 
   return (
@@ -325,82 +469,14 @@ export default function CapturePage() {
               : ''
             : 'Stay on this screen until everything has sent.'}
         </div>
+        {shots.length > 0 ? (
+          <button type="button" className="k-cap-reviewlink" onClick={() => setReviewing(true)}>
+            Review {shots.length} photo{shots.length === 1 ? '' : 's'} →
+          </button>
+        ) : null}
       </div>
 
-      {roomSheet ? (
-        <div className="k-cap-sheet-wrap" onClick={() => setRoomSheet(false)}>
-          <div className="k-cap-sheet" onClick={(e) => e.stopPropagation()}>
-            <div className="k-cap-sheet-hd">Which room are you shooting?</div>
-            <input
-              className="k-cap-input"
-              autoFocus
-              value={roomDraft}
-              onChange={(e) => setRoomDraft(e.target.value)}
-              placeholder="e.g. Kitchen"
-            />
-            <div className="k-cap-chips">
-              {['Kitchen', 'Living room', 'Master bedroom', 'Garage', 'Basement'].map((r) => (
-                <button key={r} type="button" className="k-chip" onClick={() => setRoomDraft(r)}>
-                  {r}
-                </button>
-              ))}
-            </div>
-            <p className="k-cap-hint">
-              The room tags the photos you take next, and lands in the
-              worksheet’s Room/Area column. Changing it doesn’t retag what you
-              already shot.
-            </p>
-            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-              {room ? (
-                <button
-                  type="button"
-                  className="k-cap-secondary"
-                  onClick={() => {
-                    setRoom(null)
-                    setRoomSheet(false)
-                  }}
-                >
-                  Clear
-                </button>
-              ) : null}
-              <button
-                type="button"
-                className="k-cap-primary"
-                onClick={() => {
-                  setRoom(roomDraft.trim() || null)
-                  setRoomSheet(false)
-                }}
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {noteFor ? (
-        <div className="k-cap-sheet-wrap" onClick={() => setNoteFor(null)}>
-          <div className="k-cap-sheet" onClick={(e) => e.stopPropagation()}>
-            <div className="k-cap-sheet-hd">Additional identification</div>
-            <textarea
-              className="k-cap-input"
-              autoFocus
-              rows={3}
-              maxLength={NOTE_MAX}
-              value={noteDraft}
-              onChange={(e) => setNoteDraft(e.target.value)}
-              placeholder="e.g. Ashley Trinell 6-drawer dresser"
-            />
-            <p className="k-cap-hint">
-              {NOTE_MAX - noteDraft.length} left. This travels with the photo and
-              helps identify the item — it never sets a price.
-            </p>
-            <button type="button" className="k-cap-primary" onClick={saveNote}>
-              Save
-            </button>
-          </div>
-        </div>
-      ) : null}
+      {sheets}
     </div>
   )
 }

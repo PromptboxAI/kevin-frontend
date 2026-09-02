@@ -31,6 +31,12 @@ export type Shot = {
   room: string | null
   note: string
   state: ShotState
+  /**
+   * The camera's own clock (`File.lastModified`), not the upload time. On a
+   * walk-through those can be three rooms apart, and it is the capture moment
+   * a reviewer is trying to place.
+   */
+  takenAt?: number
   photoId?: number
   error?: string
 }
@@ -150,4 +156,88 @@ export function failureFor(status: number | undefined): CaptureFailure {
   if (status === 413) return 'too_big'
   if (status === undefined) return 'offline'
   return 'unknown'
+}
+
+// --------------------------------------------------------------------------
+// Review (screen 28)
+// --------------------------------------------------------------------------
+
+/**
+ * Why review reads local state rather than the server.
+ *
+ * The capture credential is accepted on exactly two routes -- the upload and
+ * the per-photo PATCH. `GET /claims/{id}/staging` needs a full session, so the
+ * phone CANNOT list what it sent. Review is therefore a view over the shots
+ * this page is holding, which has one honest consequence: it covers this
+ * session only, and a reload loses it. The screen says so rather than implying
+ * it is the claim's whole staging set.
+ */
+
+export type RoomGroup = {
+  /** null is the untagged bucket -- shots taken before a room was set. */
+  room: string | null
+  shots: Shot[]
+}
+
+/**
+ * Group the session by room for review.
+ *
+ * Unlike `batchByRoom`, this MERGES revisits: walking back into the kitchen
+ * later is the same room to a person reviewing, even though it was a separate
+ * upload request. Untagged sorts last -- it is the bucket that needs work, and
+ * burying it above the rooms that are already fine hides it.
+ */
+export function groupForReview(shots: Shot[]): RoomGroup[] {
+  const byRoom = new Map<string, Shot[]>()
+  const untagged: Shot[] = []
+  for (const shot of shots) {
+    if (shot.room == null) untagged.push(shot)
+    else {
+      const bucket = byRoom.get(shot.room)
+      if (bucket) bucket.push(shot)
+      else byRoom.set(shot.room, [shot])
+    }
+  }
+  const groups: RoomGroup[] = [...byRoom.entries()].map(([room, s]) => ({ room, shots: s }))
+  if (untagged.length) groups.push({ room: null, shots: untagged })
+  return groups
+}
+
+/**
+ * Shots that still need something from the person holding the phone.
+ *
+ * Only two things they can actually fix here: a photo with no room, and one
+ * that failed to send. Everything else is either fine or not theirs to fix.
+ */
+export function needsAttention(shots: Shot[]): Shot[] {
+  return shots.filter((s) => s.state === 'failed' || s.room == null)
+}
+
+/**
+ * The capture clock, as a person reads it.
+ *
+ * From the FILE's own `lastModified`, which is the moment the camera wrote it
+ * -- not the moment it uploaded. That difference matters on a walk-through
+ * where a photo sits in the queue through three more rooms.
+ */
+export function shotTime(ms: number | undefined): string {
+  if (!ms) return ''
+  const d = new Date(ms)
+  let h = d.getHours()
+  const suffix = h < 12 ? 'a' : 'p'
+  h = h % 12 || 12
+  return `${h}:${String(d.getMinutes()).padStart(2, '0')}${suffix}`
+}
+
+/**
+ * What review can honestly say about the session.
+ *
+ * Names the scope, because this list is what THIS PHONE sent in THIS session
+ * -- not the claim's staging set, which the credential cannot read.
+ */
+export function reviewSummary(tally: QueueTally, rooms: number): string {
+  const parts = [`${tally.stored} photo${tally.stored === 1 ? '' : 's'} sent from this phone`]
+  if (rooms > 0) parts.push(`${rooms} room${rooms === 1 ? '' : 's'}`)
+  if (tally.failed > 0) parts.push(`${tally.failed} still to retry`)
+  return parts.join(' · ')
 }
