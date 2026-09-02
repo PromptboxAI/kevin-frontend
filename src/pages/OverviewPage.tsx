@@ -5,6 +5,7 @@ import AppHeader from '../components/AppHeader'
 import Badge from '../components/Badge'
 import ClaimTabs from '../components/ClaimTabs'
 import ClaimStateMenu from '../components/ClaimStateMenu'
+import PairPhoneModal from '../components/PairPhoneModal'
 import { I, Icon } from '../components/Icon'
 import { api } from '../lib/api'
 import { fmtDate, fmtPct, fmtUSD, fmtUSDshort } from '../lib/format'
@@ -69,6 +70,7 @@ export default function OverviewPage() {
 
   /** Lifecycle changes report here rather than silently. */
   const [notice, setNotice] = useState<string | null>(null)
+  const [pairing, setPairing] = useState(false)
 
   if (isLoading || !claim) {
     return (
@@ -87,6 +89,14 @@ export default function OverviewPage() {
             <Link className="k-btn k-btn--ghost" to={`/claims/${claimId}/staging`}>
               <Icon d={I.plus} size={12} /> Add photos
             </Link>
+            <button
+              type="button"
+              className="k-btn k-btn--ghost"
+              onClick={() => setPairing(true)}
+              title="Shoot more evidence with your phone — pairs to this claim only"
+            >
+              <Icon d={I.camera} size={12} /> From phone
+            </button>
             <Link className="k-btn k-btn--ghost" to={`/claims/${claimId}/import`}>
               <Icon d={I.file} size={12} /> Import a list
             </Link>
@@ -97,6 +107,8 @@ export default function OverviewPage() {
           </>
         }
       />
+
+      {pairing ? <PairPhoneModal claimId={claimId} onClose={() => setPairing(false)} /> : null}
 
       <ClaimTabs
         active="Overview"

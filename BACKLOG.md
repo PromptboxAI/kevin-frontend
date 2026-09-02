@@ -388,10 +388,55 @@ claim with `exported_at` set it now reads "Lines below these renumber — the
 export you already sent cites the old numbers." Silent before the first export,
 where there is no document to contradict.
 
-## 10. Mobile capture
+## 10. Mobile capture — PAIRING BUILT, capture surface next
 
-`POST /claims/{id}/pair-token`, `/pair-token/revoke`, `POST /v1/pair`. Four
-design screens (`11`, `26`, `27`, `28`). Whole surface, field-facing.
+Split in two, because the handoff is the security-critical half and stands on
+its own: the desktop can hand a phone an upload-only credential and take it
+back. What that phone then *does* is the second half.
+
+### Built: the handoff (`PairPhoneModal`, on the claim overview)
+
+Two credentials, and conflating them is the mistake `pair-rules.ts` exists to
+prevent:
+
+| | lifetime | scope |
+|---|---|---|
+| **handoff token** (the QR) | ~2 min, single-use, burns on redemption | redeemable once |
+| **capture token** (what the phone keeps) | ~hours | ONE claim, upload only |
+
+- **The QR is real.** The design used `FauxQR`, a decorative grid, and a
+  `Math.random` token. Added `qrcode-generator` (1 dep, encoding only) and draw
+  its module grid as a single SVG path — no canvas, crisp at any size.
+- **The token rides in the URL FRAGMENT**, never the query string. A fragment
+  is not sent to servers, not logged, and not forwarded in a Referer — and this
+  value is a bearer credential for someone's claim photos.
+- **The countdown reads the wall clock**, not a decrementing counter: a
+  backgrounded tab stops firing timers, and resuming from where it paused would
+  show time the token does not have.
+- **Revoke is honest about its limits.** It kills paired PHONES; it cannot
+  recall a code nobody has redeemed yet — those die on their own in ~2 minutes,
+  and the zero-case copy says exactly that instead of implying a recall.
+- **One failure message.** The API returns the same `401` for unknown, expired
+  and already-used so a caller cannot probe; the UI does not invent a
+  distinction it was deliberately denied.
+
+Verified live end to end: 43-char token → `200` with a capture credential
+scoped to `godfrey-kitchen-fire` → **the same token again → `401`**, the
+atomic burn working, with the identical message an invented token gets. Revoke
+reported "Signed out 1 paired phone", and a second revoke reported the
+no-phones case as a normal answer rather than an error.
+
+### Next: the capture surface (`11`, `26`, `27`, `28`)
+
+The phone side — redeem at `/pair`, then shoot, tag the batch's **room**, note
+per photo, upload with `X-Capture-Token` on
+`POST /claims/{id}/staging/photos`. That header is the one thing the existing
+`api` layer needed no change for; it merges custom headers already.
+
+Worth knowing before it is built: **this is the flow that finally sends the
+per-batch `room`** — the gap left open under #8, and the reason every row on a
+real claim reads `—`. Pairing is documented nowhere in `FRONTEND.md`; the
+contract above was read off `main.py` and `schemas.py`.
 
 ## 11. Settings
 
