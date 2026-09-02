@@ -694,3 +694,54 @@ happen to match the documented shape, but that is us guessing in two places.
 Adding `Content-Disposition` to the CORS `expose_headers` list makes the
 server's name authoritative. `X-Request-ID` is already exposed, so the list
 exists — this is one entry.
+
+
+## 32. BLOCKING — `X-Capture-Token` is not allowed by CORS, so no phone can upload
+
+The pairing mechanism works. I verified the whole credential lifecycle against
+production: mint → redeem → the same token again is a `401` (the atomic burn) →
+revoke reports the live count → a second revoke reports 0 as a normal answer.
+Server-side this is solid.
+
+But the credential is unusable from a browser, which is the only client it has.
+
+`main.py:485`:
+
+```python
+allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
+```
+
+`X-Capture-Token` is absent, so the preflight for any request carrying it is
+rejected and the request never leaves the browser. Measured from the deployed
+frontend, same origin, same session, one header apart:
+
+```js
+fetch(B+'/v1/claims/tmp-cap/staging',
+      {headers:{'X-Capture-Token': cred.capture_token}})  // TypeError: Failed to fetch
+fetch(B+'/v1/claims/tmp-cap/staging')                     // 401 — reached the server
+```
+
+That is a CORS preflight rejection, not a server error: nothing is logged
+backend-side because nothing arrives.
+
+It blocks **both** routes the capture credential is accepted on —
+`POST /claims/{id}/staging/photos` and
+`PATCH /claims/{id}/staging/photos/{photo_id}` — which is the entire phone
+surface. `schemas.py` mandates this exact header ("Send it as
+`X-Capture-Token`… deliberately NOT an `Authorization: Bearer` value"), and I
+agree with that reasoning — it just has to be allowed through.
+
+**The fix is one list entry:**
+
+```python
+allow_headers=["Authorization", "Content-Type", "X-Request-ID", "X-Capture-Token"],
+```
+
+The frontend is built and waiting: pair page, capture queue, per-batch room,
+per-photo notes. Nothing needs to change on this side. Worth pairing with
+ask 31 (`Content-Disposition` in `expose_headers`) since both are one-line CORS
+edits.
+
+**Why it went unnoticed:** every server-side test of pairing is a direct HTTP
+call, and preflight is a browser behaviour. The credential is correct; it has
+simply never been exercised from a page.

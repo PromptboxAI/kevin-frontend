@@ -388,7 +388,7 @@ claim with `exported_at` set it now reads "Lines below these renumber — the
 export you already sent cites the old numbers." Silent before the first export,
 where there is no document to contradict.
 
-## 10. Mobile capture — PAIRING BUILT, capture surface next
+## 10. Mobile capture — BUILT, blocked on a one-line CORS fix
 
 Split in two, because the handoff is the security-critical half and stands on
 its own: the desktop can hand a phone an upload-only credential and take it
@@ -426,17 +426,60 @@ atomic burn working, with the identical message an invented token gets. Revoke
 reported "Signed out 1 paired phone", and a second revoke reported the
 no-phones case as a normal answer rather than an error.
 
-### Next: the capture surface (`11`, `26`, `27`, `28`)
+### Built: the capture surface — BLOCKED on one CORS entry
 
-The phone side — redeem at `/pair`, then shoot, tag the batch's **room**, note
-per photo, upload with `X-Capture-Token` on
-`POST /claims/{id}/staging/photos`. That header is the one thing the existing
-`api` layer needed no change for; it merges custom headers already.
+`/pair` and `/capture`, both PUBLIC routes: the phone has no account, and
+requiring one is the friction the flow exists to remove.
 
-Worth knowing before it is built: **this is the flow that finally sends the
-per-batch `room`** — the gap left open under #8, and the reason every row on a
-real claim reads `—`. Pairing is documented nowhere in `FRONTEND.md`; the
-contract above was read off `main.py` and `schemas.py`.
+**It cannot work until ask 32 lands.** `main.py:485` allows
+`Authorization, Content-Type, X-Request-ID` — `X-Capture-Token` is absent, so
+the preflight for any request carrying it is rejected and the upload never
+leaves the browser. Measured one header apart, same origin, same session:
+
+```
+with X-Capture-Token   -> TypeError: Failed to fetch   (preflight rejected)
+without it             -> 401                          (reached the server)
+```
+
+That blocks both routes the credential is accepted on, which is the whole phone
+surface. One list entry fixes it; nothing changes on this side.
+
+What is built and verified as far as it can be: pairing lands on `/pair`,
+auto-redeems the token from the fragment, **clears it out of the URL**, stores
+the credential in sessionStorage (not localStorage — it dies with the tab) and
+hands off to `/capture`, which showed the right claim and its empty state. The
+upload then failed exactly as designed: **the queue said so** — "2 didn't send —
+tap to retry. 0 safely uploaded" — rather than claiming success over photos
+that never left.
+
+What is deliberately NOT ported from the design's camera app, each because it
+would lie or cost something real:
+
+- **No live viewfinder.** `getUserMedia` yields a downscaled video frame;
+  `<input capture="environment">` opens the phone's own camera and returns the
+  full-resolution file with EXIF intact — and EXIF timestamps are what the
+  clusterer groups on. A prettier viewfinder that costs the clustering signal
+  is a bad trade.
+- **No flash and no SCAN BARCODE.** Torch needs a live stream; `BarcodeDetector`
+  is Chrome-only, and a mode button that silently does nothing on an iPhone is
+  worse than no button.
+- **No "queueing photos locally" banner.** Offline queueing is a service worker
+  and IndexedDB, and is not built — so nothing claims it. A phone that says
+  "queued" over a photo held in a tab about to be evicted costs someone a
+  second trip.
+- **No fake phone chrome.** The design's artboards draw a status bar, a clock
+  and a battery because they sit on a design canvas. This runs inside a real
+  phone's browser.
+
+Also built here: the per-batch `room` — the gap #8 left open. Room is captured
+PER SHOT and batched on change, because `room` is one form field per request;
+changing rooms mid-walk cannot retag photos already queued under the old one.
+
+### Still open
+
+Offline capture (service worker + IndexedDB), and the review screen (28), which
+in the design re-orders and annotates before sending. Both are worth doing once
+photos can actually reach the server.
 
 ## 11. Settings
 

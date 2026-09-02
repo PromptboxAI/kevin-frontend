@@ -11,6 +11,8 @@ import ImportPage from './pages/ImportPage'
 import NotFoundPage from './pages/NotFoundPage'
 import OverviewPage from './pages/OverviewPage'
 import PhotosPage from './pages/PhotosPage'
+import CapturePage from './pages/CapturePage'
+import PairPage from './pages/PairPage'
 import PortalPage from './pages/PortalPage'
 import RecoveryPage from './pages/RecoveryPage'
 import SignInPage from './pages/SignInPage'
@@ -27,6 +29,12 @@ export default function App() {
             <SHARE_BASE_URL>/p/<token> -- this route is why they resolve.
             Deliberately outside RequireAuth: the insured has no account. */}
         <Route path="/p/:token" element={<PortalPage />} />
+
+        {/* The phone. PUBLIC on purpose: it has no account, and requiring one
+            is the friction the pairing flow exists to remove. The capture
+            credential is upload-only and scoped to a single claim. */}
+        <Route path="/pair" element={<PairPage />} />
+        <Route path="/capture" element={<CapturePage />} />
 
         <Route
           path="/claims"

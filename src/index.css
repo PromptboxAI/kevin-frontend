@@ -1337,3 +1337,92 @@ button.k-avatar-menu-item {
 .k-exp-row:last-child { border-bottom: 0; }
 .k-exp-row:hover { background: var(--k-bg-2); }
 
+/* --- Phone capture (screens 11 / 26 / 27) ---
+   NEW, not ported. The design's mobile artboards draw a PHONE — a fake status
+   bar, a clock, a battery, a dark camera chrome — because they sit on a design
+   canvas. This runs inside a real phone's browser, so it draws none of that
+   and simply fills the viewport. Tokens only; no new colours. */
+.k-cap-shell {
+  min-height: 100dvh; display: flex; flex-direction: column;
+  background: var(--k-bg); color: var(--k-fg);
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+.k-cap-pair { margin: auto; padding: 28px 22px; max-width: 420px; width: 100%; }
+.k-cap-brand { font-family: var(--k-font-display); font-size: 22px; letter-spacing: -0.02em; }
+.k-cap-brand span { color: var(--k-accent); }
+.k-cap-h1 { font-family: var(--k-font-display); font-weight: 400; font-size: 26px; letter-spacing: -0.02em; margin: 18px 0 6px; }
+.k-cap-sub { font-size: 14px; line-height: 1.55; color: var(--k-fg-3); margin: 0 0 20px; }
+.k-cap-label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; color: var(--k-fg-4); margin-bottom: 6px; }
+/* 16px minimum: anything smaller makes iOS Safari zoom the page on focus. */
+.k-cap-input {
+  width: 100%; font-size: 16px; font-family: var(--k-font-mono);
+  padding: 12px 14px; border: 1px solid var(--k-line); border-radius: 10px;
+  background: var(--k-bg-2); color: var(--k-fg); box-sizing: border-box;
+}
+.k-cap-primary, .k-cap-secondary {
+  display: block; width: 100%; box-sizing: border-box; text-align: center;
+  margin-top: 12px; padding: 14px 16px; border-radius: 10px; border: 0;
+  font-size: 15px; font-weight: 600; cursor: pointer;
+  background: var(--k-fg); color: var(--k-bg);
+}
+.k-cap-secondary { background: var(--k-bg-2); color: var(--k-fg); border: 1px solid var(--k-line); }
+.k-cap-primary:disabled { opacity: 0.4; }
+.k-cap-alert {
+  display: flex; gap: 8px; align-items: flex-start;
+  margin: 12px 14px 0; padding: 12px 14px; border-radius: 10px;
+  background: var(--k-bg-2); border: 1px solid var(--k-line);
+  font-size: 13px; line-height: 1.5; color: var(--k-fg-2);
+}
+.k-cap-top {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 14px 16px; border-bottom: 1px solid var(--k-line);
+}
+.k-cap-claim { font-family: var(--k-font-mono); font-size: 11.5px; color: var(--k-fg-4); }
+.k-cap-status { font-size: 13.5px; font-weight: 600; margin-top: 2px; }
+.k-cap-room {
+  display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+  padding: 9px 12px; border-radius: 999px; border: 1px solid var(--k-line);
+  background: var(--k-bg-2); color: var(--k-fg-3); font-size: 13px; cursor: pointer;
+}
+.k-cap-room--on { border-color: var(--k-accent); color: var(--k-accent); }
+.k-cap-grid {
+  flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 8px; padding: 14px 16px; align-content: start;
+}
+.k-cap-empty { grid-column: 1 / -1; font-size: 13.5px; line-height: 1.55; color: var(--k-fg-4); margin: 8px 0; }
+.k-cap-shot { position: relative; border-radius: 10px; overflow: hidden; background: var(--k-bg-3); }
+.k-cap-shot img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+.k-cap-shot--uploading img, .k-cap-shot--queued img { opacity: 0.55; }
+.k-cap-shot--failed { outline: 2px solid var(--k-danger); outline-offset: -2px; }
+.k-cap-shot--stored { outline: 2px solid var(--k-ok); outline-offset: -2px; }
+.k-cap-shot-foot { position: absolute; left: 0; right: 0; bottom: 0; padding: 6px; background: linear-gradient(transparent, rgba(0,0,0,0.65)); }
+.k-cap-note, .k-cap-retry {
+  width: 100%; border: 0; background: transparent; color: #fff; cursor: pointer;
+  font-size: 11.5px; text-align: left; padding: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.k-cap-retry { font-weight: 600; }
+.k-cap-shot-room {
+  position: absolute; top: 6px; left: 6px; padding: 2px 6px; border-radius: 999px;
+  background: rgba(0,0,0,0.6); color: #fff; font-size: 10px;
+}
+.k-cap-controls {
+  position: sticky; bottom: 0; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+  background: var(--k-bg); border-top: 1px solid var(--k-line);
+}
+/* 68px: a shutter is pressed one-handed, often in gloves. */
+.k-cap-shutter {
+  width: 68px; height: 68px; border-radius: 50%; border: 0; cursor: pointer;
+  background: var(--k-fg); color: var(--k-bg); display: grid; place-items: center;
+}
+.k-cap-safe { font-size: 12px; color: var(--k-fg-4); min-height: 16px; text-align: center; }
+.k-cap-sheet-wrap { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.4); display: flex; align-items: flex-end; }
+.k-cap-sheet {
+  width: 100%; background: var(--k-bg); border-radius: 16px 16px 0 0;
+  padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+}
+.k-cap-sheet-hd { font-size: 15px; font-weight: 600; margin-bottom: 10px; }
+.k-cap-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.k-cap-hint { font-size: 12px; line-height: 1.5; color: var(--k-fg-4); margin: 10px 0 0; }
+
