@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import SettingsShell from '../components/SettingsShell'
 import { F, FSelect, FSelectOther, FBrandColor } from '../components/SettingsFields'
@@ -51,12 +52,17 @@ const POLICY_FORMS = [
 ]
 
 export default function SettingsBusinessPage() {
+  // Every field here is uncontrolled (defaultValue, per the design), so Discard
+  // remounts them rather than tracking a value for each.
+  const [fieldsKey, setFieldsKey] = useState(0)
+
   return (
     <SettingsShell
       activeId="agency"
       title="Business"
       eyebrow="Your business · branding"
       saveDisabled
+      onDiscard={() => setFieldsKey((n) => n + 1)}
       saveNote={
         <>
           Defaults apply to new claims, and anything already in a claim keeps
@@ -82,7 +88,7 @@ export default function SettingsBusinessPage() {
         </p>
       </div>
 
-      <section className="k-set-card">
+      <section className="k-set-card" key={fieldsKey}>
         <div className="k-set-card-hd">Business details</div>
         <div className="k-set-card-body">
           <div className="k-set-grid2">

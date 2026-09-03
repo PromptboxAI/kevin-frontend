@@ -114,6 +114,15 @@ export default function SettingsProfilePage() {
   const toggle = (key: string, channel: Channel) =>
     setPrefs((p) => ({ ...p, [key]: { ...p[key], [channel]: !p[key][channel] } }))
 
+  // The identity fields are uncontrolled (the design uses defaultValue), so a
+  // key bump remounts them to clear what was typed. The prefs are state and
+  // reset directly.
+  const [fieldsKey, setFieldsKey] = useState(0)
+  const discard = () => {
+    setFieldsKey((n) => n + 1)
+    setPrefs(Object.fromEntries(NOTIFICATIONS.map(([k, , mail, push]) => [k, { mail, push }])))
+  }
+
   const email = me.data?.email ?? ''
   const initials = (email.split('@')[0]?.slice(0, 2) || 'K').toUpperCase()
 
@@ -123,6 +132,7 @@ export default function SettingsProfilePage() {
       title="My profile"
       eyebrow="Personal · session"
       saveDisabled
+      onDiscard={discard}
       saveNote={
         <>
           Nothing on this page saves yet — there is no profile write route
@@ -164,7 +174,7 @@ export default function SettingsProfilePage() {
             </button>
           </div>
 
-          <div className="k-set-grid2">
+          <div className="k-set-grid2" key={fieldsKey}>
             <F label="First name" value="" placeholder="Your first name" />
             <F label="Last name" value="" placeholder="Your last name" />
             <F label="Work email" value={email} readOnly hint="From your sign-in" />

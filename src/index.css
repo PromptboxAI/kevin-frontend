@@ -962,6 +962,48 @@
   color: var(--k-fg-2);
 }
 
+/* Controls whose native input is visually hidden still take keyboard focus,
+   and without this they showed NOTHING when focused -- tabbing through the
+   export defaults left no indication of where you were. `:focus-visible` on
+   the input, painted on the box the user can actually see.
+
+   Scoped to keyboard focus, so clicking does not leave a ring behind. */
+/* kevin.css hides these two inputs with `display: none`, which does not just
+   hide them -- it removes them from the tab order and from the accessibility
+   tree. The eight "Include by default" toggles and the fourteen notification
+   preferences were therefore mouse-only: unreachable by keyboard, and absent
+   for a screen reader.
+
+   Visually hidden but still focusable instead. The `input:checked ~ .k-toggle-box`
+   rules keep working (a sibling selector does not care that the input is
+   clipped), and clicking the label still toggles as before.
+
+   Loaded after kevin.css, same specificity, so this wins on order. Worth
+   fixing in the design's stylesheet too -- the prototype has the same problem. */
+.k-toggle input,
+.k-pref-toggle input {
+  /* Must undo `display: none` explicitly -- clipping alone leaves the element
+     undisplayed, and therefore still unfocusable. */
+  display: block;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.k-radio:has(input:focus-visible) .k-radio-dot,
+.k-toggle:has(input:focus-visible) .k-toggle-box,
+.k-pref-toggle:has(input:focus-visible) .k-toggle-box {
+  outline: 2px solid var(--k-accent);
+  outline-offset: 2px;
+}
+
 /* --- Avatar menu --- */
 .k-avatar-btn {
   width: 28px;

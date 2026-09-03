@@ -95,6 +95,18 @@ export default function SettingsExportPage() {
     ),
   )
 
+  // Discard works even though Save cannot: putting the screen back is local.
+  const discard = () => {
+    setFormat('Xactimate (Excel)')
+    setDelivery('download')
+    setPattern(DEFAULT_PATTERN)
+    setIncludes(
+      Object.fromEntries(
+        INCLUDES.filter(([k]) => !k.startsWith('head')).map(([k, , , on]) => [k, on ?? false]),
+      ),
+    )
+  }
+
   // The demo claim, so the preview shows a filename shaped like a real one.
   const example = buildFilename(pattern, {
     claim_number: 'CLM-2026-04412',
@@ -116,6 +128,7 @@ export default function SettingsExportPage() {
       title="Export defaults"
       eyebrow="Defaults · per export format"
       saveDisabled
+      onDiscard={discard}
       saveNote={
         <>
           These are meant to pre-fill the export modal, with per-claim

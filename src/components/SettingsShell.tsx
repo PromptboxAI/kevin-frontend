@@ -56,6 +56,7 @@ export default function SettingsShell({
   save = true,
   saveNote,
   saveDisabled = false,
+  onDiscard,
   carrierCount,
 }: {
   activeId: string
@@ -72,6 +73,13 @@ export default function SettingsShell({
    * finds out otherwise on the next page load. See BACKEND-ASKS ask 35.
    */
   saveDisabled?: boolean
+  /**
+   * Resets the screen's own state. Deliberately independent of `saveDisabled`:
+   * discarding is a purely local action, so it works whether or not there is
+   * anywhere to save to. Disabling it with Save was over-broad -- it left the
+   * user with edits they could neither keep nor clear.
+   */
+  onDiscard?: () => void
   /** Count badge on the Carrier profiles row. */
   carrierCount?: number
 }) {
@@ -172,7 +180,12 @@ export default function SettingsShell({
             <div className="k-set-savebar">
               {saveNote ? <span>{saveNote}</span> : null}
               <div style={{ display: 'flex', gap: 8 }}>
-                <button type="button" className="k-btn k-btn--ghost" disabled={saveDisabled}>
+                <button
+                  type="button"
+                  className="k-btn k-btn--ghost"
+                  onClick={onDiscard}
+                  disabled={!onDiscard}
+                >
                   Discard
                 </button>
                 <button type="button" className="k-btn" disabled={saveDisabled}>
