@@ -71,7 +71,7 @@ export default function SettingsSecurityPage() {
         </p>
       </div>
 
-      <section className="k-set-card">
+      <section className="k-set-card" id="password">
         <div className="k-set-card-hd">Change password</div>
         <div className="k-set-card-body">
           <div className="k-set-grid2">
@@ -119,7 +119,7 @@ export default function SettingsSecurityPage() {
         </div>
       </section>
 
-      <section className="k-set-card">
+      <section className="k-set-card" id="sessions">
         <div className="k-set-card-hd">Devices</div>
         <div className="k-set-card-body">
           <div className="k-set-row">
@@ -150,10 +150,10 @@ export default function SettingsSecurityPage() {
         </div>
       </section>
 
-      <section className="k-set-card">
+      <section className="k-set-card" id="two-factor">
         <div className="k-set-card-hd">Not built</div>
         <div className="k-set-card-body">
-          <div className="k-set-row">
+          <div className="k-set-row" id="passkeys">
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 13, fontWeight: 600 }}>Two-factor and passkeys</div>
               <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', marginTop: 2 }}>

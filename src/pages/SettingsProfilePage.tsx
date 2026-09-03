@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import SettingsShell from '../components/SettingsShell'
 import { F, FSelectOther } from '../components/SettingsFields'
 import { Icon, I } from '../components/Icon'
@@ -9,20 +11,37 @@ import type { MeResponse } from '../lib/types'
  * Screen 31 — My profile. Ported from `SettingsProfile` in
  * `design/components/settings-pages.jsx`.
  *
- * TWO deviations, both noted per the Porting rule:
+ * Deviations, all noted:
  *
- * 1. The design seeds every field with the demo adjuster (Mariana Reyes). This
- *    app has a real signed-in account, and printing someone else's name as the
- *    user's own is not a placeholder, it's wrong. So `GET /v1/me` supplies the
- *    email and the heading; the fields with no endpoint behind them keep the
- *    design's values as the placeholders they are.
- * 2. The Security rows link to `/settings/security` (screen 41) rather than to
- *    `41-Security.html#hash`. Same destination, app routing.
+ * 1. **No seeded identity.** The design fills every field with the demo
+ *    adjuster (Mariana Reyes, Reyes Adjusting, Hauppauge NY). This app has a
+ *    real signed-in account: `GET /v1/me` supplies the email, and the rest are
+ *    empty fields with placeholders. Showing a stranger's name and firm as the
+ *    user's own is not a placeholder, it is wrong — and on the screen that
+ *    prints "Prepared by" on a carrier-facing document, doubly so.
  *
- * Everything else is lifted: the avatar row, the two-column grid, the timezone
- * optgroups, the seven notification rows with their Email/Push pair, and the
- * danger zone. None of it saves — see INTERACTIONS.md for each control's
- * production target, which is the contract the no-dead-ends rule asks for.
+ * 2. **The Security rows describe CAPABILITY, not state.** The design's
+ *    sub-lines assert facts about the account — "Enabled · Authenticator app
+ *    (8 backup codes left)", "3 registered", "3 devices", "Last changed 4
+ *    months ago". Nothing here can verify any of that, and telling someone
+ *    two-factor is enabled when it is not is the most damaging thing this page
+ *    could say. Same class of problem as the seeded card digits on Billing.
+ *    The four rows and their CTAs are kept exactly; the sub-lines say what each
+ *    control does. They point at real anchors on screen 41.
+ *
+ * 3. **Notification toggles are stateful.** The design renders the tick from a
+ *    literal, and `.k-pref-toggle input` is `display:none` with no `:checked`
+ *    rule — so in a live app the boxes did not move when clicked. They are
+ *    React state now. They still do not PERSIST (no endpoint, and no sending
+ *    service behind them), which the card says in one line rather than letting
+ *    someone believe a preference was saved.
+ *
+ * "Prepared by" stays per claim and that is settled backend-side, not a gap:
+ * migration 0043 puts `estimator_name` / `business_name` on the CLAIM
+ * deliberately, because an inventory prepared by someone who has since left the
+ * firm must keep saying so — "a profile table would rewrite history".
+ *
+ * Every control's production target is in INTERACTIONS.md.
  */
 
 const TITLES = [
@@ -36,32 +55,50 @@ const TITLES = [
   'Owner',
 ]
 
+/** [label, what the control does, CTA, anchor on screen 41] */
 const SECURITY_ROWS: [string, string, string, string][] = [
-  ['Password', 'Last changed 4 months ago', 'Change', '#password'],
-  ['Two-factor auth', 'Enabled · Authenticator app (8 backup codes left)', 'Manage', '#two-factor'],
-  ['Passkeys', '3 registered · MacBook Pro, iPhone, 1Password', 'Manage', '#passkeys'],
-  ['Active sessions', '3 devices · Mac Safari · iPhone · iPad', 'Sign out others', '#sessions'],
+  ['Password', 'Change the password you sign in with', 'Change', '#password'],
+  ['Two-factor auth', 'Adds a second step at sign-in', 'Manage', '#two-factor'],
+  ['Passkeys', 'Sign in with Touch ID, Windows Hello or a security key', 'Manage', '#passkeys'],
+  ['Active sessions', 'Sign out the devices you are signed in on', 'Sign out others', '#sessions'],
 ]
 
-const NOTIFICATIONS: [string, boolean, boolean, string][] = [
+/** [key, label, email default, push default, description] */
+const NOTIFICATIONS: [string, string, boolean, boolean, string][] = [
   [
+    'processing',
     'Processing complete',
     true,
     true,
     'Identification and pricing finished — the worksheet is ready to review',
   ],
-  ['Export ready', true, false, 'The file finished generating and is ready to download or share'],
-  ['Export failed', true, true, 'With a reference ID and a retry'],
-  ['Share link opened', true, false, 'Someone you sent a link to has opened it'],
   [
+    'export_ready',
+    'Export ready',
+    true,
+    false,
+    'The file finished generating and is ready to download or share',
+  ],
+  ['export_failed', 'Export failed', true, true, 'With a reference ID and a retry'],
+  ['share_opened', 'Share link opened', true, false, 'Someone you sent a link to has opened it'],
+  [
+    'special_limits',
     'Special-limits flagged',
     true,
     false,
     'An item may be capped under the policy’s special-limits provision',
   ],
-  ['Storage nearing the pool', true, false, 'An email first — never a lockout mid-claim'],
-  ['Payment problem', true, true, 'Before anything is interrupted'],
+  [
+    'storage',
+    'Storage nearing the pool',
+    true,
+    false,
+    'An email first — never a lockout mid-claim',
+  ],
+  ['payment', 'Payment problem', true, true, 'Before anything is interrupted'],
 ]
+
+type Channel = 'mail' | 'push'
 
 export default function SettingsProfilePage() {
   const me = useQuery({
@@ -70,9 +107,15 @@ export default function SettingsProfilePage() {
     staleTime: Infinity,
   })
 
+  // Deviation 3: the ticks follow state, so the control responds to a click.
+  const [prefs, setPrefs] = useState<Record<string, { mail: boolean; push: boolean }>>(() =>
+    Object.fromEntries(NOTIFICATIONS.map(([k, , mail, push]) => [k, { mail, push }])),
+  )
+  const toggle = (key: string, channel: Channel) =>
+    setPrefs((p) => ({ ...p, [key]: { ...p[key], [channel]: !p[key][channel] } }))
+
   const email = me.data?.email ?? ''
-  const local = email.split('@')[0] ?? ''
-  const initials = (local.slice(0, 2) || 'K').toUpperCase()
+  const initials = (email.split('@')[0]?.slice(0, 2) || 'K').toUpperCase()
 
   return (
     <SettingsShell
@@ -94,7 +137,7 @@ export default function SettingsProfilePage() {
           {email || 'Your account'}
         </h1>
         <p style={{ fontSize: 13, color: 'var(--k-fg-3)', margin: 0 }}>
-          General Adjuster · Reyes Adjusting, LLC · Hauppauge, NY
+          Signed in with your work email.
         </p>
       </div>
 
@@ -113,11 +156,12 @@ export default function SettingsProfilePage() {
               Upload new
             </button>
           </div>
+
           <div className="k-set-grid2">
-            <F label="First name" value="Mariana" />
-            <F label="Last name" value="Reyes" />
+            <F label="First name" value="" placeholder="Your first name" />
+            <F label="Last name" value="" placeholder="Your last name" />
             <F label="Work email" value={email} readOnly hint="From your sign-in" />
-            <F label="Phone" value="(631) 555-0142" mono />
+            <F label="Phone" value="" mono placeholder="(000) 000-0000" />
             <FSelectOther
               label="Title"
               value="General Adjuster"
@@ -126,9 +170,9 @@ export default function SettingsProfilePage() {
               hint="Prints under Prepared by on exported PDFs"
             />
             <div className="k-insp-field">
-              <label>Time zone</label>
+              <label htmlFor="timezone">Time zone</label>
               <div className="k-fselect">
-                <select defaultValue="America/New_York">
+                <select id="timezone" defaultValue="America/New_York">
                   <optgroup label="United States">
                     <option value="America/New_York">Eastern Time (ET, GMT−5)</option>
                     <option value="America/Chicago">Central Time (CT, GMT−6)</option>
@@ -190,9 +234,9 @@ export default function SettingsProfilePage() {
                 <div style={{ fontSize: 13, fontWeight: 600 }}>{l}</div>
                 <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', marginTop: 2 }}>{sub}</div>
               </div>
-              <a className="k-btn k-btn--ghost" href={`/settings/security${hash}`}>
+              <Link className="k-btn k-btn--ghost" to={`/settings/security${hash}`}>
                 {cta}
-              </a>
+              </Link>
             </div>
           ))}
         </div>
@@ -201,30 +245,49 @@ export default function SettingsProfilePage() {
       <section className="k-set-card">
         <div className="k-set-card-hd">Notifications</div>
         <div className="k-set-card-body" style={{ display: 'flex', flexDirection: 'column' }}>
-          {NOTIFICATIONS.map(([l, mail, push, sub]) => (
-            <div key={l} className="k-set-pref">
+          {NOTIFICATIONS.map(([key, l, , , sub]) => (
+            <div key={key} className="k-set-pref">
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, fontWeight: 600 }}>{l}</div>
                 <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', marginTop: 2 }}>{sub}</div>
               </div>
               <div style={{ display: 'flex', gap: 16, minWidth: 180, justifyContent: 'flex-end' }}>
-                <label className="k-pref-toggle">
-                  <input type="checkbox" defaultChecked={mail} />
-                  <span className="k-toggle-box">
-                    {mail ? <Icon d={I.check} size={10} stroke={2.5} /> : null}
-                  </span>
-                  <span style={{ fontSize: 11.5 }}>Email</span>
-                </label>
-                <label className="k-pref-toggle">
-                  <input type="checkbox" defaultChecked={push} />
-                  <span className="k-toggle-box">
-                    {push ? <Icon d={I.check} size={10} stroke={2.5} /> : null}
-                  </span>
-                  <span style={{ fontSize: 11.5 }}>Push</span>
-                </label>
+                {(['mail', 'push'] as Channel[]).map((channel) => {
+                  const on = prefs[key][channel]
+                  return (
+                    <label key={channel} className="k-pref-toggle">
+                      <input
+                        type="checkbox"
+                        checked={on}
+                        onChange={() => toggle(key, channel)}
+                        aria-label={`${l} — ${channel === 'mail' ? 'Email' : 'Push'}`}
+                      />
+                      <span
+                        className="k-toggle-box"
+                        // .k-pref-toggle hides its input and carries no :checked
+                        // rule, so the box is styled from state here rather than
+                        // in CSS -- otherwise it never moves.
+                        style={
+                          on
+                            ? { background: 'var(--k-accent)', borderColor: 'var(--k-accent)' }
+                            : undefined
+                        }
+                      >
+                        {on ? <Icon d={I.check} size={10} stroke={2.5} /> : null}
+                      </span>
+                      <span style={{ fontSize: 11.5 }}>
+                        {channel === 'mail' ? 'Email' : 'Push'}
+                      </span>
+                    </label>
+                  )
+                })}
               </div>
             </div>
           ))}
+          <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', marginTop: 12, lineHeight: 1.5 }}>
+            These are the sixteen transactional emails in <code>emails/</code>. Preferences do not
+            save yet — there is no endpoint behind them and no sending service wired up.
+          </div>
         </div>
       </section>
 

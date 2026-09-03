@@ -483,6 +483,11 @@ App-side state, where it differs from the prototype:
 |---|---|---|
 | 31 Profile | Work email + heading are LIVE from `GET /v1/me`; every other field is the design's placeholder | The design seeds all fields with the demo adjuster. Printing someone else's name as the signed-in user's own is not a placeholder, so email comes from the session |
 | 31 Profile | Security rows link to `/settings/security` | Same four sections as screen 41, app routing instead of `41-Security.html#hash` |
+| 31 Profile | Security row sub-lines describe the CONTROL, not account state | The design asserts "Enabled · Authenticator app (8 backup codes left)", "3 registered", "3 devices", "Last changed 4 months ago". Nothing can verify any of it, and telling someone 2FA is on when it is not is the most damaging thing this page could say. Rows and CTAs kept exactly; sub-lines say what each control does |
+| 31 Profile | `#password` / `#two-factor` / `#passkeys` / `#sessions` resolve | Screen 41 carries matching `id`s, so the four CTAs land on their section instead of the top of the page |
+| 31 Profile | Notification toggles MOVE when clicked (14 of them) | `.k-pref-toggle input` is `display:none` with no `:checked` rule, and the design renders the tick from a literal -- so in a live app the boxes never changed. They are React state now. They still do not persist: no endpoint, no sending service. The card says so in one line |
+| 31 Profile | Name / phone render EMPTY with placeholders | The design seeds Mariana Reyes. On the screen that prints "Prepared by" on a carrier-facing document, a stranger's name is not a placeholder |
+| 31 Profile | **Upload new**, **Request export**, **Delete account** | 🔌 Still unwired -- no avatar, data-export or account-delete route exists. Targets are in the 31 rows above |
 | 41 Security | **Change password** genuinely works (`supabase.auth.updateUser`) | The only settings control in the app with a real write behind it. 2FA, passkeys and the session list are named, not mocked — they need enrolment flows, not screens |
 | 32 / 33 / 36 | Save bar renders; no write route exists yet | BACKEND-ASKS ask 33. The button is designed, documented, and inert — not replaced with prose |
 | 34 Xactimate | `save={false}` | Nothing to save by design (rules 2 and 4): no connection, no credentials, no sync |

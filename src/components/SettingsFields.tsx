@@ -22,6 +22,7 @@ export function F({
   hint,
   width = '100%',
   readOnly,
+  placeholder,
 }: {
   label: string
   value: string
@@ -30,6 +31,8 @@ export function F({
   hint?: string
   width?: string | number
   readOnly?: boolean
+  /** Shown when there is no stored value -- an empty field beats a stranger's. */
+  placeholder?: string
 }) {
   return (
     <div className="k-insp-field" style={{ width }}>
@@ -47,6 +50,7 @@ export function F({
       >
         <input
           defaultValue={value}
+          placeholder={placeholder}
           readOnly={readOnly}
           style={{
             border: 0,

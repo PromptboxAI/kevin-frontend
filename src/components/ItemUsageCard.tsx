@@ -19,13 +19,13 @@ import type { Quota } from '../lib/types'
  *    that never happened, on a billing surface. The floor is kept for every
  *    non-zero value and dropped at 0.
  *
- * 2. **Credit block prices are derived, not literal.** The design's hint reads
- *    "500 for $75 · 1,000 for $140" — $0.15 and $0.14 an item. CLAUDE.md rule
- *    9c says credits sell at the SAME $0.20 as Pro overage, and AddCreditsModal
- *    charges exactly that, so the literal hint would have contradicted the
- *    modal one click away. It is computed from the same constants the modal
- *    uses. Flagged to design: if credits are meant to be discounted, rule 9c
- *    and the modal need to change too, not just this line.
+ * 2. **Credit block prices are derived, not literal.** The design originally
+ *    read "500 for $75 · 1,000 for $140" — $0.15 and $0.14 an item, which
+ *    contradicted rule 9c (credits sell at the same $0.20 as Pro overage) and
+ *    disagreed with what AddCreditsModal actually charges one click away.
+ *    Design has since adopted flat per-item pricing. Computed here from the
+ *    same two constants the modal uses, so the hint and the charge cannot
+ *    drift apart again.
  *
  * 3. **An overage line when both pools are spent.** Not in the design, which
  *    has no over-allowance state. What is owed belongs on the page that bills
@@ -166,7 +166,7 @@ export default function ItemUsageCard({
           </button>
           {free ? onUpgrade : null}
           <span style={{ fontSize: 11.5, color: 'var(--k-fg-4)' }}>
-            {hint} · credits never expire
+            {hint} · ${OVERAGE_PRICE.toFixed(2)} per item · credits never expire
           </span>
         </div>
       </div>
