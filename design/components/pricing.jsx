@@ -88,7 +88,7 @@ const Pricing = () => (
           One subscription. Unlimited claims.
         </h1>
         <p style={{ fontSize: 16, color: 'var(--k-fg-2)', lineHeight: 1.55, margin: 0, maxWidth: 560, marginLeft: 'auto', marginRight: 'auto' }}>
-          A flat monthly price, the way you already pay for Xactimate. $249 covers 2,000 line items a month — more claims than most adjusters write — and anything past that is $0.20 an item. No per-seat math, no per-claim fee, and every account starts with a 7-day free trial.
+          A flat monthly price, the way you already pay for Xactimate. $249 covers 2,000 line items a month — more claims than most adjusters write — and anything past that is $0.20 an item. No per-seat math, no per-claim fee, and your first 250 line items are free.
         </p>
       </section>
 

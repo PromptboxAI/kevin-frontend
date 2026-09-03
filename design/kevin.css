@@ -4140,3 +4140,12 @@
       border-left-color: var(--k-ok);
     }
     .k-trunc--ok .k-trunc-icon { color: var(--k-ok); }
+
+    /* The boot-failure notice inside #root must stay INVISIBLE during a normal
+       load. These pages transpile ~30 components in the browser, which takes a
+       few seconds, and the notice was showing for that whole window on every
+       page — telling people the page had failed while it was busy succeeding.
+       It now fades in only after 6s, by which time a healthy page has mounted
+       and replaced it entirely. A genuine failure still gets the message. */
+    .k-bootfail { opacity: 0; animation: k-bootfail-reveal 0s 6s forwards; }
+    @keyframes k-bootfail-reveal { to { opacity: 1; } }

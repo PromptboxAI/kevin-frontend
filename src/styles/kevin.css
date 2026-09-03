@@ -4552,5 +4552,18 @@
        title attribute carries the explanation. Each becomes a real Link the
        moment its page lands. */
     .k-mkt-soon { cursor: default; }
-    .k-nav .k-mkt-soon { font-size: 13px; }
-    .k-footx-col .k-mkt-soon { font-size: 13px; color: var(--k-fg-3); }
+    .k-nav .k-mkt-soon { font-size: 13px; color: var(--k-fg-4); }
+    .k-footx-col .k-mkt-soon { font-size: 13px; color: var(--k-fg-4); }
+    /* Muted one step from a live link (fg-4 rather than fg-3), not dimmed to
+       40%. Dimming read as broken; full link colour read as clickable and then
+       did nothing, which is worse. One step down plus `cursor: default` says
+       "not yet" without either lie. Every one of these becomes a real Link as
+       its page is ported -- that is the actual fix, and it is in progress. */
+
+    /* The nav's solid CTA keeps its own colour on hover.
+       `.k-nav a:hover { color: var(--k-fg) }` is written for plain nav links,
+       and design never hit it here because "Start a new claim" was a <button>.
+       As a router <Link> it is an anchor, so that rule won and the white label
+       turned dark-on-dark mid-hover. Ghost buttons are excluded -- their own
+       hover already sets `color: var(--k-fg)`, which is what they want. */
+    .k-nav a.k-btn:not(.k-btn--ghost):hover { color: var(--k-bg); }

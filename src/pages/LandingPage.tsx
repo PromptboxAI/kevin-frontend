@@ -12,13 +12,12 @@ import { MktFooter, MktNav } from '../components/MarketingChrome'
  *
  * TWO DISCLOSED DEVIATIONS, both because the app has no demo seed:
  *
- *  1. The prototype builds its hero rows and gallery mock-ups from
- *     `buildWorksheetRows(57)` / `REYES_TOTALS`, so the marketing figures can
- *     never drift from the worksheet. Nothing like that exists here, and the
- *     app has no reason to carry a claim seed just to draw a picture — so the
- *     illustrative rows below are explicit constants. They are ILLUSTRATIVE
- *     MARKETING, not claim data. The canonical numbers live in
- *     design/components/data.jsx; if the demo claim changes, update HERO_ROWS.
+ *  1. The prototype builds its hero rows from `buildWorksheetRows(57)` /
+ *     `REYES_TOTALS`, so the marketing figures can never drift from the
+ *     worksheet. Nothing like that exists here, so HERO_ROWS is an explicit
+ *     constant — same five descriptions, prices and field photos, read off the
+ *     rendered prototype rather than paraphrased. ILLUSTRATIVE MARKETING, not
+ *     claim data: if the demo claim changes, update it here by hand.
  *
  *  2. The four "inside the grid" gallery cards keep their headings and copy
  *     verbatim, but their inner mock visualisations are simplified — the
@@ -32,14 +31,24 @@ import { MktFooter, MktNav } from '../components/MarketingChrome'
 
 /* ── Illustrative hero rows (see deviation 1) ─────────────────────────── */
 
-type HeroRow = { desc: string; meta: string; note: string; tone: 'accent' | 'ok'; price: string }
+type HeroRow = {
+  desc: string
+  meta: string
+  note: string
+  tone: 'accent' | 'ok'
+  price: string
+  photo: string
+}
 
+/** The same five rows and the same five field captures the design hero shows —
+ *  descriptions and photo filenames read off the rendered prototype, not
+ *  paraphrased. Photos live in public/marketing/items/. */
 const HERO_ROWS: HeroRow[] = [
-  { desc: 'Guess Branded Leather Belt', meta: 'Guess · Clothing — Adult', note: '2 photos merged', tone: 'accent', price: '$77.25' },
-  { desc: 'Black Rubber-Soled Boot, Madden', meta: 'Madden · Clothing — Adult', note: 'Vision match', tone: 'ok', price: '$141.16' },
-  { desc: 'Honeywell Filter Power Replacement', meta: 'Honeywell · Major Appliances', note: 'Vision match', tone: 'ok', price: '$17.91' },
-  { desc: 'Yellow-Handled Household Tool', meta: 'Tools & Garage', note: 'Vision match', tone: 'ok', price: '$14.98' },
-  { desc: 'Decorative Shell Ornament', meta: 'Decor & Accessories', note: 'Live comps ×3', tone: 'ok', price: '$16.28' },
+  { desc: 'Guess Branded Leather Belt with Silver Buckle, Black', meta: 'Guess · Clothing — Adult', note: '2 photos merged', tone: 'accent', price: '$77.25', photo: '20260805_144542.jpg' },
+  { desc: 'Black Rubber-Soled Boot, Madden Brand', meta: 'Madden · Clothing — Adult', note: 'Vision match', tone: 'ok', price: '$141.16', photo: '20260805_143711.jpg' },
+  { desc: 'Honeywell FilterPower Replacement Vacuum Filter for Bissell', meta: 'Honeywell · Major Appliances', note: 'Vision match', tone: 'ok', price: '$17.91', photo: '20260805_143757.jpg' },
+  { desc: 'Yellow-Handled Household Scissors', meta: 'Tools & Garage', note: 'Vision match', tone: 'ok', price: '$14.98', photo: '20260805_144556.jpg' },
+  { desc: 'Decorative Shell Ornament, Brown/White', meta: 'Decor & Accessories', note: 'Live comps ×3', tone: 'ok', price: '$16.28', photo: '20260805_143831.jpg' },
 ]
 
 /** Carriers whose claims Kevin-built inventories have settled with. Real
@@ -360,7 +369,34 @@ export default function LandingPage() {
             <div className="k-card-rows">
               {HERO_ROWS.map((r, i) => (
                 <div key={i} className="k-card-row">
-                  <span className="k-thumb" style={{ width: 28, height: 28, flex: 'none' }} />
+                  {/* Matches the design's <Thumb>: a real <img> so the browser
+                      can defer it, cover-fitted in a 4px-radius 28px box. */}
+                  <div
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: 4,
+                      overflow: 'hidden',
+                      flex: '0 0 auto',
+                      position: 'relative',
+                      boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.08)',
+                    }}
+                  >
+                    <img
+                      src={`/marketing/items/${r.photo}`}
+                      alt={r.desc}
+                      loading="lazy"
+                      decoding="async"
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        display: 'block',
+                      }}
+                    />
+                  </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div
                       style={{
