@@ -14,8 +14,11 @@ import { useAuth } from '../lib/auth'
  *    stay inert until their screens land.
  */
 const ITEMS: ({ kind: 'div' } | { kind: 'link'; label: string; to?: string })[] = [
-  { kind: 'link', label: 'My profile' },
-  { kind: 'link', label: 'Business' },
+  // Profile and Business landed with the settings screens, so per the rule
+  // above they stop being inert. Security (design 41), Docs (24) and Get help
+  // have no screen in this app yet and stay labels.
+  { kind: 'link', label: 'My profile', to: '/settings/profile' },
+  { kind: 'link', label: 'Business', to: '/settings/business' },
   { kind: 'link', label: 'Billing', to: '/settings/billing' },
   { kind: 'link', label: 'Security' },
   { kind: 'div' },

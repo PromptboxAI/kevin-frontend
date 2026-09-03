@@ -936,8 +936,17 @@
 /* Unbuilt destinations: same weight and colour as any inactive tab (the
    design's own --k-fg-3), distinguished by cursor and tooltip only. Dimming
    them was what made the nav read "too light". */
+/* An item that is designed but has no screen yet.
+   `cursor: default` alone was not enough: it looked IDENTICAL to a working
+   link, so people clicked it and reasonably concluded the app was broken. The
+   tooltip only appears on hover, which is no help on a first click. Dimming is
+   what actually distinguishes "not built" from "not working". */
 .k-tab--todo {
   cursor: default;
+  opacity: 0.4;
+}
+.k-tab--todo:hover {
+  background: transparent;
 }
 
 /* --- Avatar menu --- */
