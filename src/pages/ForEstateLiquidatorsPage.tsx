@@ -13,10 +13,10 @@ import { MktShot } from './LandingPage'
  * The two proof shots are the estate worksheet and the client PDF, NOT the
  * Xactimate export: an estate professional never touches XactContents.
  *
- * DEVIATION: the prototype's "what you give Kevin" grid pulls eight Unsplash
- * stock photos via PRODUCT_IMG. Those are stock, not Kevin's own captures, so
- * rather than ship someone else's photography they render as the design's own
- * no-src Thumb placeholder. Everything else is verbatim.
+ * The "what you give Kevin" grid uses the same eight Unsplash stock photos
+ * the prototype pulls via PRODUCT_IMG, at the same 240px crop. Stock is right
+ * here: an estate walkthrough is someone's home, and Kevin has no cleared
+ * photography of one.
  */
 
 const WORKFLOW: [string, string, string, string][] = [
@@ -89,20 +89,55 @@ const ESTATE_USES = [
   'Scheduling for insurance',
 ]
 
-/** The design's <Thumb> with no src — a striped placeholder. */
-function PlainThumb({ size }: { size: number }) {
+/**
+ * The walkthrough grid, ordered to MATCH the inventory beside it — the photos
+ * a visitor sees should be the items the list prices, not generic homeware.
+ *
+ *   piano · rug · sideboard · pearls · Rolex   -> the first five priced lines
+ *   sofa · armchair · range                    -> filler, because the grid
+ *                                                 stands for 318 photos of a
+ *                                                 whole house, not just 7 lines
+ *
+ * NOT MATCHED: "Sterling silver tea service" and "Watercolor, signed E.M.
+ * Bauer" have no usable stock crop — Unsplash returns collection pages rather
+ * than a direct image for either — so those two slots carry household goods
+ * instead. Worth sourcing properly if this page matters for a campaign.
+ *
+ * Piano and rug are sourced; the rest reuse the design's own PRODUCT_IMG crops.
+ */
+const WALKTHROUGH_PHOTOS: [string, string][] = [
+  ['Upright piano', 'photo-1517578099694-8b23adec837c'],
+  ['Persian rug', 'photo-1757618978085-850cad5b020a'],
+  ['Walnut sideboard', 'photo-1606144042614-b2417e99c4e3'],
+  ['Pearl strand', 'photo-1605100804763-247f67b3557e'],
+  ['Wristwatch', 'photo-1523275335684-37898b6baf30'],
+  ['Sofa', 'photo-1555041469-a586c61ea9bc'],
+  ['Armchair', 'photo-1592078615290-033ee584e267'],
+  ['Range', 'photo-1556909114-f6e7ad7d3136'],
+]
+
+/** Matches the design's <Thumb src=…>: cover-fitted, 4px radius, hairline. */
+function StockThumb({ id, alt, size }: { id: string; alt: string; size: number }) {
   return (
     <div
       style={{
         width: size,
         height: size,
         borderRadius: 4,
+        overflow: 'hidden',
         flex: '0 0 auto',
-        backgroundImage:
-          'repeating-linear-gradient(135deg, var(--k-bg-2) 0 6px, var(--k-bg-3) 6px 12px)',
+        position: 'relative',
         boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.08)',
       }}
-    />
+    >
+      <img
+        src={`https://images.unsplash.com/${id}?w=240&h=240&fit=crop&auto=format`}
+        alt={alt}
+        loading="lazy"
+        decoding="async"
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+      />
+    </div>
   )
 }
 
@@ -336,8 +371,8 @@ export default function ForEstateLiquidatorsPage() {
               318 phone photos
             </h3>
             <div className="k-photo-grid-mini">
-              {Array.from({ length: 8 }, (_, i) => (
-                <PlainThumb key={i} size={80} />
+              {WALKTHROUGH_PHOTOS.map(([alt, id]) => (
+                <StockThumb key={id} id={id} alt={alt} size={80} />
               ))}
             </div>
             <div

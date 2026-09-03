@@ -4762,3 +4762,40 @@
       .k-est-win-step { padding: 18px 0; }
       .k-est-win-t { font-size: 19px; }
     }
+
+    /* Mobile marketing nav. The design drops the middle links below 820px but
+       keeps both buttons; at 375px "Sign in" and "Start a new claim" do not fit
+       a header together. Below 820px they collapse into one toggle. Desktop is
+       untouched — the burger simply is not rendered there. */
+    .k-nav-burger { display: none; }
+    @media (max-width: 820px) {
+      .k-nav { position: relative; }
+      .k-nav .k-nav-actions { display: none !important; }
+      /* The nav element carries an inline `display: flex` ported from the
+         design, and an inline style beats `.k-nav nav { display: none }`.
+         The links live in the sheet at this width, so hide the inline one. */
+      .k-nav nav { display: none !important; }
+      .k-nav-burger {
+        display: inline-flex; flex-direction: column; justify-content: center;
+        gap: 4px; width: 34px; height: 34px; padding: 0 7px;
+        background: transparent; border: 1px solid var(--k-line);
+        border-radius: 8px; cursor: pointer;
+      }
+      .k-nav-burger span {
+        display: block; height: 1.5px; width: 100%;
+        background: var(--k-fg-2); border-radius: 2px;
+      }
+      .k-nav-sheet {
+        position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
+        display: flex; flex-direction: column; gap: 2px;
+        padding: 10px 20px 16px;
+        background: var(--k-bg); border-bottom: 1px solid var(--k-line);
+        box-shadow: 0 12px 28px oklch(0.2 0.01 250 / 0.10);
+      }
+      .k-nav-sheet-item {
+        padding: 11px 2px; font-size: 15px; color: var(--k-fg-2);
+        text-decoration: none; border-bottom: 1px solid var(--k-line);
+      }
+      .k-nav-sheet-div { height: 6px; }
+      .k-nav-sheet-cta { width: 100%; justify-content: center; margin-top: 8px; }
+    }

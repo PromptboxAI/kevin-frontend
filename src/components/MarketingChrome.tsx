@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import KevinWordmark from './KevinWordmark'
@@ -70,6 +71,11 @@ function MktLink({
 
 export function MktNav({ active }: { active?: string }) {
   const { session, loading } = useAuth()
+  // Mobile menu. The design hides the middle links below 820px but keeps both
+  // buttons, which at 375px leaves "Sign in" and "Start a new claim" fighting
+  // for a header that cannot hold them. Below 820px this collapses everything
+  // into one toggle instead -- an addition to the design, not a port of it.
+  const [menu, setMenu] = useState(false)
   const items: [string, string, string][] = [
     ['product', 'Product', '/product'],
     ['adj', 'For Adjusters', '/for-adjusters'],
@@ -91,7 +97,7 @@ export function MktNav({ active }: { active?: string }) {
           just offers the way back into the app instead of asking someone who is
           already authenticated to sign in again. `loading` renders neither, so
           the header never flashes "Sign in" at a signed-in visitor. */}
-      <div style={{ display: 'flex', gap: 8 }}>
+      <div className="k-nav-actions" style={{ display: 'flex', gap: 8 }}>
         {loading ? null : session ? (
           <Link className="k-btn" to="/claims">
             Go to app →
@@ -107,6 +113,43 @@ export function MktNav({ active }: { active?: string }) {
           </>
         )}
       </div>
+
+      <button
+        type="button"
+        className="k-nav-burger"
+        aria-label={menu ? 'Close menu' : 'Open menu'}
+        aria-expanded={menu}
+        onClick={() => setMenu((o) => !o)}
+      >
+        <span />
+        <span />
+        <span />
+      </button>
+
+      {menu ? (
+        <div className="k-nav-sheet">
+          {items.map(([id, label, to]) => (
+            <MktLink key={id} to={to} className="k-nav-sheet-item">
+              {label}
+            </MktLink>
+          ))}
+          <div className="k-nav-sheet-div" />
+          {session ? (
+            <Link className="k-btn k-btn--lg k-nav-sheet-cta" to="/claims">
+              Go to app →
+            </Link>
+          ) : (
+            <>
+              <Link className="k-nav-sheet-item" to="/sign-in">
+                Sign in
+              </Link>
+              <Link className="k-btn k-btn--lg k-nav-sheet-cta" to="/sign-in">
+                Start a new claim
+              </Link>
+            </>
+          )}
+        </div>
+      ) : null}
     </header>
   )
 }
