@@ -14,13 +14,14 @@ import { useAuth } from '../lib/auth'
  *    stay inert until their screens land.
  */
 const ITEMS: ({ kind: 'div' } | { kind: 'link'; label: string; to?: string })[] = [
-  // Profile and Business landed with the settings screens, so per the rule
-  // above they stop being inert. Security (design 41), Docs (24) and Get help
-  // have no screen in this app yet and stay labels.
+  // Profile, Business and Security exist now, so per the rule above they stop
+  // being inert. Docs (/docs) and Get help (/contact) are MARKETING pages that
+  // were never ported to this app -- they stay labels until those routes exist,
+  // because a link to a route with no page is a 404, not a feature.
   { kind: 'link', label: 'My profile', to: '/settings/profile' },
   { kind: 'link', label: 'Business', to: '/settings/business' },
   { kind: 'link', label: 'Billing', to: '/settings/billing' },
-  { kind: 'link', label: 'Security' },
+  { kind: 'link', label: 'Security', to: '/settings/security' },
   { kind: 'div' },
   { kind: 'link', label: 'Docs' },
   { kind: 'link', label: 'Get help' },

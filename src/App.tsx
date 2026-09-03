@@ -20,6 +20,7 @@ import SettingsBusinessPage from './pages/SettingsBusinessPage'
 import SettingsExportPage from './pages/SettingsExportPage'
 import SettingsIntegrationsPage from './pages/SettingsIntegrationsPage'
 import SettingsProfilePage from './pages/SettingsProfilePage'
+import SettingsSecurityPage from './pages/SettingsSecurityPage'
 import SignInPage from './pages/SignInPage'
 import WorksheetPage from './pages/WorksheetPage'
 
@@ -147,6 +148,15 @@ export default function App() {
             </RequireAuth>
           }
         />
+        <Route
+          path="/settings/security"
+          element={
+            <RequireAuth>
+              <SettingsSecurityPage />
+            </RequireAuth>
+          }
+        />
+
         <Route
           path="/settings/business"
           element={
