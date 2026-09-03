@@ -793,3 +793,31 @@ The two genuinely useful endpoints, if you want a priority order:
   are purely a convenience and carry no point-in-time problem.
 - **A default depreciation METHOD per account.** It is chosen per claim today,
   and it is the one export "default" that would actually save repeated work.
+
+## 34 · Billing details: payment method and invoice list
+
+The Billing screen (35) renders a payment-method row and an invoice table, both
+per the design. Neither has a route today — `main.py` carries checkout, credits
+checkout, portal and the webhook, and nothing else billing-shaped — so both
+sections render a quiet empty row.
+
+The frontend already calls these and tolerates a 404, so shipping them needs no
+frontend change:
+
+- **`GET /v1/billing/payment-method`** → `{ brand, last4, exp_month, exp_year,
+  billing_city? }`, or 404 when no card is on file. All of it is
+  Stripe-safe to expose (no PAN); it is the at-a-glance line the design puts
+  above "Update card".
+- **`GET /v1/billing/invoices`** → `{ invoices: [{ id, number, created,
+  description, amount_paid, currency, status, pdf_url }] }`, newest first.
+  `amount_paid` in MINOR UNITS with an explicit `currency`, matching how Stripe
+  reports money — the UI divides by 100 in exactly one place. `pdf_url` is
+  Stripe's hosted PDF and may be absent on a draft.
+
+Both are read-only projections of the Stripe customer. Neither replaces the
+hosted portal: the portal still owns card updates and cancellation, and the UI
+links to it from both sections. What these add is the information the design
+shows without a round trip to Stripe.
+
+Not urgent — the sections degrade quietly — but the empty state is the one part
+of screen 35 that is not yet the design.

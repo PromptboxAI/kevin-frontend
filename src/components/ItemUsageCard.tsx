@@ -1,35 +1,42 @@
-import { OVERAGE_PRICE } from '../lib/billing'
+import { CREDIT_BLOCKS, OVERAGE_PRICE } from '../lib/billing'
 import type { Quota } from '../lib/types'
 
 /**
- * Ported from design/components/settings-pages.jsx (ItemUsageCard).
+ * Line items — the metered dimension of Pro. Ported from `LineItemUsageCard` in
+ * the design's settings-pages.jsx: headline + right-aligned percent, the
+ * k-store-track bar, two k-store-key dots (cycle / rollover), the two-paragraph
+ * k-store-note, then Add credits above a price hint.
  *
- * Standard SaaS usage meter: ONE paradigm throughout, and that paradigm is
- * CONSUMPTION. The headline counts what has been used, the bar fills
- * left-to-right as it is used, and the percentage is of the same thing. An
- * earlier pass mixed them -- a headline counting what was left above a
- * percentage counting what was spent -- which made a brand-new account read as
- * both completely full and completely empty at the same time.
+ * Data is LIVE from `quota` on /v1/me. The design's LI_USAGE seed
+ * (1,418 of 2,000 · 500 credits · resets Oct 1) stands in for
+ * GET /v1/account/usage and is not reproduced.
  *
- * At zero used the bar is genuinely EMPTY. No minimum-width sliver: a visible
- * indicator on an account that has produced nothing implies consumption that
- * did not happen, and this is a billing surface.
+ * THREE deviations, each noted:
  *
- * Below the bar: TOTAL AVAILABLE, then the two pools it is made of. The
- * customer's actual question is "how much can I run right now?", and the answer
- * spans both -- but the cycle RESETS at period_end while credits ROLL OVER
- * forever, so the total alone would drop on renewal day with nothing to explain
- * it, and the parts alone made them do arithmetic. Both, total first.
+ * 1. **Empty bar at zero.** The design floors the width at 0.6% so a small
+ *    non-zero value stays visible. Correct — but applied at exactly 0 it draws
+ *    a sliver on an account that has produced nothing, implying consumption
+ *    that never happened, on a billing surface. The floor is kept for every
+ *    non-zero value and dropped at 0.
  *
- * Spend order is cycle-first; credits are drawn once the cycle hits 0. That
- * is stated ON SCREEN, not just here: the first person to read this page
- * guessed it the other way round, and getting it backwards changes what a
- * customer thinks they are buying.
+ * 2. **Credit block prices are derived, not literal.** The design's hint reads
+ *    "500 for $75 · 1,000 for $140" — $0.15 and $0.14 an item. CLAUDE.md rule
+ *    9c says credits sell at the SAME $0.20 as Pro overage, and AddCreditsModal
+ *    charges exactly that, so the literal hint would have contradicted the
+ *    modal one click away. It is computed from the same constants the modal
+ *    uses. Flagged to design: if credits are meant to be discounted, rule 9c
+ *    and the modal need to change too, not just this line.
  *
- * PROVENANCE: `credit_balance` is a bare number -- the payload carries no
- * source field. "Purchased" is accurate because buying is currently the only
- * way credits are minted; if the backend ever grants them (a comp, a goodwill
- * credit), this needs a real field rather than a hardcoded word.
+ * 3. **An overage line when both pools are spent.** Not in the design, which
+ *    has no over-allowance state. What is owed belongs on the page that bills
+ *    it.
+ *
+ * The free tier gets its own copy (rule 9b: 250 items, metered, NO clock — no
+ * reset date, because that pool never resets).
+ *
+ * PROVENANCE: `credit_balance` is a bare number — the payload carries no source
+ * field. "Purchased" is accurate because buying is currently the only way
+ * credits are minted; if the backend ever grants them, this needs a real field.
  */
 export default function ItemUsageCard({
   quota,
@@ -44,7 +51,7 @@ export default function ItemUsageCard({
   const credits = quota.credit_balance
   const cycleRemaining = quota.items_remaining
 
-  // Everything below is CONSUMPTION against the cycle allowance.
+  // Consumption against the cycle allowance, which is the pool the bar tracks.
   const cycleUsed = Math.min(quota.items_used, quota.included_items)
   const pct =
     quota.included_items > 0
@@ -54,14 +61,14 @@ export default function ItemUsageCard({
   // Billable overage begins only once BOTH pools are empty.
   const over = Math.max(quota.items_used - (quota.included_items + credits), 0)
   const overageCost = Math.round(over * OVERAGE_PRICE * 100) / 100
-  const tight = over === 0 && credits === 0 && cycleRemaining <= quota.included_items * 0.2
-  const onCredits = cycleRemaining === 0 && credits > 0
-  // The question the customer arrives with: how much can I run right now?
-  const available = cycleRemaining + credits
 
   const resetsOn = quota.period_end
     ? new Date(quota.period_end).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
     : null
+
+  const hint = CREDIT_BLOCKS.slice(0, 2)
+    .map((n) => `${n.toLocaleString()} for $${(n * OVERAGE_PRICE).toFixed(0)}`)
+    .join(' · ')
 
   return (
     <section className="k-set-card">
@@ -91,69 +98,33 @@ export default function ItemUsageCard({
           </div>
         </div>
 
-        {/* Fills left-to-right with usage. Width is exactly pct -- at 0 used the
-            track is empty, with no sliver implying work that never happened. */}
         <div className="k-store-track">
+          {/* Deviation 1: the design's 0.6% floor, but only above zero. */}
           {pct > 0 ? (
             <div
               className={`k-store-fill ${over > 0 ? 'k-store-fill--cold' : 'k-store-fill--warm'}`}
-              style={{ width: `${pct}%` }}
+              style={{ width: Math.max(pct, 0.6) + '%' }}
             />
           ) : null}
         </div>
 
-        {/* Below the bar: the TOTAL first, then what it is made of.
-            The bar tracks the cycle (the pool that resets, so the only one with
-            a meaningful "full"), but the question a customer actually arrives
-            with is "how much can I do right now?" -- and the answer is both
-            pools added. Showing only the parts made them do the arithmetic;
-            showing only the total hid the renewal-day drop. Both, in that
-            order, answers the question without losing the distinction. */}
-        {credits > 0 ? (
-          <div className="k-usage-total">
-            <div className="k-usage-total-hd">
-              <span>Total available</span>
-              <strong>{available.toLocaleString()} line items</strong>
-            </div>
-            <ul className="k-usage-breakdown">
-              <li>
-                <span className="k-usage-bd-n">{cycleRemaining.toLocaleString()}</span> left this
-                cycle <span className="k-usage-bd-q">(resets {resetsOn ?? 'at renewal'})</span>
-              </li>
-              <li>
-                <span className="k-usage-bd-n">{credits.toLocaleString()}</span> rollover credits{' '}
-                <span className="k-usage-bd-q">
-                  {onCredits ? '(purchased · in use now · never expire)' : '(purchased · never expire)'}
-                </span>
-              </li>
-            </ul>
-            {/* Spend order was only ever in a code comment, and the first person
-                to read this screen guessed it backwards -- so it is on screen
-                now. Cycle first, credits after: that is what makes the rollover
-                worth having, since unspent credits survive the reset. */}
-            <p className="k-usage-order">
-              Your cycle allowance is used first — credits are only drawn once it reaches zero.
-            </p>
-          </div>
-        ) : (
-          <div className="k-store-keys">
-            <span
-              className="k-store-key"
-              style={{ color: tight ? 'var(--k-warn)' : 'var(--k-fg-4)' }}
-            >
-              {cycleRemaining.toLocaleString()} left this cycle
-              {resetsOn && !free ? ` · resets ${resetsOn}` : ''}
-            </span>
-          </div>
-        )}
-
-        {over > 0 ? (
-          <div className="k-store-keys">
+        <div className="k-store-keys">
+          <span className="k-store-key">
+            <i className="k-store-dot k-store-dot--warm" />
+            {cycleRemaining.toLocaleString()} left
+            {free ? ' · no deadline' : resetsOn ? ` this cycle · resets ${resetsOn}` : ' this cycle'}
+          </span>
+          <span className="k-store-key">
+            <i className="k-store-dot k-store-dot--cold" />
+            {credits.toLocaleString()} rollover credits · purchased, never expire
+          </span>
+          {/* Deviation 3: what is actually owed, once both pools are spent. */}
+          {over > 0 ? (
             <span className="k-store-key" style={{ color: 'var(--k-warn)' }}>
               {over.toLocaleString()} over · ${overageCost.toFixed(2)} on the next invoice
             </span>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
 
         <div className="k-store-note">
           {free ? (
@@ -164,29 +135,39 @@ export default function ItemUsageCard({
             </p>
           ) : (
             <p>
+              Your cycle allowance is used first — credits are only drawn once it reaches zero.{' '}
               <strong>Going over never locks a claim.</strong> The work finishes and the overage
-              bills after — items past your allowance{credits > 0 ? ' and credits' : ''} are $
-              {OVERAGE_PRICE.toFixed(2)} each.
+              bills after — items past your allowance and credits are ${OVERAGE_PRICE.toFixed(2)}{' '}
+              each.
             </p>
           )}
           {/* Rule 9c. The likeliest support ticket, answered on the meter itself. */}
-          <p className="k-usage-fine">
-            <strong>Deleting an item does not give the quota back.</strong> The count records items
-            Kevin produced, not items you kept — the pricing lookups behind a row are already paid
-            for by the time it appears.
-          </p>
           <p>
+            Deleting an item does not give the quota back — the count records items Kevin produced,
+            not items you kept.{' '}
             {free
-              ? 'Claims are unlimited even on the free tier. Estate sales are billed per estate rather than against these items.'
-              : 'Claims stay unlimited on Pro. Estate sales are billed per estate rather than against this allowance.'}
+              ? 'Claims are unlimited even on the free tier; estate sales bill per estate rather than against these items.'
+              : 'Claims stay unlimited on Pro; estate sales bill per estate rather than against this allowance.'}
           </p>
         </div>
 
-        <div className="k-usage-actions">
-          <button type="button" className="k-btn k-btn--ghost k-btn--sm" onClick={onAddCredits}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            marginTop: 14,
+            paddingTop: 14,
+            borderTop: '1px solid var(--k-line)',
+          }}
+        >
+          <button type="button" className="k-btn" onClick={onAddCredits}>
             Add credits
           </button>
           {free ? onUpgrade : null}
+          <span style={{ fontSize: 11.5, color: 'var(--k-fg-4)' }}>
+            {hint} · credits never expire
+          </span>
         </div>
       </div>
     </section>

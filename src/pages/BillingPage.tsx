@@ -6,10 +6,18 @@ import AddCreditsModal from '../components/AddCreditsModal'
 import ItemUsageCard from '../components/ItemUsageCard'
 import StorageUsageCard from '../components/StorageUsageCard'
 import UpgradeProButton from '../components/UpgradeProButton'
+import Badge from '../components/Badge'
 import { Icon, I } from '../components/Icon'
 import { ApiError, api } from '../lib/api'
 import { clearPending, openBillingPortal, pollMe, readPending } from '../lib/billing'
 import { fmtInt } from '../lib/format'
+import {
+  brandLabel,
+  fetchInvoices,
+  fetchPaymentMethod,
+  fmtExpiry,
+  fmtMoney,
+} from '../lib/billing-details'
 import type { BillingPlan, MeResponse, Quota } from '../lib/types'
 
 /**
@@ -18,7 +26,7 @@ import type { BillingPlan, MeResponse, Quota } from '../lib/types'
  *
  * The previous version worked but was not this screen: one "Your plan" card and
  * the item meter, with none of the design's structure. Restored here — the
- * heading row with Manage subscription, the three-cell KPI strip, Your plan,
+ * heading row, the three-cell KPI strip, Your plan,
  * Storage & fair use, Line items, and the billing-detail sections.
  *
  * Plan states are data, never hardcoded (the design says so and it is right —
@@ -27,18 +35,19 @@ import type { BillingPlan, MeResponse, Quota } from '../lib/types'
  * selected by `quota.plan` from `GET /v1/me`; the money and dates in the KPI
  * strip come from the payload, not from the table.
  *
- * TWO deviations, both deliberate and both about not fabricating financial
- * records:
+ * The design's SEEDED VALUES are not reproduced — the card mock's
+ * "•••• 4242 · MARIANA REYES · 12/28" and the five literal invoice numbers are
+ * stand-ins for an API, and rendering them would show a customer a card and a
+ * payment history that are not theirs. The STRUCTURE is kept exactly: the
+ * payment row carries real brand / last4 / expiry (Stripe exposes these safely)
+ * and the invoice table renders real invoices, each row downloading its own
+ * PDF. Neither route is deployed yet, so both render a quiet empty row today
+ * and fill themselves in when the endpoints land — see BACKEND-ASKS ask 34.
  *
- * 1. **Payment method.** The design draws a card mock reading
- *    "•••• 4242 · MARIANA REYES · 12/28". No endpoint exposes the customer's
- *    card — Stripe's hosted portal owns cards, invoices and cancellation
- *    (kevin-backend/main.py:776) — so showing seeded digits would render a
- *    financial artifact that is not the user's. The section keeps its place and
- *    sends you to the portal, which is where the real card lives.
- * 2. **Invoice history.** Same reason: there is no invoice list endpoint, and
- *    five invented invoice numbers with amounts is a fake billing record. The
- *    section names where the real ones are.
+ * Actions follow the design: the plan card's two controls are Cancel plan
+ * (ghost) and Talk to us about Enterprise (primary). Stripe's hosted portal
+ * owns cancellation and card updates, so the DESTINATION is the portal while
+ * the control stays as designed.
  *
  * Everything live is preserved: the return-from-Stripe confirmation poll, the
  * portal handoff, dunning and cancellation notices, the item meter and the
@@ -222,6 +231,26 @@ export default function BillingPage() {
     refetchOnMount: 'always',
   })
 
+  // Card and invoices come from Stripe via the backend. Neither route is
+  // deployed yet, so both resolve to null on a 404 and the sections render
+  // their quiet empty row -- they fill in with no frontend change once the
+  // endpoints land (BACKEND-ASKS ask 34).
+  const card = useQuery({
+    queryKey: ['billing', 'payment-method'],
+    queryFn: fetchPaymentMethod,
+    staleTime: 60_000,
+    retry: false,
+  })
+
+  const invoiceQuery = useQuery({
+    queryKey: ['billing', 'invoices'],
+    queryFn: fetchInvoices,
+    staleTime: 60_000,
+    retry: false,
+  })
+
+  const invoices = invoiceQuery.data?.invoices ?? []
+
   /**
    * RETURN FROM STRIPE. The redirect is not proof of payment — the customer can
    * beat the webhook home — so this never trusts having landed here. It polls
@@ -287,7 +316,6 @@ export default function BillingPage() {
   // moves billing_state to past_due, so we warn without locking anyone out.
   const dunning = quota?.billing_state === 'past_due'
   const canceled = quota?.billing_state === 'canceled'
-  const showPortal = plan === 'pro' || plan === 'enterprise'
 
   const eyebrow = copy
     ? [copy.name, copy.showPayment && 'payment', 'usage'].filter(Boolean).join(' · ')
@@ -421,19 +449,11 @@ export default function BillingPage() {
                 {nextLineFor(plan, quota)}
               </p>
             </div>
-            {showPortal ? (
-              <button
-                type="button"
-                className="k-btn"
-                onClick={() => void portal()}
-                disabled={portalBusy}
-                style={{ flexShrink: 0 }}
-              >
-                {portalBusy ? 'Redirecting…' : 'Manage subscription'}
-              </button>
-            ) : plan === 'free' ? (
-              <UpgradeProButton planBefore={plan} />
-            ) : null}
+            {/* The design's heading row carries no action for a plan that
+                cannot self-serve; Pro's controls live in the plan card below.
+                Free is the exception -- upgrading is the whole point of this
+                screen for that account. */}
+            {plan === 'free' ? <UpgradeProButton planBefore={plan} /> : null}
           </div>
 
           {plan === 'comped' ? (
@@ -487,6 +507,8 @@ export default function BillingPage() {
                   {copy.blurb}
                 </span>
                 <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                  {/* Stripe's hosted portal owns cancellation, so the
+                      DESTINATION changes and the control does not. */}
                   {copy.showCancel ? (
                     <button
                       type="button"
@@ -494,7 +516,7 @@ export default function BillingPage() {
                       onClick={() => void portal()}
                       disabled={portalBusy}
                     >
-                      Cancel plan
+                      {portalBusy ? 'Opening…' : 'Cancel plan'}
                     </button>
                   ) : null}
                   <Link className={plan === 'pro' ? 'k-btn' : 'k-btn k-btn--ghost'} to="/contact">
@@ -530,20 +552,46 @@ export default function BillingPage() {
             />
           ) : null}
 
-          {/* Deviation 1 — see the file header. The design draws a card mock
-              with seeded digits; no endpoint exposes the real card, and a
-              fabricated one on a billing page is worse than an honest pointer. */}
+          {/* Payment method. Real brand / last4 / expiry from Stripe -- none of
+              which is sensitive -- so the design's at-a-glance row is kept and
+              only the seeded digits are gone. Until the endpoint ships this
+              renders as a quiet row rather than a missing section. */}
           {copy.showPayment ? (
             <section className="k-set-card">
               <div className="k-set-card-hd">Payment method</div>
               <div className="k-set-card-body">
                 <div className="k-set-row">
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600 }}>Your card lives with Stripe</div>
-                    <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', marginTop: 2, lineHeight: 1.5 }}>
-                      Kevin never stores card details. Add, replace or remove a card in the billing
-                      portal.
-                    </div>
+                    {card.data ? (
+                      <>
+                        <div style={{ fontSize: 13, fontWeight: 600 }}>
+                          {brandLabel(card.data.brand)} ending in {card.data.last4}
+                        </div>
+                        <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', marginTop: 2 }}>
+                          Expires {fmtExpiry(card.data.exp_month, card.data.exp_year)}
+                          {card.data.billing_city
+                            ? ` · Billing address on file in ${card.data.billing_city}`
+                            : null}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--k-fg-3)' }}>
+                          {card.isPending ? 'Checking your card…' : 'No card details to show yet'}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 11.5,
+                            color: 'var(--k-fg-4)',
+                            marginTop: 2,
+                            lineHeight: 1.5,
+                          }}
+                        >
+                          Kevin never stores card numbers. Add or replace a card in the billing
+                          portal.
+                        </div>
+                      </>
+                    )}
                   </div>
                   <button
                     type="button"
@@ -551,15 +599,16 @@ export default function BillingPage() {
                     onClick={() => void portal()}
                     disabled={portalBusy}
                   >
-                    Update
+                    Update card
                   </button>
                 </div>
               </div>
             </section>
           ) : null}
 
-          {/* Deviation 2 — see the file header. No invoice list endpoint exists,
-              and five invented invoice numbers are a fake billing record. */}
+          {/* Invoice history. Real invoices, each row downloading its own PDF.
+              No invented invoice numbers -- an empty list renders as one quiet
+              row, never a missing section. */}
           <section className="k-set-card">
             <div
               className="k-set-card-hd"
@@ -577,23 +626,82 @@ export default function BillingPage() {
                 PDF per invoice · receipts also emailed on payment
               </span>
             </div>
-            <div className="k-set-card-body">
-              <div className="k-set-row">
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600 }}>Every invoice and receipt</div>
-                  <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', marginTop: 2, lineHeight: 1.5 }}>
-                    Stripe holds the record of what you were charged and when, with a PDF for each.
+            <div className="k-set-card-body" style={{ padding: invoices.length ? 0 : undefined }}>
+              {invoices.length ? (
+                invoices.map((inv) => (
+                  <div key={inv.id} className="k-invoice-row">
+                    <span
+                      style={{
+                        fontFamily: 'var(--k-font-mono)',
+                        fontSize: 11.5,
+                        color: 'var(--k-fg)',
+                      }}
+                    >
+                      {inv.number ?? inv.id}
+                    </span>
+                    <span style={{ fontSize: 12, color: 'var(--k-fg-3)' }}>
+                      {fmtDate(inv.created)}
+                    </span>
+                    <span style={{ flex: 1, fontSize: 12, color: 'var(--k-fg-2)' }}>
+                      {inv.description ?? `${copy.name} · monthly`}
+                    </span>
+                    <span className="k-mono" style={{ fontWeight: 600, fontSize: 13 }}>
+                      {fmtMoney(inv.amount_paid, inv.currency)}
+                    </span>
+                    <Badge tone={inv.status === 'paid' ? 'ok' : 'warn'} dot={true}>
+                      {inv.status === 'paid' ? 'Paid' : inv.status}
+                    </Badge>
+                    {/* Stripe's PDF is served from its own host, so this is a
+                        real <a download>, not a portal handoff. A draft
+                        invoice has no PDF yet -- the control greys rather than
+                        disappearing, so the row stays the same shape. */}
+                    {inv.pdf_url ? (
+                      <a
+                        className="k-icon-btn"
+                        href={inv.pdf_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        title="Download PDF"
+                      >
+                        <Icon d={I.download} size={13} />
+                      </a>
+                    ) : (
+                      <span className="k-icon-btn" title="No PDF yet" style={{ opacity: 0.35 }}>
+                        <Icon d={I.download} size={13} />
+                      </span>
+                    )}
                   </div>
+                ))
+              ) : (
+                <div className="k-set-row">
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--k-fg-3)' }}>
+                      {invoiceQuery.isPending
+                        ? 'Loading your invoices…'
+                        : 'No invoices yet'}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 11.5,
+                        color: 'var(--k-fg-4)',
+                        marginTop: 2,
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      Each payment adds a row here with its own PDF, and the receipt is emailed to
+                      you as well.
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="k-btn k-btn--ghost"
+                    onClick={() => void portal()}
+                    disabled={portalBusy}
+                  >
+                    Open billing portal
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  className="k-btn k-btn--ghost"
-                  onClick={() => void portal()}
-                  disabled={portalBusy}
-                >
-                  <Icon d={I.download} size={12} /> View invoices
-                </button>
-              </div>
+              )}
             </div>
           </section>
         </>
