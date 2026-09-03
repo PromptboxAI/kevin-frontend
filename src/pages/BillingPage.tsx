@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import AppHeader from '../components/AppHeader'
+import SettingsShell from '../components/SettingsShell'
 import AddCreditsModal from '../components/AddCreditsModal'
 import ItemUsageCard from '../components/ItemUsageCard'
 import UpgradeProButton from '../components/UpgradeProButton'
@@ -17,16 +17,6 @@ import type { MeResponse } from '../lib/types'
  * unbuilt destinations. A visible label beats a link to nowhere.
  */
 
-const NAV: { id: string; label: string; built?: boolean }[] = [
-  { id: 'my-profile', label: 'My profile' },
-  { id: 'agency', label: 'Business' },
-  { id: 'carriers', label: 'Carrier profiles' },
-  { id: 'pricing', label: 'Pricing' },
-  { id: 'export', label: 'Export defaults' },
-  { id: 'integrations', label: 'Xactimate' },
-  { id: 'billing', label: 'Billing', built: true },
-  { id: 'api', label: 'API & webhooks' },
-]
 
 const PLAN_NAME: Record<string, string> = {
   free: 'Free tier',
@@ -124,70 +114,7 @@ export default function BillingPage() {
   const showPortal = plan === 'pro' || plan === 'enterprise'
 
   return (
-    <div className="k-settings">
-      <AppHeader />
-
-      <div className="k-settings-body">
-        <aside className="k-settings-side">
-          <div style={{ padding: '20px 16px 12px' }}>
-            <div
-              style={{
-                fontSize: 11,
-                color: 'var(--k-fg-4)',
-                fontFamily: 'var(--k-font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
-                fontWeight: 600,
-              }}
-            >
-              Settings
-            </div>
-            <h2
-              style={{
-                fontFamily: 'var(--k-font-display)',
-                fontWeight: 400,
-                fontSize: 22,
-                letterSpacing: '-0.018em',
-                margin: '4px 0 0',
-              }}
-            >
-              Billing
-            </h2>
-          </div>
-          <nav style={{ padding: '4px 8px' }}>
-            {NAV.map((item) =>
-              item.built ? (
-                <span key={item.id} className="k-side-item k-side-item--on">
-                  <span style={{ flex: 1, textAlign: 'left' }}>{item.label}</span>
-                </span>
-              ) : (
-                <span
-                  key={item.id}
-                  className="k-side-item k-tab--todo"
-                  title="Not built yet in the production app"
-                >
-                  <span style={{ flex: 1, textAlign: 'left' }}>{item.label}</span>
-                </span>
-              ),
-            )}
-          </nav>
-        </aside>
-
-        <main className="k-settings-main">
-          <div className="k-settings-hd">
-            <div
-              style={{
-                fontSize: 11,
-                color: 'var(--k-fg-4)',
-                fontFamily: 'var(--k-font-mono)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
-                fontWeight: 600,
-              }}
-            >
-              Plan · payment · usage
-            </div>
-          </div>
+    <SettingsShell activeId="billing" title="Billing" eyebrow="Plan · payment · usage">
 
           {confirming ? (
             <div
@@ -351,8 +278,6 @@ export default function BillingPage() {
               ) : null}
             </>
           )}
-        </main>
-      </div>
 
       {credits ? (
         <AddCreditsModal
@@ -360,6 +285,6 @@ export default function BillingPage() {
           onClose={() => setCredits(false)}
         />
       ) : null}
-    </div>
+    </SettingsShell>
   )
 }
