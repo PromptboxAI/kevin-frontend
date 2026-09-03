@@ -4799,3 +4799,28 @@
       .k-nav-sheet-div { height: 6px; }
       .k-nav-sheet-cta { width: 100%; justify-content: center; margin-top: 8px; }
     }
+
+    /* Legal hub on narrow screens. The design sheet never collapsed these — the
+       prototype's legal page was reviewed at desktop width only — but /legal,
+       /legal#terms and /security are public marketing URLs, so they follow the
+       marketing breakpoints. Four tab cards across and a 220px TOC rail both
+       overflow well before 375px. */
+    @media (max-width: 900px) {
+      .k-legal-doc { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+      /* The rail is a table of contents for a document already on screen;
+         stacked under 16 sections it is scroll debris, not navigation. */
+      .k-legal-rail { display: none; }
+    }
+    @media (max-width: 820px) {
+      .k-legal-body { padding: 28px 20px 60px; }
+      /* The marketing clamp family keys off `.k-landing`; the legal hub's root
+         is `.k-docs`, so its inline 44px hero never scaled with the rest. */
+      .k-legal-hero h1 { font-size: clamp(30px, 8.5vw, 44px) !important; }
+      .k-legal-article h2 { font-size: clamp(23px, 6.4vw, 30px) !important; }
+      .k-legal-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .k-legal-article { padding: 24px 20px 28px; }
+    }
+    @media (max-width: 520px) {
+      .k-legal-tabs { grid-template-columns: minmax(0, 1fr); }
+      .k-legal-tab { padding: 12px 14px; }
+    }

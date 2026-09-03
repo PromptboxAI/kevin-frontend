@@ -73,8 +73,13 @@ SKIP_BASENAMES = {
     "Kevin-docs.md", "github.md", os.path.basename(__file__),
 }
 
+# The design prototype AND the React app that actually serves kevin.co. The
+# marketing copy now ships from `src/pages/*.tsx`; leaving those out would put
+# the blind spot exactly where the live words are, which is the failure this
+# script exists to catch.
 PATTERNS = ("components/*.jsx", "pages/*.html", "emails/*.html",
-            "*.jsx", "gitbook/**/*.md", "deploy/*")
+            "*.jsx", "gitbook/**/*.md", "deploy/*",
+            "../src/**/*.tsx", "../src/**/*.ts")
 
 
 def files():

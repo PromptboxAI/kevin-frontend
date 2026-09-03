@@ -32,7 +32,7 @@ import KevinWordmark from './KevinWordmark'
  */
 
 /** Routes that actually resolve today. Add as pages are ported. */
-const LIVE = new Set<string>(['/', '/sign-in', '/sign-up', '/pricing', '/product', '/for-adjusters', '/for-estate-liquidators', '/done-for-you', '/about', '/contact'])
+const LIVE = new Set<string>(['/', '/sign-in', '/sign-up', '/pricing', '/product', '/for-adjusters', '/for-estate-liquidators', '/done-for-you', '/about', '/contact', '/legal', '/security'])
 
 function MktLink({
   to,
@@ -45,7 +45,9 @@ function MktLink({
   className?: string
   style?: React.CSSProperties
 }) {
-  if (LIVE.has(to)) {
+  // A footer target may carry a hash (`/legal#terms`); liveness is a property
+  // of the route, not of the anchor.
+  if (LIVE.has(to.split('#')[0])) {
     return (
       <Link to={to} className={className} style={style}>
         {children}

@@ -427,6 +427,11 @@ same failure and must not share a code path:
 | 53 Careers | Role row · **kevin@kevin.co** | ✅ | `mailto:` with the role in the subject. No ATS — a 3-person company takes applications by email. Roles are CMS content (admin 68) |
 | 24 Docs | Nav item → article (**44 articles across 8 sections**, all written) · full-text search · in-article TOC (scrolls to the heading) · prev/next pager | ✅ | Content is DATA in `docs-articles.jsx` + `-2` + `-3` (block tuples), rendered by `docs.jsx`. Lifts into GitBook or a CMS untouched — treat as CMS content (admin 68), not markup |
 | 25 Legal-hub | section tabs (Privacy/Terms/DPA/etc.) | 🔌/✅ | In-page anchor or route |
+| 25 Legal-hub | **Print** (topbar) | ✅ | `window.print()` in the React port (`src/pages/LegalPage.tsx`). The prototype button was inert; printing is exactly what the label promises, so it is wired rather than documented |
+| 25 Legal-hub | **Download PDF** (topbar) | 🔌 | Needs a rendered artefact, not a print dialog. `GET /v1/legal/{privacy\|terms\|dpa\|security}.pdf`, versioned to the same `v2026.05` stamp the page shows. Pending in the React port |
+| 25 Legal-hub | rail **section anchors** | ✅ | Plain `#id` anchors. In the SPA port the tab follows the hash ONLY when the hash names a tab — a section anchor must scroll inside the open document, never reset it to Privacy |
+| 25 Legal-hub | **Data Processing Addendum** tab | ✅ | In the prototype this tab fell through to the Privacy sections, printing the Privacy Policy under a DPA heading. The React port states the DPA is executed per account and links `mailto:kevin@kevin.co?subject=DPA request`. Replace with the real document when counsel supplies it — do not re-point it at the privacy body |
+| 25 Legal-hub | **public changelog** link | 🔌 | `/legal/changelog` — both the Privacy §9 and Terms §15 text promise prior versions are kept there. Pending; not yet a route |
 | 41 Security | Breadcrumb **Back to My profile** · "My profile → Session timeout" link | ✅ | `href` → 31-Settings-profile.html |
 | 41 Security | **Change password →** | 🔌 | `POST /v1/auth/password` — validate current, enforce strength + last-5 reuse block, then invalidate other sessions |
 | 41 Security | **Register key** (passkey) | 🔌 | WebAuthn `navigator.credentials.create()` → `POST /v1/auth/passkeys`. No biometrics branding |
