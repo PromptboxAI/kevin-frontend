@@ -28,6 +28,9 @@ import SettingsPricingPage from './pages/SettingsPricingPage'
 import SettingsProfilePage from './pages/SettingsProfilePage'
 import SettingsSecurityPage from './pages/SettingsSecurityPage'
 import SignInPage from './pages/SignInPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import ResetSentPage from './pages/ResetSentPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import WorksheetPage from './pages/WorksheetPage'
 
 export default function App() {
@@ -43,6 +46,14 @@ export default function App() {
         <Route path="/product" element={<ProductPage />} />
         <Route path="/for-adjusters" element={<ForAdjustersPage />} />
         <Route path="/sign-in" element={<SignInPage />} />
+
+        {/* The password-reset flow, screens 45 / 46 / 47. Public by necessity:
+            somebody who cannot sign in is the entire audience. `/reset-password`
+            is where Supabase's emailed recovery link lands -- it mints a session
+            on arrival, which is what lets updateUser set the password there. */}
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-sent" element={<ResetSentPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* Public, token-scoped. The backend mints these links as
             <SHARE_BASE_URL>/p/<token> -- this route is why they resolve.

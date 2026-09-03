@@ -1693,6 +1693,17 @@
       height: 100%;
     }
 
+    /* The auth screens (00, 45, 46, 47) are their own case: `.k-auth` is a
+       two-column grid at `height: 100%`, so without a full-height ancestor the
+       navy right panel stops at the height of the form and leaves the page
+       half white. The design's own wrappers set `min-height: 100vh` on
+       html/body/#root -- min-height, not height, so the taller reset-password
+       screen can still grow past the viewport and scroll. Same values here. */
+    html:has(.k-auth), body:has(.k-auth), #root:has(.k-auth) {
+      min-height: 100vh;
+    }
+    .k-auth { min-height: 100vh; }
+
     .k-claim-ov { width: 100%; min-height: 100%; display: flex; flex-direction: column; background: var(--k-bg); }
     .k-claim-ov-hd {
       padding: 24px 32px 22px; border-bottom: 1px solid var(--k-line);
