@@ -4541,18 +4541,16 @@
       .k-dfy-worked { padding: 16px 16px; }
     }
 
-    /* Inert marketing links (routes not ported yet) render as <span>, so the
-       anchor-scoped rules above skip them and they fall back to 16px body
-       text. These restate the anchor typography so an unported footer link is
-       visually identical to a live one — the only difference should be that it
-       does not navigate.
+    /* A marketing link whose page is not ported yet.
+       Deliberately NOT `.k-tab--todo` (index.css: opacity 0.4, transparent
+       hover). That treatment is designed to single out ONE unbuilt item among
+       working ones; across a whole nav and footer it dimmed every link and the
+       chrome read as broken. It also broke the primary CTA outright -- killing
+       the dark button background on hover left light text on a light page.
 
-       NOTE: `.k-tab--todo` itself has no definition anywhere in this sheet,
-       though AvatarMenu and ClaimTabs both use it for unbuilt destinations.
-       Worth giving it one globally; scoped here so this port does not restyle
-       those surfaces on its way past. */
-    .k-footx-col .k-tab--todo {
-      font-size: 13px; color: var(--k-fg-3); cursor: default;
-    }
-    .k-nav .k-tab--todo { cursor: default; }
-    .k-cta-secondary.k-tab--todo { cursor: default; }
+       These keep normal typography and colour and simply do not navigate; the
+       title attribute carries the explanation. Each becomes a real Link the
+       moment its page lands. */
+    .k-mkt-soon { cursor: default; }
+    .k-nav .k-mkt-soon { font-size: 13px; }
+    .k-footx-col .k-mkt-soon { font-size: 13px; color: var(--k-fg-3); }

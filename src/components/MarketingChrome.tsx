@@ -30,7 +30,7 @@ import { useAuth } from '../lib/auth'
  */
 
 /** Routes that actually resolve today. Add as pages are ported. */
-const LIVE = new Set<string>(['/', '/sign-in'])
+const LIVE = new Set<string>(['/', '/sign-in', '/sign-up'])
 
 function MktLink({
   to,
@@ -50,9 +50,15 @@ function MktLink({
       </Link>
     )
   }
+  // NOT `k-tab--todo`: that is defined in index.css as opacity 0.4 with a
+  // transparent hover, which is right for one unbuilt item among working ones
+  // and very wrong here. Applied across a whole nav and footer it dimmed every
+  // link to 40% -- the chrome read as broken rather than as one page pending --
+  // and on the dark primary button the transparent hover left light text on a
+  // light page, so the button disappeared under the cursor.
   return (
     <span
-      className={className ? `${className} k-tab--todo` : 'k-tab--todo'}
+      className={className ? `${className} k-mkt-soon` : 'k-mkt-soon'}
       style={style}
       title="Coming soon"
     >
@@ -96,9 +102,9 @@ export function MktNav({ active }: { active?: string }) {
             <Link className="k-btn k-btn--ghost" to="/sign-in">
               Sign in
             </Link>
-            <MktLink className="k-btn" to="/sign-up">
+            <Link className="k-btn" to="/sign-in">
               Start a new claim
-            </MktLink>
+            </Link>
           </>
         )}
       </div>
