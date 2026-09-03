@@ -1,6 +1,11 @@
 import { useState } from 'react'
 import SettingsShell from '../components/SettingsShell'
-import { F } from '../components/SettingsFields'
+import {
+  DEFAULT_PATTERN,
+  FILENAME_TOKENS,
+  buildFilename,
+  isoDate,
+} from '../lib/filename-rules'
 import Badge from '../components/Badge'
 import { Icon, I } from '../components/Icon'
 
@@ -36,19 +41,43 @@ const FORMATS: [string, string, boolean][] = [
   ['Generic CSV', '.csv · any other tool', false],
 ]
 
-/** `head*` keys are section headings inside the toggle list, not toggles. */
+/**
+ * `head*` keys are section headings inside the toggle list, not toggles.
+ *
+ * Depreciation and Sales tax used to sit under "In the spreadsheet", which
+ * offered something the spreadsheet cannot do. Rule 18 fixes the XactContents
+ * column set — `# · Room/Area · Qty · Description · Make·Model · Unit Cost ·
+ * Ext. Cost · Sales Tax · RCV + Tax · Age · % Depr. · $ Depr. · ACV` — and
+ * both are columns in it. Switching either off for the .xlsx would produce a
+ * file the carrier's importer rejects, so they are scoped to the formats that
+ * can actually vary.
+ *
+ * They get their OWN group rather than joining the PDF-and-bundle one: photos,
+ * comps and the audit log are PDF/bundle only (a CSV cannot carry a photo),
+ * while these two apply to PDF and CSV alike. Folding them together would have
+ * been a second inaccurate heading in place of the first.
+ *
+ * Proof link stays in the spreadsheet group and is correct there — it is an
+ * ADDED column, not one of the template's own, so removing it cannot break
+ * ingestion.
+ */
 const INCLUDES: [string, string, string | null, boolean | null][] = [
   ['head1', 'In the spreadsheet', null, null],
+  ['proofLinks', 'Proof link column', 'The comp each price came from', true],
+  ['head2', 'In the PDF and CSV only', null, null],
   ['depreciated', 'Depreciation % and $ columns', 'From the schedule on the claim', true],
   ['taxBreakout', 'Sales tax per line item', 'Rate resolved from the loss ZIP', true],
-  ['proofLinks', 'Proof link column', 'The comp each price came from', true],
-  ['head2', 'In the PDF and bundle only', null, null],
+  ['head3', 'In the PDF and bundle only', null, null],
   ['photos', 'Item photos (high-res)', 'Adds 50-500 MB per claim', true],
   ['comps', 'All three pricing comps', 'With source URLs and fetch dates', true],
   ['notes', 'Adjuster notes', 'Free-text notes on the claim', true],
   ['audit', 'Full audit log', 'Every edit, with who and when', true],
   ['watermark', 'Watermark with business name', 'Useful on share-link exports', false],
 ]
+
+/** Shown under the PDF-and-CSV group, because the exclusion is not obvious. */
+const XACTIMATE_LOCKED =
+  'The Xactimate (Excel) template always carries these two — they are columns in the XactContents schema, and a file missing them will not import.'
 
 export default function SettingsExportPage() {
   // Every control below was inert: the format cards and the delivery radios had
@@ -58,12 +87,28 @@ export default function SettingsExportPage() {
   // A control that does not move reads as broken long before anyone discovers
   // it also does not save. State here; persistence is ask 35.
   const [format, setFormat] = useState('Xactimate (Excel)')
+  const [pattern, setPattern] = useState(DEFAULT_PATTERN)
   const [delivery, setDelivery] = useState('download')
   const [includes, setIncludes] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(
       INCLUDES.filter(([k]) => !k.startsWith('head')).map(([k, , , on]) => [k, on ?? false]),
     ),
   )
+
+  // The demo claim, so the preview shows a filename shaped like a real one.
+  const example = buildFilename(pattern, {
+    claim_number: 'CLM-2026-04412',
+    insured_last: 'Godfrey',
+    format: format.startsWith('Xactimate')
+      ? 'xactimate'
+      : format.startsWith('PDF')
+        ? 'inventory'
+        : 'items',
+    date: isoDate(),
+    carrier: 'Allstate',
+    adjuster: 'Reyes',
+    ext: format.startsWith('Xactimate') ? 'xlsx' : format.startsWith('PDF') ? 'pdf' : 'csv',
+  })
 
   return (
     <SettingsShell
@@ -141,7 +186,33 @@ export default function SettingsExportPage() {
         <div className="k-set-card-hd">Include by default</div>
         <div className="k-set-card-body" style={{ display: 'flex', flexDirection: 'column' }}>
           {INCLUDES.map(([k, l, s], i) =>
-            k.startsWith('head') ? (
+            k === 'head3' ? (
+              <div key={k}>
+                <div
+                  style={{
+                    fontSize: 11.5,
+                    color: 'var(--k-fg-4)',
+                    lineHeight: 1.5,
+                    padding: '10px 0 0',
+                  }}
+                >
+                  {XACTIMATE_LOCKED}
+                </div>
+                <div
+                  style={{
+                    fontSize: 10.5,
+                    color: 'var(--k-fg-4)',
+                    fontFamily: 'var(--k-font-mono)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    fontWeight: 700,
+                    padding: '16px 0 8px',
+                  }}
+                >
+                  {l}
+                </div>
+              </div>
+            ) : k.startsWith('head') ? (
               <div
                 key={k}
                 style={{
@@ -204,12 +275,41 @@ export default function SettingsExportPage() {
       <section className="k-set-card">
         <div className="k-set-card-hd">Filename pattern</div>
         <div className="k-set-card-body">
-          <F
-            label="Pattern"
-            value="{claim_number}_{insured_last}_{format}_{date}.{ext}"
-            mono
-            hint="Variables: {claim_number} {insured_last} {format} {date} {carrier} {adjuster}"
-          />
+          {/* Controlled, so the example below is genuinely computed from what
+              is typed rather than a fixed string that happens to match. */}
+          <div className="k-insp-field">
+            <label htmlFor="filename-pattern">Pattern</label>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                padding: '8px 11px',
+                background: 'var(--k-bg)',
+                border: '1px solid var(--k-line)',
+                borderRadius: 6,
+              }}
+            >
+              <input
+                id="filename-pattern"
+                value={pattern}
+                onChange={(e) => setPattern(e.target.value)}
+                spellCheck={false}
+                style={{
+                  border: 0,
+                  outline: 0,
+                  background: 'transparent',
+                  flex: 1,
+                  font: 'inherit',
+                  fontSize: 13,
+                  fontFamily: 'var(--k-font-mono)',
+                  color: 'var(--k-fg)',
+                }}
+              />
+            </div>
+            <span style={{ fontSize: 11, color: 'var(--k-fg-4)' }}>
+              Variables: {FILENAME_TOKENS.map((t) => `{${t}}`).join(' ')}
+            </span>
+          </div>
           <div
             style={{
               marginTop: 10,
@@ -232,7 +332,7 @@ export default function SettingsExportPage() {
               Example
             </div>
             <div style={{ fontFamily: 'var(--k-font-mono)', fontSize: 12, color: 'var(--k-fg)' }}>
-              CLM-2026-04412_Godfrey_xactimate_2026-08-04.xlsx
+              {example}
             </div>
           </div>
         </div>

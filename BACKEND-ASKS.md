@@ -879,6 +879,33 @@ Three things worth deciding now rather than later:
   there is a transport. Better to store an unused true than to hide the column
   and rediscover it later.
 
+### 35c · The export filename pattern is server-owned
+
+Related, and the one place where "it does not save" is not the whole story.
+`downloadBinary` in `lib/api.ts` names the file from the response's
+**`Content-Disposition`** header and falls back to a local name only when that
+header is missing. So the pattern on screen 33 cannot rename a real export no
+matter what the frontend stores — the server has to build the header from it.
+
+The expansion itself is implemented and tested (`lib/filename-rules.ts`, 27
+tests) so the contract is unambiguous:
+
+- Tokens: `{claim_number} {insured_last} {format} {date} {carrier} {adjuster}
+  {ext}`. Unknown tokens are left intact rather than blanked, so a token added
+  server-side survives an older client.
+- Values are sanitised, patterns are not: `/ \ ? % * : | " < >` are stripped
+  from VALUES only, so a pattern's own separators survive and an insured named
+  `../../etc/passwd` cannot escape the value.
+- Empty values collapse WITH their stranded separator, and a pattern that
+  expands to nothing but an extension falls back to `export.<ext>` rather than
+  a dotfile with no extension.
+- `{date}` is `YYYY-MM-DD` local, so a directory listing sorts chronologically.
+
+Either accept the pattern on the export request and build the header from it,
+or expose it on the account and apply it server-side. If neither is wanted,
+say so and the field should come off the screen rather than sit there implying
+control it does not have.
+
 ### The UI boundary, until both land
 
 Profile, Business (32) and Export defaults (33) render their designed Save bar
