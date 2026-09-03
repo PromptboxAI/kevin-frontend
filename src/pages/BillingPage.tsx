@@ -114,7 +114,7 @@ export default function BillingPage() {
   const showPortal = plan === 'pro' || plan === 'enterprise'
 
   return (
-    <SettingsShell activeId="billing" title="Billing" eyebrow="Plan · payment · usage">
+    <SettingsShell activeId="billing" title="Billing" eyebrow="Plan · payment · usage" save={false}>
 
           {confirming ? (
             <div

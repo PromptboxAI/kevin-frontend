@@ -17,6 +17,7 @@ import PairPage from './pages/PairPage'
 import PortalPage from './pages/PortalPage'
 import RecoveryPage from './pages/RecoveryPage'
 import SettingsApiPage from './pages/SettingsApiPage'
+import SettingsCarriersPage from './pages/SettingsCarriersPage'
 import SettingsBusinessPage from './pages/SettingsBusinessPage'
 import SettingsExportPage from './pages/SettingsExportPage'
 import SettingsXactimatePage from './pages/SettingsXactimatePage'
@@ -201,6 +202,14 @@ export default function App() {
           element={
             <RequireAuth>
               <SettingsApiPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/settings/carriers"
+          element={
+            <RequireAuth>
+              <SettingsCarriersPage />
             </RequireAuth>
           }
         />

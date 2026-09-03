@@ -34,6 +34,7 @@ export const I = {
   ),
   plus: <path d="M12 5v14M5 12h14" />,
   download: <path d="M12 4v12m0 0-4-4m4 4 4-4M5 20h14" />,
+  upload: <path d="M12 20V8m0 0-4 4m4-4 4 4M5 4h14" />,
   filter: <path d="M4 5h16M7 12h10M10 19h4" />,
   check: <path d="m5 12 5 5 9-11" />,
   chevleft: <path d="m15 18-6-6 6-6" />,

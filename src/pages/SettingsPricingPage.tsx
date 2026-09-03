@@ -83,7 +83,7 @@ export default function SettingsPricingPage() {
   const [tiebreak, setTiebreak] = useState(true)
 
   return (
-    <SettingsShell activeId="pricing" title="Pricing" eyebrow="Pricing">
+    <SettingsShell activeId="pricing" title="Pricing" eyebrow="Pricing" save={false}>
       <div style={{ marginBottom: 18 }}>
         <h1
           style={{

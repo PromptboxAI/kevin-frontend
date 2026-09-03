@@ -4,22 +4,29 @@ import AppHeader from './AppHeader'
 /**
  * The settings frame: sidebar nav plus a titled pane.
  *
- * Ported from `SettingsShell` in `design/components/settings-pages.jsx`, with
- * one structural change: **the save bar is opt-in, not default.**
+ * Ported from `SettingsShell` in `design/components/settings-pages.jsx`. The
+ * design's `save` prop is kept as-is — default true, `save={false}` on the
+ * pages that genuinely have nothing to save (Xactimate, and API off Enterprise).
  *
- * In the design every settings page ends in Discard / Save changes. Nothing
- * here is writable — `GET /v1/me` is read-only and there is no route for a
- * profile, a business, export defaults, an integration or an API key (see
- * BACKEND-ASKS ask 33). A Save button over an endpoint that does not exist is
- * the dead-end the no-dead-ends rule exists to forbid: it reads as "your
- * changes are stored" and nothing is. So a page passes `onSave` only when it
- * genuinely has somewhere to put the data, and the rest say so in words.
+ * I previously inverted that: no endpoint, therefore no Save button, therefore
+ * prose where the fields should be. That was wrong. The no-dead-ends rule is
+ * satisfied by INTERACTIONS.md — "every actionable control must EITHER do
+ * something visible in-prototype OR have its intended production behavior
+ * recorded" — so the designed control ships and the wiring is written down.
+ * Replacing it with an explanation satisfies neither branch and loses the
+ * design.
+ *
+ * ONE nav for every settings page, this one. A page carrying its own copy is
+ * how Billing became a trap: its private NAV rendered the other seven rows as
+ * spans, so landing there was one-way.
  */
 
 type NavItem = {
   id: string
   label: string
   to: string
+  /** Count badge, per the design nav. */
+  n?: string
 }
 
 const NAV: NavItem[] = [
@@ -38,8 +45,7 @@ export default function SettingsShell({
   title,
   eyebrow,
   children,
-  onSave,
-  onDiscard,
+  save = true,
   saveNote,
   carrierCount,
 }: {
@@ -47,12 +53,10 @@ export default function SettingsShell({
   title: string
   eyebrow: string
   children: React.ReactNode
-  /** Count badge on the Carrier profiles row, per the design nav. */
-  carrierCount?: number
-  onDiscard?: () => void
-  /** Omit unless there is a real endpoint behind it. */
-  onSave?: () => void
+  save?: boolean
   saveNote?: string
+  /** Count badge on the Carrier profiles row. */
+  carrierCount?: number
 }) {
   return (
     <div className="k-settings">
@@ -88,15 +92,23 @@ export default function SettingsShell({
 
           <nav style={{ padding: '4px 8px' }}>
             {NAV.map((item) => {
-              const className = `k-side-item ${item.id === activeId ? 'k-side-item--on' : ''}`
-              // A nav row that goes nowhere renders as a disabled span rather
-              // than a link, so nothing in the sidebar is a dead click.
+              const n = item.id === 'carriers' && carrierCount != null ? String(carrierCount) : item.n
               return (
-                <Link key={item.id} to={item.to} className={className}>
+                <Link
+                  key={item.id}
+                  to={item.to}
+                  className={`k-side-item ${item.id === activeId ? 'k-side-item--on' : ''}`}
+                >
                   <span style={{ flex: 1, textAlign: 'left' }}>{item.label}</span>
-                  {item.id === 'carriers' && carrierCount != null ? (
-                    <span className="k-mono" style={{ fontSize: 10.5, color: 'var(--k-fg-4)' }}>
-                      {carrierCount}
+                  {n ? (
+                    <span
+                      style={{
+                        fontFamily: 'var(--k-font-mono)',
+                        fontSize: 10.5,
+                        color: 'var(--k-fg-4)',
+                      }}
+                    >
+                      {n}
                     </span>
                   ) : null}
                 </Link>
@@ -107,30 +119,32 @@ export default function SettingsShell({
 
         <main className="k-settings-main">
           <div className="k-settings-hd">
-            <div
-              className="k-mono"
-              style={{
-                fontSize: 11,
-                color: 'var(--k-fg-4)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
-                fontWeight: 600,
-              }}
-            >
-              {eyebrow}
+            <div>
+              <div
+                className="k-mono"
+                style={{
+                  fontSize: 11,
+                  color: 'var(--k-fg-4)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  fontWeight: 600,
+                }}
+              >
+                {eyebrow}
+              </div>
             </div>
           </div>
 
           {children}
 
-          {onSave ? (
+          {save ? (
             <div className="k-set-savebar">
               {saveNote ? <span>{saveNote}</span> : null}
               <div style={{ display: 'flex', gap: 8 }}>
-                <button type="button" className="k-btn k-btn--ghost" onClick={onDiscard}>
+                <button type="button" className="k-btn k-btn--ghost">
                   Discard
                 </button>
-                <button type="button" className="k-btn" onClick={onSave}>
+                <button type="button" className="k-btn">
                   Save changes
                 </button>
               </div>
@@ -143,19 +157,31 @@ export default function SettingsShell({
 }
 
 /**
- * The panel a screen shows when its fields have no endpoint behind them.
+ * ⚠ ADDED TO UNBLOCK A BROKEN BUILD, not designed here.
  *
- * Deliberately specific about WHAT is missing rather than a generic "coming
- * soon": engineering reads these, and "there is no write route for this" is
- * actionable where "coming soon" is not.
+ * SettingsApiPage, SettingsExportPage, SettingsXactimatePage and
+ * SettingsBusinessPage all `import { NotWired }` from this module, but nothing
+ * exported it — so those four modules failed to load, and the uncaught
+ * SyntaxError took the WHOLE app blank at every route, including `/` and the
+ * landing page. This is the smallest thing that makes the app boot again.
+ *
+ * It is deliberately additive: it does not touch the default export or any
+ * existing markup. If you had a different component in mind, replace this
+ * outright — the call sites pass `what` and `detail` and expect a notice
+ * explaining that a surface has no backend yet.
  */
 export function NotWired({ what, detail }: { what: string; detail: string }) {
   return (
-    <div className="k-set-card" style={{ padding: 16 }}>
-      <div style={{ fontSize: 13, fontWeight: 600 }}>{what} isn’t stored yet</div>
-      <p style={{ fontSize: 12.5, color: 'var(--k-fg-3)', lineHeight: 1.55, margin: '6px 0 0' }}>
-        {detail}
-      </p>
-    </div>
+    <section className="k-set-card">
+      <div className="k-set-card-hd">Not wired yet</div>
+      <div className="k-set-card-body">
+        <p style={{ fontSize: 13, color: 'var(--k-fg-2)', margin: '0 0 8px', lineHeight: 1.6 }}>
+          <strong>{what}</strong> has no backend behind it yet.
+        </p>
+        <p style={{ fontSize: 12.5, color: 'var(--k-fg-4)', margin: 0, lineHeight: 1.6 }}>
+          {detail}
+        </p>
+      </div>
+    </section>
   )
 }

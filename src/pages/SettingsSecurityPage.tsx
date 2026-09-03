@@ -53,7 +53,7 @@ export default function SettingsSecurityPage() {
   }
 
   return (
-    <SettingsShell activeId="my-profile" title="Security" eyebrow="Account">
+    <SettingsShell activeId="my-profile" title="Security" eyebrow="Account" save={false}>
       <div style={{ marginBottom: 20 }}>
         <h1
           style={{

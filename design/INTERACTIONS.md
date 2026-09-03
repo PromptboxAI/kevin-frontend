@@ -468,6 +468,28 @@ same failure and must not share a code path:
 | 10 | **New carrier profile**; **Duplicate**; **Version history**; **Delete profile**; **Save changes**; **Import rate table (CSV)**; **Start from standard schedule**; **Import/Export**; **Edit** exclusion; **show all** | 🔌 | Profile CRUD, CSV import/export, versions |
 | 19 Team | **Invite people** / **Send invites**; member ⋯; **Resend**; remove (trash) | 🔌 | Enterprise-only; invite/role/remove |
 
+### In the React app (`src/pages/Settings*.tsx`)
+
+The six non-billing settings screens are ported verbatim from
+`design/components/settings-pages.jsx` and `carrier-settings.jsx`, and render at
+`/settings/{profile,business,carriers,pricing,export,xactimate,api}` plus
+`/settings/security` (screen 41). Every control above ships as designed and is
+covered by the rows above — that is the contract: a control either works or its
+production target is written down here.
+
+App-side state, where it differs from the prototype:
+
+| Screen | App state | Note |
+|---|---|---|
+| 31 Profile | Work email + heading are LIVE from `GET /v1/me`; every other field is the design's placeholder | The design seeds all fields with the demo adjuster. Printing someone else's name as the signed-in user's own is not a placeholder, so email comes from the session |
+| 31 Profile | Security rows link to `/settings/security` | Same four sections as screen 41, app routing instead of `41-Security.html#hash` |
+| 41 Security | **Change password** genuinely works (`supabase.auth.updateUser`) | The only settings control in the app with a real write behind it. 2FA, passkeys and the session list are named, not mocked — they need enrolment flows, not screens |
+| 32 / 33 / 36 | Save bar renders; no write route exists yet | BACKEND-ASKS ask 33. The button is designed, documented, and inert — not replaced with prose |
+| 34 Xactimate | `save={false}` | Nothing to save by design (rules 2 and 4): no connection, no credentials, no sync |
+| 10 Carriers | Carrier picker + five sub-tabs work (client state); all data is the design's seed | No carrier endpoints exist at all. The sidebar count is the seed array's length, not a live count |
+| 14 Pricing | `save={false}`; engine telemetry renders as `—` | `GET /v1/sources` reports `telemetry: "coming_soon"`; inventing figures on the screen that explains how values are justified would be the worst place to do it |
+| 35 Billing | `save={false}`, per the design | Billing has its own actions in-card (Manage subscription, Add credits); a bottom Save bar there was a porting slip, now removed |
+
 ## Estate-sale worksheet (62)
 | Control | State | Production behavior |
 |---|---|---|
