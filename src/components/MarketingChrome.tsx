@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { useAuth } from '../lib/auth'
 
 /**
  * Marketing nav and footer, ported from design/components/marketing-pages.jsx
@@ -61,6 +62,7 @@ function MktLink({
 }
 
 export function MktNav({ active }: { active?: string }) {
+  const { session, loading } = useAuth()
   const items: [string, string, string][] = [
     ['product', 'Product', '/product'],
     ['adj', 'For Adjusters', '/for-adjusters'],
@@ -80,13 +82,25 @@ export function MktNav({ active }: { active?: string }) {
           ))}
         </nav>
       </div>
+      {/* Signed in, the marketing page is still the marketing page -- the nav
+          just offers the way back into the app instead of asking someone who is
+          already authenticated to sign in again. `loading` renders neither, so
+          the header never flashes "Sign in" at a signed-in visitor. */}
       <div style={{ display: 'flex', gap: 8 }}>
-        <Link className="k-btn k-btn--ghost" to="/sign-in">
-          Sign in
-        </Link>
-        <MktLink className="k-btn" to="/sign-up">
-          Start a new claim
-        </MktLink>
+        {loading ? null : session ? (
+          <Link className="k-btn" to="/claims">
+            Go to app →
+          </Link>
+        ) : (
+          <>
+            <Link className="k-btn k-btn--ghost" to="/sign-in">
+              Sign in
+            </Link>
+            <MktLink className="k-btn" to="/sign-up">
+              Start a new claim
+            </MktLink>
+          </>
+        )}
       </div>
     </header>
   )

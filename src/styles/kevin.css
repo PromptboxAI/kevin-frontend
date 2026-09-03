@@ -4540,3 +4540,19 @@
       .k-dfy-rate-v { text-align: left; }
       .k-dfy-worked { padding: 16px 16px; }
     }
+
+    /* Inert marketing links (routes not ported yet) render as <span>, so the
+       anchor-scoped rules above skip them and they fall back to 16px body
+       text. These restate the anchor typography so an unported footer link is
+       visually identical to a live one — the only difference should be that it
+       does not navigate.
+
+       NOTE: `.k-tab--todo` itself has no definition anywhere in this sheet,
+       though AvatarMenu and ClaimTabs both use it for unbuilt destinations.
+       Worth giving it one globally; scoped here so this port does not restyle
+       those surfaces on its way past. */
+    .k-footx-col .k-tab--todo {
+      font-size: 13px; color: var(--k-fg-3); cursor: default;
+    }
+    .k-nav .k-tab--todo { cursor: default; }
+    .k-cta-secondary.k-tab--todo { cursor: default; }

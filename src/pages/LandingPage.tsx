@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { I, Icon } from '../components/Icon'
 import Badge from '../components/Badge'
-import { MktFooter } from '../components/MarketingChrome'
+import { MktFooter, MktNav } from '../components/MarketingChrome'
 
 /**
  * The public landing page — ported from design/components/landing.jsx.
@@ -289,32 +289,7 @@ export function MktSocialProof() {
 export default function LandingPage() {
   return (
     <div className="k-landing">
-      <header className="k-nav">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
-          <Link to="/" className="k-wordmark">
-            Kevin<span>.</span>
-          </Link>
-          <nav style={{ display: 'flex', gap: 24, fontSize: 13, color: 'var(--k-fg-3)' }}>
-            <span className="k-tab--todo" title="Coming soon">
-              Product
-            </span>
-            <span className="k-tab--todo" title="Coming soon">
-              For Adjusters
-            </span>
-            <span className="k-tab--todo" title="Coming soon">
-              Pricing
-            </span>
-          </nav>
-        </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <Link className="k-btn k-btn--ghost" to="/sign-in">
-            Sign in
-          </Link>
-          <Link className="k-btn" to="/sign-in">
-            Start a new claim
-          </Link>
-        </div>
-      </header>
+      <MktNav />
 
       <main className="k-hero">
         <div className="k-hero-l">
