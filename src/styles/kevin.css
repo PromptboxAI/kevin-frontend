@@ -4611,3 +4611,154 @@
        turned dark-on-dark mid-hover. Ghost buttons are excluded -- their own
        hover already sets `color: var(--k-fg)`, which is what they want. */
     .k-nav a.k-btn:not(.k-btn--ghost):hover { color: var(--k-bg); }
+
+
+    /* ══ Marketing responsive rules, second pass ══════════════════
+       The first port appended a design @media block only when its QUERY
+       STRING was absent here. Both sheets already had (max-width: 820px),
+       so design's block was skipped whole -- and every rule inside it was
+       lost, including the one that collapses .k-seg-hero to a single
+       column. That is why the estate page scrolled sideways at 375px
+       while the design page did not. Matched per (query, selector) this
+       time, so only genuinely absent rules are added. */
+
+    @media (max-width: 1080px) {
+      .k-docs-body > aside:last-child{ display: none; }
+      .k-proof-row { grid-template-columns: minmax(0, 1fr); gap: 26px; }
+      .k-proof-row--flip .k-proof-copy { order: 0; }
+    }
+
+    @media (max-width: 820px) {
+      .k-req-main{ grid-template-columns: minmax(0, 1fr) !important; }
+      .k-proof { padding: 44px 24px 4px; }
+      .k-proof-h2 { font-size: 30px; }
+      .k-proof-h { font-size: 23px; }
+      .k-proof-solo { padding: 4px 24px 40px; }
+      .k-proof-two { grid-template-columns: minmax(0, 1fr); gap: 22px; padding: 0 24px 40px; }
+      .k-carrier-marquee {
+        -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
+        mask-image: linear-gradient(90deg, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
+      }
+    }
+
+    @media (max-width: 520px) {
+      .k-proof-h2 { font-size: 25px; }
+      .k-shot-label { display: none; }
+      .k-stats-ribbon-inner { grid-template-columns: minmax(0, 1fr); }
+      .k-hero-actions { flex-direction: column; align-items: stretch; }
+      .k-hero-actions > .k-btn { width: 100%; justify-content: center; }
+      .k-trust { flex-wrap: wrap; row-gap: 4px; }
+      .k-tiers { grid-template-columns: minmax(0, 1fr); max-width: none; }
+    }
+
+    @media (max-width: 640px) {
+      .k-carrier-band { flex-wrap: wrap; gap: 0; padding: 22px 20px; }
+      .k-carrier-band-l {
+        flex: 0 0 100%;
+        border-right: 0; border-bottom: 1px solid var(--k-line);
+        padding: 0 0 12px; margin-bottom: 14px;
+        align-self: auto;
+      }
+      .k-carrier-marquee { flex: 1 1 1px; width: 0; }
+    }
+
+    @media (max-width: 900px) {
+      .k-stats-ribbon { padding: 12px 20px 32px; }
+      .k-stats-ribbon-inner { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .k-pg-grid { grid-template-columns: minmax(0, 1fr); }
+      .k-testimonials { grid-template-columns: minmax(0, 1fr); }
+      .k-how { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+      .k-howband { padding: 48px 20px; }
+      .k-band { flex-direction: column; align-items: flex-start; gap: 18px; padding: 32px 20px; }
+      .k-band-l { max-width: none; }
+      .k-audience-inner { flex-wrap: wrap; justify-content: center; gap: 10px 16px; padding: 16px 20px; }
+      .k-audience-r { flex-wrap: wrap; justify-content: center; gap: 8px 10px; }
+      .k-anno { display: none; }
+      .k-mkt-main { min-width: 0; }
+      .k-price-hero { padding: 40px 20px 28px; }
+      .k-price-hero h1 { font-size: clamp(30px, 8vw, 44px); }
+      .k-price-stats { padding: 40px 20px 48px; }
+      .k-stat-row--3 { grid-template-columns: minmax(0, 1fr); }
+      .k-faq-grid { grid-template-columns: minmax(0, 1fr); }
+      .k-mkt-band {
+        flex-direction: column; align-items: stretch;
+        gap: 20px; padding: 26px 20px; margin: 28px 0;
+      }
+      .k-mkt-cta { padding: 56px 20px; }
+      .k-mkt-main { padding: 0 20px 44px; }
+      .k-prod-hero { padding: 40px 20px 28px; }
+      .k-prod-hero h1 { font-size: clamp(32px, 8.5vw, 46px); }
+      .k-mkt-band-r { min-width: 0; }
+      .k-prod-surface { grid-template-columns: minmax(0, 1fr); gap: 18px; padding: 22px 20px; }
+      .k-landing h1, .k-docs-main h1, .k-req h1 { font-size: clamp(30px, 8.5vw, 46px) !important; }
+      .k-landing h2, .k-docs-main h2, .k-req h2 { font-size: clamp(23px, 6.4vw, 36px) !important; }
+      .k-landing blockquote { font-size: clamp(17px, 4.6vw, 24px) !important; }
+      .k-req-main { gap: 32px; padding: 32px 20px 44px; min-width: 0; }
+      .k-req-foot { flex-wrap: wrap; justify-content: flex-start; gap: 12px; }
+      .k-req-section { padding: 18px 16px 20px; }
+      .k-req .k-insp-field { width: 100% !important; }
+      .k-contact { grid-template-columns: minmax(0, 1fr); gap: 32px; padding: 40px 20px 44px; }
+      .k-contact-meta { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+      .k-topbar div:has(> .k-btn) { flex-wrap: wrap; row-gap: 8px; }
+      .k-topbar { row-gap: 8px; }
+      .k-dfy .k-mkt-main > section,
+      .k-dfy section[style*="padding"] {
+        padding-left: 20px !important; padding-right: 20px !important;
+      }
+      .k-dfy [style*="grid-template-columns"] {
+        grid-template-columns: minmax(0, 1fr) !important;
+        gap: 20px !important;
+      }
+      .k-dfy section > div[style*="display: flex"] { flex-wrap: wrap; }
+      .k-seg-hero { grid-template-columns: minmax(0, 1fr); gap: 32px; padding: 40px 0 28px; }
+      .k-seg-example { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 32px 20px; margin: 28px 0; }
+      .k-seg-why-grid { grid-template-columns: minmax(0, 1fr); }
+      .k-seg-work-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .k-seg-stats { grid-template-columns: minmax(0, 1fr); }
+      .k-seg-quote { margin-left: 0; margin-right: 0; padding: 48px 20px; }
+      .k-seg-quote-inner { padding: 0; }
+      .k-demo-sec { padding-left: 20px !important; padding-right: 20px !important; }
+      .k-demo-step-hd { flex-wrap: wrap; row-gap: 4px; }
+      .k-demo-step-t { min-width: 0; }
+      .k-demo-step { padding: 16px 16px; }
+      .k-demo-note { padding: 12px 14px; }
+      .k-404 { padding: 48px 20px 40px; }
+      .k-404-num { font-size: clamp(84px, 26vw, 132px) !important; }
+      .k-404-suggest-grid { grid-template-columns: minmax(0, 1fr); }
+      .k-404-suggest { padding: 18px 16px; }
+      .k-404-suggest-row { flex-wrap: wrap; row-gap: 2px; }
+      .k-404-suggest-row > span { min-width: 0; overflow-wrap: anywhere; }
+      .k-footnote {
+        flex-wrap: wrap; align-items: flex-start;
+        padding: 18px 20px; gap: 4px 8px; line-height: 1.5;
+      }
+      .k-footnote > :last-child { margin-left: 0 !important; }
+      .k-prod-surface-shot { width: 100%; max-width: 320px; }
+      .k-about-belief-hd { padding: 40px 20px 0; }
+      .k-about-founder {
+        grid-template-columns: minmax(0, 1fr); gap: 28px; padding: 40px 20px 36px;
+      }
+      .k-about-founder-media { max-width: 260px; }
+      .k-about-hero { padding: 44px 20px 32px; }
+      .k-about-pillars { grid-template-columns: minmax(0, 1fr); gap: 16px; padding: 24px 20px; }
+      .k-about-pillar { padding: 22px 20px; }
+      .k-about-not-inner { padding: 40px 20px 36px; }
+      .k-about-not-hd { margin-bottom: 22px; }
+      .k-about-not-row { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 18px 0; }
+      .k-about-not-t { font-size: 18px; }
+      .k-about-time-inner { padding: 40px 20px 36px; }
+      .k-about-time-hd { margin-bottom: 26px; }
+      .k-about-time-track { grid-template-columns: minmax(0, 1fr); gap: 0; }
+      .k-about-time-item { padding: 0 0 26px 24px; }
+      .k-about-time-item::before { top: 6px; bottom: -6px; left: 4px; right: auto; width: 1px; height: auto; }
+      .k-about-time-item:last-child::before { bottom: auto; height: 0; }
+      .k-about-time-item::after { top: 4px; left: 0; }
+      .k-about-time-t { font-size: 18px; margin: 6px 0 6px; }
+      .k-dfy-rates-sec { padding: 40px 20px 20px; }
+      .k-dfy-quote-sec { padding: 44px 20px 22px; }
+      .k-est-win { padding: 36px 20px 32px; }
+      .k-est-win-hd { margin-bottom: 22px; }
+      .k-est-win-steps { grid-template-columns: minmax(0, 1fr); gap: 0; }
+      .k-est-win-step { padding: 18px 0; }
+      .k-est-win-t { font-size: 19px; }
+    }
