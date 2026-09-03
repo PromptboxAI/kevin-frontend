@@ -5,7 +5,7 @@ const TABS: [string, string | null][] = [
   ['New claim', '/claims/new'],
   ['My claims', '/claims'],
   ['Exports', '/exports'],
-  ['Settings', null],
+  ['Settings', '/settings'],
 ]
 
 export default function TopNavTabs() {

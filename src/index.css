@@ -1455,3 +1455,9 @@ button.k-avatar-menu-item {
 .k-cap-pill--bad { background: var(--k-danger); color: #fff; }
 .k-cap-reviewlink { border: 0; background: transparent; color: var(--k-accent); font-size: 13px; cursor: pointer; padding: 4px; }
 
+/* A settings row that is designed but not built. Matches .k-claim-tab--todo,
+   the convention already used for the same situation on the claim tabs -- it
+   renders as a span, so nothing in the sidebar is a dead click. */
+.k-side-item--todo { opacity: 0.4; cursor: default; }
+.k-side-item--todo:hover { background: transparent; }
+

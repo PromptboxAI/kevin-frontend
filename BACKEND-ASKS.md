@@ -745,3 +745,51 @@ edits.
 **Why it went unnoticed:** every server-side test of pairing is a direct HTTP
 call, and preflight is a browser behaviour. The credential is correct; it has
 simply never been exercised from a page.
+
+
+## 33. Settings has almost no backend — five screens, one read
+
+Not a bug; the shape of a gap, raised because the design assumes otherwise and
+somebody will otherwise build forms over nothing.
+
+I built the five non-billing settings screens (31 Profile, 32 Business,
+33 Export defaults, 34 Xactimate, 36 API). Between them the design draws
+roughly thirty editable fields. Here is what exists:
+
+| screen | what the API offers |
+|---|---|
+| 31 Profile | `GET /v1/me` — id, email, roles, quota. **Read-only.** |
+| 32 Business | nothing |
+| 33 Export defaults | `GET /v1/depreciation-rules` — the live class taxonomy. **Read-only.** |
+| 34 Xactimate | nothing (and mostly should stay that way — see below) |
+| 36 API & webhooks | nothing |
+
+There is no `PATCH /v1/me`, no account record, no preferences store, no API-key
+issuance and no webhook registry. So none of these screens can save anything,
+and **none of them pretends to** — the save bar is opt-in in the shell and no
+screen passes it. Where a designed field has no home, the page says which
+endpoint is missing rather than showing a Save button that lies.
+
+Three of these are more than a missing endpoint, and worth deciding before
+building:
+
+1. **Profile fields that print on a document** hit the same problem the
+   preparer name did, and that was settled per-claim in ask 25 for good
+   reason — a document must keep the details that were true when it was filed.
+   Anything on screen 32 (firm name, licence, address) inherits that argument.
+2. **An API key is a bearer credential**, so it needs the shape the capture
+   token and share link already have: returned once, stored as a hash,
+   revocable, scoped. The open question is the scope — whole account, one
+   claim, read-only? — not the form.
+3. **Xactimate "integration" is deliberately not a connector.** Rule 2 says
+   .xlsx not XML, and rule 4 says Kevin never pushes into a carrier system.
+   The screen explains the hand-off instead. A Connect button would imply both
+   of the things the product declines to do — so if XactAnalysis delivery is
+   ever wired, that is a product decision first.
+
+The two genuinely useful endpoints, if you want a priority order:
+
+- **`PATCH /v1/me`** for display name, phone and time zone — the fields that
+  are purely a convenience and carry no point-in-time problem.
+- **A default depreciation METHOD per account.** It is chosen per claim today,
+  and it is the one export "default" that would actually save repeated work.

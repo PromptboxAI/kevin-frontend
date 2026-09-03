@@ -15,6 +15,11 @@ import CapturePage from './pages/CapturePage'
 import PairPage from './pages/PairPage'
 import PortalPage from './pages/PortalPage'
 import RecoveryPage from './pages/RecoveryPage'
+import SettingsApiPage from './pages/SettingsApiPage'
+import SettingsBusinessPage from './pages/SettingsBusinessPage'
+import SettingsExportPage from './pages/SettingsExportPage'
+import SettingsIntegrationsPage from './pages/SettingsIntegrationsPage'
+import SettingsProfilePage from './pages/SettingsProfilePage'
 import SignInPage from './pages/SignInPage'
 import WorksheetPage from './pages/WorksheetPage'
 
@@ -126,8 +131,54 @@ export default function App() {
           }
         />
 
-        {/* Settings. Only Billing is built so far; the rest of the sidebar
-            renders inert rather than routing nowhere. */}
+        {/* Settings. `/settings/billing` is owned elsewhere and untouched
+            here; the five screens below are the ones with no existing file.
+            Carrier profiles (10) and Pricing (14) are still unbuilt and render
+            as disabled rows in the sidebar rather than dead links. */}
+        <Route
+          path="/settings"
+          element={<Navigate to="/settings/profile" replace />}
+        />
+        <Route
+          path="/settings/profile"
+          element={
+            <RequireAuth>
+              <SettingsProfilePage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/settings/business"
+          element={
+            <RequireAuth>
+              <SettingsBusinessPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/settings/export"
+          element={
+            <RequireAuth>
+              <SettingsExportPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/settings/integrations"
+          element={
+            <RequireAuth>
+              <SettingsIntegrationsPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/settings/api"
+          element={
+            <RequireAuth>
+              <SettingsApiPage />
+            </RequireAuth>
+          }
+        />
         <Route
           path="/settings/billing"
           element={

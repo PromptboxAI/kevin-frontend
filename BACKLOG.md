@@ -566,12 +566,58 @@ Nothing on #10. The remaining phone work is the design's own deferred ideas
 (barcode scan, a live viewfinder), which need capabilities the web does not
 portably have.
 
-## 11. Settings
+## 11. Settings — FIVE OF SIX BUILT (billing left alone)
 
-Six screens designed (`31`–`36`: profile, agency, export defaults,
-integrations, billing, API), plus `10-Carrier-settings` and
-`14-Settings-pricing`. None built. `GET /v1/depreciation-rules` and
-`GET /v1/sources` feed these.
+`/settings/{profile,business,export,integrations,api}` behind a shared
+`SettingsShell`, and the Settings nav tab is live. **`BillingPage.tsx` is
+untouched** — zero diff — along with `AvatarMenu`, `billing.ts` and the two
+billing components, so there is nothing to collide with the parallel work.
+
+### The finding: there is almost no backend here
+
+Between them these screens design ~30 editable fields. The API offers two
+reads and no writes:
+
+| screen | what exists |
+|---|---|
+| 31 Profile | `GET /v1/me` — id, email, roles, quota. Read-only. |
+| 32 Business | nothing |
+| 33 Export defaults | `GET /v1/depreciation-rules` — live class taxonomy. Read-only. |
+| 34 Xactimate | nothing, and mostly should stay that way |
+| 36 API & webhooks | nothing |
+
+No `PATCH /v1/me`, no account record, no preferences store, no key issuance.
+So **the save bar is opt-in in the shell and no screen passes it.** A Save
+button over a missing endpoint is precisely the dead end the no-dead-ends rule
+forbids — it reads as "your changes are stored" and nothing is. Each page names
+the endpoint it needs instead. Filed as ask 33.
+
+What the screens do carry, all of it true:
+
+- **Profile** renders the real identity and usage from `/v1/me`, and explains
+  that "Prepared by" is per-claim by design (ask 25) — a point-in-time document
+  must keep the details that were true when it was filed.
+- **Export defaults** renders the **live depreciation schedule** read-only:
+  rule 13 says fetch it, never retype it, and an editable local copy would be a
+  second set of rules that can drift from the one doing the arithmetic. Also
+  states the fixed Xactimate column order and that every exported cell is a
+  static value, never a formula.
+- **Xactimate** explains the hand-off rather than offering a Connect button:
+  .xlsx not XML (rule 2), and Kevin never pushes into a carrier system
+  (rule 4). A connector would imply both things the product declines to do.
+- **API** explains that the two narrow credentials which DO exist (capture
+  token, share link) are not general-purpose keys, and that a key needs the
+  same issue-once/hash/revoke shape before it exists.
+
+Carrier profiles (10) and Pricing (14) remain unbuilt and render as disabled
+sidebar rows rather than dead links.
+
+### Not verified visually
+
+The browser profile was reset mid-session, so there is no signed-in session and
+I do not enter passwords. Typecheck and lint are clean and every `k-` class
+used already exists — but nobody has SEEN these five render. Worth one pass
+with a session open.
 
 ## 12. ~~Exports history · holdback recovery~~ — BUILT
 
