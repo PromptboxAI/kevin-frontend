@@ -4,6 +4,7 @@ import { AuthProvider } from './lib/auth'
 import BillingPage from './pages/BillingPage'
 import RootRoute from './components/RootRoute'
 import PricingPage from './pages/PricingPage'
+import ProductPage from './pages/ProductPage'
 import ClaimsPage from './pages/ClaimsPage'
 import ExportsPage from './pages/ExportsPage'
 import IntakePage from './pages/IntakePage'
@@ -38,6 +39,7 @@ export default function App() {
             so a signed-in user never sees the landing page flash first. */}
         <Route path="/" element={<RootRoute />} />
         <Route path="/pricing" element={<PricingPage />} />
+        <Route path="/product" element={<ProductPage />} />
         <Route path="/sign-in" element={<SignInPage />} />
 
         {/* Public, token-scoped. The backend mints these links as

@@ -30,7 +30,7 @@ import { useAuth } from '../lib/auth'
  */
 
 /** Routes that actually resolve today. Add as pages are ported. */
-const LIVE = new Set<string>(['/', '/sign-in', '/sign-up', '/pricing'])
+const LIVE = new Set<string>(['/', '/sign-in', '/sign-up', '/pricing', '/product'])
 
 function MktLink({
   to,
