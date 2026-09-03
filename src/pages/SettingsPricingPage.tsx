@@ -225,7 +225,7 @@ export default function SettingsPricingPage() {
         <div className="k-ov-card-hd">
           <span>How Kevin sets each value</span>
         </div>
-        <div style={{ padding: '8px 14px 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ padding: '18px 14px 18px', display: 'flex', flexDirection: 'column', gap: 16 }}>
           {BASES.map(([title, desc]) => (
             <div key={title}>
               <div style={{ fontSize: 13, fontWeight: 600 }}>{title}</div>
