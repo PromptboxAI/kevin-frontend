@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import RequireAuth from './components/RequireAuth'
 import { AuthProvider } from './lib/auth'
 import BillingPage from './pages/BillingPage'
+import RootRoute from './components/RootRoute'
 import ClaimsPage from './pages/ClaimsPage'
 import ExportsPage from './pages/ExportsPage'
 import IntakePage from './pages/IntakePage'
@@ -29,7 +30,11 @@ export default function App() {
   return (
     <AuthProvider>
       <Routes>
-        <Route path="/" element={<Navigate to="/claims" replace />} />
+        {/* PUBLIC. `/` is the marketing site for visitors and a redirect to
+            the app for anyone signed in -- ad traffic must not land on a
+            sign-in bounce. RootRoute waits for the auth check before choosing,
+            so a signed-in user never sees the landing page flash first. */}
+        <Route path="/" element={<RootRoute />} />
         <Route path="/sign-in" element={<SignInPage />} />
 
         {/* Public, token-scoped. The backend mints these links as
