@@ -1394,6 +1394,32 @@
         radial-gradient(circle at 78% 20%, oklch(0.50 0.10 252 / 0.35) 0%, transparent 50%),
         radial-gradient(circle at 14% 88%, oklch(0.66 0.13 175 / 0.18) 0%, transparent 45%);
     }
+    /* Oversized watermark K, cropped by the panel's own overflow:hidden so it
+       reads as a design element rather than a logo sitting in the corner. Set
+       on ::after, so every k-auth-r gets it -- sign-in inlines its panel while
+       45/46/47 come through AuthShell, and a pseudo-element keeps the two in
+       sync without either having to remember the markup.
+
+       Sits under .k-auth-r-inner (z-index 1) and is aria-hidden by virtue of
+       being generated content, so it never reaches the accessibility tree or a
+       text selection. Opacity is deliberately low: at 0.07 it survives the
+       navy gradient without competing with the pull-quote in front of it. */
+    .k-auth-r::after {
+      content: 'K';
+      position: absolute;
+      right: -0.20em;
+      bottom: -0.30em;
+      z-index: 0;
+      font-family: var(--k-font-display);
+      font-weight: 400;
+      font-size: min(58vh, 520px);
+      line-height: 0.8;
+      letter-spacing: -0.03em;
+      color: rgba(255, 255, 255, 0.07);
+      pointer-events: none;
+      user-select: none;
+    }
+
     .k-auth-r-inner {
       position: relative; z-index: 1;
       padding: 80px 60px;
