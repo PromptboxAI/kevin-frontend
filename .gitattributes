@@ -1,0 +1,18 @@
+# The sample exports are BINARY. The PDF is written with byte-exact xref
+# offsets, so a single LF->CRLF conversion on checkout shifts every offset and
+# hands the next person a corrupt file that git itself broke. Git warned about
+# this on the first commit; marking them settles it.
+*.pdf   binary
+*.xlsx  binary
+*.xls   binary
+*.zip   binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.webp  binary
+*.ico   binary
+*.woff  binary
+*.woff2 binary
+
+# The CSV sample is written with CRLF on purpose (RFC 4180) -- leave it alone.
+public/samples/*.csv -text
