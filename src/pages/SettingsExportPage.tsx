@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import SettingsShell from '../components/SettingsShell'
 import { F } from '../components/SettingsFields'
 import Badge from '../components/Badge'
@@ -7,10 +8,26 @@ import { Icon, I } from '../components/Icon'
  * Screen 33 — Export defaults. Ported from `SettingsExport` in
  * `design/components/settings-pages.jsx`, verbatim.
  *
- * No defaults endpoint exists yet (BACKEND-ASKS ask 33), so nothing here
- * persists and the export modal reads its own defaults. Recorded in
- * INTERACTIONS.md rather than replaced with an explanation — the designed
- * control is the deliverable.
+ * SCOPE, because the label invites a wrong reading: these govern what goes in
+ * the EXPORTED FILE. None of them changes the worksheet on screen. Turning off
+ * "Sales tax per line item" removes the Sales Tax column from the export; the
+ * worksheet still shows tax, because that is where the adjuster checks the
+ * arithmetic that produced it.
+ *
+ * Nothing persists yet either — no defaults endpoint (BACKEND-ASKS ask 35) —
+ * so the Save bar is disabled and the export modal uses its own defaults.
+ *
+ * The controls were also inert, which is a separate bug from not saving: the
+ * format cards and delivery radios had no state (the selected one was
+ * hardcoded), and the include checkboxes only appeared to respond because the
+ * CSS repaints the box — the tick was drawn from a constant and merely went
+ * white-on-white. All three hold state now, so the screen behaves like a form
+ * even though the form has nowhere to post.
+ *
+ * OPEN QUESTION for design: rule 18 fixes the XactContents column set, and
+ * Sales Tax is one of its columns. Switching it off for the .xlsx format would
+ * produce a file Xactimate cannot ingest — so this toggle arguably belongs to
+ * the PDF/CSV formats only, the way the second group already is.
  */
 
 const FORMATS: [string, string, boolean][] = [
@@ -34,6 +51,20 @@ const INCLUDES: [string, string, string | null, boolean | null][] = [
 ]
 
 export default function SettingsExportPage() {
+  // Every control below was inert: the format cards and the delivery radios had
+  // no state at all (the "on" one was hardcoded), and the include checkboxes
+  // only appeared to respond because the CSS repaints the box -- the tick was
+  // drawn from a constant and just became white-on-white when unchecked.
+  // A control that does not move reads as broken long before anyone discovers
+  // it also does not save. State here; persistence is ask 35.
+  const [format, setFormat] = useState('Xactimate (Excel)')
+  const [delivery, setDelivery] = useState('download')
+  const [includes, setIncludes] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(
+      INCLUDES.filter(([k]) => !k.startsWith('head')).map(([k, , , on]) => [k, on ?? false]),
+    ),
+  )
+
   return (
     <SettingsShell
       activeId="export"
@@ -70,8 +101,16 @@ export default function SettingsExportPage() {
         <div className="k-set-card-hd">Default export format</div>
         <div className="k-set-card-body">
           <div className="k-format-grid">
-            {FORMATS.map(([l, sub, on]) => (
-              <button key={l} type="button" className={`k-format ${on ? 'k-format--on' : ''}`}>
+            {FORMATS.map(([l, sub]) => {
+              const on = format === l
+              return (
+              <button
+                key={l}
+                type="button"
+                aria-pressed={on}
+                onClick={() => setFormat(l)}
+                className={`k-format ${on ? 'k-format--on' : ''}`}
+              >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ fontWeight: 600, fontSize: 13 }}>{l}</span>
                   {on ? <Badge tone="ok">Default</Badge> : null}
@@ -92,7 +131,8 @@ export default function SettingsExportPage() {
                   </div>
                 ) : null}
               </button>
-            ))}
+              )
+            })}
           </div>
         </div>
       </section>
@@ -100,7 +140,7 @@ export default function SettingsExportPage() {
       <section className="k-set-card">
         <div className="k-set-card-hd">Include by default</div>
         <div className="k-set-card-body" style={{ display: 'flex', flexDirection: 'column' }}>
-          {INCLUDES.map(([k, l, s, on], i) =>
+          {INCLUDES.map(([k, l, s], i) =>
             k.startsWith('head') ? (
               <div
                 key={k}
@@ -118,9 +158,13 @@ export default function SettingsExportPage() {
               </div>
             ) : (
               <label key={k} className="k-toggle">
-                <input type="checkbox" defaultChecked={on ?? false} />
+                <input
+                  type="checkbox"
+                  checked={includes[k] ?? false}
+                  onChange={() => setIncludes((p) => ({ ...p, [k]: !p[k] }))}
+                />
                 <span className="k-toggle-box">
-                  {on ? <Icon d={I.check} size={10} stroke={2.5} /> : null}
+                  {includes[k] ? <Icon d={I.check} size={10} stroke={2.5} /> : null}
                 </span>
                 <span style={{ flex: 1 }}>
                   <span style={{ display: 'block', fontSize: 13, color: 'var(--k-fg)' }}>{l}</span>
@@ -135,16 +179,25 @@ export default function SettingsExportPage() {
       <section className="k-set-card">
         <div className="k-set-card-hd">Delivery</div>
         <div className="k-set-card-body" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <label className="k-radio">
-            <span className="k-radio-dot k-radio-dot--on" />
-            <span style={{ flex: 1, fontSize: 13 }}>Download to my computer</span>
-            <span style={{ fontSize: 11, color: 'var(--k-fg-4)' }}>Default</span>
-          </label>
-          <label className="k-radio">
-            <span className="k-radio-dot" />
-            <span style={{ flex: 1, fontSize: 13 }}>Copy a secure share link</span>
-            <span style={{ fontSize: 11, color: 'var(--k-fg-4)' }}>Expires in 7 days</span>
-          </label>
+          {(
+            [
+              ['download', 'Download to my computer', 'Default'],
+              ['link', 'Copy a secure share link', 'Expires in 7 days'],
+            ] as [string, string, string][]
+          ).map(([key, label, meta]) => (
+            <label key={key} className="k-radio">
+              <input
+                type="radio"
+                name="delivery"
+                checked={delivery === key}
+                onChange={() => setDelivery(key)}
+                style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}
+              />
+              <span className={`k-radio-dot ${delivery === key ? 'k-radio-dot--on' : ''}`} />
+              <span style={{ flex: 1, fontSize: 13 }}>{label}</span>
+              <span style={{ fontSize: 11, color: 'var(--k-fg-4)' }}>{meta}</span>
+            </label>
+          ))}
         </div>
       </section>
 
