@@ -1438,6 +1438,13 @@
     .k-side-item:hover { background: var(--k-bg); color: var(--k-fg); }
     .k-side-item--on { background: var(--k-bg); color: var(--k-fg); font-weight: 600; box-shadow: inset 2px 0 0 var(--k-accent); }
     .k-settings-main { padding: 28px 32px 40px; overflow-y: auto; }
+    /* `.k-ov-card` carries no bottom margin because on the claim overview it
+       sits inside a grid with its own gap. Stacked down a settings pane there
+       is no such gap, so the Pricing screen's cards ran flush into one another
+       and the section boundaries disappeared. Scoped to direct children of the
+       settings pane so the overview grid is untouched, and matched to the 16px
+       `.k-set-card` already uses, so both card types share one rhythm. */
+    .k-settings-main > .k-ov-card { margin-bottom: 16px; }
     .k-settings-hd { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 22px; gap: 20px; }
     .k-carrier-picker {
       display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px;

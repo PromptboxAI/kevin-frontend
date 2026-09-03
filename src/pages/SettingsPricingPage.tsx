@@ -84,7 +84,7 @@ export default function SettingsPricingPage() {
 
   return (
     <SettingsShell activeId="pricing" title="Pricing" eyebrow="Pricing" save={false}>
-      <div style={{ marginBottom: 18 }}>
+      <div style={{ marginBottom: 24 }}>
         <h1
           style={{
             fontFamily: 'var(--k-font-display)',
@@ -113,7 +113,7 @@ export default function SettingsPricingPage() {
           <span>Comp source</span>
           <Badge tone="ok">Operational</Badge>
         </div>
-        <div style={{ padding: '4px 14px 14px' }}>
+        <div style={{ padding: '10px 14px 16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0 14px' }}>
             <div className="k-source-logo">G</div>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -153,10 +153,11 @@ export default function SettingsPricingPage() {
           <div
             style={{
               borderTop: '1px solid var(--k-line)',
-              paddingTop: 12,
+              marginTop: 4,
+              paddingTop: 16,
               display: 'flex',
               flexDirection: 'column',
-              gap: 7,
+              gap: 10,
             }}
           >
             <div
@@ -167,7 +168,7 @@ export default function SettingsPricingPage() {
                 textTransform: 'uppercase',
                 letterSpacing: '0.06em',
                 fontWeight: 600,
-                marginBottom: 2,
+                marginBottom: 6,
               }}
             >
               What the aggregator covers
@@ -192,7 +193,7 @@ export default function SettingsPricingPage() {
         <div className="k-ov-card-hd">
           <span>Valuation behavior</span>
         </div>
-        <div style={{ padding: '4px 14px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ padding: '8px 14px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
           <Toggle
             on={lkq}
             set={setLkq}
@@ -224,7 +225,7 @@ export default function SettingsPricingPage() {
         <div className="k-ov-card-hd">
           <span>How Kevin sets each value</span>
         </div>
-        <div style={{ padding: '4px 14px 14px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ padding: '8px 14px 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
           {BASES.map(([title, desc]) => (
             <div key={title}>
               <div style={{ fontSize: 13, fontWeight: 600 }}>{title}</div>
