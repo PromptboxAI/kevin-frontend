@@ -14,17 +14,16 @@ import { useAuth } from '../lib/auth'
  *    stay inert until their screens land.
  */
 const ITEMS: ({ kind: 'div' } | { kind: 'link'; label: string; to?: string })[] = [
-  // Profile, Business and Security exist now, so per the rule above they stop
-  // being inert. Docs (/docs) and Get help (/contact) are MARKETING pages that
-  // were never ported to this app -- they stay labels until those routes exist,
-  // because a link to a route with no page is a 404, not a feature.
+  // Routes per the design contract (avatar-menu.jsx). Docs and Get help are
+  // IN-APP: the marketing pages are being ported into this router as public
+  // routes, so these are ordinary links. They 404 until those pages land.
   { kind: 'link', label: 'My profile', to: '/settings/profile' },
   { kind: 'link', label: 'Business', to: '/settings/business' },
   { kind: 'link', label: 'Billing', to: '/settings/billing' },
   { kind: 'link', label: 'Security', to: '/settings/security' },
   { kind: 'div' },
-  { kind: 'link', label: 'Docs' },
-  { kind: 'link', label: 'Get help' },
+  { kind: 'link', label: 'Docs', to: '/docs' },
+  { kind: 'link', label: 'Get help', to: '/contact' },
   { kind: 'div' },
 ]
 
@@ -119,7 +118,7 @@ export default function AvatarMenu({ email }: { email: string | null }) {
                   key={item.label}
                   className="k-avatar-menu-item k-tab--todo"
                   role="menuitem"
-                  title="Not built yet in the production app"
+                  title="Lives on the marketing site, which is a separate deployment"
                 >
                   <span style={{ display: 'inline-grid', width: 14, color: 'var(--k-fg-4)' }}>
                     <Icon d={I.spark} size={12} />

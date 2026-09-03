@@ -19,23 +19,16 @@ import AppHeader from './AppHeader'
 type NavItem = {
   id: string
   label: string
-  to: string | null
-  /** Why it is not reachable yet, for the tooltip. */
-  why?: string
+  to: string
 }
 
 const NAV: NavItem[] = [
   { id: 'my-profile', label: 'My profile', to: '/settings/profile' },
   { id: 'agency', label: 'Business', to: '/settings/business' },
-  {
-    id: 'carriers',
-    label: 'Carrier profiles',
-    to: null,
-    why: 'Not built yet — design screen 10',
-  },
-  { id: 'pricing', label: 'Pricing', to: null, why: 'Not built yet — design screen 14' },
+  { id: 'carriers', label: 'Carrier profiles', to: '/settings/carriers' },
+  { id: 'pricing', label: 'Pricing', to: '/settings/pricing' },
   { id: 'export', label: 'Export defaults', to: '/settings/export' },
-  { id: 'integrations', label: 'Xactimate', to: '/settings/integrations' },
+  { id: 'integrations', label: 'Xactimate', to: '/settings/xactimate' },
   { id: 'billing', label: 'Billing', to: '/settings/billing' },
   { id: 'api', label: 'API & webhooks', to: '/settings/api' },
 ]
@@ -46,12 +39,17 @@ export default function SettingsShell({
   eyebrow,
   children,
   onSave,
+  onDiscard,
   saveNote,
+  carrierCount,
 }: {
   activeId: string
   title: string
   eyebrow: string
   children: React.ReactNode
+  /** Count badge on the Carrier profiles row, per the design nav. */
+  carrierCount?: number
+  onDiscard?: () => void
   /** Omit unless there is a real endpoint behind it. */
   onSave?: () => void
   saveNote?: string
@@ -93,19 +91,15 @@ export default function SettingsShell({
               const className = `k-side-item ${item.id === activeId ? 'k-side-item--on' : ''}`
               // A nav row that goes nowhere renders as a disabled span rather
               // than a link, so nothing in the sidebar is a dead click.
-              return item.to ? (
+              return (
                 <Link key={item.id} to={item.to} className={className}>
                   <span style={{ flex: 1, textAlign: 'left' }}>{item.label}</span>
+                  {item.id === 'carriers' && carrierCount != null ? (
+                    <span className="k-mono" style={{ fontSize: 10.5, color: 'var(--k-fg-4)' }}>
+                      {carrierCount}
+                    </span>
+                  ) : null}
                 </Link>
-              ) : (
-                <span
-                  key={item.id}
-                  className={`${className} k-side-item--todo`}
-                  title={item.why}
-                  aria-disabled
-                >
-                  <span style={{ flex: 1, textAlign: 'left' }}>{item.label}</span>
-                </span>
               )
             })}
           </nav>
@@ -133,6 +127,9 @@ export default function SettingsShell({
             <div className="k-set-savebar">
               {saveNote ? <span>{saveNote}</span> : null}
               <div style={{ display: 'flex', gap: 8 }}>
+                <button type="button" className="k-btn k-btn--ghost" onClick={onDiscard}>
+                  Discard
+                </button>
                 <button type="button" className="k-btn" onClick={onSave}>
                   Save changes
                 </button>

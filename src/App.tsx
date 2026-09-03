@@ -18,7 +18,8 @@ import RecoveryPage from './pages/RecoveryPage'
 import SettingsApiPage from './pages/SettingsApiPage'
 import SettingsBusinessPage from './pages/SettingsBusinessPage'
 import SettingsExportPage from './pages/SettingsExportPage'
-import SettingsIntegrationsPage from './pages/SettingsIntegrationsPage'
+import SettingsXactimatePage from './pages/SettingsXactimatePage'
+import SettingsPricingPage from './pages/SettingsPricingPage'
 import SettingsProfilePage from './pages/SettingsProfilePage'
 import SettingsSecurityPage from './pages/SettingsSecurityPage'
 import SignInPage from './pages/SignInPage'
@@ -166,6 +167,15 @@ export default function App() {
           }
         />
         <Route
+          path="/settings/pricing"
+          element={
+            <RequireAuth>
+              <SettingsPricingPage />
+            </RequireAuth>
+          }
+        />
+
+        <Route
           path="/settings/export"
           element={
             <RequireAuth>
@@ -174,10 +184,10 @@ export default function App() {
           }
         />
         <Route
-          path="/settings/integrations"
+          path="/settings/xactimate"
           element={
             <RequireAuth>
-              <SettingsIntegrationsPage />
+              <SettingsXactimatePage />
             </RequireAuth>
           }
         />

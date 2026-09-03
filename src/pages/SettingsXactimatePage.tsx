@@ -13,7 +13,7 @@ import { Link } from 'react-router-dom'
  * Connect button would imply both of the things the product deliberately does
  * not do.
  */
-export default function SettingsIntegrationsPage() {
+export default function SettingsXactimatePage() {
   return (
     <SettingsShell activeId="integrations" title="Xactimate" eyebrow="Integration">
       <div style={{ marginBottom: 22 }}>
