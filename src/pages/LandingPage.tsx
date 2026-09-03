@@ -69,6 +69,60 @@ const LANDING_CARRIERS = [
   { name: 'USAA', mark: 'U', color: 'oklch(0.38 0.11 252)' },
 ]
 
+/** Matches the design's <Thumb src=…>: cover-fitted, 4px radius, inset hairline. */
+function ItemThumb({ file, size }: { file: string; size: number }) {
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: 4,
+        overflow: 'hidden',
+        flex: '0 0 auto',
+        position: 'relative',
+        boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.08)',
+      }}
+    >
+      <img
+        src={`/marketing/items/${file}`}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+      />
+    </div>
+  )
+}
+
+/** The design's <Thumb> with no src: a striped placeholder. Used where the
+ *  prototype pulls an Unsplash stock image the app has no reason to ship. */
+function PlainThumb({ size }: { size: number }) {
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: 4,
+        flex: '0 0 auto',
+        backgroundImage:
+          'repeating-linear-gradient(135deg, var(--k-bg-2) 0 6px, var(--k-bg-3) 6px 12px)',
+        boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.08)',
+      }}
+    />
+  )
+}
+
+/** ConfPip from design/components/shared.jsx — the AI confidence dot. */
+function ConfPip({ level = 'high' }: { level?: 'high' | 'med' | 'low' }) {
+  const c = level === 'high' ? 'var(--k-ok)' : level === 'med' ? 'var(--k-fg-3)' : 'var(--k-fg-4)'
+  return (
+    <span
+      title={`AI confidence: ${level}`}
+      style={{ width: 5, height: 5, borderRadius: 99, background: c, display: 'inline-block', flex: '0 0 auto' }}
+    />
+  )
+}
+
 /* ── Shared marketing pieces (pricing will reuse these) ───────────────── */
 
 /**
@@ -628,6 +682,232 @@ export default function LandingPage() {
             slot="Carrier export modal"
             caption="The export modal — formats, what needs attention, and live download buttons."
           />
+        </div>
+      </section>
+
+      {/* — Product gallery: "Inside the grid" — */}
+      <section className="k-pg">
+        <div className="k-pg-hd">
+          <div className="k-pg-eyebrow-top">Inside the grid</div>
+          <h2 className="k-pg-h2">Four things you’ll actually use, every claim.</h2>
+          <p className="k-pg-sub" style={{ textAlign: 'center' }}>
+            Each one earns its keep on the first claim.
+          </p>
+        </div>
+
+        <div className="k-pg-grid">
+          {/* Card 1 — RCV with three retailer comps */}
+          <article className="k-pg-card">
+            <div className="k-pg-eyebrow">RCV with proof</div>
+            <h3 className="k-pg-h">Three retailers behind every number.</h3>
+            <div className="k-pg-viz k-pg-viz--rcv">
+              <div className="k-pg-mockrow">
+                <ItemThumb file="20260805_143711.jpg" size={26} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="k-pg-mockrow-t">Black Rubber-Soled Boot, Madden Brand</div>
+                  <div className="k-pg-mockrow-s">Madden · Clothing — Adult</div>
+                </div>
+                <div className="k-pg-rcv-focus">
+                  <span className="k-mono">$141.16</span>
+                  <Icon d={I.chevdown} size={10} />
+                </div>
+              </div>
+              <div className="k-pg-pop">
+                <div className="k-pg-pop-hd">Live comps · median sets RCV</div>
+                {[
+                  ['Target', '$152.19', false],
+                  ['Madden', '$141.16', true],
+                  ['Google Shopping', '$124.75', false],
+                ].map(([source, price, isMedian], i) => (
+                  <div key={i} className="k-pg-pop-row">
+                    <span
+                      style={{
+                        fontWeight: 600,
+                        fontSize: 12.5,
+                        flex: 1,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {source}
+                    </span>
+                    <span className={`k-mini-dot k-mini-dot--${isMedian ? 'ok' : 'quiet'}`} />
+                    <span style={{ fontSize: 11, color: 'var(--k-fg-4)' }}>
+                      {isMedian ? 'Direct listing' : 'Search result'}
+                    </span>
+                    <span className="k-mono" style={{ fontWeight: 600 }}>
+                      {price}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <p className="k-pg-body">
+              Click any RCV cell to see the live retailer comps behind it — the median sets the
+              price, the alternates stay one click away. Source URLs travel with the export.
+            </p>
+          </article>
+
+          {/* Card 2 — Special-limits flagging */}
+          <article className="k-pg-card">
+            <div className="k-pg-eyebrow">Carrier-aware flagging</div>
+            <h3 className="k-pg-h">Jewelry. Firearms. Fine arts. Furs.</h3>
+            <div className="k-pg-viz k-pg-viz--sl">
+              <div className="k-pg-mockrow k-pg-mockrow--flag">
+                <PlainThumb size={26} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="k-pg-mockrow-t">Diamond solitaire engagement ring, 1.5ct</div>
+                  <div className="k-pg-mockrow-s">Tiffany &amp; Co. · Jewelry</div>
+                </div>
+                <Badge tone="warn">Special limits</Badge>
+                <span className="k-mono" style={{ fontWeight: 600, fontSize: 13 }}>
+                  $18,500.00
+                </span>
+              </div>
+              <div className="k-pg-mockrow k-pg-mockrow--flag">
+                <PlainThumb size={26} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="k-pg-mockrow-t">Semi-auto pistol, 9mm</div>
+                  <div className="k-pg-mockrow-s">Sig Sauer · Firearms</div>
+                </div>
+                <Badge tone="warn">Special limits</Badge>
+                <span className="k-mono" style={{ fontWeight: 600, fontSize: 13 }}>
+                  $799.00
+                </span>
+              </div>
+              <div className="k-pg-cap">
+                <Icon d={I.warn} size={11} />
+                <span>
+                  <strong>Most policies cap Jewelry at $2,500/item.</strong> Above cap requires
+                  appraisal on file or adjuster override.
+                </span>
+              </div>
+            </div>
+            <p className="k-pg-body">
+              Items in carrier-capped classes are flagged inline — never blocked. Override anything
+              with a click; the cap policy and proof requirement are one hover away.
+            </p>
+          </article>
+
+          {/* Card 3 — Barcode auto-match */}
+          <article className="k-pg-card">
+            <div className="k-pg-eyebrow">Reads model stickers</div>
+            <h3 className="k-pg-h">Make. Model. Category. Filled.</h3>
+            <div className="k-pg-viz k-pg-viz--match">
+              <div className="k-pg-match">
+                <div className="k-pg-photo">
+                  <ItemThumb file="20260805_144542.jpg" size={88} />
+                  <span className="k-pg-bcode">BG7811-BLK</span>
+                </div>
+                <div className="k-pg-arrow">
+                  <Icon
+                    d={
+                      <>
+                        <path d="M5 12h14" />
+                        <path d="m13 6 6 6-6 6" />
+                      </>
+                    }
+                    size={18}
+                    stroke={2}
+                  />
+                </div>
+                <div className="k-pg-fields">
+                  {[
+                    ['Make', 'Guess'],
+                    ['Model', 'BG7811-BLK'],
+                    ['Category', 'Clothing — Adult'],
+                    ['RCV', '$77.25'],
+                  ].map(([k, v]) => (
+                    <div key={k} className="k-pg-field">
+                      <Icon d={I.check} size={10} stroke={2.5} />
+                      <span className="k-pg-field-k">{k}</span>
+                      <span
+                        className={`k-pg-field-v ${k === 'Model' || k === 'RCV' ? 'k-mono' : ''}`}
+                      >
+                        {v}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <p className="k-pg-body">
+              Kevin reads barcodes and model labels in your photos, matches them to manufacturer
+              SKUs, and fills make / model / category / price in one pass.{' '}
+              <strong>87% prefill rate</strong> on a typical claim.
+            </p>
+          </article>
+
+          {/* Card 4 — Live processing */}
+          <article className="k-pg-card">
+            <div className="k-pg-eyebrow">Watch it work</div>
+            <h3 className="k-pg-h">60 photos in, 57 items out — in 2m 41s.</h3>
+            <div className="k-pg-viz k-pg-viz--feed">
+              <div className="k-pg-feed-hd">
+                <span className="k-pulse k-pulse--sm" />
+                <span style={{ fontSize: 11.5, fontWeight: 600 }}>Kevin is working</span>
+                <span
+                  className="k-mono"
+                  style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--k-fg-4)' }}
+                >
+                  42 / 60
+                </span>
+              </div>
+              {[
+                ['20260805_144542.jpg', 'Guess Branded Leather Belt with Silver Buckle, Black', '$77.25', 'just now'],
+                ['20260805_143711.jpg', 'Black Rubber-Soled Boot, Madden Brand', '$141.16', '2s ago'],
+                ['20260805_143757.jpg', 'Honeywell FilterPower Replacement Vacuum Filter', '$17.91', '4s ago'],
+                ['20260805_144556.jpg', 'Yellow-Handled Household Scissors', '$14.98', '6s ago'],
+              ].map(([file, desc, price, age]) => (
+                <div key={file} className="k-pg-feed-row">
+                  <ItemThumb file={file} size={22} />
+                  <span
+                    style={{
+                      flex: 1,
+                      fontSize: 12,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {desc}
+                  </span>
+                  <ConfPip />
+                  <span className="k-mono" style={{ fontSize: 12, fontWeight: 600 }}>
+                    {price}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 10.5,
+                      color: 'var(--k-fg-4)',
+                      fontFamily: 'var(--k-font-mono)',
+                      width: 56,
+                      textAlign: 'right',
+                    }}
+                  >
+                    {age}
+                  </span>
+                </div>
+              ))}
+              <div
+                style={{
+                  padding: '8px 12px',
+                  fontSize: 11,
+                  color: 'var(--k-fg-4)',
+                  fontFamily: 'var(--k-font-mono)',
+                  textAlign: 'center',
+                }}
+              >
+                + 38 earlier items …
+              </div>
+            </div>
+            <p className="k-pg-body">
+              Items resolve into the grid as Kevin processes — confidence dots show what it’s sure
+              of. Open the worksheet the moment the first batch is done; you don’t wait for the last
+              photo.
+            </p>
+          </article>
         </div>
       </section>
 

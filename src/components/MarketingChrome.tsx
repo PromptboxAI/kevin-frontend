@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
+import KevinWordmark from './KevinWordmark'
 
 /**
  * Marketing nav and footer, ported from design/components/marketing-pages.jsx
@@ -77,9 +78,7 @@ export function MktNav({ active }: { active?: string }) {
   return (
     <header className="k-nav">
       <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
-        <Link to="/" className="k-wordmark">
-          Kevin<span>.</span>
-        </Link>
+        <KevinWordmark size={18} suffix />
         <nav style={{ display: 'flex', gap: 24, fontSize: 13, color: 'var(--k-fg-3)' }}>
           {items.map(([id, label, to]) => (
             <MktLink key={id} to={to} style={{ color: active === id ? 'var(--k-fg)' : undefined }}>
@@ -117,9 +116,7 @@ export function MktFooter() {
     <footer className="k-footx">
       <div className="k-footx-cols">
         <div className="k-footx-brand">
-          <Link to="/" className="k-wordmark">
-            Kevin<span>.</span>
-          </Link>
+          <KevinWordmark size={15} suffix />
           <p>A content inventory adjuster. Photos in, inventory out.</p>
         </div>
         <div className="k-footx-col">
