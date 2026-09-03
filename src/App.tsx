@@ -5,6 +5,9 @@ import BillingPage from './pages/BillingPage'
 import RootRoute from './components/RootRoute'
 import PricingPage from './pages/PricingPage'
 import ForAdjustersPage from './pages/ForAdjustersPage'
+import AboutPage from './pages/AboutPage'
+import ContactPage from './pages/ContactPage'
+import DoneForYouPage from './pages/DoneForYouPage'
 import ForEstateLiquidatorsPage from './pages/ForEstateLiquidatorsPage'
 import ProductPage from './pages/ProductPage'
 import ClaimsPage from './pages/ClaimsPage'
@@ -46,6 +49,9 @@ export default function App() {
         <Route path="/product" element={<ProductPage />} />
         <Route path="/for-adjusters" element={<ForAdjustersPage />} />
         <Route path="/for-estate-liquidators" element={<ForEstateLiquidatorsPage />} />
+        <Route path="/done-for-you" element={<DoneForYouPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/contact" element={<ContactPage />} />
         <Route path="/sign-in" element={<SignInPage />} />
 
         {/* The password-reset flow, screens 45 / 46 / 47. Public by necessity:

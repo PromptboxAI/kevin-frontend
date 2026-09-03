@@ -32,7 +32,7 @@ import KevinWordmark from './KevinWordmark'
  */
 
 /** Routes that actually resolve today. Add as pages are ported. */
-const LIVE = new Set<string>(['/', '/sign-in', '/sign-up', '/pricing', '/product', '/for-adjusters', '/for-estate-liquidators'])
+const LIVE = new Set<string>(['/', '/sign-in', '/sign-up', '/pricing', '/product', '/for-adjusters', '/for-estate-liquidators', '/done-for-you', '/about', '/contact'])
 
 function MktLink({
   to,
