@@ -4,6 +4,7 @@ import { AuthProvider } from './lib/auth'
 import BillingPage from './pages/BillingPage'
 import RootRoute from './components/RootRoute'
 import PricingPage from './pages/PricingPage'
+import ForAdjustersPage from './pages/ForAdjustersPage'
 import ProductPage from './pages/ProductPage'
 import ClaimsPage from './pages/ClaimsPage'
 import ExportsPage from './pages/ExportsPage'
@@ -40,6 +41,7 @@ export default function App() {
         <Route path="/" element={<RootRoute />} />
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/product" element={<ProductPage />} />
+        <Route path="/for-adjusters" element={<ForAdjustersPage />} />
         <Route path="/sign-in" element={<SignInPage />} />
 
         {/* Public, token-scoped. The backend mints these links as
