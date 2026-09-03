@@ -821,3 +821,69 @@ shows without a round trip to Stripe.
 
 Not urgent — the sections degrade quietly — but the empty state is the one part
 of screen 35 that is not yet the design.
+
+## 35 · `PATCH /v1/me` and a notification-preferences store
+
+Screen 31 (My profile) is a **read-only surface with a Save bar**. Every field
+renders, nothing persists, and the Save button is disabled with the reason on
+screen — see "UI boundary" below. Two routes turn it into a working page.
+
+### 35a · `PATCH /v1/me` — the adjuster's own details
+
+`GET /v1/me` does not currently touch the database (identity comes straight
+from the JWT), so this is the first route that needs a user row at all.
+
+Writable fields, all optional, all nullable:
+
+| Field | Notes |
+|---|---|
+| `first_name`, `last_name` | Display only |
+| `phone` | Free text — international formats vary too much to validate |
+| `title` | Free text, not an enum. The UI offers eight common ones plus "Other…", and an adjuster whose card says something else must be able to type it |
+| `time_zone` | IANA identifier (`America/New_York`), never an offset — offsets change twice a year |
+| `avatar_url` | Written by whatever handles the upload, not by the client |
+
+`email` is **not** writable here. It is the sign-in identity and belongs to
+Supabase auth; changing it needs a verification round-trip, not a PATCH.
+
+**What this is NOT.** It must not become the source of "Prepared by" on an
+export. Migration 0043 put `estimator_name` / `business_name` on the CLAIM
+deliberately — *"a profile table would rewrite history"* — so an inventory
+prepared by someone who has since left the firm keeps saying so. If profile
+values ever pre-fill those fields, they must be **copied into the claim at
+creation**, never read through at render time. Getting this wrong silently
+rewrites documents already sent to carriers.
+
+### 35b · Notification preferences
+
+Seven events, two channels each, matching the seven rows on screen 31 and the
+templates in `emails/`:
+
+```
+processing · export_ready · export_failed · share_opened
+special_limits · storage · payment
+```
+
+`GET /v1/me/notifications` → `{ prefs: { <event>: { email: bool, push: bool } } }`
+`PATCH /v1/me/notifications` with a partial of the same shape.
+
+Three things worth deciding now rather than later:
+
+- **Defaults live server-side.** The UI currently seeds its own defaults; two
+  copies of that list will drift. Return every event with its default already
+  applied, so the client renders the payload and nothing else.
+- **Unknown events are ignored, not rejected.** Adding an eighth email should
+  not 422 an older client.
+- **`push` has nothing behind it.** There is no web-push registration and no
+  mobile app, so storing the flag is fine but nothing should read it until
+  there is a transport. Better to store an unused true than to hide the column
+  and rediscover it later.
+
+### The UI boundary, until both land
+
+Profile, Business (32) and Export defaults (33) render their designed Save bar
+with the button **disabled** and a line naming the missing route. That is
+deliberate: an enabled Save that silently discards is worse than an honest
+one, and the alternative — hiding the fields — loses the design and tells
+engineering nothing. When the routes ship, the fields are already there and
+the bar just needs enabling.

@@ -56,7 +56,14 @@ export default function SettingsBusinessPage() {
       activeId="agency"
       title="Business"
       eyebrow="Your business · branding"
-      saveNote="Defaults apply to new claims. Anything already in a claim keeps the value it was created with."
+      saveDisabled
+      saveNote={
+        <>
+          Defaults apply to new claims, and anything already in a claim keeps
+          the value it was created with — but nothing saves yet: there is no
+          business write route (BACKEND-ASKS ask 35).
+        </>
+      }
     >
       <div style={{ marginBottom: 22 }}>
         <h1

@@ -7,6 +7,11 @@ import { Icon, I } from '../components/Icon'
  * Screen 10 — Carrier profiles. Ported from `CarrierSettings` in
  * `design/components/carrier-settings.jsx`.
  *
+ * NOT ROUTED IN BETA. Carrier profiles is not part of the beta offering, so the
+ * sidebar row is greyed and `/settings/carriers` redirects to Profile. This
+ * file is kept intact rather than deleted: re-enabling is an import, a route
+ * element, and clearing `off` on the nav item in SettingsShell.
+ *
  * The design builds its own chrome; this renders inside the shared
  * `SettingsShell` so the sidebar stays one implementation (a page with its own
  * nav is what made Billing a one-way trip). `save={false}` matches the design,

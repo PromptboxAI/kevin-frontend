@@ -122,7 +122,14 @@ export default function SettingsProfilePage() {
       activeId="my-profile"
       title="My profile"
       eyebrow="Personal · session"
-      saveNote="Your name and title appear on exports you prepare from now on."
+      saveDisabled
+      saveNote={
+        <>
+          Nothing on this page saves yet — there is no profile write route
+          (BACKEND-ASKS ask 35). Your email comes from your sign-in, and
+          “Prepared by” is set per claim.
+        </>
+      }
     >
       <div style={{ marginBottom: 22 }}>
         <h1

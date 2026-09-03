@@ -27,12 +27,20 @@ type NavItem = {
   to: string
   /** Count badge, per the design nav. */
   n?: string
+  /**
+   * Not offered in beta. The row stays visible and greyed so the shape of the
+   * product is still legible, but it is a span rather than a link -- and its
+   * route redirects, so a bookmarked URL cannot reach it either.
+   */
+  off?: boolean
 }
 
 const NAV: NavItem[] = [
   { id: 'my-profile', label: 'My profile', to: '/settings/profile' },
   { id: 'agency', label: 'Business', to: '/settings/business' },
-  { id: 'carriers', label: 'Carrier profiles', to: '/settings/carriers' },
+  // Carrier profiles is BUILT (SettingsCarriersPage) but not offered in beta.
+  // Flip `off` and restore the route in App.tsx to bring it back.
+  { id: 'carriers', label: 'Carrier profiles', to: '/settings/carriers', off: true },
   { id: 'pricing', label: 'Pricing', to: '/settings/pricing' },
   { id: 'export', label: 'Export defaults', to: '/settings/export' },
   { id: 'integrations', label: 'Xactimate', to: '/settings/xactimate' },
@@ -47,6 +55,7 @@ export default function SettingsShell({
   children,
   save = true,
   saveNote,
+  saveDisabled = false,
   carrierCount,
 }: {
   activeId: string
@@ -54,7 +63,15 @@ export default function SettingsShell({
   eyebrow: string
   children: React.ReactNode
   save?: boolean
-  saveNote?: string
+  saveNote?: React.ReactNode
+  /**
+   * The UI boundary. A screen whose fields have no write route keeps the
+   * designed bar but disables the button, so nobody types into a form that
+   * silently discards. An enabled Save over a missing endpoint is a
+   * false-positive save state -- the user believes the work is stored, and
+   * finds out otherwise on the next page load. See BACKEND-ASKS ask 35.
+   */
+  saveDisabled?: boolean
   /** Count badge on the Carrier profiles row. */
   carrierCount?: number
 }) {
@@ -93,6 +110,20 @@ export default function SettingsShell({
           <nav style={{ padding: '4px 8px' }}>
             {NAV.map((item) => {
               const n = item.id === 'carriers' && carrierCount != null ? String(carrierCount) : item.n
+
+              if (item.off) {
+                return (
+                  <span
+                    key={item.id}
+                    className="k-side-item k-side-item--off"
+                    title="Not available in beta"
+                  >
+                    <span style={{ flex: 1, textAlign: 'left' }}>{item.label}</span>
+                    <span style={{ fontSize: 10.5, color: 'var(--k-fg-4)' }}>Soon</span>
+                  </span>
+                )
+              }
+
               return (
                 <Link
                   key={item.id}
@@ -141,10 +172,10 @@ export default function SettingsShell({
             <div className="k-set-savebar">
               {saveNote ? <span>{saveNote}</span> : null}
               <div style={{ display: 'flex', gap: 8 }}>
-                <button type="button" className="k-btn k-btn--ghost">
+                <button type="button" className="k-btn k-btn--ghost" disabled={saveDisabled}>
                   Discard
                 </button>
-                <button type="button" className="k-btn">
+                <button type="button" className="k-btn" disabled={saveDisabled}>
                   Save changes
                 </button>
               </div>

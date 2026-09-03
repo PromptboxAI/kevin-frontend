@@ -39,7 +39,14 @@ export default function SettingsExportPage() {
       activeId="export"
       title="Export defaults"
       eyebrow="Defaults · per export format"
-      saveNote="These pre-fill the export modal. You can still override anything per claim."
+      saveDisabled
+      saveNote={
+        <>
+          These are meant to pre-fill the export modal, with per-claim
+          overrides — but nothing saves yet: there is no export-defaults route
+          (BACKEND-ASKS ask 35). The modal uses its own defaults today.
+        </>
+      }
     >
       <div style={{ marginBottom: 22 }}>
         <h1

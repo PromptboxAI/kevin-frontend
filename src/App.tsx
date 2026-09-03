@@ -20,7 +20,6 @@ import PairPage from './pages/PairPage'
 import PortalPage from './pages/PortalPage'
 import RecoveryPage from './pages/RecoveryPage'
 import SettingsApiPage from './pages/SettingsApiPage'
-import SettingsCarriersPage from './pages/SettingsCarriersPage'
 import SettingsBusinessPage from './pages/SettingsBusinessPage'
 import SettingsExportPage from './pages/SettingsExportPage'
 import SettingsXactimatePage from './pages/SettingsXactimatePage'
@@ -222,14 +221,11 @@ export default function App() {
             </RequireAuth>
           }
         />
-        <Route
-          path="/settings/carriers"
-          element={
-            <RequireAuth>
-              <SettingsCarriersPage />
-            </RequireAuth>
-          }
-        />
+        {/* Carrier profiles is not offered in beta. The screen is built and
+            kept (SettingsCarriersPage) -- this route redirects so a bookmark or
+            an old link cannot reach a feature we are not selling yet. Restore
+            the element and clear `off` on the nav item to bring it back. */}
+        <Route path="/settings/carriers" element={<Navigate to="/settings/profile" replace />} />
         <Route
           path="/settings/billing"
           element={

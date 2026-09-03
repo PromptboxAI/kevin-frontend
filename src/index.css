@@ -949,6 +949,19 @@
   background: transparent;
 }
 
+/* A settings nav row for something not offered yet. Same 0.4 treatment as an
+   unbuilt tab, so "greyed out" reads the same everywhere in the app. Rendered
+   as a <span>, never a link -- an anchor that goes nowhere is the dead click
+   this exists to avoid. */
+.k-side-item--off {
+  cursor: default;
+  opacity: 0.4;
+}
+.k-side-item--off:hover {
+  background: transparent;
+  color: var(--k-fg-2);
+}
+
 /* --- Avatar menu --- */
 .k-avatar-btn {
   width: 28px;
