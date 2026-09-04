@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { I, Icon } from '../components/Icon'
 import KevinWordmark from '../components/KevinWordmark'
 import { MktFooter } from '../components/MarketingChrome'
@@ -120,7 +120,10 @@ function scrollToHeading(heading: string) {
 export default function DocsPage() {
   const { slug } = useParams()
   const navigate = useNavigate()
-  const [q, setQ] = useState('')
+  // Seeded from ?q= so another page can hand off a search — the 404's box does
+  // exactly that, which is the difference between a decorative input and one.
+  const [params] = useSearchParams()
+  const [q, setQ] = useState(() => params.get('q') ?? '')
 
   const hits = useMemo(() => {
     if (!q.trim()) return null
@@ -133,9 +136,14 @@ export default function DocsPage() {
     })
   }, [q])
 
-  if (!slug) return <Navigate to={`/docs/${DOC_FLAT[0].id}`} replace />
+  // /docs and an unknown slug both land on the first article — carrying the
+  // query string, or a handed-off ?q= would be dropped by the redirect that
+  // was supposed to deliver it.
+  const search = params.toString()
+  const first = { pathname: `/docs/${DOC_FLAT[0].id}`, search: search ? `?${search}` : '' }
+  if (!slug) return <Navigate to={first} replace />
   const art = DOC_ARTICLES[slug]
-  if (!art) return <Navigate to={`/docs/${DOC_FLAT[0].id}`} replace />
+  if (!art) return <Navigate to={first} replace />
 
   const idx = DOC_FLAT.findIndex((a) => a.id === slug)
   const prev = idx > 0 ? DOC_FLAT[idx - 1] : null
@@ -174,7 +182,7 @@ export default function DocsPage() {
           <Link className="k-btn k-btn--ghost" to="/sign-in">
             Sign in
           </Link>
-          <Link className="k-btn" to="/sign-in">
+          <Link className="k-btn" to="/sign-up">
             Start a claim
           </Link>
         </div>
