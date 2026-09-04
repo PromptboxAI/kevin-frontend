@@ -946,3 +946,69 @@ rather than typed into the UI.
 
 Not urgent — no customer is on Enterprise yet — but worth settling the
 "secret shown once" rule before a key exists, because it cannot be retrofitted.
+
+## 37 · Public sample claim — an unauthenticated read of ONE designated claim
+
+Blocks `/sample` (design page 48) and with it four live marketing controls: the
+**Sample claim** footer link on every page, **Open the sample claim** on `/demo`
+and `/done-for-you`, **See a finished claim** in the landing hero, and **See a
+sample inventory** on `/for-estate-liquidators`. All four are deliberately inert
+`<span>`s today — no href, so nothing 404s.
+
+**The ask, in one line:** let `GET /v1/claims/{id}` and
+`GET /v1/claim_items?claim_id={id}` (plus `GET /v1/claims/{id}/photos`) answer
+**without a bearer token** for exactly one designated sample claim.
+
+### Why it has to come from the API
+
+`/sample` shows the real adjuster worksheet — editable, with the RCV popover and
+the photo lightbox live. `WorksheetPage.tsx` is ~1,850 lines of API-backed React
+(`useInfiniteQuery`, live mutations, `claimId` off the route, auth on every
+call). There are three ways to feed it and two are barred by project rules:
+
+- a seed-data `sample` mode inside `WorksheetPage.tsx` — surgery on the most
+  load-bearing file in the app, owned by another agent;
+- a second read-only sample grid — CLAUDE.md forbids parallel grids by name
+  ("there is ONE worksheet");
+- **an unauthenticated read path** — this ask.
+
+`/p/{token}` is not a substitute: that is the insured's paywalled portal, with a
+different column set and a different purpose. Showing it as "the worksheet"
+would misrepresent the product.
+
+### Why this shape and not a `/v1/sample/*` namespace
+
+Reusing the existing routes means the frontend needs **no new code path at
+all** — `/claims/sample` renders through the component that already exists and
+`/sample` is a redirect. A new namespace means new response types, a new fetch
+layer and a second rendering path to keep in sync with the first, which is the
+fork this ask exists to avoid. `src/lib/api.ts` already omits the
+`Authorization` header when there is no session rather than throwing, so an
+anonymous GET arrives intact.
+
+### Contract
+
+| | |
+|---|---|
+| Auth | **None.** No bearer token, no cookie. Must not 401 |
+| Identifier | Stable; guessable is fine — `sample` reads better in a URL than a UUID, and it is public by design |
+| Response shapes | **Byte-identical** to the authenticated ones (`ClaimSummary`, `ClaimItemListResponse`, `ClaimPhotoListResponse`). Any divergence forces a second parser |
+| Methods | GET only. `override`, `reprice`, `PATCH`, export and share all stay 401/403 for this claim. The banner already tells the visitor nothing saves; the frontend holds edits in local state |
+| Caching | Cacheable and CDN-friendly — one fixed row set, no PII, about to be linked from every marketing page |
+| Rate limit | Whatever protects a public route. It would be the only unauthenticated read of claim data in the API |
+
+Content: the canonical demo claim — **CLM-2026-04412 · "Godfrey — Kitchen fire"
+· Allstate · 60 photos → 57 items · 8.625% Suffolk County tax** — so the figures
+match every marketing surface already quoting them.
+
+**One decision before it goes live.** That claim carries the founder's own name
+and a loss address. Authenticated it is demo data; unauthenticated it becomes
+crawlable, indexable and quotable. Either swap the insured to a clearly
+synthetic name and address for the public copy, or confirm the real ones are
+meant to be public. The frontend does not care which — it should be a decision
+rather than a side effect of opening the endpoint.
+
+**For the day it lands:** `WorksheetPage` renders `AppHeader`, which reads
+`/v1/me`. For an anonymous visitor that call has no session. Whether AppHeader
+degrades cleanly or needs a guard is a frontend problem, not part of this
+contract — noted here only so it is not a surprise.
