@@ -914,3 +914,35 @@ deliberate: an enabled Save that silently discards is worse than an honest
 one, and the alternative — hiding the fields — loses the design and tells
 engineering nothing. When the routes ship, the fields are already there and
 the bar just needs enabling.
+
+## 36 · API keys and webhook endpoints (Enterprise)
+
+Screen 36 gates programmatic access to Enterprise and now reads the real plan
+from `quota.plan`. For an Enterprise account it renders the keys and webhooks
+sections with an honest empty state, because no route exists to list, create or
+revoke either.
+
+The design seeds those panels with `sk_live_4G3y...92Pa` and three
+`example-tpa.com` endpoints. Those are NOT reproduced: showing a paying
+customer a fabricated API key is worse than the seeded card digits on Billing,
+because someone may try to use it, or read it as evidence their real key
+leaked.
+
+- **`GET /v1/api-keys`** → `[{ id, name, prefix, scopes[], created_at,
+  last_used_at }]`. The **prefix only** — never the secret. A key is returned in
+  full exactly once, from the create call, and is unrecoverable afterwards.
+- **`POST /v1/api-keys`** `{ name, scopes[] }` → the same shape plus `secret`,
+  the one and only time it is readable.
+- **`DELETE /v1/api-keys/{id}`** — revoke. Immediate, not a soft delete.
+- **`GET|POST|DELETE /v1/webhooks`** → `{ id, url, events[], status,
+  last_delivery_at, last_status }`. Events are the six the screen already
+  documents, and they are Kevin's OWN lifecycle only — there is no submit hook,
+  because Kevin never writes into a carrier system (rule 4).
+
+Scopes should be coarse and few (`claims:read`, `claims:write`,
+`exports:read`), matching what the screen already shows. Rate limits are per
+contract; if they are ever exposed, they belong on the same account payload
+rather than typed into the UI.
+
+Not urgent — no customer is on Enterprise yet — but worth settling the
+"secret shown once" rule before a key exists, because it cannot be retrofitted.
