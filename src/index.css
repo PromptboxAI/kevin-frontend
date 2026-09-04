@@ -1525,3 +1525,13 @@ button.k-avatar-menu-item {
 .k-side-item--todo { opacity: 0.4; cursor: default; }
 .k-side-item--todo:hover { background: transparent; }
 
+
+/* Screen 48 -- the sample banner is fixed, so the worksheet below it is inset
+   by the banner's height rather than pushed down by a sibling in flow. The
+   worksheet is a full-height shell that scrolls inside itself; shortening it
+   with a margin would change the very layout the demo exists to show. */
+.k-sample-frame {
+  height: 100%;
+  padding-top: 34px;
+  box-sizing: border-box;
+}

@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useParams } from 'react-router-dom'
 import RequireAuth from './components/RequireAuth'
 import ScrollToTop from './components/ScrollToTop'
 import { AuthProvider } from './lib/auth'
@@ -43,6 +43,27 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetSentPage from './pages/ResetSentPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import WorksheetPage from './pages/WorksheetPage'
+import SampleBanner from './components/SampleBanner'
+import { SAMPLE_CLAIM_ID } from './lib/sample'
+
+function ClaimRoute() {
+  const { claimId = '' } = useParams()
+  if (claimId === SAMPLE_CLAIM_ID) {
+    return (
+      <>
+        <SampleBanner />
+        <div className="k-sample-frame">
+          <WorksheetPage />
+        </div>
+      </>
+    )
+  }
+  return (
+    <RequireAuth>
+      <WorksheetPage />
+    </RequireAuth>
+  )
+}
 
 export default function App() {
   return (
@@ -84,6 +105,10 @@ export default function App() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-sent" element={<ResetSentPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+        {/* SCREEN 48 -- the public sample claim. `/sample` redirects onto the
+            claim route below, which decides its own gate from the param. */}
+        <Route path="/sample" element={<Navigate to="/claims/sample" replace />} />
 
         {/* Public, token-scoped. The backend mints these links as
             <SHARE_BASE_URL>/p/<token> -- this route is why they resolve.
@@ -177,14 +202,16 @@ export default function App() {
           }
         />
 
-        <Route
-          path="/claims/:claimId"
-          element={
-            <RequireAuth>
-              <WorksheetPage />
-            </RequireAuth>
-          }
-        />
+        {/* ONE route, which decides its own gate from the param.
+            `/claims/sample` is the public marketing demo (screen 48) and must
+            NOT sit behind RequireAuth; every other claim must. Splitting them
+            into two <Route>s does not work -- a static "/claims/sample" path
+            supplies no params, and WorksheetPage reads claimId from useParams,
+            so it would mount with an empty id and render an empty claim.
+
+            WorksheetPage itself is untouched: the sample's data is intercepted
+            at the api boundary (lib/sample.ts), not injected here. */}
+        <Route path="/claims/:claimId" element={<ClaimRoute />} />
 
         {/* Settings. `/settings/billing` is owned elsewhere and untouched
             here; the five screens below are the ones with no existing file.

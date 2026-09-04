@@ -1,3 +1,4 @@
+import { NOT_SAMPLE, isSampleRoute, sampleApplyPatch, sampleRespond } from './sample'
 import { API_BASE_URL } from './env'
 import { isAuthConfigured } from './env'
 import { getSupabase } from './supabase'
@@ -86,6 +87,23 @@ async function authHeader(): Promise<Record<string, string>> {
  */
 export async function request<T>(path: string, options: Options = {}): Promise<T> {
   const { json, form, retryOnRateLimit = false, headers, ...init } = options
+
+  // The public sample claim (screen 48) is served from a bundled fixture rather
+  // than the API -- see lib/sample.ts for why it lives at this boundary. Scoped
+  // to the sample ROUTE, so an authenticated claim can never be intercepted,
+  // and unhandled paths fall through to the real network below. Deleting these
+  // six lines and lib/sample*.ts reverts to a pure API client.
+  if (isSampleRoute()) {
+    const method = (init.method ?? 'GET').toUpperCase()
+    const faked = await sampleRespond(path, method)
+    if (faked !== NOT_SAMPLE) {
+      if (method !== 'GET' && json && typeof json === 'object') {
+        const id = Number(/\/v1\/claim_items\/(\d+)/.exec(path)?.[1])
+        if (id) await sampleApplyPatch(id, json as Record<string, never>)
+      }
+      return faked as T
+    }
+  }
 
   const send = async (): Promise<Response> => {
     const merged: Record<string, string> = {
