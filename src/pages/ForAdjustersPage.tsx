@@ -170,7 +170,7 @@ export default function ForAdjustersPage() {
               per line. Then you do the part that requires judgment.
             </p>
             <div className="k-hero-actions" style={{ marginTop: 32 }}>
-              <Link className="k-btn k-btn--lg" to="/sign-in">
+              <Link className="k-btn k-btn--lg" to="/sign-up">
                 Start a new claim →
               </Link>
               <Link className="k-btn k-btn--ghost k-btn--lg" to="/demo">
@@ -560,7 +560,7 @@ export default function ForAdjustersPage() {
             items a month included, no per-seat fee.
           </p>
           <div className="k-hero-actions" style={{ marginTop: 0 }}>
-            <Link className="k-btn k-btn--lg" to="/sign-in">
+            <Link className="k-btn k-btn--lg" to="/sign-up">
               Start a claim →
             </Link>
             {/* The adjuster IS the founder; the call is the introduction. */}

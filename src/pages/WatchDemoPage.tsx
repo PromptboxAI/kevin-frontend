@@ -170,7 +170,7 @@ export default function WatchDemoPage() {
             Your first 250 items are free.
           </h2>
           <div className="k-hero-actions" style={{ marginTop: 0 }}>
-            <Link className="k-btn k-btn--lg" to="/sign-in">
+            <Link className="k-btn k-btn--lg" to="/sign-up">
               Start a new claim →
             </Link>
             {/* The sample claim is not ported yet; it stays pending rather than

@@ -375,12 +375,15 @@ export default function LandingPage() {
             live pricing comps per line. Hundreds of items reviewed in one grid — not one at a time.
           </p>
           <div className="k-hero-actions">
-            <Link className="k-btn k-btn--lg" to="/sign-in">
+            <Link className="k-btn k-btn--lg" to="/sign-up">
               Start free — 250 items →
             </Link>
-            <Link className="k-btn k-btn--ghost k-btn--lg" to="/sign-in">
+            {/* Design page 48 (the sample claim). It pointed at /sign-in, which
+                promises a finished claim and delivers a login. Pending with the
+                site's other sample-claim links until 48 is ported. */}
+            <span className="k-btn k-btn--ghost k-btn--lg k-mkt-soon" title="Coming soon">
               See a finished claim
-            </Link>
+            </span>
           </div>
           <div className="k-trust">
             <span>250 free items, no deadline</span>
@@ -968,7 +971,7 @@ export default function LandingPage() {
             want company, we'll walk the worksheet with you on a 30-minute call.
           </p>
           <div className="k-cta-actions">
-            <Link className="k-cta-primary" to="/sign-in">
+            <Link className="k-cta-primary" to="/sign-up">
               Start free — 250 items →
             </Link>
             <Link className="k-cta-secondary" to="/book-call">

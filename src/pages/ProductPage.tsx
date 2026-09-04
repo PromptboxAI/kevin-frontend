@@ -91,7 +91,7 @@ export default function ProductPage() {
             the spreadsheet your carrier already accepts.
           </p>
           <div className="k-hero-actions" style={{ justifyContent: 'center' }}>
-            <Link className="k-btn k-btn--lg" to="/sign-in">
+            <Link className="k-btn k-btn--lg" to="/sign-up">
               Start free — 250 items →
             </Link>
             <Link className="k-btn k-btn--ghost k-btn--lg" to="/pricing">
@@ -327,7 +327,7 @@ export default function ProductPage() {
             unlimited claims, 2,000 line items a month included, no per-seat fee.
           </p>
           <div className="k-hero-actions" style={{ marginTop: 0 }}>
-            <Link className="k-btn k-btn--lg" to="/sign-in">
+            <Link className="k-btn k-btn--lg" to="/sign-up">
               Start free — 250 items →
             </Link>
             <Link className="k-btn k-btn--ghost k-btn--lg" to="/claims">

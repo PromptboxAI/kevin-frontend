@@ -4913,3 +4913,22 @@
     @media (max-width: 820px) {
       .k-contact-book { padding: 0 20px 48px; }
     }
+
+    /* Sign-up: inline form feedback. The design's account-create screen has no
+       error state — a prototype form never fails — but a real signUp returns
+       "User already registered", a weak-password rejection, or a bad code, and
+       those have to land next to the field that caused them. */
+    .k-signup-error, .k-signup-notice {
+      font-size: 12.5px; line-height: 1.5; padding: 10px 12px; border-radius: 8px;
+    }
+    .k-signup-error {
+      color: var(--k-danger);
+      /* No --k-danger-soft token exists; this is the same 6% wash
+         .k-btn--danger:hover already uses, so the palette holds. */
+      background: oklch(0.58 0.19 25 / 0.06);
+      border: 1px solid oklch(0.62 0.19 25 / 0.28);
+    }
+    .k-signup-notice {
+      color: var(--k-fg-2); background: var(--k-bg-2);
+      border: 1px solid var(--k-line);
+    }

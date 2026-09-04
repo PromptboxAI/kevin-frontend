@@ -178,7 +178,7 @@ export default function ForEstateLiquidatorsPage() {
               or take to auction.
             </p>
             <div className="k-hero-actions" style={{ marginTop: 32 }}>
-              <Link className="k-btn k-btn--lg" to="/sign-in">
+              <Link className="k-btn k-btn--lg" to="/sign-up">
                 Start an estate →
               </Link>
               <span className="k-btn k-btn--ghost k-btn--lg k-mkt-soon" title="Coming soon">
@@ -505,7 +505,7 @@ export default function ForEstateLiquidatorsPage() {
             you nothing. No seats, no subscription, no percentage of the sale.
           </p>
           <div className="k-hero-actions" style={{ marginTop: 0 }}>
-            <Link className="k-btn k-btn--lg" to="/sign-in">
+            <Link className="k-btn k-btn--lg" to="/sign-up">
               Start your first estate →
             </Link>
             <Link className="k-btn k-btn--ghost k-btn--lg" to="/book-call">

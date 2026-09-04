@@ -109,7 +109,7 @@ export function MktNav({ active }: { active?: string }) {
             <Link className="k-btn k-btn--ghost" to="/sign-in">
               Sign in
             </Link>
-            <Link className="k-btn" to="/sign-in">
+            <Link className="k-btn" to="/sign-up">
               Start a new claim
             </Link>
           </>
@@ -145,7 +145,7 @@ export function MktNav({ active }: { active?: string }) {
               <Link className="k-nav-sheet-item" to="/sign-in">
                 Sign in
               </Link>
-              <Link className="k-btn k-btn--lg k-nav-sheet-cta" to="/sign-in">
+              <Link className="k-btn k-btn--lg k-nav-sheet-cta" to="/sign-up">
                 Start a new claim
               </Link>
             </>

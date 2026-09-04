@@ -37,6 +37,7 @@ import SettingsPricingPage from './pages/SettingsPricingPage'
 import SettingsProfilePage from './pages/SettingsProfilePage'
 import SettingsSecurityPage from './pages/SettingsSecurityPage'
 import SignInPage from './pages/SignInPage'
+import SignUpPage from './pages/SignUpPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetSentPage from './pages/ResetSentPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
@@ -72,6 +73,7 @@ export default function App() {
         {/* The footer's "Security" link. Same document, Security tab preselected. */}
         <Route path="/security" element={<LegalPage initialTab="security" />} />
         <Route path="/sign-in" element={<SignInPage />} />
+        <Route path="/sign-up" element={<SignUpPage />} />
 
         {/* The password-reset flow, screens 45 / 46 / 47. Public by necessity:
             somebody who cannot sign in is the entire audience. `/reset-password`

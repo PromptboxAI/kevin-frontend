@@ -387,7 +387,7 @@ export default function PricingPage() {
             30-minute call.
           </p>
           <div className="k-hero-actions" style={{ marginTop: 0 }}>
-            <Link className="k-btn k-btn--lg" to="/sign-in">
+            <Link className="k-btn k-btn--lg" to="/sign-up">
               Start free — 250 items →
             </Link>
             <Link className="k-btn k-btn--ghost k-btn--lg" to="/contact">
