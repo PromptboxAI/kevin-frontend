@@ -3611,7 +3611,10 @@
       .k-nav nav { display: none; }
       /* Hero → single column */
       .k-hero { grid-template-columns: minmax(0, 1fr); gap: 28px; padding: 40px 20px 52px; }
-      .k-hero-r { order: -1; }
+      /* The design sheet pulled the shot above the copy on mobile (order: -1),
+         so the first thing on the phone was a screenshot and the headline sat
+         below the fold. The hero leads with the headline at every width now;
+         the shot follows the CTAs. */
       .k-h1 { font-size: clamp(34px, 9vw, 46px); }
       /* Pricing tiers stack */
       .k-tiers { grid-template-columns: minmax(0, 1fr); max-width: 420px; }
@@ -4823,4 +4826,78 @@
     @media (max-width: 520px) {
       .k-legal-tabs { grid-template-columns: minmax(0, 1fr); }
       .k-legal-tab { padding: 12px 14px; }
+    }
+
+    /* Stats ribbon on a phone. At 375px the four cells were a 2×2 grid of
+       167px columns: "~29 min" broke mid-value, "machine-unattended" hyphen-
+       wrapped, and four stats ate ~520px of scroll. Below 640px each stat
+       becomes a ROW instead — the figure holds a fixed left column, the label
+       and the note stack beside it, and the card reads as a list. Same content,
+       same type scale relationships, roughly a third less height.
+
+       This sits last on purpose: the earlier ≤900px rule (2 columns) is
+       declared after the ≤520px one (1 column) and was winning at 375px. */
+    @media (max-width: 640px) {
+      .k-stats-ribbon { padding: 12px 20px 28px; }
+      .k-stats-ribbon-inner { grid-template-columns: minmax(0, 1fr); }
+      .k-stat-cell {
+        display: grid;
+        grid-template-columns: 100px minmax(0, 1fr);
+        column-gap: 16px;
+        align-items: start;
+        padding: 15px 18px 16px;
+        border-right: 0;
+        border-bottom: 1px solid var(--k-line);
+      }
+      .k-stat-cell:last-child { border-bottom: 0; }
+      .k-stat-cell-n {
+        grid-column: 1; grid-row: 1 / span 2;
+        font-size: 30px; line-height: 1.06;
+        /* The figure is the anchor; nudge it onto the label's baseline. */
+        padding-top: 1px;
+      }
+      .k-stat-cell-l { grid-column: 2; grid-row: 1; margin-top: 0; font-size: 13.5px; }
+      .k-stat-cell-s { grid-column: 2; grid-row: 2; margin-top: 5px; line-height: 1.45; }
+    }
+
+    /* Landing gallery cards on a phone. The four viz mock-ups are miniatures of
+       real worksheet chrome, laid out for a ~300px card in a two-up grid. At
+       375px that card is ~250px wide inside its padding and the horizontal
+       layouts collapse: on the special-limits card the item title truncated to
+       nothing, the badge sat on top of the subtitle and "$18,500.00" ran off
+       the edge; on the barcode card the 88px photo + 24px arrow + a 70px key
+       column left ~14px for the value, so Make/Model/Category read as slivers.
+
+       Both become vertical below 640px. Nothing is hidden and no type is
+       shrunk — the rows just stop competing for one line. */
+    @media (max-width: 640px) {
+      /* — Mock-rows: thumb + text keep line one, the trailing controls
+           (badge, price, the RCV chip) drop to line two. — */
+      .k-pg-mockrow { flex-wrap: wrap; row-gap: 8px; padding: 9px 10px; }
+      .k-pg-mockrow > :nth-child(n + 3) { order: 2; }
+      .k-pg-mockrow::after { content: ''; order: 1; flex-basis: 100%; height: 0; }
+      /* Second line reads as a meta strip: badge left, figure right. Indenting
+         it to the text column instead cost ~36px and pushed "$18,500.00" onto
+         a third line while the shorter "$799.00" stayed put, so two identical
+         rows laid out differently. */
+      .k-pg-mockrow > :last-child { margin-left: auto; }
+      /* The title ellipsised to zero width in a 40px box; let it wrap instead. */
+      .k-pg-mockrow-t { white-space: normal; overflow: visible; line-height: 1.35; }
+
+      /* — Barcode card: photo, then arrow, then the field list full width. — */
+      .k-pg-match { grid-template-columns: minmax(0, 1fr); gap: 8px; align-items: start; height: auto; }
+      /* The arrow means "becomes"; stacked, it has to point down. */
+      .k-pg-arrow { transform: rotate(90deg); justify-self: start; margin-left: 32px; }
+      .k-pg-field { grid-template-columns: 14px 68px minmax(0, 1fr); gap: 7px; }
+
+      /* The RCV popover overlays its row on desktop; stacked it just follows. */
+      .k-pg-pop { width: 100%; margin-left: 0; margin-right: 0; }
+      .k-pg-viz--rcv { padding-bottom: 18px; }
+      /* Four things on one 210px line clipped the merchant to "Goo...", which
+         is the one word in the row a reader needs. Name and price take line
+         one; the provenance dot and its label take line two. */
+      .k-pg-pop-row { flex-wrap: wrap; row-gap: 3px; }
+      .k-pg-pop-row > :nth-child(4) { order: 1; }
+      .k-pg-pop-row::after { content: ''; order: 2; flex-basis: 100%; height: 0; }
+      .k-pg-pop-row > :nth-child(2), .k-pg-pop-row > :nth-child(3) { order: 3; }
     }
