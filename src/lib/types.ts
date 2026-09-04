@@ -121,7 +121,25 @@ export type ManualReason =
 /** The two reasons that mean "the pricing service is throttled", not "act on this". */
 export const CAPACITY_REASONS: ReadonlySet<string> = new Set(['quota_exhausted', 'budget_exhausted'])
 
-export type Comp = { title?: string; source?: string; price?: number | string; link?: string }
+/**
+ * One comparable listing behind a price.
+ *
+ * `kind` is the load-bearing field and was missing until this audit. Per the
+ * API contract, a `retail` comp is sold new and drives a depreciated retail
+ * RCV, while a `resale` comp comes from the used/secondary market and prices
+ * the item on the `comparable_sale` basis -- published RAW, with no gross-up,
+ * so the resale median IS the RCV.
+ *
+ * Rendering both identically invited an adjuster to read a used-market price as
+ * a new-replacement one on a document whose whole value is defensibility.
+ */
+export type Comp = {
+  title?: string
+  source?: string
+  price?: number | string
+  link?: string
+  kind?: 'retail' | 'resale'
+}
 
 export type ClaimItem = {
   id: number

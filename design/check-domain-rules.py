@@ -47,7 +47,13 @@ RULES = [
     ("9b", "a trial cap other than 250 items",  r"\b(?!250\b)[\d,]{2,7}\s+free\s+items\b(?!\s+(left|remaining|used))"),
     ("10", "per-retailer sources / store list",  r"per[- ](retailer|store)\s+(integration|scraper|adapter)|18\s+stores|toggleable\s+stores"),
     ("10", "domain allowlist / blocklist",       r"(domain|strict)\s+(allow|block)list|allowlists?\s+govern"),
-    ("11", "the removed comparable-sale path",   r"comparable[- ]sale|marketComp|back[- ]solve|resale\s+market\s+decides|RCV\s+equals\s+the\s+market\s+comp"),
+    # AMENDED 2026-09-03. `comparable_sale` / `market_comp` are LIVE again --
+    # the backend reintroduced the resale fall-through, so flagging them
+    # produced false positives on correct code (ItemDrawer's basis label).
+    # What stays banned is the BACK-SOLVE, which was never reinstated: deriving
+    # RCV by dividing a comp by (1 - depr%). The frontend computes no valuation
+    # at all (rule 20), so any such formula in this codebase is a bug.
+    ("11", "the removed back-solve (RCV = comp / (1 - depr))", r"back[- ]solve|marketComp|RCV\s*=\s*comp\s*[/÷]|gross(?:ed)?[- ]up\s+to\s+a\s+replacement"),
     # Estate FMV is a haircut off ACTIVE listings, so naming a merchant that
     # returns active listings is fine -- what is false is calling any of it
     # SOLD. LiveAuctioneers stays listed: an auction house only reports
