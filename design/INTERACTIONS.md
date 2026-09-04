@@ -439,7 +439,7 @@ same failure and must not share a code path:
 | 41 Security | Per-session **Sign out** · **Sign out all other sessions** | 🔌 | `DELETE /v1/auth/sessions/:id` and `/sessions?others=true` |
 | 41 Security | **Save changes** (session timeout) | 🔌 | `PATCH /v1/account/security` |
 | 41 Security | CTA / contact security | ✅ | → contact |
-| 51 Book-call | scheduler embed | 🔌 | Calendar (Cal.com/Calendly) |
+| 51 Book-call · 38 Contact | scheduler embed | ✅/🔌 | `src/components/CalendlyInline.tsx` — Calendly inline widget on BOTH pages off ONE env var, `VITE_CALENDLY_URL` (full event URL, e.g. `https://calendly.com/<handle>/30min`), set in the Vercel project env. With it UNSET the component renders an email fallback rather than an empty frame, so the page can never ship pointing at a handle that does not exist; it also falls back if `assets.calendly.com` is blocked. Contact's "book a call" link is an in-page `#book` anchor to it |
 | 52 Watch-demo | video player | 🎭 | Real demo video |
 
 ## Auth

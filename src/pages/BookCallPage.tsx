@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import Badge from '../components/Badge'
-import { I, Icon } from '../components/Icon'
+import CalendlyInline from '../components/CalendlyInline'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
 
 /**
@@ -9,15 +9,12 @@ import { MktFooter, MktNav } from '../components/MarketingChrome'
  * verbatim.
  *
  * ONE deviation, in the scheduler region. The prototype draws a labelled
- * placeholder card ("Calendly scheduler · calendly.com/kevin-co/30min") that
+ * placeholder card ("Calendly scheduler · calendly.com/kevin-co/30min"), which
  * reads correctly on a design canvas and reads as a broken page to a visitor
- * who just clicked "Book a 30-min call" on the home page. There is no Calendly
- * account wired yet, so the slot holds the real alternative instead: email, and
- * Kevin sends times. Same conversion, no dead end.
- *
- * When the account exists, drop the Calendly inline widget into the element
- * marked `data-calendly-embed` and delete the fallback — the surrounding layout
- * is already sized for it (`.k-cal-embed`, min-height 560px at ≤900px).
+ * who just clicked "Book a 30-min call" on the home page. The slot holds the
+ * real `CalendlyInline` widget instead — the same component /contact uses, off
+ * the same VITE_CALENDLY_URL, so the booking handle exists in one place. With
+ * that variable unset it renders an email fallback rather than an empty frame.
  */
 
 const BC_POINTS: [string, string][] = [
@@ -120,28 +117,9 @@ export default function BookCallPage() {
               </div>
             </div>
 
-            {/* The Calendly inline widget mounts here — see the file header. */}
-            <div className="k-cal-embed" data-calendly-embed="true">
-              <div className="k-cal-embed-ph">
-                <Icon d={I.clock} size={22} />
-                <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--k-fg-2)' }}>
-                  Pick a time by email, for now
-                </div>
-                <div style={{ fontSize: 12, color: 'var(--k-fg-4)', lineHeight: 1.5, maxWidth: 320 }}>
-                  Self-serve scheduling is being connected. Until it is, say when you're free and
-                  Kevin sends an invite the same day — usually within a couple of hours during
-                  business hours, 8a–6p ET.
-                </div>
-                <a
-                  className="k-btn"
-                  style={{ marginTop: 4 }}
-                  href="mailto:kevin@kevin.co?subject=Booking%20a%2030-minute%20walkthrough"
-                >
-                  Email to book →
-                </a>
-                <code className="k-cal-embed-code">kevin@kevin.co · 30 min · video</code>
-              </div>
-            </div>
+            {/* The Calendly inline widget. One component, one handle
+                (VITE_CALENDLY_URL), shared with /contact. */}
+            <CalendlyInline minHeight={700} />
           </div>
         </section>
       </main>

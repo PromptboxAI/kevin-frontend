@@ -1,4 +1,5 @@
 import Badge from '../components/Badge'
+import CalendlyInline, { CALENDLY_URL } from '../components/CalendlyInline'
 import { I, Icon } from '../components/Icon'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
 
@@ -145,11 +146,52 @@ export default function ContactPage() {
               Send message →
             </button>
             <div style={{ marginTop: 12, fontSize: 11.5, color: 'var(--k-fg-4)' }}>
-              Or <span className="k-mkt-soon" title="Coming soon">book a call</span> directly · We
-              never share your info.
+              Or{' '}
+              <a className="k-link" href="#book">
+                book a call
+              </a>{' '}
+              directly · We never share your info.
             </div>
           </form>
         </section>
+
+        {/* Scheduling. Same component and same VITE_CALENDLY_URL as /book-call,
+            so the handle lives in one place; with the variable unset it renders
+            the email fallback rather than an empty frame. */}
+        <section id="book" className="k-contact-book">
+          <div className="k-contact-book-hd">
+            <div
+              style={{
+                fontFamily: 'var(--k-font-mono)',
+                fontSize: 11,
+                color: 'var(--k-fg-4)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                fontWeight: 700,
+              }}
+            >
+              Book a call
+            </div>
+            <h2
+              style={{
+                fontFamily: 'var(--k-font-display)',
+                fontWeight: 400,
+                fontSize: 30,
+                letterSpacing: '-0.024em',
+                margin: '8px 0 8px',
+                lineHeight: 1.1,
+              }}
+            >
+              Or grab thirty minutes.
+            </h2>
+            <p style={{ fontSize: 13.5, color: 'var(--k-fg-3)', margin: 0, maxWidth: 460 }}>
+              Bring a real claim and we'll run it together — no slides. You'll get a calendar invite
+              with a video link, and nothing else to fill out.
+            </p>
+          </div>
+          <CalendlyInline minHeight={CALENDLY_URL ? 700 : 300} />
+        </section>
+
         <MktFooter />
       </main>
     </div>
