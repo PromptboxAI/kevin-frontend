@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import Badge from '../components/Badge'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
 
@@ -302,9 +303,9 @@ export default function AboutPage() {
             A couple of roles at a time. If you've settled a claim, run an estate sale, or shipped
             software people use all day, we want to hear from you.
           </p>
-          <span className="k-btn k-btn--lg k-mkt-soon" title="Coming soon">
+          <Link className="k-btn k-btn--lg" to="/careers">
             See open roles →
-          </span>
+          </Link>
         </section>
 
         <MktFooter />

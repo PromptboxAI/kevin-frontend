@@ -390,9 +390,9 @@ export default function PricingPage() {
             <Link className="k-btn k-btn--lg" to="/sign-in">
               Start free — 250 items →
             </Link>
-            <span className="k-btn k-btn--ghost k-btn--lg k-mkt-soon" title="Coming soon">
+            <Link className="k-btn k-btn--ghost k-btn--lg" to="/contact">
               Talk to sales
-            </span>
+            </Link>
           </div>
         </section>
 

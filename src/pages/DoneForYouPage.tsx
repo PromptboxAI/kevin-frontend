@@ -95,12 +95,17 @@ export default function DoneForYouPage() {
             XactContents-ready .xlsx and a client-facing PDF, usually within one business day.
           </p>
           <div className="k-hero-actions" style={{ justifyContent: 'center', marginTop: 26 }}>
-            <span className="k-btn k-btn--lg k-mkt-soon" title="Coming soon">
+            {/* Done-for-you has no self-serve intake — the claim arrives by
+                email and Kevin scopes it. Both CTAs go where that happens. */}
+            <a
+              className="k-btn k-btn--lg"
+              href="mailto:kevin@kevin.co?subject=Done-for-you%20claim"
+            >
               Send us a claim →
-            </span>
-            <span className="k-btn k-btn--ghost k-btn--lg k-mkt-soon" title="Coming soon">
+            </a>
+            <Link className="k-btn k-btn--ghost k-btn--lg" to="/book-call">
               Talk it through first
-            </span>
+            </Link>
           </div>
           <div style={{ marginTop: 14, fontSize: 12.5, color: 'var(--k-fg-4)' }}>
             Priced per line, quoted up front from your photo count. One-time per engagement — no
@@ -335,9 +340,13 @@ export default function DoneForYouPage() {
                 no site day at all.
               </p>
             </div>
-            <span className="k-btn k-mkt-soon" title="Coming soon" style={{ flex: '0 0 auto' }}>
+            <a
+              className="k-btn"
+              style={{ flex: '0 0 auto' }}
+              href="mailto:kevin@kevin.co?subject=On-site%20capture"
+            >
               Ask about on-site →
-            </span>
+            </a>
           </div>
         </section>
 

@@ -173,9 +173,9 @@ export default function ForAdjustersPage() {
               <Link className="k-btn k-btn--lg" to="/sign-in">
                 Start a new claim →
               </Link>
-              <span className="k-btn k-btn--ghost k-btn--lg k-mkt-soon" title="Coming soon">
+              <Link className="k-btn k-btn--ghost k-btn--lg" to="/demo">
                 Watch demo
-              </span>
+              </Link>
             </div>
           </div>
           <div className="k-seg-hero-r">
@@ -563,9 +563,10 @@ export default function ForAdjustersPage() {
             <Link className="k-btn k-btn--lg" to="/sign-in">
               Start a claim →
             </Link>
-            <span className="k-btn k-btn--ghost k-btn--lg k-mkt-soon" title="Coming soon">
+            {/* The adjuster IS the founder; the call is the introduction. */}
+            <Link className="k-btn k-btn--ghost k-btn--lg" to="/book-call">
               Talk to an adjuster who uses Kevin
-            </span>
+            </Link>
           </div>
         </section>
 
