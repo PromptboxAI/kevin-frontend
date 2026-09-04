@@ -11,6 +11,7 @@ import ContactPage from './pages/ContactPage'
 import DoneForYouPage from './pages/DoneForYouPage'
 import LegalPage from './pages/LegalPage'
 import BookCallPage from './pages/BookCallPage'
+import RequestAccessPage from './pages/RequestAccessPage'
 import DocsPage from './pages/DocsPage'
 import CareersPage from './pages/CareersPage'
 import WatchDemoPage from './pages/WatchDemoPage'
@@ -63,6 +64,7 @@ export default function App() {
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/book-call" element={<BookCallPage />} />
+        <Route path="/request-access" element={<RequestAccessPage />} />
         {/* One URL per article: 45 articles at a single /docs would index as
             one page and break every deep link. /docs sends you to the first. */}
         <Route path="/docs" element={<DocsPage />} />

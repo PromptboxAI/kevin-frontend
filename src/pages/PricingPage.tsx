@@ -225,23 +225,15 @@ export default function PricingPage() {
                 )}
               </div>
               <p className="k-tier-blurb">{t.blurb}</p>
-              {t.primary ? (
-                <Link
-                  className="k-btn k-btn--lg"
-                  to="/sign-in"
-                  style={{ width: '100%', justifyContent: 'center' }}
-                >
-                  {t.cta}
-                </Link>
-              ) : (
-                <span
-                  className="k-btn k-btn--lg k-btn--ghost k-mkt-soon"
-                  title="Coming soon"
-                  style={{ width: '100%', justifyContent: 'center' }}
-                >
-                  {t.cta}
-                </span>
-              )}
+              {/* Pro self-serves; Enterprise is quoted, which is what screen 15
+                  collects. Neither is a sign-IN. */}
+              <Link
+                className={`k-btn k-btn--lg${t.primary ? '' : ' k-btn--ghost'}`}
+                to={t.primary ? '/sign-up' : '/request-access'}
+                style={{ width: '100%', justifyContent: 'center' }}
+              >
+                {t.cta}
+              </Link>
               {/* The card question is THE objection for cold traffic. Answer it
                   at the button, not 15 FAQ rows below the fold. */}
               {t.primary && (

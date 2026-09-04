@@ -67,6 +67,25 @@ NEGATION_HINTS = re.compile(
     r"rather\s+than|scrapped|removed|dead|deprecated|superseded|was\s+the|"
     r"do\s+not\s+reintroduce|no\s+longer)\b", re.I)
 
+# How near a negation has to be to count. A whole line can hold two unrelated
+# clauses: page 15 read "You don't need this -- start on Pro ... 7-day free
+# trial", and skipping the LINE because of that "don't" hid a scrapped-trial
+# violation for as long as the guard has existed. The negation has to be in the
+# same breath as the term, not merely in the same sentence.
+NEGATION_WINDOW = 60
+# A trailing negation runs a few words longer than a leading one -- "7-day free
+# trial, which rule 9b scrapped" needs 26 characters before it lands.
+NEGATION_WINDOW_AFTER = 48
+
+
+def negated(line, match):
+    """True when a negation sits just before the matched span, or right after it
+    ('... 7-day trial: scrapped')."""
+    before = line[max(0, match.start() - NEGATION_WINDOW):match.start()]
+    after = line[match.end():match.end() + NEGATION_WINDOW_AFTER]
+    return bool(NEGATION_HINTS.search(before) or NEGATION_HINTS.search(after))
+
+
 # Docs that quote the prohibitions in order to state them.
 SKIP_BASENAMES = {
     "CLAUDE.md", "INTERACTIONS.md", "SEO.md", "ROUTES.md", "SCHEMAS.md",
@@ -108,7 +127,8 @@ def main():
         hits = []
         for p, lines in cache.items():
             for n, line in enumerate(lines, 1):
-                if rx.search(line) and not NEGATION_HINTS.search(line):
+                m = rx.search(line)
+                if m and not negated(line, m):
                     hits.append((os.path.relpath(p, BASE), n, line.strip()[:104]))
         if hits:
             flagged += len(hits)

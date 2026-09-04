@@ -108,7 +108,7 @@ const TERMS_SECTIONS: Section[] = [
   [
     't-service',
     '2 · What the service does',
-    'Kevin is software that helps you build personal-property inventories from photographs. It identifies items, suggests a content class, retrieves retail and comparable-sale pricing, calculates suggested depreciation, and produces exports — including a spreadsheet formatted for import into Xactimate/XactContents and a printable PDF inventory. Kevin produces a working document for you to review; it does not submit anything to a carrier on your behalf.',
+    'Kevin is software that helps you build personal-property inventories from photographs. It identifies items, suggests a content class, retrieves live retail replacement pricing, calculates suggested depreciation, and produces exports — including a spreadsheet formatted for import into Xactimate/XactContents and a printable PDF inventory. Kevin produces a working document for you to review; it does not submit anything to a carrier on your behalf.',
   ],
   [
     't-accounts',
@@ -118,7 +118,7 @@ const TERMS_SECTIONS: Section[] = [
   [
     't-valuation',
     '4 · Valuation disclaimer — not an appraisal',
-    'Kevin is a pricing-research and documentation tool, not an appraisal service. Values Kevin produces are estimates compiled from publicly available retailer listings, comparable sales, and the depreciation schedule you select. They are NOT a certified appraisal, and Kevin is not acting as a licensed or certified appraiser, adjuster, broker, or valuation expert. No opinion of value is being rendered. Items in categories that customarily require a qualified appraisal — including jewelry, fine art, firearms, furs, antiques, and collectibles — are deliberately left unpriced for you to value or refer out. You are the professional of record: every figure is presented for your review, and you are solely responsible for the values you accept, adjust, and submit. Kevin makes no representation that any estimate will be accepted by an insurer, a court, a taxing authority, or any other party.',
+    'Kevin is a pricing-research and documentation tool, not an appraisal service. Values Kevin produces are estimates compiled from publicly available retailer listings and the depreciation schedule you select. They are NOT a certified appraisal, and Kevin is not acting as a licensed or certified appraiser, adjuster, broker, or valuation expert. No opinion of value is being rendered. Items in categories that customarily require a qualified appraisal — including jewelry, fine art, firearms, furs, antiques, and collectibles — are deliberately left unpriced for you to value or refer out. You are the professional of record: every figure is presented for your review, and you are solely responsible for the values you accept, adjust, and submit. Kevin makes no representation that any estimate will be accepted by an insurer, a court, a taxing authority, or any other party.',
   ],
   [
     't-conduct',
