@@ -971,9 +971,9 @@ export default function LandingPage() {
             <Link className="k-cta-primary" to="/sign-in">
               Start free — 250 items →
             </Link>
-            <span className="k-cta-secondary k-mkt-soon" title="Coming soon">
+            <Link className="k-cta-secondary" to="/book-call">
               Book a 30-min call
-            </span>
+            </Link>
           </div>
           <div className="k-cta-trust">
             <span>250 free items</span>

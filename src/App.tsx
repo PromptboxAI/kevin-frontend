@@ -9,6 +9,7 @@ import AboutPage from './pages/AboutPage'
 import ContactPage from './pages/ContactPage'
 import DoneForYouPage from './pages/DoneForYouPage'
 import LegalPage from './pages/LegalPage'
+import BookCallPage from './pages/BookCallPage'
 import CareersPage from './pages/CareersPage'
 import WatchDemoPage from './pages/WatchDemoPage'
 import ForEstateLiquidatorsPage from './pages/ForEstateLiquidatorsPage'
@@ -55,6 +56,7 @@ export default function App() {
         <Route path="/done-for-you" element={<DoneForYouPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/book-call" element={<BookCallPage />} />
         <Route path="/careers" element={<CareersPage />} />
         <Route path="/demo" element={<WatchDemoPage />} />
         <Route path="/legal" element={<LegalPage />} />
