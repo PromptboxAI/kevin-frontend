@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import RequireAuth from './components/RequireAuth'
+import ScrollToTop from './components/ScrollToTop'
 import { AuthProvider } from './lib/auth'
 import BillingPage from './pages/BillingPage'
 import RootRoute from './components/RootRoute'
@@ -44,6 +45,9 @@ import WorksheetPage from './pages/WorksheetPage'
 export default function App() {
   return (
     <AuthProvider>
+      {/* A SPA keeps the scroll offset across a route change, so a footer link
+          opened the next page halfway down. */}
+      <ScrollToTop />
       <Routes>
         {/* PUBLIC. `/` is the marketing site for visitors and a redirect to
             the app for anyone signed in -- ad traffic must not land on a
