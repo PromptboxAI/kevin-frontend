@@ -1008,6 +1008,33 @@ synthetic name and address for the public copy, or confirm the real ones are
 meant to be public. The frontend does not care which — it should be a decision
 rather than a side effect of opening the endpoint.
 
+### Amendments after tracing the component tree (2026-09-04)
+
+`GET /v1/claims` (the LIST) is **not** needed — WorksheetPage only ever reads a
+claim by the id on the route. Do not open it.
+
+Three GETs the original ask missed, all reached by an ordinary anonymous render:
+
+- `GET /v1/claims/{id}/rooms` — `WorksheetPage.tsx:119`, fires on load
+- `GET /v1/claims/{id}/proposals` — `WorksheetPage.tsx:197`, fires on load
+- `GET /v1/claim_items/{row_id}` and
+  `GET /v1/staging/photos/thumbnails?ids=` — ItemDrawer, on clicking the `#`
+  column. The design's banner promises the RCV popover and lightbox are live, so
+  the drawer is part of the sample rather than an extra.
+
+`GET /v1/depreciation-rules` is **already public** (`main.py:634`, no user
+dependency) — no change.
+
+**Use the id `sample` as the row's real `claim_id`; do not alias it.**
+`ItemDrawer.tsx:94-96` re-fetches the claim from the ITEM payload, not the URL:
+`queryFn: () => api.get('/v1/claims/' + data.claim_id)`. Under an alias the body
+carries the underlying slug, so opening the drawer issues a GET for the *real*
+id, which is not the whitelisted public one, and 401s — grid fine, drawer broken,
+anonymous visitors only. Separately, WorksheetPage keys its claim query on the
+URL id and ItemDrawer on the payload id, so an alias double-fetches even when
+authenticated. Nothing in `src/` pins either slug (grepped, zero hits), so the
+rename costs the frontend no change.
+
 **For the day it lands:** `WorksheetPage` renders `AppHeader`, which reads
 `/v1/me`. For an anonymous visitor that call has no session. Whether AppHeader
 degrades cleanly or needs a guard is a frontend problem, not part of this
