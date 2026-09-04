@@ -378,12 +378,9 @@ export default function LandingPage() {
             <Link className="k-btn k-btn--lg" to="/sign-up">
               Start free — 250 items →
             </Link>
-            {/* Design page 48 (the sample claim). It pointed at /sign-in, which
-                promises a finished claim and delivers a login. Pending with the
-                site's other sample-claim links until 48 is ported. */}
-            <span className="k-btn k-btn--ghost k-btn--lg k-mkt-soon" title="Coming soon">
+            <Link className="k-btn k-btn--ghost k-btn--lg" to="/sample">
               See a finished claim
-            </span>
+            </Link>
           </div>
           <div className="k-trust">
             <span>250 free items, no deadline</span>

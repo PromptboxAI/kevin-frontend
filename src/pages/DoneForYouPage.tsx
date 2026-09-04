@@ -499,9 +499,9 @@ export default function DoneForYouPage() {
             <Link className="k-btn" to="/pricing">
               See pricing →
             </Link>
-            <span className="k-btn k-btn--ghost k-mkt-soon" title="Coming soon">
+            <Link className="k-btn k-btn--ghost" to="/sample">
               Open the sample claim
-            </span>
+            </Link>
           </div>
         </section>
       </main>

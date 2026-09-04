@@ -173,11 +173,9 @@ export default function WatchDemoPage() {
             <Link className="k-btn k-btn--lg" to="/sign-up">
               Start a new claim →
             </Link>
-            {/* The sample claim is not ported yet; it stays pending rather than
-                pointing at a route that would 404 on the live site. */}
-            <span className="k-btn k-btn--ghost k-btn--lg k-mkt-soon" title="Coming soon">
+            <Link className="k-btn k-btn--ghost k-btn--lg" to="/sample">
               Open the sample claim
-            </span>
+            </Link>
           </div>
         </section>
         <MktFooter />

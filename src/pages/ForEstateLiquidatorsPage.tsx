@@ -181,9 +181,9 @@ export default function ForEstateLiquidatorsPage() {
               <Link className="k-btn k-btn--lg" to="/sign-up">
                 Start an estate →
               </Link>
-              <span className="k-btn k-btn--ghost k-btn--lg k-mkt-soon" title="Coming soon">
+              <Link className="k-btn k-btn--ghost k-btn--lg" to="/sample">
                 See a sample inventory
-              </span>
+              </Link>
             </div>
           </div>
           <div className="k-seg-hero-r">

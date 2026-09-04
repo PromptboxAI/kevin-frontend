@@ -21,7 +21,7 @@ import KevinWordmark from './KevinWordmark'
  *   41-Security           /security
  *   25-Legal-hub          /legal
  *   53-Careers            /careers
- *   48-Sample-claim       /sample-claim
+ *   48-Sample-claim       /sample
  *   52-Watch-demo         /demo
  *   00-Sign-in            /sign-in      (already in the app)
  *   58-Account-create     /sign-up
@@ -32,7 +32,7 @@ import KevinWordmark from './KevinWordmark'
  */
 
 /** Routes that actually resolve today. Add as pages are ported. */
-const LIVE = new Set<string>(['/', '/sign-in', '/pricing', '/product', '/for-adjusters', '/for-estate-liquidators', '/done-for-you', '/about', '/contact', '/legal', '/security', '/careers', '/demo', '/book-call', '/docs', '/sign-up', '/request-access'])
+const LIVE = new Set<string>(['/', '/sign-in', '/pricing', '/product', '/for-adjusters', '/for-estate-liquidators', '/done-for-you', '/about', '/contact', '/legal', '/security', '/careers', '/demo', '/book-call', '/docs', '/sign-up', '/request-access', '/sample'])
 
 function MktLink({
   to,
@@ -168,7 +168,7 @@ export function MktFooter() {
           <div className="k-footx-h">Product</div>
           <MktLink to="/product">How it works</MktLink>
           <MktLink to="/pricing">Pricing</MktLink>
-          <MktLink to="/sample-claim">Sample claim</MktLink>
+          <MktLink to="/sample">Sample claim</MktLink>
           <MktLink to="/done-for-you">Done-for-you claims</MktLink>
           <MktLink to="/for-estate-liquidators">For estate liquidators</MktLink>
           <MktLink to="/demo">Watch demo</MktLink>
