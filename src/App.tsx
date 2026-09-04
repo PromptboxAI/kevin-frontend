@@ -9,6 +9,8 @@ import AboutPage from './pages/AboutPage'
 import ContactPage from './pages/ContactPage'
 import DoneForYouPage from './pages/DoneForYouPage'
 import LegalPage from './pages/LegalPage'
+import CareersPage from './pages/CareersPage'
+import WatchDemoPage from './pages/WatchDemoPage'
 import ForEstateLiquidatorsPage from './pages/ForEstateLiquidatorsPage'
 import ProductPage from './pages/ProductPage'
 import ClaimsPage from './pages/ClaimsPage'
@@ -53,6 +55,8 @@ export default function App() {
         <Route path="/done-for-you" element={<DoneForYouPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/careers" element={<CareersPage />} />
+        <Route path="/demo" element={<WatchDemoPage />} />
         <Route path="/legal" element={<LegalPage />} />
         {/* The footer's "Security" link. Same document, Security tab preselected. */}
         <Route path="/security" element={<LegalPage initialTab="security" />} />
