@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import Seo from '../components/Seo'
 import Badge from '../components/Badge'
 import { I, Icon } from '../components/Icon'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
@@ -80,6 +81,7 @@ const DEMO_STEPS: [string, string, string, string[]][] = [
 export default function WatchDemoPage() {
   return (
     <div className="k-landing">
+      <Seo title="Watch the Demo — Kevin" description="From photo drop to Xactimate. Every step of a real kitchen-fire claim, start to export." path="/demo" />
       <MktNav />
       <main className="k-mkt-main">
         <section

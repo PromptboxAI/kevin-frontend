@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Seo from '../components/Seo'
 import { Link } from 'react-router-dom'
 import StickyCta from '../components/StickyCta'
 import { I, Icon } from '../components/Icon'
@@ -355,6 +356,7 @@ export function MktSocialProof() {
 export default function LandingPage() {
   return (
     <div className="k-landing">
+      <Seo title="Kevin — Photos in. Inventory out." description="Drop your claim photos and Kevin builds a defensible, Xactimate-ready contents inventory: identified items, live retail comps, depreciation, and ACV — reviewed by you." path="/" image="og-landing.png" />
       <MktNav />
 
       <main className="k-hero">
@@ -368,7 +370,7 @@ export default function LandingPage() {
               instead, and still lands on three lines, which is what sets this
               column's height against the hero card. */}
           <h1 className="k-h1" style={{ textWrap: 'balance' }}>
-            The Contents Estimate that Writes itself
+            The Contents List that writes itself
           </h1>
           <p className="k-lede">
             Bulk-ingest hundreds of photos and Kevin returns a complete, Xactimate-ready personal

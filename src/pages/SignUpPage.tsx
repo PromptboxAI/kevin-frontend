@@ -1,4 +1,5 @@
 import { useState, type CSSProperties, type FormEvent, type ReactNode } from 'react'
+import Seo from '../components/Seo'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { I, Icon } from '../components/Icon'
 import KevinWordmark from '../components/KevinWordmark'
@@ -167,6 +168,7 @@ export default function SignUpPage() {
 
   return (
     <div className="k-onb-page">
+      <Seo noindex title="Create your account — Kevin" description="" path="/" />
       <header className="k-onb-top">
         <KevinWordmark size={18} suffix to="/" />
         <Link className="k-link" to="/sign-in" style={{ fontSize: 12.5 }}>

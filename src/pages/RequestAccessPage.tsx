@@ -1,4 +1,5 @@
 import { useState, type CSSProperties, type FormEvent } from 'react'
+import Seo from '../components/Seo'
 import { Link } from 'react-router-dom'
 import { I, Icon } from '../components/Icon'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
@@ -191,6 +192,7 @@ export default function RequestAccessPage() {
 
   return (
     <div className="k-req">
+      <Seo title="Kevin for Teams — Enterprise" description="Volume licensing for carriers, TPAs, and multi-adjuster agencies. One invoice, custom terms." path="/request-access" />
       <MktNav />
 
       <main className="k-req-main">

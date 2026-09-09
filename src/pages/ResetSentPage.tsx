@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
+import Seo from '../components/Seo'
 import AuthShell from '../components/AuthShell'
 import { Icon } from '../components/Icon'
 
@@ -27,7 +28,9 @@ export default function ResetSentPage() {
   const email = location.state?.email
 
   return (
-    <AuthShell
+    <>
+      <Seo noindex title="Check your email — Kevin" description="" path="/" />
+      <AuthShell
       quote={{
         text: 'Three retailer price comps on every line, pulled live. When a carrier questions a value, the proof is already attached.',
         who: 'Kevin Godfrey · Long Island Public Adjusters, LLC',
@@ -122,6 +125,7 @@ export default function ResetSentPage() {
           ← Back to sign in
         </Link>
       </div>
-    </AuthShell>
+      </AuthShell>
+    </>
   )
 }

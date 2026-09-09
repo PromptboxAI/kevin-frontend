@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import Seo from '../components/Seo'
 import Badge from '../components/Badge'
 import { I, Icon } from '../components/Icon'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
@@ -143,6 +144,7 @@ const FAQS: [string, string][] = [
 export default function PricingPage() {
   return (
     <div className="k-landing">
+      <Seo title="Pricing — Kevin" description="$249/mo for content inventory specialists, IAs and public adjusters. Unlimited claims, 2,000 items a month included, no per-seat fee. First 250 items free." path="/pricing" image="og-pricing.png" />
       <MktNav active="pri" />
 
       <main className="k-mkt-main">

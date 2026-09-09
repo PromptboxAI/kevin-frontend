@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import Seo from '../components/Seo'
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { I, Icon } from '../components/Icon'
 import KevinWordmark from '../components/KevinWordmark'
@@ -159,6 +160,7 @@ export default function DocsPage() {
 
   return (
     <div className="k-docs">
+      <Seo title="Documentation — Kevin" description="Guides for every step: uploading photos, staging and grouping, the review worksheet, pricing, depreciation, and exporting to Xactimate." path="/docs" />
       <header className="k-topbar">
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <KevinWordmark size={16} suffix to="/" />

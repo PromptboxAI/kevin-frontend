@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import Seo from '../components/Seo'
 import Badge from '../components/Badge'
 import { I, Icon } from '../components/Icon'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
@@ -58,6 +59,7 @@ const RATES: [string, string, string][] = [
 export default function DoneForYouPage() {
   return (
     <div className="k-landing k-dfy">
+      <Seo title="Done-for-you claims — Kevin" description="Send us the photos and we build the inventory. Flat per-item pricing, XactContents-ready .xlsx and a client PDF, usually within one business day." path="/done-for-you" />
       <MktNav active="product" />
       <main className="k-mkt-main">
         <section

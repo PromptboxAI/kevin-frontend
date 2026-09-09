@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import Seo from '../components/Seo'
 import { Link, useNavigate } from 'react-router-dom'
 import AuthShell from '../components/AuthShell'
 import { Icon, I } from '../components/Icon'
@@ -72,7 +73,9 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <AuthShell
+    <>
+      <Seo noindex title="Choose a new password — Kevin" description="" path="/" />
+      <AuthShell
       quote={{
         text: "I drop a folder of fire-damage photos and walk away. By the time I'm back, every item is identified, priced, and ready to send to Xactimate.",
         who: 'Kevin Godfrey · Long Island Public Adjusters, LLC',
@@ -220,6 +223,7 @@ export default function ResetPasswordPage() {
           </form>
         </>
       )}
-    </AuthShell>
+      </AuthShell>
+    </>
   )
 }

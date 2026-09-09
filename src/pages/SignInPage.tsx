@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import Seo from '../components/Seo'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import KevinWordmark from '../components/KevinWordmark'
 import GoogleG from '../components/GoogleG'
@@ -90,6 +91,7 @@ export default function SignInPage() {
 
   return (
     <div className="k-auth">
+      <Seo noindex title="Sign in — Kevin" description="" path="/" />
       <div className="k-auth-l">
         <div style={{ padding: '24px 32px' }}>
           <KevinWordmark size={18} suffix={true} to="/" />

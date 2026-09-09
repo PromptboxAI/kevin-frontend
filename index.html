@@ -4,7 +4,52 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Kevin</title>
+    <meta name="theme-color" content="#1c446e" />
+
+    <!--
+      STATIC FALLBACK METADATA — the landing page's, deliberately.
+
+      Per-page title/description/OG are rendered by <Seo> (src/components/Seo.tsx)
+      and hoisted into <head> by React 19. That works for Googlebot, which
+      executes JavaScript — but NOT for the social crawlers, which do not:
+      Slack, LinkedIn, X and iMessage fetch this raw HTML and never run the
+      bundle. Without the tags below they would render every shared kevin.co
+      link as a bare URL with no card.
+
+      So this file carries the landing page's metadata as the floor. A share of
+      the homepage — the overwhelmingly most-shared URL — is exactly right; a
+      share of a deep link gets the Kevin card and the homepage description
+      rather than nothing. React then overrides all of it in the browser, so
+      what a human sees in the tab is always the correct per-page title.
+
+      The real fix is pre-rendering the 14 public routes, or a Vercel edge
+      function that injects per-route meta for crawler user-agents. Until one of
+      those exists, deep-link previews are generic by design, not by accident.
+    -->
+    <title>Kevin — Photos in. Inventory out.</title>
+    <meta
+      name="description"
+      content="Drop your claim photos and Kevin builds a defensible, Xactimate-ready contents inventory: identified items, live retail comps, depreciation, and ACV — reviewed by you."
+    />
+    <link rel="canonical" href="https://www.kevin.co" />
+
+    <meta property="og:site_name" content="Kevin" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.kevin.co" />
+    <meta property="og:title" content="Kevin — Photos in. Inventory out." />
+    <meta
+      property="og:description"
+      content="Drop your claim photos and Kevin builds a defensible, Xactimate-ready contents inventory: identified items, live retail comps, depreciation, and ACV — reviewed by you."
+    />
+    <meta property="og:image" content="https://www.kevin.co/og/og-landing.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Kevin — Photos in. Inventory out." />
+    <meta
+      name="twitter:description"
+      content="Drop your claim photos and Kevin builds a defensible, Xactimate-ready contents inventory: identified items, live retail comps, depreciation, and ACV — reviewed by you."
+    />
+    <meta name="twitter:image" content="https://www.kevin.co/og/og-landing.png" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,400;0,700;0,900;1,400&family=Lato:ital,wght@0,400;0,700;0,900;1,400&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />

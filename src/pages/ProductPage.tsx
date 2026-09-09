@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import Seo from '../components/Seo'
 import Badge from '../components/Badge'
 import { I, Icon } from '../components/Icon'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
@@ -54,6 +55,7 @@ const SURFACES: { n: string; t: string; img: string; to: string; body: string }[
 export default function ProductPage() {
   return (
     <div className="k-landing">
+      <Seo title="Product — Kevin" description="How Kevin works end to end: photo ingestion, item identification, live retail comps, depreciation, and carrier-ready exports." path="/product" image="og-product.png" />
       <MktNav active="product" />
       <main className="k-mkt-main">
         <section

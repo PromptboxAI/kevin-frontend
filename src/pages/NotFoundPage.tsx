@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import Seo from '../components/Seo'
 import { Link, useNavigate } from 'react-router-dom'
 import { I, Icon } from '../components/Icon'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
@@ -51,6 +52,7 @@ export default function NotFoundPage() {
 
   return (
     <div className="k-landing">
+      <Seo noindex title="Page not found — Kevin" description="" path="/" />
       <MktNav />
 
       <main className="k-404">

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import Seo from '../components/Seo'
 import { useLocation } from 'react-router-dom'
 import { I, Icon } from '../components/Icon'
 import KevinWordmark from '../components/KevinWordmark'
@@ -253,6 +254,7 @@ export default function LegalPage({ initialTab = 'privacy' }: { initialTab?: Tab
 
   return (
     <div className="k-docs">
+      <Seo title="Privacy & Terms — Kevin" description="Kevin's privacy policy, terms of service and security practices." path="/legal" />
       <header className="k-topbar">
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <KevinWordmark size={16} suffix to="/" />

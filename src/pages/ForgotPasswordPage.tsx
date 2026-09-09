@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import Seo from '../components/Seo'
 import { Link, useNavigate } from 'react-router-dom'
 import AuthShell from '../components/AuthShell'
 import { getSupabase } from '../lib/supabase'
@@ -40,7 +41,9 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <AuthShell
+    <>
+      <Seo noindex title="Reset your password — Kevin" description="" path="/" />
+      <AuthShell
       quote={{
         text: 'A claim that used to eat two days of typing now takes an afternoon. Kevin reads the photos and writes the inventory — I just review and send.',
         who: 'Kevin Godfrey · Long Island Public Adjusters, LLC',
@@ -111,6 +114,7 @@ export default function ForgotPasswordPage() {
           Back to sign in →
         </Link>
       </div>
-    </AuthShell>
+      </AuthShell>
+    </>
   )
 }
