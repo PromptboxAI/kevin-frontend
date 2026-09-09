@@ -863,7 +863,18 @@ export default function WorksheetPage() {
             onClick={() => {
               const next = !docked
               setDocked(next)
-              if (next && openRow === null && visible.length > 0) setOpenRow(visible[0].id)
+              // Closing must clear BOTH. `docked` and `openRow` encode one
+              // thing between them -- whether the panel is up -- and letting
+              // them disagree produces two impossible states that were both
+              // reachable: clearing only `docked` left `openRow` set, so the
+              // rail unmounted and the UNDOCKED branch below immediately
+              // rendered the same item as a modal. "Close panel" made the
+              // panel bigger.
+              if (next) {
+                if (openRow === null && visible.length > 0) setOpenRow(visible[0].id)
+              } else {
+                setOpenRow(null)
+              }
             }}
             title={
               docked
@@ -1147,8 +1158,20 @@ export default function WorksheetPage() {
             </div>
           </section>
 
+          {/* The rail's X means "close the panel", not "clear the row".
+              Clearing only the row left `docked` true with nothing rendered:
+              the toolbar button still read "Close panel" with no panel open,
+              and the next row click re-opened it out of nowhere, because row
+              clicks are wired only while docked. */}
           {docked && openRow !== null ? (
-            <ItemDrawer rowId={openRow} onClose={() => setOpenRow(null)} docked />
+            <ItemDrawer
+              rowId={openRow}
+              onClose={() => {
+                setOpenRow(null)
+                setDocked(false)
+              }}
+              docked
+            />
           ) : null}
         </div>
       ) : null}
