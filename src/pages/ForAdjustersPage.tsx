@@ -111,7 +111,7 @@ function ItemThumb({ file, size }: { file: string; size: number }) {
       }}
     >
       <img
-        src={`/marketing/items/${file}`}
+        src={`/marketing/items/w192/${file}`}
         alt=""
         loading="lazy"
         decoding="async"

@@ -246,7 +246,7 @@ export default function DoneForYouPage() {
               {COLLAGE.map((f, i) => (
                 <img
                   key={f}
-                  src={`/marketing/items/${f}.jpg`}
+                  src={`/marketing/items/w480/${f}.jpg`}
                   alt=""
                   loading="lazy"
                   decoding="async"

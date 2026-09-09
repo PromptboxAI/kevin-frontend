@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import StickyCta from '../components/StickyCta'
 import { I, Icon } from '../components/Icon'
 import Badge from '../components/Badge'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
@@ -84,7 +85,9 @@ function ItemThumb({ file, size }: { file: string; size: number }) {
       }}
     >
       <img
-        src={`/marketing/items/${file}`}
+        // w192 derivative: this renders at 22-88px, and the source is a
+        // 900x1200 camera original. See public/marketing/items/README.
+        src={`/marketing/items/w192/${file}`}
         alt=""
         loading="lazy"
         decoding="async"
@@ -359,15 +362,13 @@ export default function LandingPage() {
           <Badge tone="accent" dot>
             Photos in. XactContents-ready inventory out.
           </Badge>
-          {/* Explicit breaks, not wrapping: three lines set the left column's
-              height against the hero card on the right. Each line is short
-              enough to still fit at the 34px mobile clamp. */}
-          <h1 className="k-h1">
-            The contents
-            <br />
-            estimate writes
-            <br />
-            itself.
+          {/* No manual breaks. The old copy was three hand-set lines; this one
+              is long enough that a fixed break left "Estimate" alone on a line
+              at desktop. `text-wrap: balance` evens the lines at every width
+              instead, and still lands on three lines, which is what sets this
+              column's height against the hero card. */}
+          <h1 className="k-h1" style={{ textWrap: 'balance' }}>
+            The Contents Estimate that Writes itself
           </h1>
           <p className="k-lede">
             Bulk-ingest hundreds of photos and Kevin returns a complete, Xactimate-ready personal
@@ -437,7 +438,7 @@ export default function LandingPage() {
                     }}
                   >
                     <img
-                      src={`/marketing/items/${r.photo}`}
+                      src={`/marketing/items/w192/${r.photo}`}
                       alt={r.desc}
                       loading="lazy"
                       decoding="async"
@@ -682,6 +683,31 @@ export default function LandingPage() {
             slot="Carrier export modal"
             caption="The export modal — formats, what needs attention, and live download buttons."
           />
+        </div>
+      </section>
+
+      {/* — Mid-funnel CTA —
+          The next action after this point used to be 6,000px away in the
+          footer. A visitor who has just seen the three product screenshots is
+          the most convinced they will be all page; this catches them there. */}
+      <section className="k-midcta">
+        <div className="k-midcta-inner">
+          <div className="k-midcta-l">
+            <div className="k-midcta-eyebrow">Seen enough?</div>
+            <h2 className="k-midcta-h">Run it on a real loss.</h2>
+            <p className="k-midcta-p">
+              Your first 250 line items are free, with no deadline and no card charged until you
+              start Pro. Or open a finished claim and look around first.
+            </p>
+          </div>
+          <div className="k-midcta-r">
+            <Link className="k-btn k-btn--lg" to="/sign-up">
+              Start free — 250 items →
+            </Link>
+            <Link className="k-btn k-btn--ghost k-btn--lg" to="/sample">
+              View sample claim
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -986,6 +1012,8 @@ export default function LandingPage() {
       </section>
 
       <MktFooter />
+      {/* Mobile only (CSS-gated). Appears once the hero CTA scrolls away. */}
+      <StickyCta watchSelector=".k-hero-actions" />
     </div>
   )
 }

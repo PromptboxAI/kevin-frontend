@@ -10,7 +10,7 @@ import { Link } from 'react-router-dom'
  * silently shrank the logo across the marketing pages.
  */
 export default function KevinWordmark({
-  size = 18,
+  size = 22,
   tone = 'dark',
   suffix = false,
   to = '/',

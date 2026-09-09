@@ -4932,3 +4932,130 @@
       color: var(--k-fg-2); background: var(--k-bg-2);
       border: 1px solid var(--k-line);
     }
+
+    /* ══ Mobile overhaul ═══════════════════════════════════════════════
+       The landing page ran 10,500px on a 375x812 phone — 12.9 screens
+       before the final CTA. Three changes below: the hero owns screen one
+       with no image in it, section padding is roughly halved, and a sticky
+       action bar keeps signing up one tap away instead of a scroll away. */
+
+    /* — 1 · The hero copy owns the first screen —
+       The shot sat 240px into view on load, so the first thing on a phone
+       was a screenshot competing with the headline. Giving the copy column
+       a viewport's height pushes the shot fully below the fold at any
+       device height. `svh` (not `vh`) accounts for mobile browser chrome,
+       which otherwise leaves the CTA under the URL bar. */
+    @media (max-width: 820px) {
+      .k-hero-l {
+        /* 76px = nav (55) + the hero's own 28px top padding, less a few px
+           so the shot clears the fold rather than landing exactly on it.
+           Measured, not guessed: at 375x812 this puts the shot's top at 819. */
+        min-height: calc(100svh - 76px);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding-bottom: 8px;
+      }
+      /* The scroll cue belongs to the copy block, not the shot. */
+      .k-hero { gap: 18px !important; padding-bottom: 32px !important; }
+    }
+
+    /* — 2 · Condensed vertical rhythm —
+       Desktop padding (72-88px blocks) reads as luxury on a 1440px canvas
+       and as dead air on a 375px one. Roughly halved below 768px. */
+    @media (max-width: 768px) {
+      .k-proof   { padding-top: 30px !important; }
+      .k-pg      { padding-top: 44px !important; padding-bottom: 34px !important; }
+      .k-social  { padding-top: 40px !important; padding-bottom: 34px !important; }
+      .k-howband { padding-top: 30px !important; padding-bottom: 30px !important; }
+      .k-roi     { padding-top: 38px !important; padding-bottom: 38px !important; }
+      .k-cta     { padding-top: 34px !important; padding-bottom: 34px !important; }
+      .k-stats-ribbon { padding-bottom: 18px !important; }
+      /* Gaps between cards inside the long sections, not just around them. */
+      .k-pg-grid { gap: 16px !important; }
+      .k-proof-row { gap: 18px !important; }
+      .k-proof-two { gap: 16px !important; }
+      .k-testimonials { gap: 14px !important; }
+      /* Margins between blocks, not just section padding: the proof section
+         alone carried 212px of pure gap (44 under the header, 56 after each
+         of three rows) sized for a 1440px canvas. */
+      .k-proof-hd { margin-bottom: 20px !important; }
+      .k-proof-row { margin-bottom: 26px !important; }
+      .k-pg-hd { margin-bottom: 22px !important; }
+      .k-social-hd { margin-bottom: 22px !important; }
+      .k-testimonials { margin-bottom: 26px !important; }
+      .k-pg-viz { padding: 14px !important; }
+    }
+
+    /* — 3 · Sticky conversion bar —
+       Shown only once the hero's own CTA has scrolled away, so it never
+       duplicates a button already on screen. `k-stickycta--on` is toggled
+       by an IntersectionObserver in LandingPage. */
+    .k-stickycta {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+      display: none; align-items: center; gap: 12px;
+      padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+      background: color-mix(in oklab, var(--k-bg) 92%, transparent);
+      -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+      border-top: 1px solid var(--k-line);
+      box-shadow: 0 -6px 24px oklch(0.2 0.01 250 / 0.10);
+      transform: translateY(110%);
+      transition: transform 0.22s ease;
+    }
+    .k-stickycta--on { transform: translateY(0); }
+    .k-stickycta-t {
+      flex: 1; min-width: 0; font-size: 12px; line-height: 1.35;
+      color: var(--k-fg-3);
+    }
+    .k-stickycta-t strong { color: var(--k-fg); font-weight: 700; display: block; }
+    .k-stickycta .k-btn { flex: 0 0 auto; }
+    @media (max-width: 820px) {
+      .k-stickycta { display: flex; }
+      /* The bar floats over the page; give the footer room to clear it. */
+      .k-footx { padding-bottom: 72px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .k-stickycta { transition: none; }
+    }
+
+    /* — Mid-funnel CTA (after the proof section) —
+       A split banner: the ask on the left, the two actions on the right.
+       Accent-soft rather than the dark k-cta treatment, so the page still
+       builds to one final dark CTA rather than shouting twice. */
+    .k-midcta { max-width: 1280px; margin: 0 auto; padding: 8px 40px 0; }
+    .k-midcta-inner {
+      display: grid; grid-template-columns: minmax(0, 1fr) auto;
+      gap: 32px; align-items: center;
+      padding: 28px 32px;
+      background: var(--k-accent-soft);
+      border: 1px solid oklch(0.45 0.13 255 / 0.22);
+      border-radius: 14px;
+    }
+    .k-midcta-eyebrow {
+      font-family: var(--k-font-mono); font-size: 11px; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase; color: var(--k-accent);
+    }
+    .k-midcta-h {
+      font-family: var(--k-font-display); font-weight: 400; font-size: 30px;
+      letter-spacing: -0.024em; line-height: 1.1; margin: 7px 0 8px;
+    }
+    .k-midcta-p {
+      font-size: 13.5px; color: var(--k-fg-2); line-height: 1.55;
+      margin: 0; max-width: 62ch;
+    }
+    .k-midcta-r { display: flex; flex-direction: column; gap: 10px; }
+    .k-midcta-r > .k-btn { justify-content: center; white-space: nowrap; }
+
+    @media (max-width: 900px) {
+      .k-midcta-inner { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+      .k-midcta-r { flex-direction: row; }
+      .k-midcta-r > .k-btn { flex: 1 1 0; }
+    }
+    @media (max-width: 768px) {
+      .k-midcta { padding: 4px 20px 0; }
+      .k-midcta-inner { padding: 20px 18px; }
+      .k-midcta-h { font-size: clamp(22px, 6.2vw, 30px); }
+    }
+    @media (max-width: 520px) {
+      .k-midcta-r { flex-direction: column; }
+    }
