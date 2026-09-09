@@ -297,6 +297,14 @@
     .k-avatar-menu {
       position: absolute; top: calc(100% + 8px); right: 0;
       width: 240px; padding: 0;
+      /* The surface itself. AvatarMenu pairs this with `k-pop`, which is what
+         actually supplies a background — but the claim-state menu (the ⋯ with
+         Mark closed / Archive) uses this class alone, so it rendered fully
+         transparent with its items sitting straight on the page behind. Same
+         values as .k-pop, so the paired usage is unchanged. */
+      background: var(--k-bg);
+      border: 1px solid var(--k-line);
+      border-radius: 8px;
       box-shadow: 0 1px 2px rgba(20,30,60,0.05), 0 16px 40px rgba(20,30,60,0.16);
       z-index: 40;
     }
@@ -5288,4 +5296,23 @@
         justify-content: center;
         flex: 0 0 auto;
       }
+    }
+
+    /* — Sample claim on a phone —
+       /sample is the one place a marketing visitor lands inside the real
+       worksheet, and the worksheet is deliberately desktop-width (CLAUDE.md).
+       What it does not need on a 375px screen is the claim's action cluster:
+       Add photos, Share, Generate carrier export and the state menu all crowd
+       the topbar, and on the sample NONE of them can work — it is served from
+       a bundled fixture, so every one of those calls falls through to the
+       network and 401s. Hiding them on mobile removes four dead controls and
+       the crowding at once. The banner above already states the page is a
+       demo, so nothing is lost.
+
+       Scoped to .k-sample-frame: the authenticated worksheet keeps every
+       control at every width. */
+    @media (max-width: 768px) {
+      /* !important because the group carries `display: flex` inline, which
+         outranks any selector — same trap as the careers band. */
+      .k-sample-frame .k-topbar > div:nth-child(2) { display: none !important; }
     }

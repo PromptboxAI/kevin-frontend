@@ -263,6 +263,14 @@
     .k-avatar-menu {
       position: absolute; top: calc(100% + 8px); right: 0;
       width: 240px; padding: 0;
+      /* The surface itself. AvatarMenu pairs this with `k-pop`, which is what
+         actually supplies a background — but the claim-state menu (the ⋯ with
+         Mark closed / Archive) uses this class alone, so it rendered fully
+         transparent with its items sitting straight on the page behind. Same
+         values as .k-pop, so the paired usage is unchanged. */
+      background: var(--k-bg);
+      border: 1px solid var(--k-line);
+      border-radius: 8px;
       box-shadow: 0 1px 2px rgba(20,30,60,0.05), 0 16px 40px rgba(20,30,60,0.16);
       z-index: 40;
     }
