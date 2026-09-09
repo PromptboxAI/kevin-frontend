@@ -17,7 +17,7 @@ import { MktFooter, MktNav } from '../components/MarketingChrome'
 export default function ContactPage() {
   return (
     <div className="k-landing">
-      <Seo title="Contact — Kevin" description="Questions, support, or Enterprise inquiries — reach the Kevin team." path="/contact" />
+      <Seo path="/contact" />
       <MktNav />
       <main className="k-mkt-main">
         <section className="k-contact">

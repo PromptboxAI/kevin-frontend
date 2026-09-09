@@ -68,7 +68,7 @@ When adding a component: give it a distinctive name, export it on `window`, add 
 - **Color:** defined as OKLCH CSS custom properties in `:root` of `kevin.css`. Palette = cool slate neutrals + **navy primary accent** (`--k-accent`) + **mint/teal** for ok/found states (`--k-ok`) + **amber** reserved exclusively for special-limits warnings (`--k-warn`). Never introduce raw hex outside the token set; use the `--k-*` vars.
 - **CSS naming:** every class is `k-` prefixed, BEM-ish (`k-row`, `k-row--head`, `k-c--rcv`). Kebab-case.
 - **Files:** kebab-case (`claim-overview.jsx`). **Components:** PascalCase (`ClaimOverview`).
-- **Logo:** the wordmark is **"Kevin."** — capital K, accent-colored period when `suffix={true}`. Rendered by `<KevinWordmark>` in `components/shared.jsx`. Do not use ".co" suffix or a K-monogram; those were explored and rejected.
+- **Logo:** the wordmark is **"Kevin."** — capital K, accent-colored period when `suffix={true}`. Rendered by `<KevinWordmark>` in `components/shared.jsx`. Do not use a ".co" suffix; that was explored and rejected. **A K-monogram was also rejected for the WORDMARK and still is** — never substitute a K for "Kevin." in nav, footer or page chrome. The one sanctioned exception is the **favicon** (`public/favicon.svg`): navy tile, white K, the wordmark's period, approved 2026-09-09, because "Kevin." is illegible at 16px and the period alone reads as a generic dot. That exception is the favicon only.
 
 ---
 

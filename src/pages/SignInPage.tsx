@@ -91,7 +91,7 @@ export default function SignInPage() {
 
   return (
     <div className="k-auth">
-      <Seo noindex title="Sign in — Kevin" description="" path="/" />
+      <Seo noindex path="/sign-in" title="Sign in — Kevin" />
       <div className="k-auth-l">
         <div style={{ padding: '24px 32px' }}>
           <KevinWordmark size={18} suffix={true} to="/" />

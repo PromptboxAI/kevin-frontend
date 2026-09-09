@@ -144,7 +144,7 @@ const FAQS: [string, string][] = [
 export default function PricingPage() {
   return (
     <div className="k-landing">
-      <Seo title="Pricing — Kevin" description="$249/mo for content inventory specialists, IAs and public adjusters. Unlimited claims, 2,000 items a month included, no per-seat fee. First 250 items free." path="/pricing" image="og-pricing.png" />
+      <Seo path="/pricing" />
       <MktNav active="pri" />
 
       <main className="k-mkt-main">

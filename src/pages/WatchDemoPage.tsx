@@ -81,7 +81,7 @@ const DEMO_STEPS: [string, string, string, string[]][] = [
 export default function WatchDemoPage() {
   return (
     <div className="k-landing">
-      <Seo title="Watch the Demo — Kevin" description="From photo drop to Xactimate. Every step of a real kitchen-fire claim, start to export." path="/demo" />
+      <Seo path="/demo" />
       <MktNav />
       <main className="k-mkt-main">
         <section

@@ -132,7 +132,7 @@ function ItemThumb({ file, size }: { file: string; size: number }) {
 export default function ForAdjustersPage() {
   return (
     <div className="k-landing">
-      <Seo title="Kevin for Insurance Adjusters" description="Turn pack-out photo dumps into priced, defensible contents inventories that import straight into Xactimate and XactContents." path="/for-adjusters" image="og-adjusters.png" />
+      <Seo path="/for-adjusters" />
       <MktNav active="adj" />
 
       <main className="k-mkt-main">

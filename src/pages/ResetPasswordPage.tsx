@@ -74,7 +74,7 @@ export default function ResetPasswordPage() {
 
   return (
     <>
-      <Seo noindex title="Choose a new password — Kevin" description="" path="/" />
+      <Seo noindex path="/reset-password" title="Choose a new password — Kevin" />
       <AuthShell
       quote={{
         text: "I drop a folder of fire-damage photos and walk away. By the time I'm back, every item is identified, priced, and ready to send to Xactimate.",

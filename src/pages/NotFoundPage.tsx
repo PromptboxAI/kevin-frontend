@@ -52,7 +52,7 @@ export default function NotFoundPage() {
 
   return (
     <div className="k-landing">
-      <Seo noindex title="Page not found — Kevin" description="" path="/" />
+      <Seo noindex path="/404" title="Page not found — Kevin" />
       <MktNav />
 
       <main className="k-404">

@@ -145,7 +145,7 @@ function StockThumb({ id, alt, size }: { id: string; alt: string; size: number }
 export default function ForEstateLiquidatorsPage() {
   return (
     <div className="k-landing">
-      <Seo title="Kevin for Estate Sale Professionals" description="Photograph an estate, get a fair-market-value inventory with conditions and statuses — ready to hand a client." path="/for-estate-liquidators" image="og-estate.png" />
+      <Seo path="/for-estate-liquidators" />
       <MktNav active="liq" />
 
       <main className="k-mkt-main">

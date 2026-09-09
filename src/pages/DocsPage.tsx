@@ -160,7 +160,7 @@ export default function DocsPage() {
 
   return (
     <div className="k-docs">
-      <Seo title="Documentation — Kevin" description="Guides for every step: uploading photos, staging and grouping, the review worksheet, pricing, depreciation, and exporting to Xactimate." path="/docs" />
+      <Seo path="/docs" />
       <header className="k-topbar">
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <KevinWordmark size={16} suffix to="/" />

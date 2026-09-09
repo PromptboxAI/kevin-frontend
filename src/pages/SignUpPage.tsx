@@ -168,7 +168,7 @@ export default function SignUpPage() {
 
   return (
     <div className="k-onb-page">
-      <Seo noindex title="Create your account — Kevin" description="" path="/" />
+      <Seo noindex path="/sign-up" title="Create your account — Kevin" />
       <header className="k-onb-top">
         <KevinWordmark size={18} suffix to="/" />
         <Link className="k-link" to="/sign-in" style={{ fontSize: 12.5 }}>

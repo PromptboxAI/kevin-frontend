@@ -42,7 +42,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <>
-      <Seo noindex title="Reset your password — Kevin" description="" path="/" />
+      <Seo noindex path="/forgot-password" title="Reset your password — Kevin" />
       <AuthShell
       quote={{
         text: 'A claim that used to eat two days of typing now takes an afternoon. Kevin reads the photos and writes the inventory — I just review and send.',

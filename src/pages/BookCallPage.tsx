@@ -39,7 +39,7 @@ const LINK: React.CSSProperties = {
 export default function BookCallPage() {
   return (
     <div className="k-landing">
-      <Seo title="Book a call — Kevin" description="Bring a real claim and we will run it together. 30 minutes, no slides." path="/book-call" />
+      <Seo path="/book-call" />
       <MktNav />
       <main className="k-mkt-main">
         <section style={{ maxWidth: 1060, margin: '0 auto', padding: '52px 40px 40px' }}>

@@ -356,7 +356,7 @@ export function MktSocialProof() {
 export default function LandingPage() {
   return (
     <div className="k-landing">
-      <Seo title="Kevin — Photos in. Inventory out." description="Drop your claim photos and Kevin builds a defensible, Xactimate-ready contents inventory: identified items, live retail comps, depreciation, and ACV — reviewed by you." path="/" image="og-landing.png" />
+      <Seo path="/" />
       <MktNav />
 
       <main className="k-hero">

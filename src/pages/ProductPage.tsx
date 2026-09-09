@@ -55,7 +55,7 @@ const SURFACES: { n: string; t: string; img: string; to: string; body: string }[
 export default function ProductPage() {
   return (
     <div className="k-landing">
-      <Seo title="Product — Kevin" description="How Kevin works end to end: photo ingestion, item identification, live retail comps, depreciation, and carrier-ready exports." path="/product" image="og-product.png" />
+      <Seo path="/product" />
       <MktNav active="product" />
       <main className="k-mkt-main">
         <section

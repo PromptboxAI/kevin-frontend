@@ -30,7 +30,7 @@ const TEAMS = [...new Set(ROLES.map((r) => r.team))]
 export default function CareersPage() {
   return (
     <div className="k-landing">
-      <Seo title="Careers — Kevin" description="Help build the content inventory tool adjusters actually want to use." path="/careers" />
+      <Seo path="/careers" />
       <MktNav />
       <main className="k-mkt-main">
         <section style={{ maxWidth: 920, margin: '0 auto', padding: '60px 40px 40px' }}>

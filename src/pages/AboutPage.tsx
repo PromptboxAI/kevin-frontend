@@ -86,7 +86,7 @@ const EYEBROW: React.CSSProperties = {
 export default function AboutPage() {
   return (
     <div className="k-landing">
-      <Seo title="About — Kevin" description="Built by an adjuster who settled over 10,000 claims in twenty-two years, because contents inventory should not cost you a Friday night. Long Island, NY." path="/about" />
+      <Seo path="/about" />
       <MktNav />
       <main className="k-mkt-main">
         <section className="k-about-hero">

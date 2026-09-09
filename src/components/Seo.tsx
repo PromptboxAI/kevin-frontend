@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { NOINDEX_TITLES, ORIGIN, SEO_PAGES } from '../content/seo-pages'
 
 /**
  * Per-page search and social metadata.
@@ -26,22 +27,21 @@ import { useEffect } from 'react'
  * a host that immediately redirects would split ranking signals across both.
  */
 
-const ORIGIN = 'https://www.kevin.co'
-
 export type SeoProps = {
-  title: string
-  description: string
-  /** Route path, e.g. "/pricing". Used for the canonical and og:url. */
+  /** Route path, e.g. "/pricing". Looked up in SEO_PAGES / NOINDEX_TITLES. */
   path: string
-  /** 1200x630 card under /og/. Falls back to the default card. */
-  image?: string
-  /** Auth and in-app screens: no title/description, just keep them out. */
+  /** Auth and in-app screens: no description or canonical, just keep them out. */
   noindex?: boolean
+  /** Only for routes with no table entry, e.g. the 404 catch-all. */
+  title?: string
 }
 
-export default function Seo({ title, description, path, image, noindex }: SeoProps) {
+export default function Seo({ path, noindex, title: titleOverride }: SeoProps) {
+  const entry = SEO_PAGES[path]
+  const title = titleOverride ?? entry?.title ?? NOINDEX_TITLES[path] ?? 'Kevin'
+  const description = entry?.description ?? ''
   const url = `${ORIGIN}${path === '/' ? '' : path}`
-  const card = `${ORIGIN}/og/${image ?? 'og-default.png'}`
+  const card = `${ORIGIN}/og/${entry?.image ?? 'og-default.png'}`
 
   // Retire the static fallback once the real tags are mounted. Runs once —
   // the defaults are in the initial HTML and never come back.

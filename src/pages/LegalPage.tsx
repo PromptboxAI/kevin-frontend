@@ -254,7 +254,7 @@ export default function LegalPage({ initialTab = 'privacy' }: { initialTab?: Tab
 
   return (
     <div className="k-docs">
-      <Seo title="Privacy & Terms — Kevin" description="Kevin's privacy policy, terms of service and security practices." path="/legal" />
+      <Seo path="/legal" />
       <header className="k-topbar">
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <KevinWordmark size={16} suffix to="/" />

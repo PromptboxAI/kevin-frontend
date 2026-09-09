@@ -29,7 +29,7 @@ export default function ResetSentPage() {
 
   return (
     <>
-      <Seo noindex title="Check your email — Kevin" description="" path="/" />
+      <Seo noindex path="/reset-sent" title="Check your email — Kevin" />
       <AuthShell
       quote={{
         text: 'Three retailer price comps on every line, pulled live. When a carrier questions a value, the proof is already attached.',
