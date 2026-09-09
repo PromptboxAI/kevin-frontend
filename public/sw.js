@@ -71,18 +71,23 @@ self.addEventListener('fetch', (event) => {
       fetch(request)
         .then((response) => {
           // Only cache a document that IS one. Without this an error page --
-          // a Vercel bot-challenge, a 500, a maintenance page -- gets stored
-          // as the app shell and served back on every later load, including
-          // for asset requests, which then arrive as text/html and fail the
-          // module MIME check. That happened on kevin.co: a blank page on
-          // first load in a fresh tab, correct seconds later, no JS error to
-          // explain it, and no way for the visitor to clear it themselves.
+          // a Vercel bot-challenge, a 500, a maintenance page -- was stored
+          // under this URL and became the offline fallback below. Navigations
+          // are network first, so it did not surface while the network was
+          // healthy; it surfaced on the loads where fetch rejected, which is
+          // exactly when the fallback is supposed to save you. That is the
+          // blank first load seen on kevin.co: right again on retry, no JS
+          // error to explain it, and nothing the visitor could do about it.
+          //
+          // A good response overwrites the entry, so a browser already
+          // holding a poisoned one heals on its next successful load -- no
+          // cache version bump needed to clear it.
           //
           // Scoped to navigations on purpose. Navigations are same-origin
-          // documents, where `ok` means what it looks like. A blanket check
-          // would be wrong for cross-origin assets, which come back opaque
-          // with ok === false and status 0, and would silently stop being
-          // cached -- the opposite of what this worker is for.
+          // documents, where `ok` means what it looks like. A blanket rule
+          // would be wrong for cross-origin responses, which come back opaque
+          // with ok === false and status 0. (The /assets/ branch below is
+          // same-origin and carries its own ok check already.)
           if (response.ok) {
             const copy = response.clone()
             caches.open(CACHE).then((cache) => cache.put(request, copy))
