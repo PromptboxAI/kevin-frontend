@@ -272,10 +272,22 @@ const Processing = ({ onOpenWorksheet }) => {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <ConfPip level={it.confidence} />
-                    {it.needs_manual
-                      ? <span style={{ fontSize: 11, fontWeight: 600, color: it.manual_reason === 'manual_class' ? 'var(--k-warn)' : 'var(--k-fg-4)' }}>
-                          {it.manual_reason === 'manual_class' ? "Appraisal req'd" : it.manual_reason === 'low_sample' ? 'Low sample' : 'No comps'}
+                    {/* Rules 12 and 12b. This printed the three needs_manual
+                        badges rule 12 bans by name, chosen by inline
+                        manual_reason string tests — which is precisely what
+                        rule 12b says to replace with isCapacityWait. An
+                        unpriced line is simply BLANK and the adjuster types
+                        into it; a capacity wait is not an unpriced line at all
+                        but a queue, so it gets the same quiet chip the
+                        worksheet uses. (The banned strings are deliberately
+                        not repeated here: check-domain-rules.py greps for
+                        them, and a comment quoting them would flag forever.) */}
+                    {window.isCapacityWait(it)
+                      ? <span className="k-paused" title={(window.MANUAL_CAPACITY_COPY[it.manual_reason] || {}).detail}>
+                          <span className="k-paused-dot" /> Pricing
                         </span>
+                      : it.needs_manual
+                      ? <span className="k-mono" style={{ fontSize: 12.5, color: 'var(--k-fg-4)' }}>—</span>
                       : <span className="k-mono" style={{ fontSize: 12.5, fontWeight: 600 }}>${it.rcv.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>}
                     <span style={{ fontSize: 10.5, color: 'var(--k-fg-4)', fontFamily: 'var(--k-font-mono)', width: 56, textAlign: 'right' }}>{it.age}</span>
                   </div>
