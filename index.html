@@ -2,6 +2,22 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!--
+      Two icons, .ico FIRST and deliberately.
+
+      Browsers that do not take the SVG request /favicon.ico by default. Before
+      this file existed the SPA rewrite answered that path with index.html, so
+      those clients got a 3,780-byte HTML document where an icon belonged --
+      worse than a 404, because they keep retrying it rather than giving up and
+      falling back cleanly.
+
+      Modern browsers still pick the SVG (it is the more specific type), so the
+      .ico costs them nothing. public/favicon.ico is generated from
+      public/favicon.svg by scripts/build-favicon.mjs -- regenerate it after any
+      edit to the SVG rather than exporting a replacement by hand, or the two
+      marks drift apart silently.
+    -->
+    <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#1c446e" />
