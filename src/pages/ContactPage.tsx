@@ -143,7 +143,7 @@ export default function ContactPage() {
                 window.location.href = 'mailto:kevin@kevin.co'
               }}
             >
-              Send message →
+              Send message
             </button>
             <div style={{ marginTop: 12, fontSize: 11.5, color: 'var(--k-fg-4)' }}>
               Or{' '}

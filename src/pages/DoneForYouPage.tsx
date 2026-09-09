@@ -101,7 +101,7 @@ export default function DoneForYouPage() {
               className="k-btn k-btn--lg"
               href="mailto:kevin@kevin.co?subject=Done-for-you%20claim"
             >
-              Send us a claim →
+              Send us a claim
             </a>
             <Link className="k-btn k-btn--ghost k-btn--lg" to="/book-call">
               Talk it through first
@@ -345,7 +345,7 @@ export default function DoneForYouPage() {
               style={{ flex: '0 0 auto' }}
               href="mailto:kevin@kevin.co?subject=On-site%20capture"
             >
-              Ask about on-site →
+              Ask about on-site
             </a>
           </div>
         </section>
@@ -497,7 +497,7 @@ export default function DoneForYouPage() {
           </p>
           <div className="k-hero-actions" style={{ justifyContent: 'center', marginTop: 0 }}>
             <Link className="k-btn" to="/pricing">
-              See pricing →
+              See pricing
             </Link>
             <Link className="k-btn k-btn--ghost" to="/sample">
               Open the sample claim

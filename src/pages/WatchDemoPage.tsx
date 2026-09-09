@@ -171,7 +171,7 @@ export default function WatchDemoPage() {
           </h2>
           <div className="k-hero-actions" style={{ marginTop: 0 }}>
             <Link className="k-btn k-btn--lg" to="/sign-up">
-              Start a new claim →
+              Start a new claim
             </Link>
             <Link className="k-btn k-btn--ghost k-btn--lg" to="/sample">
               Open the sample claim

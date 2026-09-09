@@ -473,7 +473,7 @@ export default function RequestAccessPage() {
                 Book a call instead
               </Link>
               <button type="submit" className="k-btn k-btn--lg">
-                Request a quote →
+                Request a quote
               </button>
             </div>
           </div>

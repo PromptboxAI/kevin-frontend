@@ -64,7 +64,7 @@ export default function NotFoundPage() {
         <div className="k-404-actions">
           {session && (
             <Link to="/claims" className="k-btn k-btn--lg">
-              Go to my claims →
+              Go to my claims
             </Link>
           )}
           <Link to="/" className={session ? 'k-btn k-btn--ghost k-btn--lg' : 'k-btn k-btn--lg'}>

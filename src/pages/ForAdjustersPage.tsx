@@ -171,7 +171,7 @@ export default function ForAdjustersPage() {
             </p>
             <div className="k-hero-actions" style={{ marginTop: 32 }}>
               <Link className="k-btn k-btn--lg" to="/sign-up">
-                Start a new claim →
+                Start a new claim
               </Link>
               <Link className="k-btn k-btn--ghost k-btn--lg" to="/demo">
                 Watch demo
@@ -561,7 +561,7 @@ export default function ForAdjustersPage() {
           </p>
           <div className="k-hero-actions" style={{ marginTop: 0 }}>
             <Link className="k-btn k-btn--lg" to="/sign-up">
-              Start a claim →
+              Start a claim
             </Link>
             {/* The adjuster IS the founder; the call is the introduction. */}
             <Link className="k-btn k-btn--ghost k-btn--lg" to="/book-call">

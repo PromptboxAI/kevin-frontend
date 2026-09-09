@@ -479,7 +479,7 @@ export default function SignUpPage() {
                   }}
                   disabled={!consented}
                 >
-                  Start free — 250 items →
+                  Start free — 250 items
                 </button>
               </form>
             </>

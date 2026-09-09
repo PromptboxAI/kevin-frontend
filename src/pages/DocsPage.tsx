@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { I, Icon } from '../components/Icon'
 import KevinWordmark from '../components/KevinWordmark'
 import { MktFooter } from '../components/MarketingChrome'
@@ -179,12 +179,6 @@ export default function DocsPage() {
               </button>
             )}
           </div>
-          <Link className="k-btn k-btn--ghost" to="/sign-in">
-            Sign in
-          </Link>
-          <Link className="k-btn" to="/sign-up">
-            Start a claim
-          </Link>
         </div>
       </header>
 

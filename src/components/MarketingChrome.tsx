@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import KevinWordmark from './KevinWordmark'
 
@@ -78,6 +78,25 @@ export function MktNav({ active }: { active?: string }) {
   // for a header that cannot hold them. Below 820px this collapses everything
   // into one toggle instead -- an addition to the design, not a port of it.
   const [menu, setMenu] = useState(false)
+  const { pathname } = useLocation()
+
+  // The sheet is route-scoped: without this it stays open across a navigation,
+  // so tapping "Pricing" lands on /pricing with the menu still covering it.
+  useEffect(() => setMenu(false), [pathname])
+
+  // Escape closes it, and the page behind must not scroll under the scrim.
+  useEffect(() => {
+    if (!menu) return
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setMenu(false)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = prev
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [menu])
+
   const items: [string, string, string][] = [
     ['product', 'Product', '/product'],
     ['adj', 'For Adjusters', '/for-adjusters'],
@@ -102,7 +121,7 @@ export function MktNav({ active }: { active?: string }) {
       <div className="k-nav-actions" style={{ display: 'flex', gap: 8 }}>
         {loading ? null : session ? (
           <Link className="k-btn" to="/claims">
-            Go to app →
+            Go to app
           </Link>
         ) : (
           <>
@@ -129,28 +148,39 @@ export function MktNav({ active }: { active?: string }) {
       </button>
 
       {menu ? (
-        <div className="k-nav-sheet">
-          {items.map(([id, label, to]) => (
-            <MktLink key={id} to={to} className="k-nav-sheet-item">
-              {label}
-            </MktLink>
-          ))}
-          <div className="k-nav-sheet-div" />
-          {session ? (
-            <Link className="k-btn k-btn--lg k-nav-sheet-cta" to="/claims">
-              Go to app →
-            </Link>
-          ) : (
-            <>
-              <Link className="k-nav-sheet-item" to="/sign-in">
-                Sign in
-              </Link>
-              <Link className="k-btn k-btn--lg k-nav-sheet-cta" to="/sign-up">
-                Start a new claim
-              </Link>
-            </>
-          )}
-        </div>
+        <>
+          {/* Scrim. Without it the page reads straight through the sheet and
+              the sheet's own CTA collides with whatever button happens to sit
+              under it. Tapping it closes, which is the gesture people try. */}
+          <div className="k-nav-scrim" onClick={() => setMenu(false)} aria-hidden />
+          <div className="k-nav-sheet">
+            {items.map(([id, label, to]) => (
+              <MktLink key={id} to={to} className="k-nav-sheet-item">
+                {label}
+              </MktLink>
+            ))}
+            {/* Account actions, not page links. Styling "Sign in" as another
+                row made it read as a fourth destination alongside Product and
+                Pricing; as a ghost button beside the primary it matches the
+                pairing the desktop header already uses. */}
+            <div className="k-nav-sheet-foot">
+              {session ? (
+                <Link className="k-btn k-btn--lg k-nav-sheet-cta" to="/claims">
+                  Go to app
+                </Link>
+              ) : (
+                <>
+                  <Link className="k-btn k-btn--ghost k-btn--lg k-nav-sheet-cta" to="/sign-in">
+                    Sign in
+                  </Link>
+                  <Link className="k-btn k-btn--lg k-nav-sheet-cta" to="/sign-up">
+                    Start a new claim
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+        </>
       ) : null}
     </header>
   )

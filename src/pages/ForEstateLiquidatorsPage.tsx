@@ -179,7 +179,7 @@ export default function ForEstateLiquidatorsPage() {
             </p>
             <div className="k-hero-actions" style={{ marginTop: 32 }}>
               <Link className="k-btn k-btn--lg" to="/sign-up">
-                Start an estate →
+                Start an estate
               </Link>
               <Link className="k-btn k-btn--ghost k-btn--lg" to="/sample">
                 See a sample inventory
@@ -506,7 +506,7 @@ export default function ForEstateLiquidatorsPage() {
           </p>
           <div className="k-hero-actions" style={{ marginTop: 0 }}>
             <Link className="k-btn k-btn--lg" to="/sign-up">
-              Start your first estate →
+              Start your first estate
             </Link>
             <Link className="k-btn k-btn--ghost k-btn--lg" to="/book-call">
               Book a 30-min call

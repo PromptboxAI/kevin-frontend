@@ -5168,3 +5168,46 @@
     @media (max-width: 768px) {
       .k-band-r { gap: 16px !important; }
     }
+
+    /* — Touch targets —
+       Every CTA on the site measured 38px tall on a phone, and the sticky
+       bar's button 27px. Both are under the 44px both Apple and Google
+       publish as the minimum comfortable target, which on a marketing site
+       means every conversion button is slightly harder to hit than it should
+       be. Raised via min-height so the label's own padding still governs the
+       horizontal size and nothing reflows. */
+    @media (max-width: 820px) {
+      .k-btn--lg,
+      .k-cta-primary,
+      .k-cta-secondary,
+      .k-stickycta .k-btn {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
+
+    /* — Mobile nav sheet: scrim and account block —
+       The sheet sat directly on the page with nothing behind it, so the copy
+       showed through and its CTA lined up with whatever button happened to be
+       underneath — on /for-estate-liquidators that read as two stacked
+       "Start" buttons. */
+    .k-nav-scrim {
+      position: fixed; inset: 0; z-index: 40;
+      background: oklch(0.2 0.01 250 / 0.42);
+      -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+    }
+    .k-nav-sheet { z-index: 50; }
+    /* Page links are rows; account actions are buttons. Keeping "Sign in" as
+       a row made it read as a fourth destination next to Product and Pricing
+       rather than as the account action it is. */
+    .k-nav-sheet-foot {
+      display: flex; flex-direction: column; gap: 8px;
+      margin-top: 14px; padding-top: 14px;
+      border-top: 1px solid var(--k-line);
+    }
+    .k-nav-sheet-foot > .k-btn { width: 100%; justify-content: center; }
+    @media (prefers-reduced-motion: reduce) {
+      .k-nav-scrim { -webkit-backdrop-filter: none; backdrop-filter: none; }
+    }

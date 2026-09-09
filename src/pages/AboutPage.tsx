@@ -304,7 +304,7 @@ export default function AboutPage() {
             software people use all day, we want to hear from you.
           </p>
           <Link className="k-btn k-btn--lg" to="/careers">
-            See open roles →
+            See open roles
           </Link>
         </section>
 
