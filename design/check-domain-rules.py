@@ -84,10 +84,22 @@ NEGATION_WINDOW = 60
 NEGATION_WINDOW_AFTER = 48
 
 
-def negated(line, match):
+COMMENT_CONT = re.compile(r"^\s*(\*|//|#)")
+
+
+def negated(line, match, prev=""):
     """True when a negation sits just before the matched span, or right after it
-    ('... 7-day trial: scrapped')."""
+    ('... 7-day trial: scrapped').
+
+    A wrapped comment is one sentence the file happens to break across lines:
+    "... ONE unified comp source -- no" / "per-retailer scrapers ..." put the
+    negation out of reach of a line-local window, and that false positive sat
+    in the output permanently, which is how a guard stops being read. So when
+    the matched line is a comment continuation, the previous line's tail counts
+    as part of the before-window."""
     before = line[max(0, match.start() - NEGATION_WINDOW):match.start()]
+    if COMMENT_CONT.match(line) and prev:
+        before = prev[-NEGATION_WINDOW:] + " " + before
     after = line[match.end():match.end() + NEGATION_WINDOW_AFTER]
     return bool(NEGATION_HINTS.search(before) or NEGATION_HINTS.search(after))
 
@@ -134,7 +146,7 @@ def main():
         for p, lines in cache.items():
             for n, line in enumerate(lines, 1):
                 m = rx.search(line)
-                if m and not negated(line, m):
+                if m and not negated(line, m, lines[n - 2] if n >= 2 else ""):
                     hits.append((os.path.relpath(p, BASE), n, line.strip()[:104]))
         if hits:
             flagged += len(hits)
