@@ -5311,8 +5311,24 @@
 
        Scoped to .k-sample-frame: the authenticated worksheet keeps every
        control at every width. */
-    @media (max-width: 768px) {
-      /* !important because the group carries `display: flex` inline, which
-         outranks any selector — same trap as the careers band. */
-      .k-sample-frame .k-topbar > div:nth-child(2) { display: none !important; }
-    }
+    /* — Sample claim: nothing on this page may dead-end —
+       /sample is a public marketing surface rendered inside the authenticated
+       worksheet, so it inherits that app's chrome. Every one of those controls
+       fails for a signed-out visitor, and I verified each:
+
+         Kevin. wordmark, My claims, New claim, Exports, Settings,
+         the ‹ CLAIMS breadcrumb, and the Overview / Photos / Notes tabs
+                                       → all bounce to /sign-in
+         Add photos, Share, Generate carrier export, Mark closed, Archive
+                                       → 401, the page is a bundled fixture
+
+       On an insurance product a broken button reads as a broken product, so
+       they are removed rather than left to be discovered. What remains is the
+       worksheet itself — the grid, the filters, the item panel, every editable
+       cell — which is the thing the page exists to show and which does work.
+
+       The banner above carries the identity and the two ways out, so hiding
+       this chrome costs the visitor nothing. */
+    .k-sample-frame .k-topbar { display: none !important; }
+    .k-sample-frame .k-claim-tabs { display: none !important; }
+    .k-sample-frame .k-crumb { display: none !important; }

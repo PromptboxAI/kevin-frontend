@@ -1532,6 +1532,9 @@ button.k-avatar-menu-item {
    with a margin would change the very layout the demo exists to show. */
 .k-sample-frame {
   height: 100%;
-  padding-top: 34px;
+  /* Set by SampleBanner via ResizeObserver; the fallback only covers the
+     first paint. A fixed 34px was wrong at any width where the banner copy
+     wrapped, which on a phone hid the claim title behind it. */
+  padding-top: var(--k-sample-banner-h, 34px);
   box-sizing: border-box;
 }
