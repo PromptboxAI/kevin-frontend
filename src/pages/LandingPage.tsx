@@ -715,7 +715,10 @@ export default function LandingPage() {
       <section className="k-pg">
         <div className="k-pg-hd">
           <div className="k-pg-eyebrow-top">Inside the grid</div>
-          <h2 className="k-pg-h2">Four things you’ll actually use, every claim.</h2>
+          {/* Count-free on purpose: mobile shows two of these four cards, and a
+              heading that says "Four" while showing two is a mismatch the
+              reader notices. */}
+          <h2 className="k-pg-h2">What you’ll actually use, every claim.</h2>
           <p className="k-pg-sub" style={{ textAlign: 'center' }}>
             Each one earns its keep on the first claim.
           </p>
