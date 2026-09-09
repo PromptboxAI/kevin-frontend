@@ -70,8 +70,23 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          const copy = response.clone()
-          caches.open(CACHE).then((cache) => cache.put(request, copy))
+          // Only cache a document that IS one. Without this an error page --
+          // a Vercel bot-challenge, a 500, a maintenance page -- gets stored
+          // as the app shell and served back on every later load, including
+          // for asset requests, which then arrive as text/html and fail the
+          // module MIME check. That happened on kevin.co: a blank page on
+          // first load in a fresh tab, correct seconds later, no JS error to
+          // explain it, and no way for the visitor to clear it themselves.
+          //
+          // Scoped to navigations on purpose. Navigations are same-origin
+          // documents, where `ok` means what it looks like. A blanket check
+          // would be wrong for cross-origin assets, which come back opaque
+          // with ok === false and status 0, and would silently stop being
+          // cached -- the opposite of what this worker is for.
+          if (response.ok) {
+            const copy = response.clone()
+            caches.open(CACHE).then((cache) => cache.put(request, copy))
+          }
           return response
         })
         .catch(() =>
