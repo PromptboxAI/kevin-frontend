@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+
 /**
  * Per-page search and social metadata.
  *
@@ -10,6 +12,13 @@
  * No library. React 19 hoists `<title>`, `<meta>` and `<link>` rendered
  * anywhere in the tree into `<head>`, and de-duplicates by name/property — so
  * a page rendering its own title simply replaces the default.
+ *
+ * index.html carries the landing page's tags as a crawler fallback, since
+ * Slack, LinkedIn and X never run the bundle. Those are marked `data-default`
+ * and retired here on mount — otherwise React's tags are ADDED to them and
+ * every page ends up with two canonicals pointing at different URLs, which
+ * Google resolves by ignoring both. Measured on the live site before this
+ * existed: two canonicals, two og:image, two descriptions, two titles.
  *
  * CANONICAL HOST is www.kevin.co, not the apex. Vercel serves www and 308s
  * kevin.co to it; SEO.md predates that decision and still says the apex, so
@@ -33,6 +42,12 @@ export type SeoProps = {
 export default function Seo({ title, description, path, image, noindex }: SeoProps) {
   const url = `${ORIGIN}${path === '/' ? '' : path}`
   const card = `${ORIGIN}/og/${image ?? 'og-default.png'}`
+
+  // Retire the static fallback once the real tags are mounted. Runs once —
+  // the defaults are in the initial HTML and never come back.
+  useEffect(() => {
+    document.head.querySelectorAll('[data-default]').forEach((el) => el.remove())
+  }, [])
 
   if (noindex) {
     return (
