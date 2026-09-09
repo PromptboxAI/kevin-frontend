@@ -377,7 +377,7 @@ export default function LandingPage() {
           </p>
           <div className="k-hero-actions">
             <Link className="k-btn k-btn--lg" to="/sign-up">
-              Start free — 250 items →
+              Start for Free
             </Link>
             <Link className="k-btn k-btn--ghost k-btn--lg" to="/sample">
               See a finished claim
@@ -701,10 +701,10 @@ export default function LandingPage() {
             </p>
           </div>
           <div className="k-midcta-r">
-            <Link className="k-btn k-btn--lg" to="/sign-up">
+            <Link className="k-cta-primary" to="/sign-up">
               Start free — 250 items →
             </Link>
-            <Link className="k-btn k-btn--ghost k-btn--lg" to="/sample">
+            <Link className="k-cta-secondary" to="/sample">
               View sample claim
             </Link>
           </div>

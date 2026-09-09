@@ -4956,7 +4956,14 @@
          nothing to push, and the min-height would only re-introduce the dead
          air above the eyebrow badge. */
       .k-hero-r { display: none; }
-      .k-hero { gap: 0 !important; padding-bottom: 10px !important; }
+      /* A little air above the eyebrow badge so the block does not start hard
+         against the nav -- 32px read as cramped, 52px sits it down without
+         costing a screen. */
+      .k-hero { gap: 0 !important; padding-top: 48px !important; padding-bottom: 10px !important; }
+      /* The trust strip repeats the pricing line the CTA and the mid-funnel
+         banner both make, and on a phone it is four fragments wrapping across
+         three lines directly under the buttons. Desktop keeps it. */
+      .k-trust { display: none; }
     }
 
     /* — 2 · Condensed vertical rhythm —
@@ -4978,10 +4985,23 @@
       /* Margins between blocks, not just section padding: the proof section
          alone carried 212px of pure gap (44 under the header, 56 after each
          of three rows) sized for a 1440px canvas. */
-      .k-proof-hd { margin-bottom: 20px !important; }
-      .k-proof-row { margin-bottom: 26px !important; }
-      .k-pg-hd { margin-bottom: 22px !important; }
-      .k-social-hd { margin-bottom: 22px !important; }
+      /* Header-to-first-block gap. 20px was too deep a cut: the section
+         heading and its lede ran straight into the first row's eyebrow, so
+         "Three screens between a photo dump..." and "AUTOMATED PHOTO TRIAGE"
+         read as one block. Same for the gallery and testimonial headers. */
+      .k-proof-hd { margin-bottom: 34px !important; }
+      .k-proof-row { margin-bottom: 22px !important; }
+      /* Stacked, consecutive proof rows read as one unbroken column of text
+         and screenshots -- side by side on desktop the two-column split does
+         the separating, and that cue is gone here. A hairline plus its
+         padding costs ~27px and makes each row legibly its own block, which
+         piling on margin alone did not achieve. */
+      .k-proof-row + .k-proof-row {
+        border-top: 1px solid var(--k-line);
+        padding-top: 26px;
+      }
+      .k-pg-hd { margin-bottom: 32px !important; }
+      .k-social-hd { margin-bottom: 32px !important; }
       .k-testimonials { margin-bottom: 26px !important; }
       .k-pg-viz { padding: 14px !important; }
     }
@@ -5023,23 +5043,36 @@
        builds to one final dark CTA rather than shouting twice. */
     .k-midcta { max-width: 1280px; margin: 0 auto; padding: 8px 40px 0; }
     .k-midcta-inner {
+      position: relative; overflow: hidden;
       display: grid; grid-template-columns: minmax(0, 1fr) auto;
       gap: 32px; align-items: center;
-      padding: 28px 32px;
-      background: var(--k-accent-soft);
-      border: 1px solid oklch(0.45 0.13 255 / 0.22);
+      padding: 32px 36px;
+      /* Same gradient and glow as .k-cta at the foot of the page. The first
+         pass used accent-soft so the page would build to one dark finish;
+         blending in is the greater cost -- a mid-scroll CTA that reads as
+         another content card does not get clicked. */
+      background: linear-gradient(135deg, oklch(0.22 0.05 250) 0%, oklch(0.15 0.04 252) 100%);
+      color: #fff;
       border-radius: 14px;
     }
+    .k-midcta-inner::before {
+      content: ''; position: absolute; inset: 0; pointer-events: none;
+      background:
+        radial-gradient(circle at 85% 18%, oklch(0.50 0.10 252 / 0.32) 0%, transparent 50%),
+        radial-gradient(circle at 12% 88%, oklch(0.66 0.13 175 / 0.16) 0%, transparent 45%);
+    }
+    .k-midcta-l, .k-midcta-r { position: relative; z-index: 1; }
     .k-midcta-eyebrow {
       font-family: var(--k-font-mono); font-size: 11px; font-weight: 700;
-      letter-spacing: 0.06em; text-transform: uppercase; color: var(--k-accent);
+      letter-spacing: 0.09em; text-transform: uppercase;
+      color: oklch(0.74 0.13 175);
     }
     .k-midcta-h {
       font-family: var(--k-font-display); font-weight: 400; font-size: 30px;
       letter-spacing: -0.024em; line-height: 1.1; margin: 7px 0 8px;
     }
     .k-midcta-p {
-      font-size: 13.5px; color: var(--k-fg-2); line-height: 1.55;
+      font-size: 13.5px; color: rgba(255,255,255,0.72); line-height: 1.55;
       margin: 0; max-width: 62ch;
     }
     .k-midcta-r { display: flex; flex-direction: column; gap: 10px; }
@@ -5076,4 +5109,22 @@
       .k-pg-grid > .k-pg-card:nth-child(4) { display: none; }
       .k-testimonials > *:nth-child(1),
       .k-testimonials > *:nth-child(3) { display: none; }
+    }
+
+    /* — "Built for" strip: hidden on a phone, its space kept —
+       The audience list (Independent adjusters / Public adjusters / Small
+       adjusting agencies / Estate liquidators) restates the segment links in
+       the nav and the two segment pages, so on a phone it is a row of words
+       the visitor scrolls past. `visibility: hidden` rather than
+       `display: none` on purpose: it is the whole gap between the stats
+       ribbon and the proof section, so removing it entirely would butt those
+       two together. This keeps the 97px of separation exactly, with no magic
+       number to drift, and takes the text out of the accessibility tree
+       along with the pixels. */
+    @media (max-width: 768px) {
+      .k-audience-inner { visibility: hidden; }
+      /* The strip carries a rule top AND bottom, and .k-proof has one of its
+         own. With the content gone that read as two lines around an empty
+         band. Drop the strip's, keep .k-proof's: one divider. */
+      .k-audience { border-top: 0; border-bottom: 0; }
     }
