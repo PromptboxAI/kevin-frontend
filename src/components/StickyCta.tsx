@@ -41,7 +41,7 @@ export default function StickyCta({ watchSelector }: { watchSelector: string }) 
         No deadline, no per-claim fee
       </div>
       <Link className="k-btn" to="/sign-up" tabIndex={shown ? 0 : -1}>
-        Start free →
+        Start for Free
       </Link>
     </div>
   )

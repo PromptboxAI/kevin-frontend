@@ -1001,7 +1001,7 @@ export default function LandingPage() {
           </p>
           <div className="k-cta-actions">
             <Link className="k-cta-primary" to="/sign-up">
-              Start free — 250 items →
+              Start for Free
             </Link>
             <Link className="k-cta-secondary" to="/book-call">
               Book a 30-min call
