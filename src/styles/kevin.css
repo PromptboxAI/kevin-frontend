@@ -5289,11 +5289,3 @@
         flex: 0 0 auto;
       }
     }
-
-    /* Hero lede: full on desktop, brief on a phone. Only one is ever rendered,
-       so there is no duplicated text in the accessibility tree. */
-    .k-lede-brief { display: none; }
-    @media (max-width: 820px) {
-      .k-lede-full { display: none; }
-      .k-lede-brief { display: inline; }
-    }

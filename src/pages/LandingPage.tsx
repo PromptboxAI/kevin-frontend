@@ -372,21 +372,14 @@ export default function LandingPage() {
           <h1 className="k-h1" style={{ textWrap: 'balance' }}>
             The Contents List that writes itself
           </h1>
-          {/* One paragraph, two tails. The feature list runs six lines on a
-              phone and outweighs a two-line headline, pushing both CTAs down
-              the screen — and the stats ribbon and gallery below restate every
-              item in it. Desktop keeps the full version, where those lines sit
-              beside the hero card and balance it. Swapped in CSS rather than
-              JS so there is no layout shift on load. */}
+          {/* Short at every width. The long version listed items identified,
+              brands matched, depreciation suggested and three comps per line —
+              every one of which the stats ribbon and gallery restate directly
+              below, so the hero was spending six lines to say what the page
+              says twice more anyway. */}
           <p className="k-lede">
             Bulk-ingest hundreds of photos and Kevin returns a complete, Xactimate-ready personal
-            property inventory
-            <span className="k-lede-full">
-              {' '}
-              — items identified, brands matched, depreciation suggested, and three live pricing
-              comps per line. Hundreds of items reviewed in one grid — not one at a time.
-            </span>
-            <span className="k-lede-brief"> — reviewed in one grid, not one at a time.</span>
+            property inventory — reviewed in one grid, not one at a time.
           </p>
           <div className="k-hero-actions">
             <Link className="k-btn k-btn--lg" to="/sign-up">
