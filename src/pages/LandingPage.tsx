@@ -701,11 +701,14 @@ export default function LandingPage() {
             </p>
           </div>
           <div className="k-midcta-r">
+            {/* Echoes the hero's pair deliberately: same two actions, same
+                two labels. "View sample claim" was a third phrasing for a
+                thing the site already calls "See a finished claim". */}
             <Link className="k-cta-primary" to="/sign-up">
-              Start free — 250 items →
+              Start for Free
             </Link>
             <Link className="k-cta-secondary" to="/sample">
-              View sample claim
+              See a finished claim
             </Link>
           </div>
         </div>
