@@ -44,7 +44,14 @@ import ResetSentPage from './pages/ResetSentPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import WorksheetPage from './pages/WorksheetPage'
 import SampleBanner from './components/SampleBanner'
-import { SAMPLE_CLAIM_ID } from './lib/sample'
+
+/**
+ * The one claim id that is public. Backed by a real, owner-scoped row on the
+ * API — `GET /v1/claims/sample` answers without a bearer token, and every
+ * other id still 401s. It lived in lib/sample.ts alongside the bundled
+ * fixture; that fixture is gone and this is a route concern, not data.
+ */
+const SAMPLE_CLAIM_ID = 'sample'
 
 function ClaimRoute() {
   const { claimId = '' } = useParams()
@@ -209,8 +216,9 @@ export default function App() {
             supplies no params, and WorksheetPage reads claimId from useParams,
             so it would mount with an empty id and render an empty claim.
 
-            WorksheetPage itself is untouched: the sample's data is intercepted
-            at the api boundary (lib/sample.ts), not injected here. */}
+            WorksheetPage itself is untouched, and there is no longer anything
+            intercepting its requests: the sample reads the live API like any
+            other claim. */}
         <Route path="/claims/:claimId" element={<ClaimRoute />} />
 
         {/* Settings. `/settings/billing` is owned elsewhere and untouched
