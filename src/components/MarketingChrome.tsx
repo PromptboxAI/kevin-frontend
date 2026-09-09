@@ -173,8 +173,12 @@ export function MktNav({ active }: { active?: string }) {
                   <Link className="k-btn k-btn--ghost k-btn--lg k-nav-sheet-cta" to="/sign-in">
                     Sign in
                   </Link>
+                  {/* "Sign up", not "Start a new claim": in this block it is
+                      the counterpart to Sign in, and the pair reads as the two
+                      account actions they are. The desktop header keeps the
+                      product-flavoured label. */}
                   <Link className="k-btn k-btn--lg k-nav-sheet-cta" to="/sign-up">
-                    Start a new claim
+                    Sign up
                   </Link>
                 </>
               )}
