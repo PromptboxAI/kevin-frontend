@@ -5253,3 +5253,20 @@
         padding-right: 20px;
       }
     }
+
+    /* — Carrier band: a rail, not a card, on a phone —
+       The band is styled identically at every width — tinted fill, hairline
+       border, 14px radius. At the 1200px desktop width that reads as a long
+       low rail and the card treatment is barely perceptible; at 335px the same
+       three properties turn it into a distinct little card sitting among the
+       testimonial cards above it, which is not what it is. Strip the card and
+       keep the label, the rule under it and the scrolling pills. */
+    @media (max-width: 768px) {
+      .k-carrier-band {
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        padding-left: 0;
+        padding-right: 0;
+      }
+    }
