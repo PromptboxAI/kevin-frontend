@@ -334,7 +334,11 @@ export default function WorksheetPage() {
    * The four returned totals are applied verbatim -- no client arithmetic.
    */
   const override = useMutation({
-    mutationFn: ({ id, body }: { id: number; body: OverrideBody }) => overrideItem(id, body),
+    // The row and the claim's tax rate are passed for the SAMPLE claim only:
+    // signed out it cannot write, so the edit is priced by the server's
+    // stateless preview instead. overrideItem ignores both on a real claim.
+    mutationFn: ({ id, body }: { id: number; body: OverrideBody }) =>
+      overrideItem(id, body, visible.find((r) => r.id === id), claim.data?.tax_rate),
     onMutate: ({ id, body }) => markPending(id, Object.keys(body)[0] ?? 'rcv'),
     onError: (error, { id }) => {
       markPending(id, null)

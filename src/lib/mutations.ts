@@ -1,4 +1,5 @@
 import { api } from './api'
+import { SAMPLE_CLAIM_ID, previewEdit } from './worksheet-preview'
 import type { ClaimItem } from './types'
 
 /**
@@ -57,7 +58,49 @@ export type OverrideResponse = MoneyBlock & {
   diff?: Record<string, { from: unknown; to: unknown }>
 }
 
-export function overrideItem(rowId: number, body: OverrideBody) {
+/**
+ * `current` is only consulted for the PUBLIC SAMPLE CLAIM, which is signed out
+ * and cannot write: the override would 401 and the row's derived money would
+ * silently go stale. There the edit is held locally and priced by
+ * `GET /v1/worksheet/preview`, which runs the server's real money chain and
+ * stores nothing, so the demo cannot disagree with the product.
+ *
+ * The branch is on the ROW's `claim_id`, not on the URL. The payload already
+ * says which claim a row belongs to, so there is no window/route dependency
+ * and nothing to keep in sync with the router.
+ *
+ * Every other claim takes the write path unchanged.
+ */
+export async function overrideItem(
+  rowId: number,
+  body: OverrideBody,
+  current?: ClaimItem,
+  taxRate?: number | null,
+): Promise<OverrideResponse> {
+  if (current?.claim_id === SAMPLE_CLAIM_ID) {
+    const money = await previewEdit(current, body, taxRate ?? 0)
+    return {
+      status: 'preview',
+      row_id: rowId,
+      // The fields the adjuster actually changed, echoed back the way the
+      // write path echoes them, so the caller's cache update is identical.
+      applied: {
+        ...body,
+        ...(money?.depreciation_pct != null
+          ? { depreciation_pct: money.depreciation_pct }
+          : {}),
+      } as OverrideResponse['applied'],
+      tax: money?.tax ?? null,
+      ext_cost: money?.ext_cost ?? null,
+      rcv_total_incl: money?.rcv_total_incl ?? null,
+      depreciation_amount: money?.depreciation_amount ?? null,
+      acv_total_incl: money?.acv_total_incl ?? null,
+      // Totals are a claim-wide rollup the preview endpoint does not compute.
+      // Null means "keep what you had" to the caller, which is right: one
+      // unsaved demo edit should not restate the claim header.
+      claim_totals: null,
+    }
+  }
   return api.patch<OverrideResponse>(`/v1/claim_items/${rowId}/override`, { json: body })
 }
 

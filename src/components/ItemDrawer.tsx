@@ -139,7 +139,8 @@ export default function ItemDrawer({
       rcv?: number
       age_years?: number
       category?: string
-    }) => overrideItem(rowId, body),
+      // Sample-claim only -- see overrideItem. Ignored on a real claim.
+    }) => overrideItem(rowId, body, data ?? undefined, claim.data?.tax_rate ?? null),
     onSuccess: refresh,
   })
 
