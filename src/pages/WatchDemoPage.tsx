@@ -14,10 +14,13 @@ import { MktFooter, MktNav } from '../components/MarketingChrome'
  *
  * TWO deviations:
  *
- * 1. The lede read "50 photos in, a 44-line inventory out". The
- *    canonical demo claim is 60 photos → 57 items (CLAUDE.md), and this page
- *    describes that same kitchen-fire claim, so the two numbers are now the
- *    claim's own.
+ * 1. The lede describes the claim behind "Open the sample claim" below it, so
+ *    its figures track /sample rather than CLAUDE.md's canon. That claim is
+ *    live API data now, not a fixture: 59 photos, 51 items, and a contents
+ *    loss rather than a kitchen fire — the demo photographs are a wardrobe
+ *    (belts, boots, a vacuum filter), which is why the backend relabelled it.
+ *    Re-point this at the canonical 60 → 57 kitchen fire once the sample is
+ *    re-seeded from kitchen-contents photos.
  *
  * 2. The footer note's "book a call" pointed at the Book-call page (51), which
  *    is not ported. It goes to /contact and reads "get in touch" — /contact's
@@ -114,8 +117,8 @@ export default function WatchDemoPage() {
               marginRight: 'auto',
             }}
           >
-            Exactly what you do on a real kitchen-fire claim — 60 photos in, a 57-line inventory
-            out, about 20 minutes of your time.
+            Exactly what you do on a real contents loss — 59 photos in, a 51-line inventory out,
+            about 20 minutes of your time.
           </p>
         </section>
 
