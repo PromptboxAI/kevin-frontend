@@ -42,7 +42,7 @@ const TIERS: {
     suffix: '/mo',
     blurb:
       'One flat monthly subscription. Unlimited claims, 2,000 items a month included, then $0.20 an item. Cancel anytime.',
-    cta: 'Start with 250 free items',
+    cta: 'Start for Free',
     primary: true,
     features: [
       ['Photo-dump ingest — hundreds of photos, auto-grouped into item sets', true],
@@ -380,7 +380,7 @@ export default function PricingPage() {
           </p>
           <div className="k-hero-actions" style={{ marginTop: 0 }}>
             <Link className="k-btn k-btn--lg" to="/sign-up">
-              Start free — 250 items
+              Start for Free
             </Link>
             <Link className="k-btn k-btn--ghost k-btn--lg" to="/contact">
               Talk to sales
