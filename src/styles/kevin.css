@@ -5270,3 +5270,30 @@
         padding-right: 0;
       }
     }
+
+    /* — Done-for-you on-site band —
+       Icon, copy and CTA sit in one flex row. At 375px that leaves the copy
+       column about 100px wide, so "Can't get to the site? We'll shoot it too."
+       broke over four lines and the body ran two words to a line. Stack it:
+       icon and heading keep the top, the copy takes the full width, the CTA
+       spans the bottom. */
+    @media (max-width: 768px) {
+      .k-dfy-onsite {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 14px !important;
+      }
+      .k-dfy-onsite > .k-btn {
+        width: 100%;
+        justify-content: center;
+        flex: 0 0 auto;
+      }
+    }
+
+    /* Hero lede: full on desktop, brief on a phone. Only one is ever rendered,
+       so there is no duplicated text in the accessibility tree. */
+    .k-lede-brief { display: none; }
+    @media (max-width: 820px) {
+      .k-lede-full { display: none; }
+      .k-lede-brief { display: inline; }
+    }

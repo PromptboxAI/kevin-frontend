@@ -289,6 +289,7 @@ export default function DoneForYouPage() {
           }}
         >
           <div
+            className="k-dfy-onsite"
             style={{
               maxWidth: 860,
               margin: '0 auto',
@@ -332,7 +333,9 @@ export default function DoneForYouPage() {
                 style={{
                   fontSize: 13,
                   color: 'var(--k-fg-2)',
-                  margin: '8px 0 0',
+                  /* 8px ran the rate paragraph straight into the description
+                     above it; they are two separate points. */
+                  margin: '14px 0 0',
                   lineHeight: 1.55,
                   maxWidth: 600,
                 }}
@@ -343,7 +346,7 @@ export default function DoneForYouPage() {
               </p>
             </div>
             <a
-              className="k-btn"
+              className="k-btn k-btn--lg"
               style={{ flex: '0 0 auto' }}
               href="mailto:kevin@kevin.co?subject=On-site%20capture"
             >
@@ -498,10 +501,10 @@ export default function DoneForYouPage() {
             send us one claim run the next one themselves.
           </p>
           <div className="k-hero-actions" style={{ justifyContent: 'center', marginTop: 0 }}>
-            <Link className="k-btn" to="/pricing">
+            <Link className="k-btn k-btn--lg" to="/pricing">
               See pricing
             </Link>
-            <Link className="k-btn k-btn--ghost" to="/sample">
+            <Link className="k-btn k-btn--ghost k-btn--lg" to="/sample">
               Open the sample claim
             </Link>
           </div>
