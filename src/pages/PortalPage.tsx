@@ -367,14 +367,17 @@ function Portal({
                 <div style={STAT_L}>Items</div>
                 <div style={STAT_V}>{fmtInt(totals?.item_count ?? total)}</div>
               </div>
+              {/* A dash, never $0.00, when the payload has no totals: the API
+                  sends them only on PAYWALLED links today, and "$0.00" on a
+                  priced inventory told the insured it was worth nothing. */}
               <div>
                 <div style={STAT_L}>Total RCV + tax</div>
-                <div style={STAT_V}>{fmtUSD(totals?.total_rcv ?? 0)}</div>
+                <div style={STAT_V}>{fmtUSD(totals?.total_rcv)}</div>
               </div>
               <div>
                 <div style={STAT_L}>Total ACV</div>
                 <div style={{ ...STAT_V, color: 'var(--k-accent)' }}>
-                  {fmtUSD(totals?.total_acv ?? 0)}
+                  {fmtUSD(totals?.total_acv)}
                 </div>
               </div>
             </div>
