@@ -19,6 +19,7 @@ import ForEstateLiquidatorsPage from './pages/ForEstateLiquidatorsPage'
 import ProductPage from './pages/ProductPage'
 import ClaimsPage from './pages/ClaimsPage'
 import ExportsPage from './pages/ExportsPage'
+import ExportPage from './pages/ExportPage'
 import IntakePage from './pages/IntakePage'
 import StagingPage from './pages/StagingPage'
 import ProcessingPage from './pages/ProcessingPage'
@@ -218,6 +219,15 @@ export default function App() {
           element={
             <RequireAuth>
               <PhotosPage />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/claims/:claimId/export"
+          element={
+            <RequireAuth>
+              <ExportPage />
             </RequireAuth>
           }
         />

@@ -624,9 +624,91 @@
   font-weight: 700;
 }
 
-/* Tabs whose surface is not built yet: visible, inert, and labelled. */
-.k-claim-tab--todo {
+/* Tabs whose surface is not built yet: visible, inert, greyed, and labelled
+   "Soon" -- the same treatment as a greyed settings row (.k-side-item--off). */
+.k-claim-tab--todo,
+.k-claim-tab--todo:hover {
   cursor: default;
+  color: var(--k-fg-4);
+}
+
+.k-claim-tab-soon {
+  margin-left: 6px;
+  font-size: 10.5px;
+  color: var(--k-fg-4);
+}
+
+/* Screen 06 as the claim's Export TAB: the design's modal body, set as a
+   card in the page rather than floated over a scrim. The k-export-* panes
+   inside are the design's own classes, unchanged. */
+.k-export-page {
+  margin: 20px 32px 40px;
+  border: 1px solid var(--k-line);
+  border-radius: 12px;
+  background: var(--k-bg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.k-export-page .k-export-grid {
+  overflow: visible;
+}
+
+.k-export-kicker {
+  font-size: 10.5px;
+  color: var(--k-fg-4);
+  font-family: var(--k-font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.k-export-title {
+  font-family: var(--k-font-display);
+  font-weight: 400;
+  font-size: 28px;
+  letter-spacing: -0.022em;
+  margin: 6px 0 0;
+}
+
+.k-export-meta {
+  font-size: 12px;
+  color: var(--k-fg-3);
+  margin-top: 4px;
+  font-family: var(--k-font-mono);
+}
+
+.k-format-sub {
+  font-size: 11px;
+  color: var(--k-fg-4);
+  font-family: var(--k-font-mono);
+  margin-top: 4px;
+}
+
+.k-export-hint {
+  font-size: 11.5px;
+  color: var(--k-fg-3);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* .k-radio is a <label> in the design; here it is a real radio button. */
+.k-export-choice {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+}
+
+.k-export-choice--off {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.k-export-choice--off:hover {
+  background: transparent;
 }
 
 .k-ws-note {

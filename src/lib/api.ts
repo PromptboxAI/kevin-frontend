@@ -201,10 +201,38 @@ async function downloadBinary(path: string, fallbackName: string) {
   URL.revokeObjectURL(url)
 }
 
-/** The Proof of Loss. STAMPS `exported_at` -- never call it for a preview. */
-export function downloadExport(claimId: string, format: 'xlsx' | 'pdf' = 'xlsx') {
+/** What the Inventory PDF carries. The .xlsx is always the worksheet alone. */
+export type PdfContents = 'worksheet' | 'packet'
+export type PhotosPerPage = 1 | 2 | 4 | 6
+
+export type ExportOptions = {
+  /** PDF only. `packet` = the worksheet, then captioned photo pages. */
+  contents?: PdfContents
+  /** PDF packet only. */
+  photosPerPage?: PhotosPerPage
+}
+
+/**
+ * The Proof of Loss. STAMPS `exported_at` -- never call it for a preview.
+ *
+ * `contents` / `photos_per_page` are sent ONLY for a PDF packet. The params
+ * are the contract asked of the backend (the photo packet); FastAPI drops an
+ * undeclared query param silently, so until it ships a packet request would
+ * come back as the worksheet-only PDF with a 200. The Export tab therefore
+ * gates the packet option on PHOTO_PACKET_LIVE rather than trusting the call.
+ */
+export function downloadExport(
+  claimId: string,
+  format: 'xlsx' | 'pdf' = 'xlsx',
+  options: ExportOptions = {},
+) {
+  const qs = new URLSearchParams({ format })
+  if (format === 'pdf' && options.contents === 'packet') {
+    qs.set('contents', 'packet')
+    qs.set('photos_per_page', String(options.photosPerPage ?? 2))
+  }
   return downloadBinary(
-    `/v1/claims/${encodeURIComponent(claimId)}/export?format=${format}`,
+    `/v1/claims/${encodeURIComponent(claimId)}/export?${qs.toString()}`,
     `${claimId}-inventory.${format}`,
   )
 }
