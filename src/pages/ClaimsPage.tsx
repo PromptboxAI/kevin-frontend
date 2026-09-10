@@ -200,11 +200,12 @@ export default function ClaimsPage() {
         (acc, c) => {
           acc.items += c.item_count ?? 0
           acc.rcv += c.total_rcv ?? 0
-          if (c.status === 'in_review') acc.review += 1
+          // The status chip's two open labels, counted the same way.
+          if (IN_PROGRESS.has(c.status)) acc.inProgress += 1
           if (c.status === 'processing') acc.processing += 1
           return acc
         },
-        { items: 0, rcv: 0, review: 0, processing: 0 },
+        { items: 0, rcv: 0, inProgress: 0, processing: 0 },
       ),
     [open],
   )
@@ -235,7 +236,10 @@ export default function ClaimsPage() {
               {firstName ? `, ${firstName}` : ''}.
             </h1>
             <p className="k-claims-sub">
-              <strong>{fmtInt(kpis.review)}</strong> claims awaiting your review ·{' '}
+              {/* Same words as the status chips: "In review" is no longer a
+                  status anyone sees, so "awaiting your review" counted a
+                  state the page never names. */}
+              <strong>{fmtInt(kpis.inProgress)}</strong> in progress ·{' '}
               {fmtInt(kpis.processing)} processing now
               {lastSignIn ? ` · Last sign-in ${lastSignIn}` : ''}
             </p>
