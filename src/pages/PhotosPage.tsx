@@ -10,6 +10,7 @@ import { ApiError, api, retryUnlessMissing } from '../lib/api'
 import { detachItemPhotos } from '../lib/evidence'
 import { fmtConfidence, fmtUSD } from '../lib/format'
 import { getClaimPhotos } from '../lib/photos'
+import { numberRows } from '../lib/rows'
 import {
   bucketOf,
   frameIndex,
@@ -76,6 +77,18 @@ export default function PhotosPage() {
   const photos = useMemo(() => data?.photos ?? [], [data])
   const items = useMemo(() => itemsPage?.items ?? [], [itemsPage])
   const byId = useMemo(() => indexItems(items), [items])
+  /**
+   * The worksheet's own line numbers (numberRows), so an unidentified item is
+   * "Line 40" here exactly when it is #40 there. Only when every item came
+   * back: numbering a partial page would give the wrong numbers.
+   */
+  const lineNos = useMemo(
+    () =>
+      (itemsPage?.count ?? 0) <= items.length
+        ? new Map(numberRows(items).map((r) => [r.id, r.lineNo]))
+        : new Map<number, number>(),
+    [items, itemsPage?.count],
+  )
   const frames = useMemo(() => framesPerItem(photos), [photos])
 
   const facets = useMemo(() => stateFacets(photos), [photos])
@@ -122,6 +135,7 @@ export default function PhotosPage() {
         const it = itemForPhoto(p, byId)
         return [
           it?.description,
+          it?.suggested_description,
           it?.make_mfr,
           it?.model_number,
           it?.category,
@@ -329,6 +343,7 @@ export default function PhotosPage() {
                   key={p.photo_id}
                   photo={p}
                   item={itemForPhoto(p, byId)}
+                  lineNo={p.item_id == null ? undefined : lineNos.get(p.item_id)}
                   frames={p.item_id == null ? 0 : (frames.get(p.item_id) ?? 0)}
                   on={p.photo_id === focused}
                   onOpen={() => setFocused(p.photo_id)}
@@ -348,6 +363,7 @@ export default function PhotosPage() {
           <PhotoDetail
             photo={focus}
             item={focusItem}
+            lineNo={focus.item_id == null ? undefined : lineNos.get(focus.item_id)}
             frameNo={frameIndex(photos, focus)}
             frameCount={focus.item_id == null ? 0 : (frames.get(focus.item_id) ?? 0)}
             claimId={claimId}
@@ -371,15 +387,34 @@ export default function PhotosPage() {
 
 // --------------------------------------------------------------------------
 
+/**
+ * What an item is called on this screen: the description on the line, which
+ * is Vision's `suggested_description` copied in at promote (and any edit the
+ * adjuster has made since) -- so a scraped or photographed item reads by name.
+ *
+ * Two fallbacks the old `??` chain got wrong. A `needs_manual` row can carry
+ * an EMPTY-STRING description (rule 2b), which `??` does not skip, so the
+ * title rendered blank. And the last resort was `Line ${item.id}`, the
+ * database row id -- "Line 3886" for what the worksheet calls #40. It now uses
+ * the worksheet's own line number, and says "Not identified" without one.
+ */
+function itemTitle(item: ClaimItem, lineNo?: number): string {
+  const name = item.description?.trim() || item.suggested_description?.trim()
+  if (name) return name
+  return lineNo ? `Line ${lineNo} · not identified` : 'Not identified'
+}
+
 function PhotoTile({
   photo,
   item,
+  lineNo,
   frames,
   on,
   onOpen,
 }: {
   photo: ClaimPhoto
   item: ClaimItem | null
+  lineNo?: number
   frames: number
   on: boolean
   onOpen: () => void
@@ -388,7 +423,7 @@ function PhotoTile({
 
   const bucket = bucketOf(photo)
   const caption = item
-    ? (item.description ?? item.suggested_description ?? `Line ${item.id}`)
+    ? itemTitle(item, lineNo)
     : bucket === 'pending'
       ? 'Waiting in staging — not processed yet'
       : 'Backs no line item'
@@ -466,6 +501,7 @@ function PhotoTile({
 function PhotoDetail({
   photo,
   item,
+  lineNo,
   frameNo,
   frameCount,
   claimId,
@@ -474,6 +510,7 @@ function PhotoDetail({
 }: {
   photo: ClaimPhoto
   item: ClaimItem | null
+  lineNo?: number
   frameNo: number
   frameCount: number
   claimId: string
@@ -514,7 +551,7 @@ function PhotoDetail({
           </div>
           <div style={{ fontSize: 14, fontWeight: 600, marginTop: 2 }}>
             {item
-              ? (item.description ?? item.suggested_description ?? `Line ${item.id}`)
+              ? itemTitle(item, lineNo)
               : bucket === 'pending'
                 ? 'Not processed yet'
                 : 'Backs no line item'}
