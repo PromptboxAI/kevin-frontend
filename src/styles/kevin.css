@@ -295,6 +295,15 @@
       width: 6px; cursor: col-resize; z-index: 3;
       background: transparent; transition: background 0.12s;
     }
+    /* A visible divider in every resizable header boundary, by request: the
+       6px hit area was invisible until hovered, so nobody knew the columns
+       could be dragged, or where to grab. Mid-grey (--k-fg-4) so it reads as
+       a handle, not as the faint --k-line cell border it sits over. */
+    .k-col-resize::before {
+      content: ''; position: absolute; left: 50%; top: 22%; bottom: 22%;
+      width: 1px; transform: translateX(-50%); background: var(--k-fg-4);
+    }
+    .k-col-resize:hover::before, .k-col-resize:active::before { background: transparent; }
     .k-col-resize:hover { background: var(--k-accent); opacity: 0.55; }
     .k-col-resize:active { background: var(--k-accent); opacity: 0.85; }
 
