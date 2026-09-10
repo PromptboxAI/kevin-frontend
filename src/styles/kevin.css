@@ -1377,7 +1377,7 @@
        Total · menu -- Xactimate's project-list order (app deviation). */
     .k-claim-row {
       display: grid;
-      grid-template-columns: minmax(0, 1.5fr) 150px minmax(0, 1.1fr) minmax(0, 1fr) 110px 190px 130px 100px;
+      grid-template-columns: minmax(0, 2fr) 140px minmax(0, 1.2fr) minmax(0, 1fr) 100px 150px 130px 100px;
       gap: 14px; align-items: center;
       padding: 14px 18px; border-bottom: 1px solid var(--k-line);
     }
