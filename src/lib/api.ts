@@ -210,46 +210,47 @@ export function downloadExport(claimId: string, format: 'xlsx' | 'pdf' = 'xlsx')
 }
 
 /**
- * Print the inventory PDF: open the browser's print dialog on it.
+ * "Print": open the inventory PDF in a new browser tab.
  *
- * "Print" in the claims menu used to call downloadExport(…, 'pdf'), so it put
- * up a save-to-computer dialog instead of a print dialog. Worse, it hits the
- * SAME endpoint, so on a claim not yet exported it silently and permanently
- * stamped the Proof of Loss date -- the one irreversible action the worksheet
- * guards behind a confirm. THIS STILL STAMPS: there is no non-stamping PDF
- * route (the old /preview was removed). Callers must confirm first on an
- * unexported claim, exactly as they do before downloadExport.
+ * The browser's PDF viewer carries its own print and save buttons, which is how
+ * Xactimate does it -- the adjuster sees the document first, then prints. This
+ * used to print from a hidden iframe, which jumped straight to the operating
+ * system's print dialog without ever showing the PDF.
  *
- * Printed from a hidden iframe over a blob URL. That opens the real print
- * dialog in Chrome, Edge and Firefox; where the browser refuses to print a PDF
- * from a frame, it falls back to opening the PDF in a tab, which carries its
- * own print button -- a new tab beats a silent no-op.
+ * STILL STAMPS `exported_at` on a claim's first export: it is the same
+ * endpoint as downloadExport, and there is no non-stamping PDF route.
+ *
+ * MUST be called synchronously from the click. The tab is opened BEFORE the
+ * fetch because pop-up blockers only allow a window.open inside the user's
+ * gesture, and the gesture is gone by the time the PDF arrives. The blank tab
+ * says what it is waiting for, then navigates to the PDF's blob URL.
+ * The API needs a bearer token, so the tab cannot simply load the API URL.
  */
 export async function printExport(claimId: string): Promise<void> {
-  const { blob } = await fetchBinary(
-    `/v1/claims/${encodeURIComponent(claimId)}/export?format=pdf`,
-  )
-  const url = URL.createObjectURL(blob)
-  const frame = document.createElement('iframe')
-  frame.setAttribute('aria-hidden', 'true')
-  frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;'
-  frame.src = url
-  document.body.appendChild(frame)
-  await new Promise<void>((resolve) => {
-    frame.onload = () => resolve()
-  })
-  try {
-    frame.contentWindow?.focus()
-    frame.contentWindow?.print()
-  } catch {
-    window.open(url, '_blank', 'noopener')
+  const tab = window.open('', '_blank')
+  if (tab) {
+    tab.opener = null
+    tab.document.title = 'Preparing PDF…'
+    tab.document.body.style.cssText = 'font:14px system-ui,sans-serif;color:#555;padding:32px'
+    tab.document.body.textContent = 'Preparing the inventory PDF…'
   }
-  // The print dialog holds the document until it closes, and there is no
-  // reliable "printed" event, so the frame is cleaned up well after.
-  window.setTimeout(() => {
-    frame.remove()
+  let blob: Blob
+  try {
+    ;({ blob } = await fetchBinary(`/v1/claims/${encodeURIComponent(claimId)}/export?format=pdf`))
+  } catch (error) {
+    tab?.close()
+    throw error
+  }
+  const url = URL.createObjectURL(blob)
+  if (tab && !tab.closed) {
+    tab.location.href = url
+  } else if (!window.open(url, '_blank')) {
     URL.revokeObjectURL(url)
-  }, 60_000)
+    throw new Error('Your browser blocked the new tab. Allow pop-ups for kevin.co and try again.')
+  }
+  // The viewer reads the blob when it loads; keep it alive long enough for a
+  // reload or a Save from the viewer, then let it go.
+  window.setTimeout(() => URL.revokeObjectURL(url), 10 * 60_000)
 }
 
 /**

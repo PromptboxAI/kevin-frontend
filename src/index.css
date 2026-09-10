@@ -185,6 +185,12 @@
   color: var(--k-fg-4);
 }
 
+/* The row being acted on keeps its hover highlight until the menu or dialog
+   closes -- the same colour, so it reads as the row you were on, still held. */
+.k-claim-row:has(> [data-active]) {
+  background: var(--k-bg-2);
+}
+
 /* Every text column is one line that truncates, with the full value in the
    title: a long project name or insured must not push its row taller than
    its neighbours, which is what makes a roster scannable. */

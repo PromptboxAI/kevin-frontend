@@ -11,7 +11,7 @@ import type { ClaimSummary } from '../lib/types'
 
 /** Ported from ClaimRowMenu in design/components/claims-dashboard.jsx. */
 
-type Modal = 'duplicate' | 'export' | 'print' | 'archive' | 'delete' | null
+type Modal = 'duplicate' | 'export' | 'archive' | 'delete' | null
 
 export default function ClaimRowMenu({
   claim,
@@ -145,6 +145,11 @@ export default function ClaimRowMenu({
   return (
     <div
       ref={ref}
+      /* Holds the row's highlight while its menu or one of its dialogs is
+         open (see .k-claim-row:has(> [data-active]) in index.css). The menu is
+         portalled, so moving onto it ends the row's :hover and the adjuster
+         lost track of which claim they were acting on. */
+      data-active={open || modal !== null ? '' : undefined}
       style={{ display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end', position: 'relative' }}
     >
       <button
@@ -195,18 +200,18 @@ export default function ClaimRowMenu({
             label="Print"
             disabled={busy}
             why="Available when processing finishes"
-            /* Print hits the Proof of Loss endpoint, so it STAMPS the date on a
-               claim not yet exported -- it used to do that silently, and put up
-               a save dialog rather than a print dialog. Same rule as the
-               worksheet's Export: exported goes straight through, otherwise
-               ask first. */
+            /* Opens the PDF in a new tab; the browser's viewer has the print
+               button. No confirm: the first-export warning that used to stand
+               here was removed by request. printExport opens the tab
+               synchronously, so it must stay inside this click. */
             onClick={() =>
-              act(() =>
-                claim.exported_at
-                  ? void printExport(claim.claim_id).catch((error) =>
+              act(
+                () =>
+                  void printExport(claim.claim_id)
+                    .then(() => refresh())
+                    .catch((error) =>
                       onNotice(error instanceof Error ? error.message : 'Print failed.', 'error'),
-                    )
-                  : setModal('print'),
+                    ),
               )
             }
           />
@@ -248,13 +253,8 @@ export default function ClaimRowMenu({
       {modal === 'duplicate' ? (
         <DuplicateModal claim={claim} onClose={() => setModal(null)} onNotice={onNotice} />
       ) : null}
-      {modal === 'export' || modal === 'print' ? (
-        <ExportModal
-          claim={claim}
-          intent={modal}
-          onClose={() => setModal(null)}
-          onNotice={onNotice}
-        />
+      {modal === 'export' ? (
+        <ExportModal claim={claim} onClose={() => setModal(null)} onNotice={onNotice} />
       ) : null}
       {modal === 'archive' || modal === 'delete' ? (
         <ConfirmModal
@@ -406,37 +406,30 @@ function DuplicateModal({
 }
 
 /**
- * Export or print, from the claims menu.
+ * Export from the claims menu: pick a format, download.
  *
- * Both hit the Proof of Loss endpoint, and the FIRST call on a claim stamps
- * `exported_at` permanently. This dialog used to say nothing about that -- only
- * a code comment did -- so the dashboard offered two unguarded ways to date a
- * claim while the worksheet's Export asked first. It now shows the same warning
- * on a claim not yet exported, and says the date is already set on one that is.
+ * The first export on a claim still stamps `exported_at` server-side (the
+ * Proof of Loss date). The dialog no longer warns about it -- removed by
+ * request, along with the "already exported" and "saves as" notes. The file
+ * is named in the browser's own Save dialog.
  */
 function ExportModal({
   claim,
-  intent,
   onClose,
   onNotice,
 }: {
   claim: ClaimSummary
-  intent: 'export' | 'print'
   onClose: () => void
   onNotice: (m: string, tone?: 'error') => void
 }) {
-  const printing = intent === 'print'
-  // Printing is the PDF by definition; there is nothing to choose.
-  const [format, setFormat] = useState<'xlsx' | 'pdf'>(printing ? 'pdf' : 'xlsx')
+  const [format, setFormat] = useState<'xlsx' | 'pdf'>('xlsx')
   const [busy, setBusy] = useState(false)
   const queryClient = useQueryClient()
-  const firstExport = !claim.exported_at
 
   const run = async () => {
     setBusy(true)
     try {
-      if (printing) await printExport(claim.claim_id)
-      else await downloadExport(claim.claim_id, format)
+      await downloadExport(claim.claim_id, format)
       // Exporting stamps exported_at, so the derived status moves.
       void queryClient.invalidateQueries({ queryKey: ['claims'] })
       onClose()
@@ -449,7 +442,7 @@ function ExportModal({
 
   return (
     <Shell
-      kicker={printing ? 'Print claim' : 'Export claim'}
+      kicker="Export claim"
       title={claim.name}
       onClose={onClose}
       footer={
@@ -458,35 +451,22 @@ function ExportModal({
             Cancel
           </button>
           <button type="button" className="k-btn" disabled={busy} onClick={() => void run()}>
-            {busy ? 'Preparing…' : printing ? 'Print' : 'Download'}
+            {busy ? 'Preparing…' : 'Download'}
           </button>
         </>
       }
     >
-      {printing ? null : (
-        <label className="k-insp-field">
-          <span className="k-modal-label">Format</span>
-          <select
-            className="k-insp-input"
-            value={format}
-            onChange={(e) => setFormat(e.target.value as 'xlsx' | 'pdf')}
-          >
-            <option value="xlsx">XactContents Template - .xlsx</option>
-            <option value="pdf">Inventory PDF</option>
-          </select>
-        </label>
-      )}
-      {/* Only the FIRST export warns: it is the one that dates the Proof of
-          Loss. Once exported there is nothing to decide, so no note -- and no
-          file name either: the browser's Save dialog is where it gets named. */}
-      {firstExport ? (
-        <div className="k-modal-note k-modal-note--danger">
-          This is the finished document, not a preview.{' '}
-          {printing ? 'Printing' : 'Exporting'} it dates your <strong>Proof of Loss</strong> as
-          today, and that date is permanent — it is what a client or carrier reads as the day the
-          schedule was produced.
-        </div>
-      ) : null}
+      <label className="k-insp-field">
+        <span className="k-modal-label">Format</span>
+        <select
+          className="k-insp-input"
+          value={format}
+          onChange={(e) => setFormat(e.target.value as 'xlsx' | 'pdf')}
+        >
+          <option value="xlsx">XactContents Template - .xlsx</option>
+          <option value="pdf">Inventory PDF</option>
+        </select>
+      </label>
     </Shell>
   )
 }

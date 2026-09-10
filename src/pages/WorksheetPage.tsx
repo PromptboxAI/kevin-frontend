@@ -371,8 +371,6 @@ export default function WorksheetPage() {
   })
 
   const [exporting, setExporting] = useState(false)
-  /** Open only for the FIRST export, which is the one that stamps the date. */
-  const [confirmExport, setConfirmExport] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
   const [proposalsOpen, setProposalsOpen] = useState(false)
 
@@ -386,7 +384,6 @@ export default function WorksheetPage() {
       setNotice(error instanceof Error ? error.message : 'Export failed.')
     } finally {
       setExporting(false)
-      setConfirmExport(false)
     }
   }
 
@@ -666,27 +663,17 @@ export default function WorksheetPage() {
               /* Exports are repeatable: a later one is simply a new version.
                  Only a claim still processing has nothing settled to export. */
               disabled={!claim.data || claim.data.status === 'processing' || exporting}
-              /* The FIRST export stamps exported_at permanently -- that date is
-                 the Proof of Loss timestamp. Re-downloads are unlimited and
-                 never move it, so only the first one asks. */
-              onClick={() => {
-                if (claim.data?.exported_at) void runExport()
-                else setConfirmExport(true)
-              }}
+              /* Straight to the download. A confirm used to stand in front of
+                 the FIRST export, warning that it dates the Proof of Loss
+                 (exported_at, still stamped server-side); removed by request. */
+              onClick={() => void runExport()}
               title={
                 claim.data?.status === 'processing'
                   ? 'Still processing — some lines have no price yet'
-                  : claim.data?.exported_at
-                    ? 'Download the XactContents .xlsx'
-                    : 'Generates the Proof of Loss and stamps its date'
+                  : 'Download the XactContents .xlsx'
               }
             >
-              <Icon d={I.download} size={12} />{' '}
-              {exporting
-                ? 'Preparing…'
-                : claim.data?.exported_at
-                  ? 'Download export'
-                  : 'Export'}
+              <Icon d={I.download} size={12} /> {exporting ? 'Preparing…' : 'Export'}
             </button>
             {/* Finishing a claim happens while looking at it, not on the walk
                 back to the dashboard. */}
@@ -1268,59 +1255,6 @@ export default function WorksheetPage() {
         <ShareSheet claimId={claimId} items={items} onClose={() => setShareOpen(false)} />
       ) : null}
 
-      {/* The first export is the one that matters: it stamps exported_at, and
-          that date IS the Proof of Loss date. Re-downloads never move it, so
-          this asks once and then gets out of the way. */}
-      {confirmExport ? (
-        <div className="k-stage-noteover" onClick={() => setConfirmExport(false)}>
-          <div className="k-notemodal" onClick={(e) => e.stopPropagation()}>
-            <div className="k-notemodal-hd">
-              <div>
-                <div className="k-notemodal-t">Export this claim?</div>
-                <div className="k-notemodal-s">
-                  {fmtInt(claim.data?.item_count ?? 0)} line items ·{' '}
-                  {claim.data?.claim_number ?? claimId}
-                </div>
-              </div>
-              <button
-                type="button"
-                className="k-icon-btn"
-                aria-label="Close"
-                onClick={() => setConfirmExport(false)}
-              >
-                <Icon d={I.close} size={15} />
-              </button>
-            </div>
-
-            <div className="k-notemodal-body">
-              <p className="k-notemodal-lede">
-                This is the finished document, not a preview. Generating it dates your{' '}
-                <strong style={{ color: 'var(--k-fg-2)' }}>Proof of Loss</strong> as today, and
-                that date is permanent — it is what a client or carrier reads as the day the
-                schedule was produced.
-              </p>
-            </div>
-
-            <div className="k-notemodal-ft" style={{ justifyContent: 'flex-end', marginTop: 0 }}>
-              <button
-                type="button"
-                className="k-btn k-btn--ghost"
-                onClick={() => setConfirmExport(false)}
-              >
-                Not yet
-              </button>
-              <button
-                type="button"
-                className="k-btn"
-                disabled={exporting}
-                onClick={() => void runExport()}
-              >
-                {exporting ? 'Preparing…' : 'Export'}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </div>
   )
 }

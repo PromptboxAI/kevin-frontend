@@ -49,8 +49,18 @@ export type MeResponse = {
   quota?: Quota
 }
 
-/** Derived by the backend from item states + an export marker -- never settable. */
-export type ClaimStatus = 'draft' | 'processing' | 'in_review' | 'exported'
+/**
+ * Derived by the backend -- never settable directly. Six values (FRONTEND.md):
+ * the first four are flavours of OPEN; `closed` and `archived` follow the
+ * close/archive actions. ClaimStatusChip collapses them for display.
+ */
+export type ClaimStatus =
+  | 'draft'
+  | 'processing'
+  | 'in_review'
+  | 'exported'
+  | 'closed'
+  | 'archived'
 
 export type StatusCounts = {
   processing: number

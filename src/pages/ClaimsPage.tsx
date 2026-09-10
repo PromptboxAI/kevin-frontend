@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import NewClaimButton from '../components/NewClaimButton'
-import Badge from '../components/Badge'
 import ClaimRowMenu from '../components/ClaimRowMenu'
 import ClaimStatusChip from '../components/ClaimStatusChip'
 import { I, Icon } from '../components/Icon'
@@ -14,22 +13,27 @@ import { CLOSED_STATUSES } from '../lib/types'
 import type { ClaimListResponse, ClaimSummary } from '../lib/types'
 
 /**
- * The locked chip set from claims-dashboard.jsx. `draft` and `exported` are
- * flavours of OPEN, never chips -- exported is a row badge. Only `archived` is
- * excluded from GET /v1/claims by default, so it needs an explicit request.
+ * The filter chips match the status chips (ClaimStatusChip): Processing, In
+ * progress, Closed, Archived. The design's set also had In review and Open,
+ * which only made sense while the rows showed those statuses.
+ *
+ * Only `archived` is excluded from GET /v1/claims by default, so it needs an
+ * explicit request.
  */
 
-type Chip = 'All' | 'Processing' | 'In review' | 'Open' | 'Closed' | 'Archived'
+type Chip = 'All' | 'Processing' | 'In progress' | 'Closed' | 'Archived'
 
-const CHIPS: Chip[] = ['All', 'Processing', 'In review', 'Open', 'Closed', 'Archived']
+const CHIPS: Chip[] = ['All', 'Processing', 'In progress', 'Closed', 'Archived']
 
-/** Which chips the API can filter server-side; the rest are shaped locally. */
+/** Which chips the API can filter server-side; In progress is shaped locally. */
 const SERVER_STATUS: Partial<Record<Chip, string>> = {
   Processing: 'processing',
-  'In review': 'in_review',
   Closed: 'closed',
   Archived: 'archived',
 }
+
+/** What ClaimStatusChip labels "In progress": open, and not still building. */
+const IN_PROGRESS = new Set(['draft', 'in_review', 'exported'])
 
 export default function ClaimsPage() {
   const { session } = useAuth()
@@ -65,8 +69,8 @@ export default function ClaimsPage() {
   const visible = useMemo(() => {
     const term = search.trim().toLowerCase()
     return all
-      // "Open" is not an API value: it means anything not closed or archived.
-      .filter((c) => (chip === 'Open' ? !CLOSED_STATUSES.includes(c.status) : true))
+      // "In progress" is not an API value; it is three of them.
+      .filter((c) => (chip === 'In progress' ? IN_PROGRESS.has(c.status) : true))
       .filter((c) =>
         !term
           ? true
@@ -266,12 +270,10 @@ function Row({
         <div className="k-claim-photos">{fmtInt(claim.photo_count)} photos</div>
       </div>
 
-      {/* Status badge only. Unpriced counts belong on the claim, not the roster. */}
+      {/* Status only -- no "Exported" badge beside it. Downloading a file is
+          not a state of the claim. Unpriced counts belong on the claim. */}
       <div className="k-claim-status">
         <ClaimStatusChip status={claim.status} />
-        {claim.exported_at && claim.status !== 'exported' ? (
-          <Badge tone="quiet">Exported</Badge>
-        ) : null}
       </div>
 
       {/* "Total": the tax-inclusive server RCV, rendered verbatim. */}
