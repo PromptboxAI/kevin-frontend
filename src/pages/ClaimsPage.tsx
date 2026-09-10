@@ -37,25 +37,33 @@ const IN_PROGRESS = new Set(['draft', 'in_review', 'exported'])
 
 /**
  * Roster columns, in Xactimate's project-list order, with default widths in px.
- * Resizable like the worksheet: drag a header's right edge, double-click it to
- * reset. Project is the flexible track -- `minmax(width, 1fr)` -- so the grid
- * still fills the list when every other column is narrow. The last column (the
- * row menu) has no header and no handle.
+ * Resizable like the worksheet: drag the divider on a header's RIGHT edge,
+ * double-click it to reset.
+ *
+ * Every labelled column is an exact px width, so a drag moves exactly the
+ * column it belongs to. The row menu (last, unlabelled) is the only flexible
+ * track, `minmax(width, 1fr)`, and right-aligns its buttons, so spare width
+ * collects there. It used to be Project that flexed: on a wide window it
+ * absorbed all the slack, so dragging its divider changed nothing on screen.
  */
 const COLUMNS: { label: string; width: number; align?: 'right' }[] = [
-  { label: 'Project', width: 220 },
-  { label: 'Claim number', width: 140 },
-  { label: 'Insured', width: 150 },
-  { label: 'Carrier', width: 130 },
-  { label: 'Items / photos', width: 100, align: 'right' },
+  { label: 'Project', width: 280 },
+  { label: 'Claim number', width: 150 },
+  { label: 'Insured', width: 160 },
+  { label: 'Carrier', width: 140 },
+  { label: 'Items / photos', width: 110, align: 'right' },
   { label: 'Status', width: 130 },
   { label: 'Total', width: 130, align: 'right' },
   { label: '', width: 100 },
 ]
 const COL_DEFAULTS = COLUMNS.map((c) => c.width)
+const FLEX_COL = COLUMNS.length - 1
 const COL_MIN = 60
-/** Per-browser convenience only; a missing or unreadable value means defaults. */
-const COLS_KEY = 'kevin.claims.cols.v1'
+/**
+ * Per-browser convenience only; a missing or unreadable value means defaults.
+ * v2: v1 widths were saved when Project flexed, so they meant something else.
+ */
+const COLS_KEY = 'kevin.claims.cols.v2'
 
 function loadCols(): number[] {
   try {
@@ -132,9 +140,8 @@ export default function ClaimsPage() {
 
   const startResize = (index: number, e: React.MouseEvent) => {
     e.preventDefault()
-    // From the RENDERED width, not the stored one: Project is a flexible
-    // track, drawn wider than its stored minimum, so starting from the stored
-    // value made the column jump narrower on the first pixel of a drag.
+    // From the RENDERED width, not the stored one, so a column never jumps on
+    // the first pixel of a drag if what is drawn differs from what is stored.
     const cell = e.currentTarget.parentElement
     const startW = cell ? Math.round(cell.getBoundingClientRect().width) : cols[index]
     drag.current = { index, startX: e.clientX, startW }
@@ -150,7 +157,7 @@ export default function ClaimsPage() {
 
   const listStyle = {
     ['--claim-cols' as string]: cols
-      .map((c, i) => (i === 0 ? `minmax(${c}px, 1fr)` : `${c}px`))
+      .map((c, i) => (i === FLEX_COL ? `minmax(${c}px, 1fr)` : `${c}px`))
       .join(' '),
     // Tracks + 7 gaps of 14px + 36px of row padding: widening a column past
     // the list overflows it horizontally rather than squeezing Project.
