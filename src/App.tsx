@@ -44,14 +44,20 @@ import ResetSentPage from './pages/ResetSentPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import WorksheetPage from './pages/WorksheetPage'
 import SampleBanner from './components/SampleBanner'
+import { SAMPLE_CLAIM_ID } from './lib/worksheet-preview'
 
 /**
  * The one claim id that is public. Backed by a real, owner-scoped row on the
  * API — `GET /v1/claims/sample` answers without a bearer token, and every
  * other id still 401s. It lived in lib/sample.ts alongside the bundled
  * fixture; that fixture is gone and this is a route concern, not data.
+ *
+ * IMPORTED, not redeclared. This route gate and the worksheet's preview path
+ * must agree on the same string: if they drift, the route still matches and
+ * pricing quietly stops working (or the reverse), with nothing failing to say
+ * so. lib/ owns it because lib/mutations.ts imports it too and importing from
+ * App.tsx would be circular.
  */
-const SAMPLE_CLAIM_ID = 'sample'
 
 function ClaimRoute() {
   const { claimId = '' } = useParams()
