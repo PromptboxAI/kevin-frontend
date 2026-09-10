@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import SettingsShell from '../components/SettingsShell'
 import { Icon, I } from '../components/Icon'
 import { api } from '../lib/api'
+import { copyText } from '../lib/clipboard'
 import { fmtInt } from '../lib/format'
 import type { MeResponse } from '../lib/types'
 
@@ -81,30 +82,10 @@ export default function SettingsApiPage({ plan: forced }: { plan?: string } = {}
    * have.
    */
   const copyCurl = async () => {
-    const done = () => {
+    if (await copyText(CURL)) {
       setCopied('yes')
       window.setTimeout(() => setCopied(null), 1600)
-    }
-    try {
-      await navigator.clipboard.writeText(CURL)
-      done()
-      return
-    } catch {
-      // fall through
-    }
-    try {
-      const ta = document.createElement('textarea')
-      ta.value = CURL
-      ta.setAttribute('readonly', '')
-      ta.style.position = 'fixed'
-      ta.style.opacity = '0'
-      document.body.appendChild(ta)
-      ta.select()
-      const ok = document.execCommand('copy')
-      ta.remove()
-      if (!ok) throw new Error('execCommand refused')
-      done()
-    } catch {
+    } else {
       setCopied('failed')
       window.setTimeout(() => setCopied(null), 2600)
     }

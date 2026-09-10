@@ -1434,6 +1434,18 @@ button.k-avatar-menu-item {
   flex-direction: column;
 }
 
+/* The link on its row, readable and selectable by hand. */
+.k-share-url {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 5px;
+  font-family: var(--k-font-mono);
+  font-size: 11.5px;
+  color: var(--k-fg-2);
+  background: var(--k-bg);
+}
+
 /* Clustering could not validate this set. Amber is reserved for special limits
    (rule 6), so this borrows the WARN text colour only -- no amber fill, no
    badge -- and reads as a prompt rather than an error. It is a button because

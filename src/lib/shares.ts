@@ -54,6 +54,21 @@ export type MintShareBody = {
   unlock_price?: number | null
 }
 
+/**
+ * The link to send, or null for a revoked share.
+ *
+ * The API's `url` is null unless the backend has SHARE_BASE_URL configured --
+ * it ships only the bare token rather than guess the portal's origin. The
+ * portal is THIS app's `/p/:token` route, so when `url` is missing the link is
+ * built on the origin the adjuster is using. Before this, Copy wrote nothing
+ * to the clipboard and still said "Copied".
+ */
+export function shareLink(share: Pick<ShareSummary, 'url' | 'token'>): string | null {
+  if (share.url) return share.url
+  if (!share.token) return null
+  return `${window.location.origin}/p/${encodeURIComponent(share.token)}`
+}
+
 export function listShares(claimId: string) {
   return api.get<{ claim_id: string; shares: ShareSummary[] }>(
     `/v1/claims/${encodeURIComponent(claimId)}/shares`,
@@ -66,6 +81,16 @@ export function mintShare(claimId: string, body: MintShareBody) {
     `/v1/claims/${encodeURIComponent(claimId)}/share`,
     { json: body },
   )
+}
+
+/**
+ * Turn downloads on for a FREE link: stamps `released_at` (idempotent -- a
+ * second call keeps the original time). A free link downloads only with BOTH
+ * `allow_download` and `released_at`; a paid link downloads on payment and
+ * never needs this. Returns the same ShareSummary the list does.
+ */
+export function releaseShare(shareId: string) {
+  return api.post<ShareSummary>(`/v1/shares/${encodeURIComponent(shareId)}/release`)
 }
 
 /** Permanent. The token is destroyed, so a revoked link cannot be un-revoked. */

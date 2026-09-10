@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Badge from './Badge'
 import { I, Icon } from './Icon'
 import { ApiError } from '../lib/api'
+import { copyText } from '../lib/clipboard'
 import { fmtDate, fmtInt, fmtUSD } from '../lib/format'
 import {
   SHARE_STATE_LABEL,
@@ -11,7 +12,9 @@ import {
   listShares,
   mintShare,
   redeliverShare,
+  releaseShare,
   revokeShare,
+  shareLink,
   shareState,
 } from '../lib/shares'
 import type { ShareSummary } from '../lib/shares'
@@ -42,7 +45,8 @@ export default function ShareSheet({
   const queryClient = useQueryClient()
   const [price, setPrice] = useState('')
   const [allowDownload, setAllowDownload] = useState(true)
-  const [copied, setCopied] = useState<string | null>(null)
+  /** Which link's Copy just ran, and whether the clipboard took it. */
+  const [copied, setCopied] = useState<{ id: string; ok: boolean } | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [confirmRevoke, setConfirmRevoke] = useState<ShareSummary | null>(null)
 
@@ -61,20 +65,45 @@ export default function ShareSheet({
     )
 
   const mint = useMutation({
-    mutationFn: () =>
-      mintShare(claimId, {
+    mutationFn: async () => {
+      // Blank means no paywall. Zero would render a lock screen that charges
+      // nothing, so it is treated as blank rather than sent.
+      const unlockPrice =
+        price.trim() === '' ? null : Math.round(parseFloat(price) * 100) / 100 || null
+      const share = await mintShare(claimId, {
         audience: 'client',
         allow_download: allowDownload,
-        // Blank means no paywall. Zero would render a lock screen that charges
-        // nothing, so it is treated as blank rather than sent.
-        unlock_price: price.trim() === '' ? null : Math.round(parseFloat(price) * 100) / 100 || null,
-      }),
+        unlock_price: unlockPrice,
+      })
+      /**
+       * "Allow downloads" has to MEAN downloads. On a free link the API wants
+       * two things -- allow_download AND a deliberate release -- and nothing
+       * here ever sent the release, so a client never saw a download button
+       * however the box was set. Ticking the box at creation is that
+       * deliberate act. A paid link needs no release: payment unlocks it.
+       */
+      if (allowDownload && unlockPrice === null) await releaseShare(share.share_id ?? share.id)
+      return share
+    },
     onSuccess: () => {
       setPrice('')
       void refresh()
     },
     onError: fail('Could not create the link'),
   })
+
+  const release = useMutation({
+    mutationFn: (id: string) => releaseShare(id),
+    onSuccess: () => void refresh(),
+    onError: fail('Could not turn on downloads'),
+  })
+
+  const copy = async (share: ShareSummary) => {
+    const link = shareLink(share)
+    const ok = link ? await copyText(link) : false
+    setCopied({ id: share.id, ok })
+    window.setTimeout(() => setCopied(null), ok ? 1600 : 2600)
+  }
 
   const revoke = useMutation({
     mutationFn: (id: string) => revokeShare(id),
@@ -218,13 +247,10 @@ export default function ShareSheet({
                   <ShareRow
                     key={s.id}
                     share={s}
-                    copied={copied === s.id}
-                    busy={revoke.isPending || redeliver.isPending}
-                    onCopy={() => {
-                      if (s.url) void navigator.clipboard?.writeText(s.url)
-                      setCopied(s.id)
-                      setTimeout(() => setCopied(null), 1600)
-                    }}
+                    copied={copied?.id === s.id ? copied.ok : null}
+                    busy={revoke.isPending || redeliver.isPending || release.isPending}
+                    onCopy={() => void copy(s)}
+                    onRelease={() => release.mutate(s.id)}
                     onRevoke={() => setConfirmRevoke(s)}
                     onRedeliver={() => redeliver.mutate(s.id)}
                   />
@@ -333,18 +359,37 @@ function ShareRow({
   copied,
   busy,
   onCopy,
+  onRelease,
   onRevoke,
   onRedeliver,
 }: {
   share: ShareSummary
-  copied: boolean
+  /** null = not just copied; true / false = the clipboard's answer. */
+  copied: boolean | null
   busy: boolean
   onCopy: () => void
+  onRelease: () => void
   onRevoke: () => void
   onRedeliver: () => void
 }) {
   const state = shareState(share)
   const paywalled = share.unlock_price !== null
+  const link = shareLink(share)
+  /**
+   * Downloads, stated per link. A paid link downloads once paid; a free one
+   * needs allow_download AND a release. A free link made before downloads were
+   * released at creation can sit at allowed-but-unreleased -- that is the one
+   * case with a button.
+   */
+  const downloads = paywalled
+    ? share.allow_download
+      ? 'Downloads after payment'
+      : 'View only'
+    : !share.allow_download
+      ? 'View only'
+      : share.released_at
+        ? 'Downloads on'
+        : null
 
   return (
     <div className="k-share-linkrow" style={{ marginBottom: 6, alignItems: 'flex-start' }}>
@@ -359,10 +404,23 @@ function ShareRow({
           <Badge tone={SHARE_STATE_TONE[state]}>{SHARE_STATE_LABEL[state]}</Badge>
         </span>
 
+        {/* The link itself, selectable: if the clipboard refuses, the adjuster
+            can still select it by hand. */}
+        {link ? (
+          <input
+            className="k-input k-share-url"
+            readOnly
+            value={link}
+            aria-label="Share link"
+            onFocus={(e) => e.currentTarget.select()}
+          />
+        ) : null}
+
         <span style={{ display: 'block', fontSize: 11, color: 'var(--k-fg-4)', marginTop: 2 }}>
           Created {fmtDate(share.created_at)}
           {share.expires_at ? ` · expires ${fmtDate(share.expires_at)}` : ' · no expiry'} ·{' '}
           {fmtInt(share.view_count)} view{share.view_count === 1 ? '' : 's'}
+          {downloads ? ` · ${downloads}` : ''}
         </span>
 
         {/* The lifecycle, in the order it happens. A paywalled link that has
@@ -411,8 +469,27 @@ function ShareRow({
           </button>
         ) : null}
 
-        <button type="button" className="k-btn k-btn--ghost k-btn--sm" onClick={onCopy}>
-          <Icon d={copied ? I.check : I.copy} size={11} /> {copied ? 'Copied' : 'Copy'}
+        {downloads === null ? (
+          <button
+            type="button"
+            className="k-btn k-btn--ghost k-btn--sm"
+            disabled={busy}
+            title="Downloads are allowed on this link but were never switched on"
+            onClick={onRelease}
+          >
+            Turn on downloads
+          </button>
+        ) : null}
+
+        <button
+          type="button"
+          className="k-btn k-btn--ghost k-btn--sm"
+          disabled={!link}
+          title={link ? undefined : 'This link has no address to copy'}
+          onClick={onCopy}
+        >
+          <Icon d={copied ? I.check : I.copy} size={11} />{' '}
+          {copied === true ? 'Copied' : copied === false ? 'Copy failed — select it' : 'Copy'}
         </button>
 
         <button
