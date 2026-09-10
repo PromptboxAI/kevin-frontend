@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { I, Icon } from './Icon'
 import { downloadExport, printExport } from '../lib/api'
 import { claimAction, deleteClaim, duplicateClaim } from '../lib/mutations'
-import { fmtDate, fmtInt } from '../lib/format'
+import { fmtInt } from '../lib/format'
 import { CLOSED_STATUSES } from '../lib/types'
 import type { ClaimSummary } from '../lib/types'
 
@@ -471,11 +471,14 @@ function ExportModal({
             value={format}
             onChange={(e) => setFormat(e.target.value as 'xlsx' | 'pdf')}
           >
-            <option value="xlsx">Xactimate (Excel) · .xlsx · XactContents template</option>
+            <option value="xlsx">XactContents Template - .xlsx</option>
             <option value="pdf">Inventory PDF</option>
           </select>
         </label>
       )}
+      {/* Only the FIRST export warns: it is the one that dates the Proof of
+          Loss. Once exported there is nothing to decide, so no note -- and no
+          file name either: the browser's Save dialog is where it gets named. */}
       {firstExport ? (
         <div className="k-modal-note k-modal-note--danger">
           This is the finished document, not a preview.{' '}
@@ -483,18 +486,7 @@ function ExportModal({
           today, and that date is permanent — it is what a client or carrier reads as the day the
           schedule was produced.
         </div>
-      ) : (
-        <div className="k-modal-note">
-          Already exported {fmtDate(claim.exported_at)}.{' '}
-          {printing ? 'Printing' : 'Downloading'} again never moves that date.
-        </div>
-      )}
-      {printing ? null : (
-        <div className="k-modal-note">
-          Saves as <span className="k-mono">{claim.claim_id}-inventory.{format}</span>. Every cell
-          is a static value — the file is a snapshot of the claim record.
-        </div>
-      )}
+      ) : null}
     </Shell>
   )
 }

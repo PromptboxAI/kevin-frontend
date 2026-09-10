@@ -677,7 +677,7 @@ export default function WorksheetPage() {
                 claim.data?.status === 'processing'
                   ? 'Still processing — some lines have no price yet'
                   : claim.data?.exported_at
-                    ? `Re-download the XactContents .xlsx · Proof of Loss dated ${fmtDate(claim.data.exported_at)}`
+                    ? 'Download the XactContents .xlsx'
                     : 'Generates the Proof of Loss and stamps its date'
               }
             >
@@ -1298,10 +1298,6 @@ export default function WorksheetPage() {
                 <strong style={{ color: 'var(--k-fg-2)' }}>Proof of Loss</strong> as today, and
                 that date is permanent — it is what a client or carrier reads as the day the
                 schedule was produced.
-              </p>
-              <p className="k-notemodal-lede">
-                You can re-download the file as often as you like afterwards, and keep editing
-                the worksheet. Neither moves the date.
               </p>
             </div>
 

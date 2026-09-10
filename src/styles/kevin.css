@@ -53,7 +53,14 @@
     /* One source of truth for disabled controls. Without this a gated button
        renders identically to a live one, so the user clicks and gets silence. */
     .k-btn:disabled, .k-icon-btn:disabled { opacity: 0.45; cursor: default; }
-    .k-btn:disabled:hover, .k-icon-btn:disabled:hover { background: transparent; }
+    /* A disabled button keeps its RESTING background under the cursor. This was
+       one `background: transparent` for every variant, which is right for ghost
+       and icon buttons and wrong for the primary: it is white text on --k-fg,
+       so a Download that disabled itself on click ("Preparing…") with the
+       pointer still on it became white on white and vanished. */
+    .k-btn:disabled:hover { background: var(--k-fg); }
+    .k-btn--ghost:disabled:hover, .k-icon-btn:disabled:hover { background: transparent; }
+    .k-btn--on:disabled:hover { background: var(--k-accent); }
 
     .k-manual-pill { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 5px; font-size: 11px; font-weight: 500; border: 1px solid var(--k-line); background: var(--k-bg-2); color: var(--k-fg-3); cursor: pointer; white-space: nowrap; max-width: 100%; transition: background 0.1s, border-color 0.1s; }
     .k-manual-pill:hover { background: var(--k-bg-3, var(--k-bg-2)); border-color: var(--k-fg-4); }
@@ -3901,7 +3908,7 @@
     .k-selbar-b:disabled:hover { background: transparent; }
     .k-selbar-b--go { background: var(--k-accent); color: #fff; font-weight: 600; }
     .k-selbar-b--go:hover { background: oklch(0.46 0.11 252); }
-    .k-selbar-b--go:disabled { background: oklch(1 0 0 / 0.14); color: inherit; }
+    .k-selbar-b--go:disabled, .k-selbar-b--go:disabled:hover { background: oklch(1 0 0 / 0.14); color: inherit; }
     .k-selbar-b--danger:hover { background: oklch(0.55 0.19 25 / 0.9); color: #fff; }
     .k-selbar-x { width: 28px; height: 28px; border-radius: 8px; border: 0; background: transparent; color: inherit; display: grid; place-items: center; cursor: pointer; opacity: 0.7; }
     .k-selbar-x:hover { background: oklch(1 0 0 / 0.14); opacity: 1; }
