@@ -14,13 +14,14 @@ import { MktFooter, MktNav } from '../components/MarketingChrome'
  *
  * TWO deviations:
  *
- * 1. The lede describes the claim behind "Open the sample claim" below it, so
- *    its figures track /sample rather than CLAUDE.md's canon. That claim is
- *    live API data now, not a fixture: 59 photos, 51 items, and a contents
- *    loss rather than a kitchen fire — the demo photographs are a wardrobe
- *    (belts, boots, a vacuum filter), which is why the backend relabelled it.
- *    Re-point this at the canonical 60 → 57 kitchen fire once the sample is
- *    re-seeded from kitchen-contents photos.
+ * 1. The lede quotes NO photo or item count, deliberately. It sits above
+ *    "Open the sample claim", so a figure here is one a visitor checks against
+ *    the claim that opens — and the marketing canon (CLAUDE.md: 60 -> 57) and
+ *    the live sample (59 -> 51) are owned by different authorities and drift
+ *    independently, silently, with nothing failing when they disagree. An
+ *    earlier note here planned to re-point this at the canonical kitchen fire
+ *    once the sample was re-seeded; that re-seed was declined, which is
+ *    precisely why the copy no longer depends on either number.
  *
  * 2. The footer note's "book a call" pointed at the Book-call page (51), which
  *    is not ported. It goes to /contact and reads "get in touch" — /contact's
@@ -117,8 +118,8 @@ export default function WatchDemoPage() {
               marginRight: 'auto',
             }}
           >
-            Exactly what you do on a real contents loss — 59 photos in, a 51-line inventory out,
-            about 20 minutes of your time.
+            Exactly what you do on a real contents loss — a folder of photos in, a priced
+            line-item inventory out, about 20 minutes of your time.
           </p>
         </section>
 

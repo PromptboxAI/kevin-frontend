@@ -417,6 +417,12 @@ export default function LandingPage() {
                   Processing complete
                 </Badge>
               </div>
+              {/* Deliberately NOT a photo/item count. This card sits directly
+                  above "See a finished claim", so any aggregate here is one a
+                  visitor compares against the claim the CTA opens — and the
+                  two are set by different authorities (CLAUDE.md's canonical
+                  demo here, the live API there), so they drift apart with
+                  nothing failing. Non-numeric copy cannot. */}
               <span
                 style={{
                   fontSize: 11,
@@ -424,7 +430,7 @@ export default function LandingPage() {
                   fontFamily: 'var(--k-font-mono)',
                 }}
               >
-                60 photos → 57 items
+                Xactimate ready
               </span>
             </div>
             <div className="k-card-rows">
@@ -489,9 +495,11 @@ export default function LandingPage() {
                   </div>
                 </div>
               ))}
+              {/* Count and RCV total removed for the same reason as the bar
+                  above — see that comment. The row stays so the card still
+                  reads as truncated rather than as a five-item inventory. */}
               <div className="k-card-row k-card-row--more">
-                <span>+ 52 more items</span>
-                <span style={{ fontFamily: 'var(--k-font-mono)' }}>$2,786.20 RCV</span>
+                <span>+ more items</span>
               </div>
             </div>
           </div>
