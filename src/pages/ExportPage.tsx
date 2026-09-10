@@ -322,11 +322,7 @@ export default function ExportPage() {
                       }}
                       disabled={!PHOTO_PACKET_LIVE}
                       label="Inventory"
-                      sub={
-                        PHOTO_PACKET_LIVE
-                          ? 'The line-item worksheet and totals'
-                          : 'The line-item worksheet and totals — always on until photo pages ship'
-                      }
+                      sub="The line-item worksheet and totals"
                     />
                     <Toggle
                       on={withPhotos}
