@@ -64,6 +64,19 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * A react-query `retry` for reads where a 404 is an ANSWER, not a blip.
+ *
+ * The default retries every failure three times with backoff -- about seven
+ * seconds -- so a claim URL that does not exist sat on a live-looking
+ * worksheet, slug for a title and Export in reach, before the error landed.
+ * Anything else still gets the default three tries.
+ */
+export function retryUnlessMissing(failureCount: number, error: unknown): boolean {
+  if (error instanceof ApiError && error.isMissing) return false
+  return failureCount < 3
+}
+
 type Options = Omit<RequestInit, 'body'> & {
   /** JSON body. Omit for multipart -- pass a FormData as `form` instead. */
   json?: unknown

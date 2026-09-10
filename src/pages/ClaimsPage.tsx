@@ -8,7 +8,7 @@ import ClaimRowMenu from '../components/ClaimRowMenu'
 import ClaimStatusChip from '../components/ClaimStatusChip'
 import { I, Icon } from '../components/Icon'
 import { ApiError, api } from '../lib/api'
-import { fmtDate, fmtInt, fmtSince, fmtUSD, greetingFor } from '../lib/format'
+import { fmtInt, fmtSince, fmtUSD, greetingFor } from '../lib/format'
 import { useAuth } from '../lib/auth'
 import { CLOSED_STATUSES } from '../lib/types'
 import type { ClaimListResponse, ClaimSummary } from '../lib/types'
@@ -139,7 +139,7 @@ export default function ClaimsPage() {
               <div className="k-tot-v">{fmtInt(kpis.items)}</div>
             </div>
             <div>
-              <div className="k-tot-l">RCV · open claims</div>
+              <div className="k-tot-l">Total · open claims</div>
               <div className="k-tot-v">{fmtUSD(kpis.rcv)}</div>
             </div>
           </div>
@@ -149,7 +149,7 @@ export default function ClaimsPage() {
           <div className="k-search" style={{ minWidth: 280 }}>
             <Icon d={I.search} size={12} />
             <input
-              placeholder="Filter claims · name, claim #, carrier, cause…"
+              placeholder="Filter claims · project, claim #, insured, carrier…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -207,13 +207,18 @@ export default function ClaimsPage() {
 
         {visible.length > 0 ? (
           <section className="k-claims-list">
+            {/* Column order follows Xactimate's project list -- Project, Claim
+                number, Insured, then Status before Total -- because that is
+                the list these adjusters already scan all day. "Total" is the
+                tax-inclusive RCV; the worksheet still calls it RCV + Tax. */}
             <div className="k-claim-row k-claim-row--head">
-              <div>Claim</div>
-              <div>Insured / cause</div>
+              <div>Project</div>
+              <div>Claim number</div>
+              <div>Insured</div>
               <div>Carrier</div>
               <div style={{ textAlign: 'right' }}>Items / photos</div>
-              <div style={{ textAlign: 'right' }}>RCV</div>
               <div>Status</div>
+              <div style={{ textAlign: 'right' }}>Total</div>
               <div />
             </div>
 
@@ -236,32 +241,30 @@ function Row({
 }) {
   return (
     <div className="k-claim-row">
-      <div>
-        <Link className="k-claim-id" to={`/claims/${claim.claim_id}`} title={claim.claim_id}>
-          {claim.claim_id}
-        </Link>
-        {/* Keep the dash when the record has no date rather than omitting it. */}
-        <div className="k-claim-dol">DOL {fmtDate(claim.date_of_loss)}</div>
+      {/* The saved name the adjuster typed at intake. The slug stays out of
+          sight -- it is identity for URLs, not something anyone reads. */}
+      <Link
+        className="k-claim-name k-claim-cell k-link"
+        to={`/claims/${claim.claim_id}`}
+        title={claim.name}
+      >
+        {claim.name || claim.claim_id}
+      </Link>
+
+      <div className="k-claim-number k-claim-cell" title={claim.claim_number ?? undefined}>
+        {claim.claim_number || '—'}
       </div>
 
-      <div>
-        <Link className="k-claim-name k-link" to={`/claims/${claim.claim_id}`}>
-          {claim.name}
-        </Link>
-        <div className="k-claim-sub">
-          {[claim.insured_name, claim.loss_type].filter(Boolean).join(' · ') || '—'}
-        </div>
+      <div className="k-claim-insured k-claim-cell" title={claim.insured_name ?? undefined}>
+        {claim.insured_name || '—'}
       </div>
 
-      <div className="k-claim-carrier">{claim.carrier ?? '—'}</div>
+      <div className="k-claim-carrier k-claim-cell">{claim.carrier || '—'}</div>
 
       <div className="k-claim-num">
         <div>{fmtInt(claim.item_count)}</div>
         <div className="k-claim-photos">{fmtInt(claim.photo_count)} photos</div>
       </div>
-
-      {/* Tax-inclusive server total, rendered verbatim. */}
-      <div className="k-claim-rcv">{fmtUSD(claim.total_rcv)}</div>
 
       {/* Status badge only. Unpriced counts belong on the claim, not the roster. */}
       <div className="k-claim-status">
@@ -270,6 +273,9 @@ function Row({
           <Badge tone="quiet">Exported</Badge>
         ) : null}
       </div>
+
+      {/* "Total": the tax-inclusive server RCV, rendered verbatim. */}
+      <div className="k-claim-rcv">{fmtUSD(claim.total_rcv)}</div>
 
       <ClaimRowMenu claim={claim} onNotice={onNotice} />
     </div>

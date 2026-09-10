@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
+import ClaimMissing from '../components/ClaimMissing'
 import { I, Icon } from '../components/Icon'
 import { ApiError, api } from '../lib/api'
 import { fmtInt, fmtUSD } from '../lib/format'
@@ -80,19 +81,7 @@ export default function ProcessingPage() {
   }, [done, claimId, navigate])
 
   if (claim.error instanceof ApiError && claim.error.isMissing) {
-    return (
-      <div className="k-intake">
-        <AppHeader />
-        <div className="k-intake-body">
-          <div className="k-empty">
-            <h2>That claim is gone</h2>
-            <Link to="/claims" className="k-btn">
-              My claims
-            </Link>
-          </div>
-        </div>
-      </div>
-    )
+    return <ClaimMissing claimId={claimId} />
   }
 
   /**

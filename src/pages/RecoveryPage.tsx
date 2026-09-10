@@ -3,8 +3,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import Badge from '../components/Badge'
+import ClaimMissing from '../components/ClaimMissing'
 import { I, Icon } from '../components/Icon'
-import { ApiError, api, downloadRecovery } from '../lib/api'
+import { ApiError, api, downloadRecovery, retryUnlessMissing } from '../lib/api'
 import { RECEIPT_ACCEPT, uploadReceipt } from '../lib/evidence'
 import { fmtUSD } from '../lib/format'
 import {
@@ -44,6 +45,7 @@ export default function RecoveryPage() {
     queryKey: ['claim', claimId],
     queryFn: () => api.get<ClaimSummary>(`/v1/claims/${encodeURIComponent(claimId)}`),
     enabled: !!claimId,
+    retry: retryUnlessMissing,
   })
 
   const items = useQuery({
@@ -79,6 +81,10 @@ export default function RecoveryPage() {
     } finally {
       setBusy(false)
     }
+  }
+
+  if (claim.error instanceof ApiError && claim.error.isMissing) {
+    return <ClaimMissing claimId={claimId} />
   }
 
   if (claim.isLoading || !claim.data) {

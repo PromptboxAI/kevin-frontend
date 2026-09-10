@@ -3,11 +3,12 @@ import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import Badge from '../components/Badge'
+import ClaimMissing from '../components/ClaimMissing'
 import ClaimTabs from '../components/ClaimTabs'
 import ClaimStateMenu from '../components/ClaimStateMenu'
 import PairPhoneModal from '../components/PairPhoneModal'
 import { I, Icon } from '../components/Icon'
-import { api } from '../lib/api'
+import { ApiError, api, retryUnlessMissing } from '../lib/api'
 import { fmtDate, fmtPct, fmtUSD, fmtUSDshort } from '../lib/format'
 import { getClaimPhotos } from '../lib/photos'
 import {
@@ -35,10 +36,11 @@ const CLASS_KEEP = 12
 export default function OverviewPage() {
   const { claimId = '' } = useParams()
 
-  const { data: claim, isLoading } = useQuery({
+  const { data: claim, isLoading, error: claimError } = useQuery({
     queryKey: ['claim', claimId],
     queryFn: () => api.get<ClaimSummary>(`/v1/claims/${encodeURIComponent(claimId)}`),
     enabled: !!claimId,
+    retry: retryUnlessMissing,
   })
 
   const { data: itemsPage } = useQuery({
@@ -71,6 +73,11 @@ export default function OverviewPage() {
   /** Lifecycle changes report here rather than silently. */
   const [notice, setNotice] = useState<string | null>(null)
   const [pairing, setPairing] = useState(false)
+
+  // Otherwise a missing claim fell into the branch below: "Loading claim…" forever.
+  if (claimError instanceof ApiError && claimError.isMissing) {
+    return <ClaimMissing claimId={claimId} />
+  }
 
   if (isLoading || !claim) {
     return (

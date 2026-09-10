@@ -3,6 +3,7 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tansta
 import type { InfiniteData } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
+import ClaimMissing from '../components/ClaimMissing'
 import ClaimStatusChip from '../components/ClaimStatusChip'
 import ClaimTabs from '../components/ClaimTabs'
 import CompsPopover from '../components/CompsPopover'
@@ -13,7 +14,7 @@ import ProposalsPanel from '../components/ProposalsPanel'
 import RoomsPopover from '../components/RoomsPopover'
 import ClaimStateMenu from '../components/ClaimStateMenu'
 import { I, Icon } from '../components/Icon'
-import { ApiError, api, downloadExport } from '../lib/api'
+import { ApiError, api, downloadExport, retryUnlessMissing } from '../lib/api'
 import {
   DEPR_ERROR_COPY,
   deprCellValue,
@@ -202,6 +203,7 @@ export default function WorksheetPage() {
   const claim = useQuery({
     queryKey: ['claim', claimId],
     queryFn: () => api.get<ClaimSummary>(`/v1/claims/${encodeURIComponent(claimId)}`),
+    retry: retryUnlessMissing,
   })
 
   /**
@@ -617,6 +619,10 @@ export default function WorksheetPage() {
   const padTop = windowed ? win.padTop : 0
   const padBottom = windowed ? win.padBottom : 0
 
+  // After every hook: an early return above one would change the hook order.
+  if (claim.error instanceof ApiError && claim.error.isMissing) {
+    return <ClaimMissing claimId={claimId} />
+  }
 
   return (
     <div className="k-shell">
@@ -659,7 +665,7 @@ export default function WorksheetPage() {
               className="k-btn"
               /* Exports are repeatable: a later one is simply a new version.
                  Only a claim still processing has nothing settled to export. */
-              disabled={claim.data?.status === 'processing' || exporting}
+              disabled={!claim.data || claim.data.status === 'processing' || exporting}
               /* The FIRST export stamps exported_at permanently -- that date is
                  the Proof of Loss timestamp. Re-downloads are unlimited and
                  never move it, so only the first one asks. */

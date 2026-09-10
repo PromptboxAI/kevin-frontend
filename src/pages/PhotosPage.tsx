@@ -3,9 +3,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import Badge from '../components/Badge'
+import ClaimMissing from '../components/ClaimMissing'
 import ClaimTabs from '../components/ClaimTabs'
 import { I, Icon } from '../components/Icon'
-import { api } from '../lib/api'
+import { ApiError, api, retryUnlessMissing } from '../lib/api'
 import { detachItemPhotos } from '../lib/evidence'
 import { fmtConfidence, fmtUSD } from '../lib/format'
 import { getClaimPhotos } from '../lib/photos'
@@ -42,10 +43,11 @@ export default function PhotosPage() {
   const { claimId = '' } = useParams()
   const navigate = useNavigate()
 
-  const { data: claim } = useQuery({
+  const { data: claim, error: claimError } = useQuery({
     queryKey: ['claim', claimId],
     queryFn: () => api.get<ClaimSummary>(`/v1/claims/${encodeURIComponent(claimId)}`),
     enabled: !!claimId,
+    retry: retryUnlessMissing,
   })
 
   const { data, isLoading, error } = useQuery({
@@ -157,6 +159,10 @@ export default function PhotosPage() {
     : room
       ? room
       : 'All photos'
+
+  if (claimError instanceof ApiError && claimError.isMissing) {
+    return <ClaimMissing claimId={claimId} />
+  }
 
   return (
     <div className="k-photos">

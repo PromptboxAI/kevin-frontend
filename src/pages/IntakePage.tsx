@@ -48,6 +48,15 @@ const LEDE: React.CSSProperties = {
   lineHeight: 1.5,
 }
 
+/** The project name's slug already names one of this account's claims. */
+class ProjectNameTaken extends Error {
+  existing: string
+  constructor(existing: string) {
+    super(`Project name taken: ${existing}`)
+    this.existing = existing
+  }
+}
+
 /**
  * Start a new claim — the intake metadata screen, then photos.
  *
@@ -110,12 +119,20 @@ export default function IntakePage() {
   const [taxChoice, setTaxChoice] = useState<string | null>(null)
 
   /**
-   * The claim NAME is derived, which is why the design has no field for it:
-   * insured surname + cause of loss is exactly how the canonical claim reads
-   * ("Godfrey — Kitchen fire"). Asking for it again would invite a third
-   * spelling of facts already on the page.
+   * The claim NAME is the PROJECT name, and the adjuster types it first.
+   *
+   * It used to be derived -- insured surname + cause of loss, the way the
+   * canonical claim reads ("Godfrey — Kitchen fire") -- with no field at all.
+   * Adjusters coming from Xactimate expect the opposite: its first step on a
+   * new project is naming the saved file (GRECO-TREE_DAMAGE, 31HALLOCK-REBUILD),
+   * and that name is how they find the job again in their project list. My
+   * claims now leads with it under the same heading, so it has to be theirs,
+   * not a string Kevin assembled from two other fields.
+   *
+   * Required: without it there is no slug, and no claim.
    */
-  const name = [insuredLast.trim(), lossType.trim()].filter(Boolean).join(' — ')
+  const [projectName, setProjectName] = useState('')
+  const name = projectName.trim()
 
   /**
    * The slug is internal identity, derived silently from that name. It is never
@@ -153,8 +170,25 @@ export default function IntakePage() {
     claimId !== '' && idValid && !dateInvalid && !ppLimitInvalid && !alreadyInvalid
 
   const create = useMutation({
-    mutationFn: () =>
-      api.post<ClaimSummary>('/v1/claims', {
+    mutationFn: async () => {
+      /**
+       * Refuse a project name that is already taken, BEFORE posting.
+       *
+       * `POST /v1/claims` is idempotent on the slug: a claim_id that already
+       * exists comes back UNCHANGED with a 200, not a 409 (FRONTEND.md). With
+       * a derived name that was rare; with a typed one it is ordinary -- two
+       * jobs for the same insured, "GODFREY-KITCHEN" and "Godfrey Kitchen"
+       * -- and the page would carry on and stage the new photos into the old
+       * claim. Nothing on screen would say so.
+       */
+      const existing = await api
+        .get<ClaimSummary>(`/v1/claims/${encodeURIComponent(claimId)}`)
+        .catch((err: unknown) => {
+          if (err instanceof ApiError && err.isMissing) return null
+          throw err
+        })
+      if (existing) throw new ProjectNameTaken(existing.name || existing.claim_id)
+      return api.post<ClaimSummary>('/v1/claims', {
         json: {
           claim_id: claimId,
           // Omit rather than send empty strings: the API treats an absent field
@@ -179,7 +213,8 @@ export default function IntakePage() {
           ...(ppLimitValue !== null ? { personal_property_limit: ppLimitValue } : {}),
           ...(alreadyValue !== null ? { amount_already_claimed: alreadyValue } : {}),
         },
-      }),
+      })
+    },
     onSuccess: (claim) => {
       void queryClient.invalidateQueries({ queryKey: ['claims'] })
       // Only after it lands on a real claim: a value that never got submitted
@@ -195,9 +230,11 @@ export default function IntakePage() {
     },
     onError: (err) =>
       setError(
-        err instanceof ApiError
-          ? `Could not create the claim — HTTP ${err.status}: ${err.message422}`
-          : 'Could not create the claim.',
+        err instanceof ProjectNameTaken
+          ? `You already have a project named “${err.existing}”. Give this one a different project name.`
+          : err instanceof ApiError
+            ? `Could not create the claim — HTTP ${err.status}: ${err.message422}`
+            : 'Could not create the claim.',
       ),
   })
 
@@ -255,6 +292,23 @@ export default function IntakePage() {
           </div>
 
           <div className="k-intake-form">
+            {/* 0 — the saved name, before anything else, as in Xactimate. */}
+            <IntakeField
+              label="Project name"
+              value={projectName}
+              width={320}
+              placeholder="GODFREY-KITCHEN_FIRE"
+              onChange={setProjectName}
+              invalid={name !== '' && (claimId === '' || !idValid)}
+              hint={
+                name === ''
+                  ? 'Required · how you’ll find this claim in My claims'
+                  : claimId === ''
+                    ? 'Use at least one letter or number'
+                    : 'How you’ll find this claim in My claims'
+              }
+            />
+
             {/* 1 — who */}
             <IntakeField
               label="Insured — first name"
@@ -427,7 +481,6 @@ export default function IntakePage() {
               width={240}
               placeholder="Allstate"
               onChange={setCarrier}
-              hint={name ? `Filed as “${name}”` : 'Insured surname + cause of loss name the claim'}
             />
           </div>
 
