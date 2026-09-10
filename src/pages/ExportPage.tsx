@@ -28,21 +28,23 @@ import type { ClaimItem, ClaimItemListResponse, ClaimSummary } from '../lib/type
  *
  * Deviations from the design, by decision:
  * - Options are the ones agreed for carrier submissions: XactContents .xlsx or
- *   Inventory PDF, and for the PDF, Worksheet only or Full packet (worksheet +
- *   captioned photo pages) at 1, 2, 4 or 6 photos per page. The design's
- *   comps / notes toggles and Delivery radio are not ported: nothing produces
- *   them (sharing is the worksheet's Share button).
+ *   a PDF, and for the PDF two toggles -- Inventory and Photos -- so it can be
+ *   the inventory alone, the photos alone, or both, at 1, 2, 4 or 6 captioned
+ *   photos per page. A 500-photo packet is often too big to send a carrier,
+ *   which is why the inventory must stand alone. The design's comps / notes
+ *   toggles and Delivery radio are not ported: nothing produces them (sharing
+ *   is the worksheet's Share button).
  * - No size estimate: the design's "~340 MB" was a literal.
  *
  * Validation flags, never blocks (rule 16), and is computed from the rows.
  */
 
 /**
- * The photo packet needs backend work (photo pages in the PDF renderer, and
- * the `contents` / `photos_per_page` params). Until it ships, FastAPI would
- * drop those params and return the worksheet-only PDF with a 200 -- so the
- * option renders, disabled, instead of producing a packet with no photos.
- * Flip when the backend confirms.
+ * Photo pages need backend work (the PDF renderer, and the `contents` /
+ * `photos_per_page` params). Until they ship, FastAPI would drop those params
+ * and return the inventory-only PDF with a 200 -- so the toggles render,
+ * disabled at Inventory on / Photos off, instead of producing a "photos" PDF
+ * with no photos in it. Flip when the backend confirms.
  */
 const PHOTO_PACKET_LIVE = false
 
@@ -57,7 +59,7 @@ const FORMATS: { id: Format; label: string; sub: string; recommended?: boolean }
     sub: '.xlsx · the worksheet, ready to import',
     recommended: true,
   },
-  { id: 'pdf', label: 'Inventory PDF', sub: '.pdf · formatted report' },
+  { id: 'pdf', label: 'PDF', sub: '.pdf · inventory, photos, or both' },
 ]
 
 const ITEM_PAGE = 500
@@ -84,7 +86,8 @@ export default function ExportPage() {
   })
 
   const [format, setFormat] = useState<Format>('xlsx')
-  const [contents, setContents] = useState<PdfContents>('worksheet')
+  const [withInventory, setWithInventory] = useState(true)
+  const [withPhotos, setWithPhotos] = useState(false)
   const [perPage, setPerPage] = useState<PhotosPerPage>(2)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -99,7 +102,9 @@ export default function ExportPage() {
   }
 
   const c = claim.data
-  const packet = format === 'pdf' && contents === 'packet'
+  // The two toggles, as the API's one `contents` value.
+  const pdfContents: PdfContents =
+    withInventory && withPhotos ? 'packet' : withPhotos ? 'photos' : 'worksheet'
 
   const run = async () => {
     setBusy(true)
@@ -108,7 +113,9 @@ export default function ExportPage() {
       await downloadExport(
         claimId,
         format,
-        packet ? { contents: 'packet', photosPerPage: perPage } : {},
+        format === 'pdf' && pdfContents !== 'worksheet'
+          ? { contents: pdfContents, photosPerPage: perPage }
+          : {},
       )
       void queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
       void queryClient.invalidateQueries({ queryKey: ['claims'] })
@@ -124,7 +131,13 @@ export default function ExportPage() {
   }
 
   const exportLabel =
-    format === 'xlsx' ? 'Export XactContents .xlsx' : packet ? 'Export PDF packet' : 'Export Inventory PDF'
+    format === 'xlsx'
+      ? 'Export XactContents .xlsx'
+      : pdfContents === 'packet'
+        ? 'Export PDF — inventory + photos'
+        : pdfContents === 'photos'
+          ? 'Export PDF — photos'
+          : 'Export PDF — inventory'
 
   return (
     <div className="k-claim-ov">
@@ -291,34 +304,48 @@ export default function ExportPage() {
             {format === 'xlsx' ? (
               <p className="k-export-hint">
                 The worksheet only — every line, ready for the XactContents importer. For photos,
-                choose Inventory PDF.
+                choose PDF.
               </p>
             ) : (
               <>
+                {/* Two independent toggles, as Xactimate's report picker works:
+                    inventory alone, photos alone, or both. At least one stays
+                    on -- an empty PDF is not an export. */}
                 <section className="k-export-sec">
-                  <div className="k-export-sec-h">PDF contents</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    <Choice
-                      on={contents === 'worksheet'}
-                      onPick={() => setContents('worksheet')}
-                      label="Worksheet only"
-                      sub="The line-item table and totals"
-                    />
-                    <Choice
-                      on={contents === 'packet'}
-                      onPick={() => setContents('packet')}
+                  <div className="k-export-sec-h">Include in the PDF</div>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <Toggle
+                      on={withInventory}
+                      onChange={(next) => {
+                        setWithInventory(next)
+                        if (!next) setWithPhotos(true)
+                      }}
                       disabled={!PHOTO_PACKET_LIVE}
-                      label="Full packet — worksheet + photos"
+                      label="Inventory"
                       sub={
                         PHOTO_PACKET_LIVE
-                          ? `The worksheet, then ${fmtInt(c?.photo_count)} photos`
+                          ? 'The line-item worksheet and totals'
+                          : 'The line-item worksheet and totals — always on until photo pages ship'
+                      }
+                    />
+                    <Toggle
+                      on={withPhotos}
+                      onChange={(next) => {
+                        setWithPhotos(next)
+                        if (!next) setWithInventory(true)
+                      }}
+                      disabled={!PHOTO_PACKET_LIVE}
+                      label="Photos"
+                      sub={
+                        PHOTO_PACKET_LIVE
+                          ? `${fmtInt(c?.photo_count)} photos, captioned, in worksheet order`
                           : 'Coming soon — photo pages are being built'
                       }
                     />
                   </div>
                 </section>
 
-                {packet ? (
+                {pdfContents !== 'worksheet' ? (
                   <section className="k-export-sec">
                     <div className="k-export-sec-h">Photos per page</div>
                     <div className="k-segwrap" role="radiogroup" aria-label="Photos per page">
@@ -405,34 +432,42 @@ function Flag({
   )
 }
 
-function Choice({
+/** The design's `.k-toggle` checkbox row (export.jsx "Include" list). */
+function Toggle({
   on,
-  onPick,
+  onChange,
   label,
   sub,
   disabled,
 }: {
   on: boolean
-  onPick: () => void
+  onChange: (next: boolean) => void
   label: string
   sub: string
   disabled?: boolean
 }) {
   return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={on}
-      disabled={disabled}
-      className={`k-radio k-export-choice ${disabled ? 'k-export-choice--off' : ''}`}
-      onClick={onPick}
-    >
-      <span className={`k-radio-dot ${on ? 'k-radio-dot--on' : ''}`} />
-      <span style={{ flex: 1, textAlign: 'left' }}>
-        <span style={{ display: 'block', fontSize: 12.5 }}>{label}</span>
+    <label className={`k-toggle ${disabled ? 'k-toggle--off' : ''}`}>
+      <input
+        type="checkbox"
+        checked={on}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+      <span className="k-toggle-box">{on ? <Icon d={I.check} size={10} stroke={2.5} /> : null}</span>
+      <span style={{ flex: 1 }}>
+        <span
+          style={{
+            display: 'block',
+            fontSize: 12.5,
+            color: disabled ? 'var(--k-fg-3)' : 'var(--k-fg)',
+          }}
+        >
+          {label}
+        </span>
         <span style={{ display: 'block', fontSize: 11, color: 'var(--k-fg-4)' }}>{sub}</span>
       </span>
-    </button>
+    </label>
   )
 }
 

@@ -693,24 +693,6 @@
   margin: 0;
 }
 
-/* .k-radio is a <label> in the design; here it is a real radio button. */
-.k-export-choice {
-  width: 100%;
-  border: 0;
-  background: transparent;
-  font: inherit;
-  color: inherit;
-}
-
-.k-export-choice--off {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.k-export-choice--off:hover {
-  background: transparent;
-}
-
 .k-ws-note {
   padding: 0 16px;
 }
