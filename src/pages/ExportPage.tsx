@@ -40,13 +40,13 @@ import type { ClaimItem, ClaimItemListResponse, ClaimSummary } from '../lib/type
  */
 
 /**
- * Photo pages need backend work (the PDF renderer, and the `contents` /
- * `photos_per_page` params). Until they ship, FastAPI would drop those params
- * and return the inventory-only PDF with a 200 -- so the toggles render,
- * disabled at Inventory on / Photos off, instead of producing a "photos" PDF
- * with no photos in it. Flip when the backend confirms.
+ * What the backend can build. `contents=packet` shipped in 3c193aa, so Photos
+ * can be ticked -- alongside Inventory. `contents=photos` (photos alone) is
+ * the pending addendum and 422s today, so Inventory stays locked on until it
+ * ships. Flip PHOTOS_ONLY_LIVE when the backend confirms it.
  */
-const PHOTO_PACKET_LIVE = false
+const PHOTO_PACKET_LIVE = true
+const PHOTOS_ONLY_LIVE = false
 
 const PER_PAGE: PhotosPerPage[] = [1, 2, 4, 6]
 
@@ -91,6 +91,8 @@ export default function ExportPage() {
   const [perPage, setPerPage] = useState<PhotosPerPage>(2)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  /** A successful export that still needs saying -- e.g. no photos linked. */
+  const [info, setInfo] = useState<string | null>(null)
 
   const items = useMemo(() => itemsPage.data?.items ?? [], [itemsPage.data])
   const check = useMemo(() => validate(items), [items])
@@ -106,24 +108,35 @@ export default function ExportPage() {
   const pdfContents: PdfContents =
     withInventory && withPhotos ? 'packet' : withPhotos ? 'photos' : 'worksheet'
 
+  const wantsPhotos = format === 'pdf' && pdfContents !== 'worksheet'
+
   const run = async () => {
     setBusy(true)
     setError(null)
+    setInfo(null)
     try {
-      await downloadExport(
+      const result = await downloadExport(
         claimId,
         format,
-        format === 'pdf' && pdfContents !== 'worksheet'
-          ? { contents: pdfContents, photosPerPage: perPage }
-          : {},
+        wantsPhotos ? { contents: pdfContents, photosPerPage: perPage } : {},
       )
       void queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
       void queryClient.invalidateQueries({ queryKey: ['claims'] })
+      // Verify against what the server built, never the query string: an
+      // unrecognised param is dropped silently and the PDF comes back without
+      // photos (FRONTEND.md "Photo packet").
+      if (wantsPhotos && result.contents && result.contents !== pdfContents) {
+        setError('The server sent the inventory without photos. Try again, or contact support.')
+      } else if (wantsPhotos && result.photos === 0) {
+        setInfo('No photos are linked to line items yet, so the PDF is the inventory alone.')
+      }
     } catch (err) {
       setError(
-        err instanceof ApiError
-          ? `The export failed — HTTP ${err.status}.${err.requestId ? ` Reference ${err.requestId}.` : ''}`
-          : 'The export failed.',
+        err instanceof ApiError && err.status === 413
+          ? 'This claim has more than 500 photos linked to items, too many for one PDF. Export the inventory alone, or contact support.'
+          : err instanceof ApiError
+            ? `The export failed — HTTP ${err.status}.${err.requestId ? ` Reference ${err.requestId}.` : ''}`
+            : 'The export failed.',
       )
     } finally {
       setBusy(false)
@@ -320,7 +333,7 @@ export default function ExportPage() {
                         setWithInventory(next)
                         if (!next) setWithPhotos(true)
                       }}
-                      disabled={!PHOTO_PACKET_LIVE}
+                      disabled={!PHOTOS_ONLY_LIVE}
                       label="Inventory"
                       sub="The line-item worksheet and totals"
                     />
@@ -334,7 +347,7 @@ export default function ExportPage() {
                       label="Photos"
                       sub={
                         PHOTO_PACKET_LIVE
-                          ? `${fmtInt(c?.photo_count)} photos, captioned, in worksheet order`
+                          ? 'Photos linked to line items, captioned, in worksheet order'
                           : 'Coming soon — photo pages are being built'
                       }
                     />
@@ -359,8 +372,9 @@ export default function ExportPage() {
                       ))}
                     </div>
                     <p className="k-export-hint">
-                      Each photo is captioned with its line #, description and room, in worksheet
-                      order.
+                      Each photo is captioned with its line #, description and room. A PDF with
+                      hundreds of photos takes up to a minute to build and is too large to email —
+                      it downloads to your computer.
                     </p>
                   </section>
                 ) : null}
@@ -373,6 +387,12 @@ export default function ExportPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
             {error ? (
               <span className="k-error">{error}</span>
+            ) : info ? (
+              <span style={{ fontSize: 12, color: 'var(--k-fg-2)' }}>{info}</span>
+            ) : busy && wantsPhotos ? (
+              <span style={{ fontSize: 12, color: 'var(--k-fg-3)' }}>
+                Building the PDF with photos — this can take up to a minute.
+              </span>
             ) : (
               <span style={{ fontSize: 12, color: 'var(--k-fg-3)' }}>
                 Flagged items are for your review. Nothing here blocks the export.

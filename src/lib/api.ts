@@ -175,7 +175,9 @@ export const portal = {
  * Fetching is separate from what happens next, because "download it" and
  * "print it" are different endings to the same request.
  */
-async function fetchBinary(path: string): Promise<{ blob: Blob; filename: string | null }> {
+async function fetchBinary(
+  path: string,
+): Promise<{ blob: Blob; filename: string | null; headers: Headers }> {
   const { data } = await (await import('./supabase')).getSupabase().auth.getSession()
   const token = data.session?.access_token
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -186,11 +188,11 @@ async function fetchBinary(path: string): Promise<{ blob: Blob; filename: string
   }
   const disposition = response.headers.get('Content-Disposition') ?? ''
   const match = /filename="?([^"]+)"?/.exec(disposition)
-  return { blob: await response.blob(), filename: match?.[1] ?? null }
+  return { blob: await response.blob(), filename: match?.[1] ?? null, headers: response.headers }
 }
 
-async function downloadBinary(path: string, fallbackName: string) {
-  const { blob, filename } = await fetchBinary(path)
+async function downloadBinary(path: string, fallbackName: string): Promise<Headers> {
+  const { blob, filename, headers } = await fetchBinary(path)
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
@@ -199,6 +201,7 @@ async function downloadBinary(path: string, fallbackName: string) {
   link.click()
   link.remove()
   URL.revokeObjectURL(url)
+  return headers
 }
 
 /**
@@ -216,29 +219,41 @@ export type ExportOptions = {
   photosPerPage?: PhotosPerPage
 }
 
+/** What the server says it actually built, from the response headers. */
+export type ExportResult = {
+  /** `X-Export-Contents`: worksheet | photos | packet. Null if not exposed. */
+  contents: string | null
+  /** `X-Export-Photos`: photo cells printed. 0 on a packet = no linked photos. */
+  photos: number | null
+}
+
 /**
  * The Proof of Loss. STAMPS `exported_at` -- never call it for a preview.
  *
- * `contents` / `photos_per_page` are sent ONLY for a PDF with photos. The
- * params are the contract asked of the backend (photo pages); FastAPI drops an
- * undeclared query param silently, so until it ships such a request would come
- * back as the inventory-only PDF with a 200. The Export tab therefore gates the
- * photo toggles on PHOTO_PACKET_LIVE rather than trusting the call.
+ * `contents` / `photos_per_page` are sent ONLY for a PDF with photos
+ * (backend 3c193aa: `packet`; `photos` is the pending addendum). FastAPI drops
+ * an undeclared param silently, so callers verify against X-Export-Contents
+ * rather than trusting the query string (FRONTEND.md "Photo packet").
  */
-export function downloadExport(
+export async function downloadExport(
   claimId: string,
   format: 'xlsx' | 'pdf' = 'xlsx',
   options: ExportOptions = {},
-) {
+): Promise<ExportResult> {
   const qs = new URLSearchParams({ format })
   if (format === 'pdf' && options.contents && options.contents !== 'worksheet') {
     qs.set('contents', options.contents)
     qs.set('photos_per_page', String(options.photosPerPage ?? 2))
   }
-  return downloadBinary(
+  const headers = await downloadBinary(
     `/v1/claims/${encodeURIComponent(claimId)}/export?${qs.toString()}`,
     `${claimId}-inventory.${format}`,
   )
+  const photos = headers.get('X-Export-Photos')
+  return {
+    contents: headers.get('X-Export-Contents'),
+    photos: photos === null || photos === '' ? null : Number(photos),
+  }
 }
 
 /**
