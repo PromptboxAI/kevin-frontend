@@ -132,7 +132,12 @@ export default function ClaimsPage() {
 
   const startResize = (index: number, e: React.MouseEvent) => {
     e.preventDefault()
-    drag.current = { index, startX: e.clientX, startW: cols[index] }
+    // From the RENDERED width, not the stored one: Project is a flexible
+    // track, drawn wider than its stored minimum, so starting from the stored
+    // value made the column jump narrower on the first pixel of a drag.
+    const cell = e.currentTarget.parentElement
+    const startW = cell ? Math.round(cell.getBoundingClientRect().width) : cols[index]
+    drag.current = { index, startX: e.clientX, startW }
     document.body.style.cursor = 'col-resize'
     document.body.style.userSelect = 'none'
   }

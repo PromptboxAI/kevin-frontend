@@ -1347,9 +1347,12 @@
 
     /* ── My Claims dashboard ─────────────────────────────────────── */
     .k-claims { width: 100%; min-height: 100%; display: flex; flex-direction: column; background: var(--k-bg); }
+    /* Full width, by request: the 1320px cap left wide empty margins beside a
+       roster that then scrolled sideways. The list uses the window instead,
+       as Xactimate's project list does. Shared with Exports. */
     .k-claims-body {
-      max-width: 1320px; width: 100%; margin: 0 auto;
-      padding: 32px 40px 60px; display: flex; flex-direction: column; gap: 22px;
+      width: 100%; margin: 0 auto;
+      padding: 28px 32px 60px; display: flex; flex-direction: column; gap: 22px;
     }
     .k-claims-stats {
       display: grid; grid-template-columns: repeat(3, auto); gap: 0;
