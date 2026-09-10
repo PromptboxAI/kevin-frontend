@@ -19,7 +19,9 @@ type Tone = 'ok' | 'quiet' | 'accent'
 
 const LABEL: Partial<Record<ClaimStatus, { label: string; tone: Tone }>> = {
   processing: { label: 'Processing', tone: 'accent' },
-  closed: { label: 'Closed', tone: 'ok' },
+  // Grey, not mint: a coloured Closed read as the live one beside navy In
+  // progress. Only open work carries colour.
+  closed: { label: 'Closed', tone: 'quiet' },
   archived: { label: 'Archived', tone: 'quiet' },
 }
 const IN_PROGRESS: { label: string; tone: Tone } = { label: 'In progress', tone: 'accent' }

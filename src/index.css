@@ -185,10 +185,12 @@
   color: var(--k-fg-4);
 }
 
-/* The row being acted on keeps its hover highlight until the menu or dialog
-   closes -- the same colour, so it reads as the row you were on, still held. */
-.k-claim-row:has(> [data-active]) {
-  background: var(--k-bg-2);
+/* The row being acted on stays highlighted until its menu or dialog closes,
+   in the accent tint rather than the hover grey -- selected, not merely
+   pointed at, the way Xactimate marks the chosen project. */
+.k-claim-row:has(> [data-active]),
+.k-claim-row:has(> [data-active]):hover {
+  background: var(--k-accent-soft);
 }
 
 /* Every text column is one line that truncates, with the full value in the
@@ -201,21 +203,30 @@
   white-space: nowrap;
 }
 
+/* Readability, by request, against Xactimate's project list: the project
+   name is what the eye hunts for, so it is the boldest, darkest thing in the
+   row. Everything else is body size at full contrast -- the old 12.5px
+   --k-fg-2 read as disabled beside it. */
 .k-claim-name {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--k-fg);
+}
+
+.k-claim-name:hover {
+  color: var(--k-accent-2);
 }
 
 .k-claim-number {
   font-family: var(--k-font-mono);
-  font-size: 12px;
-  color: var(--k-fg-2);
+  font-size: 13px;
+  color: var(--k-fg);
 }
 
 .k-claim-insured,
 .k-claim-carrier {
-  font-size: 12.5px;
-  color: var(--k-fg-2);
+  font-size: 13.5px;
+  color: var(--k-fg);
 }
 
 .k-claim-num,
@@ -226,12 +237,14 @@
 }
 
 .k-claim-num {
-  font-size: 12.5px;
+  font-size: 13px;
+  color: var(--k-fg);
 }
 
 .k-claim-rcv {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--k-fg);
 }
 
 .k-claim-status {

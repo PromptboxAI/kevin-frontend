@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
@@ -35,6 +35,52 @@ const SERVER_STATUS: Partial<Record<Chip, string>> = {
 /** What ClaimStatusChip labels "In progress": open, and not still building. */
 const IN_PROGRESS = new Set(['draft', 'in_review', 'exported'])
 
+/**
+ * Roster columns, in Xactimate's project-list order, with default widths in px.
+ * Resizable like the worksheet: drag a header's right edge, double-click it to
+ * reset. Project is the flexible track -- `minmax(width, 1fr)` -- so the grid
+ * still fills the list when every other column is narrow. The last column (the
+ * row menu) has no header and no handle.
+ */
+const COLUMNS: { label: string; width: number; align?: 'right' }[] = [
+  { label: 'Project', width: 220 },
+  { label: 'Claim number', width: 140 },
+  { label: 'Insured', width: 150 },
+  { label: 'Carrier', width: 130 },
+  { label: 'Items / photos', width: 100, align: 'right' },
+  { label: 'Status', width: 130 },
+  { label: 'Total', width: 130, align: 'right' },
+  { label: '', width: 100 },
+]
+const COL_DEFAULTS = COLUMNS.map((c) => c.width)
+const COL_MIN = 60
+/** Per-browser convenience only; a missing or unreadable value means defaults. */
+const COLS_KEY = 'kevin.claims.cols.v1'
+
+function loadCols(): number[] {
+  try {
+    const saved = JSON.parse(localStorage.getItem(COLS_KEY) ?? 'null') as unknown
+    if (
+      Array.isArray(saved) &&
+      saved.length === COL_DEFAULTS.length &&
+      saved.every((n) => typeof n === 'number' && Number.isFinite(n) && n >= COL_MIN)
+    ) {
+      return saved as number[]
+    }
+  } catch {
+    // Storage blocked (private window, site data off): defaults.
+  }
+  return COL_DEFAULTS
+}
+
+function saveCols(cols: number[]) {
+  try {
+    localStorage.setItem(COLS_KEY, JSON.stringify(cols))
+  } catch {
+    // Not worth surfacing: the widths still apply for this visit.
+  }
+}
+
 export default function ClaimsPage() {
   const { session } = useAuth()
   const [search, setSearch] = useState('')
@@ -55,6 +101,56 @@ export default function ClaimsPage() {
     const t = window.setTimeout(() => setNoticeState(null), 5000)
     return () => window.clearTimeout(t)
   }, [notice])
+
+  const [cols, setCols] = useState<number[]>(loadCols)
+  const drag = useRef<{ index: number; startX: number; startW: number } | null>(null)
+
+  useEffect(() => {
+    const move = (e: MouseEvent) => {
+      if (!drag.current) return
+      const { index, startX, startW } = drag.current
+      const next = Math.max(COL_MIN, Math.round(startW + (e.clientX - startX)))
+      setCols((prev) => prev.map((c, i) => (i === index ? next : c)))
+    }
+    const up = () => {
+      if (!drag.current) return
+      drag.current = null
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      setCols((prev) => {
+        saveCols(prev)
+        return prev
+      })
+    }
+    document.addEventListener('mousemove', move)
+    document.addEventListener('mouseup', up)
+    return () => {
+      document.removeEventListener('mousemove', move)
+      document.removeEventListener('mouseup', up)
+    }
+  }, [])
+
+  const startResize = (index: number, e: React.MouseEvent) => {
+    e.preventDefault()
+    drag.current = { index, startX: e.clientX, startW: cols[index] }
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+  }
+  const resetCol = (index: number) =>
+    setCols((prev) => {
+      const next = prev.map((c, i) => (i === index ? COL_DEFAULTS[index] : c))
+      saveCols(next)
+      return next
+    })
+
+  const listStyle = {
+    ['--claim-cols' as string]: cols
+      .map((c, i) => (i === 0 ? `minmax(${c}px, 1fr)` : `${c}px`))
+      .join(' '),
+    // Tracks + 7 gaps of 14px + 36px of row padding: widening a column past
+    // the list overflows it horizontally rather than squeezing Project.
+    ['--claim-roww' as string]: `${cols.reduce((a, b) => a + b, 0) + 7 * 14 + 36}px`,
+  } as React.CSSProperties
 
   const status = SERVER_STATUS[chip]
 
@@ -210,20 +306,30 @@ export default function ClaimsPage() {
         ) : null}
 
         {visible.length > 0 ? (
-          <section className="k-claims-list">
+          <section className="k-claims-list" style={listStyle}>
             {/* Column order follows Xactimate's project list -- Project, Claim
                 number, Insured, then Status before Total -- because that is
                 the list these adjusters already scan all day. "Total" is the
                 tax-inclusive RCV; the worksheet still calls it RCV + Tax. */}
             <div className="k-claim-row k-claim-row--head">
-              <div>Project</div>
-              <div>Claim number</div>
-              <div>Insured</div>
-              <div>Carrier</div>
-              <div style={{ textAlign: 'right' }}>Items / photos</div>
-              <div>Status</div>
-              <div style={{ textAlign: 'right' }}>Total</div>
-              <div />
+              {COLUMNS.map((col, i) =>
+                col.label ? (
+                  <div key={col.label} style={col.align ? { textAlign: col.align } : undefined}>
+                    {col.label}
+                    <span
+                      className="k-col-resize"
+                      role="separator"
+                      aria-orientation="vertical"
+                      aria-label={`Resize ${col.label} column`}
+                      onMouseDown={(e) => startResize(i, e)}
+                      onDoubleClick={() => resetCol(i)}
+                      title="Drag to resize · double-click to reset"
+                    />
+                  </div>
+                ) : (
+                  <div key="menu" />
+                ),
+              )}
             </div>
 
             {visible.map((claim) => (
