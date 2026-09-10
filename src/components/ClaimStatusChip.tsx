@@ -19,12 +19,13 @@ type Tone = 'ok' | 'quiet' | 'accent'
 
 const LABEL: Partial<Record<ClaimStatus, { label: string; tone: Tone }>> = {
   processing: { label: 'Processing', tone: 'accent' },
-  // Grey, not mint: a coloured Closed read as the live one beside navy In
-  // progress. Only open work carries colour.
+  // Grey: only open work carries colour, so a closed claim never reads as live.
   closed: { label: 'Closed', tone: 'quiet' },
   archived: { label: 'Archived', tone: 'quiet' },
 }
-const IN_PROGRESS: { label: string; tone: Tone } = { label: 'In progress', tone: 'accent' }
+// Green (mint, --k-ok): open and workable. Navy stays with Processing, so the
+// two open states are told apart by colour as well as label.
+const IN_PROGRESS: { label: string; tone: Tone } = { label: 'In progress', tone: 'ok' }
 
 export default function ClaimStatusChip({ status }: { status: ClaimStatus }) {
   const meta = LABEL[status] ?? IN_PROGRESS
