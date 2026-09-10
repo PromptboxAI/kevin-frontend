@@ -600,6 +600,77 @@
   color: var(--k-fg-4);
 }
 
+/* The item photo in a portal row, and the full-size view it opens. */
+.k-portal-thumb {
+  display: block;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--k-line);
+  border-radius: 5px;
+  background: var(--k-bg-2);
+  overflow: hidden;
+  cursor: zoom-in;
+}
+
+.k-portal-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.k-portal-thumb:focus-visible {
+  outline: 2px solid var(--k-accent);
+  outline-offset: 1px;
+}
+
+.k-portal-thumb--ghost {
+  cursor: default;
+}
+
+.k-portal-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(15, 18, 32, 0.72);
+}
+
+.k-portal-viewer figure {
+  position: relative;
+  margin: 0;
+  max-width: min(1100px, 100%);
+  background: var(--k-bg);
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: 0 30px 80px rgba(15, 20, 40, 0.4);
+}
+
+.k-portal-viewer img {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100vh - 140px);
+  margin: 0 auto;
+  border-radius: 6px;
+  object-fit: contain;
+}
+
+.k-portal-viewer figcaption {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--k-fg-2);
+}
+
+.k-portal-viewer .k-icon-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--k-bg);
+}
+
 /* --- Worksheet page chrome the prototype expressed with inline styles --- */
 .k-claim-h1 {
   font-family: var(--k-font-display);

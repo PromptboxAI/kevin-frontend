@@ -40,8 +40,12 @@ import type { PortalItem, PortalResponse } from '../lib/portal'
  * Do not build a third, pending-edit state.
  */
 
-/** Export-parity columns minus the adjuster-only internals. */
-const COLS = '40px 90px 40px 1.5fr 1fr 74px 78px 64px 84px 42px 52px 74px 84px 46px'
+/**
+ * Export-parity columns minus the adjuster-only internals, plus the item's
+ * photo (second). The payload always carried `image_url` per row; nothing
+ * rendered it, while the paywall promised "the photos".
+ */
+const COLS = '40px 48px 90px 40px 1.5fr 1fr 74px 78px 64px 84px 42px 52px 74px 84px 46px'
 const NUM: React.CSSProperties = {
   textAlign: 'right',
   fontFamily: 'var(--k-font-mono)',
@@ -221,6 +225,22 @@ function Portal({
   /** Rows whose recompute is in flight -- money dims, never blanks. */
   const [pending, setPending] = useState<Set<number>>(new Set())
   const [rowError, setRowError] = useState<string | null>(null)
+  /** The photo open full-size, if any. */
+  const [viewing, setViewing] = useState<PortalItem | null>(null)
+
+  /**
+   * `image_url` is a signed URL that lives ~5 minutes (FRONTEND.md), so a page
+   * left open goes stale and its images 403. A failed image re-reads the
+   * portal for fresh URLs -- at most once a minute, so a photo that is truly
+   * missing cannot loop the request.
+   */
+  const lastImageRefresh = useRef(0)
+  const refreshImages = () => {
+    const now = Date.now()
+    if (now - lastImageRefresh.current < 60_000) return
+    lastImageRefresh.current = now
+    void queryClient.invalidateQueries({ queryKey: ['portal', token] })
+  }
 
   /**
    * The insured corrects one line.
@@ -502,6 +522,7 @@ function Portal({
               }}
             >
               <span>#</span>
+              <span>Photo</span>
               <span>Room</span>
               <span style={{ textAlign: 'right' }}>Qty</span>
               <span>Description</span>
@@ -527,6 +548,8 @@ function Portal({
                 editable={!paywalled || paid}
                 pending={pending.has(item.id)}
                 onAge={(years) => void saveAge(item, years)}
+                onPhoto={() => setViewing(item)}
+                onPhotoError={refreshImages}
               />
             ))}
 
@@ -552,6 +575,7 @@ function Portal({
                     <span style={{ fontFamily: 'var(--k-font-mono)', fontSize: 10.5 }}>
                       {String(shown + i + 1).padStart(3, '0')}
                     </span>
+                    <span className="k-portal-thumb k-portal-thumb--ghost" />
                     <span>██████</span>
                     <span style={{ textAlign: 'right' }}>█</span>
                     <span>█████ ████████ ██████</span>
@@ -639,6 +663,15 @@ function Portal({
           </section>
         ) : null}
 
+        {/* Read the row fresh from the payload: a refresh after an expired
+            URL replaces image_url, and the open viewer should get the new one. */}
+        {viewing ? (
+          <PhotoViewer
+            item={items.find((it) => it.id === viewing.id) ?? viewing}
+            onClose={() => setViewing(null)}
+          />
+        ) : null}
+
         {checkoutOpen && !paid ? (
           <div
             style={{
@@ -721,12 +754,16 @@ function Row({
   editable,
   pending,
   onAge,
+  onPhoto,
+  onPhotoError,
 }: {
   item: PortalItem
   n: number
   editable: boolean
   pending: boolean
   onAge: (years: number | null) => void
+  onPhoto: () => void
+  onPhotoError: () => void
 }) {
   // While the server recomputes, the derived money DIMS rather than blanking:
   // a cell that empties reads as "your edit deleted the price".
@@ -746,6 +783,7 @@ function Row({
       <span style={{ fontFamily: 'var(--k-font-mono)', fontSize: 10.5, color: 'var(--k-fg-4)' }}>
         {String(n).padStart(4, '0')}
       </span>
+      <PhotoThumb item={item} onOpen={onPhoto} onError={onPhotoError} />
       <span
         style={{
           color: 'var(--k-fg-3)',
@@ -813,6 +851,78 @@ function Row({
           <span style={{ color: 'var(--k-fg-4)' }}>—</span>
         )}
       </span>
+    </div>
+  )
+}
+
+/**
+ * The item's photo in its row. A button, so it is reachable by keyboard and
+ * opens the full-size view. No photo (a written-list item, or none stored)
+ * reads as a dash, like any other empty cell.
+ */
+function PhotoThumb({
+  item,
+  onOpen,
+  onError,
+}: {
+  item: PortalItem
+  onOpen: () => void
+  onError: () => void
+}) {
+  const [broken, setBroken] = useState(false)
+  // A fresh URL after a refresh gets a fresh try.
+  const [triedUrl, setTriedUrl] = useState(item.image_url)
+  if (triedUrl !== item.image_url) {
+    setTriedUrl(item.image_url)
+    setBroken(false)
+  }
+
+  if (!item.image_url || broken) {
+    return <span style={{ color: 'var(--k-fg-4)', fontSize: 11.5 }}>—</span>
+  }
+  return (
+    <button
+      type="button"
+      className="k-portal-thumb"
+      onClick={onOpen}
+      title="View photo"
+      aria-label={`View photo of ${item.description || `line ${item.id}`}`}
+    >
+      <img
+        src={item.image_url}
+        alt=""
+        loading="lazy"
+        onError={() => {
+          setBroken(true)
+          onError()
+        }}
+      />
+    </button>
+  )
+}
+
+/** Full-size photo over the page. Click outside, the ×, or Escape closes it. */
+function PhotoViewer({ item, onClose }: { item: PortalItem; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  return (
+    <div className="k-portal-viewer" role="dialog" aria-modal="true" onClick={onClose}>
+      <figure onClick={(e) => e.stopPropagation()}>
+        <button type="button" className="k-icon-btn" aria-label="Close" onClick={onClose}>
+          <Icon d={I.close} size={15} />
+        </button>
+        {item.image_url ? <img src={item.image_url} alt={item.description ?? ''} /> : null}
+        <figcaption>
+          <strong>{item.description || '—'}</strong>
+          {item.room_area ? <span> · {item.room_area}</span> : null}
+        </figcaption>
+      </figure>
     </div>
   )
 }
