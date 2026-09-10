@@ -3,22 +3,23 @@ import { createPortal } from 'react-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { I, Icon } from './Icon'
-import { downloadExport } from '../lib/api'
+import { downloadExport, printExport } from '../lib/api'
 import { claimAction, deleteClaim, duplicateClaim } from '../lib/mutations'
-import { fmtInt } from '../lib/format'
+import { fmtDate, fmtInt } from '../lib/format'
 import { CLOSED_STATUSES } from '../lib/types'
 import type { ClaimSummary } from '../lib/types'
 
 /** Ported from ClaimRowMenu in design/components/claims-dashboard.jsx. */
 
-type Modal = 'duplicate' | 'export' | 'archive' | 'delete' | null
+type Modal = 'duplicate' | 'export' | 'print' | 'archive' | 'delete' | null
 
 export default function ClaimRowMenu({
   claim,
   onNotice,
 }: {
   claim: ClaimSummary
-  onNotice: (message: string) => void
+  /** `error` notices stay until dismissed; everything else clears itself. */
+  onNotice: (message: string, tone?: 'error') => void
 }) {
   const [open, setOpen] = useState(false)
   const [modal, setModal] = useState<Modal>(null)
@@ -115,19 +116,17 @@ export default function ClaimRowMenu({
       void refresh()
       onNotice(`${claim.name} is now ${result.status.replace('_', ' ')}.`)
     },
-    onError: (error) => onNotice(error instanceof Error ? error.message : 'That action failed.'),
+    onError: (error) => onNotice(error instanceof Error ? error.message : 'That action failed.', 'error'),
   })
 
   const remove = useMutation({
     mutationFn: () => deleteClaim(claim.claim_id),
-    onSuccess: (result) => {
-      void refresh()
-      // Photos are never destroyed by a claim delete -- say so.
-      onNotice(
-        `Deleted ${claim.name} · ${fmtInt(result.deleted_items)} items removed · photos kept in storage.`,
-      )
-    },
-    onError: (error) => onNotice(error instanceof Error ? error.message : 'Delete failed.'),
+    // No success notice. The adjuster typed DELETE and confirmed; the row
+    // leaving the list is the confirmation, and a banner they then had to
+    // dismiss was noise. (It also used to say "photos kept in storage", which
+    // was false for a CLAIM delete -- see the confirm copy below.)
+    onSuccess: () => void refresh(),
+    onError: (error) => onNotice(error instanceof Error ? error.message : 'Delete failed.', 'error'),
   })
 
   /**
@@ -196,7 +195,20 @@ export default function ClaimRowMenu({
             label="Print"
             disabled={busy}
             why="Available when processing finishes"
-            onClick={() => act(() => void downloadExport(claim.claim_id, 'pdf'))}
+            /* Print hits the Proof of Loss endpoint, so it STAMPS the date on a
+               claim not yet exported -- it used to do that silently, and put up
+               a save dialog rather than a print dialog. Same rule as the
+               worksheet's Export: exported goes straight through, otherwise
+               ask first. */
+            onClick={() =>
+              act(() =>
+                claim.exported_at
+                  ? void printExport(claim.claim_id).catch((error) =>
+                      onNotice(error instanceof Error ? error.message : 'Print failed.', 'error'),
+                    )
+                  : setModal('print'),
+              )
+            }
           />
 
           <div className="k-avatar-menu-div" />
@@ -236,8 +248,13 @@ export default function ClaimRowMenu({
       {modal === 'duplicate' ? (
         <DuplicateModal claim={claim} onClose={() => setModal(null)} onNotice={onNotice} />
       ) : null}
-      {modal === 'export' ? (
-        <ExportModal claim={claim} onClose={() => setModal(null)} onNotice={onNotice} />
+      {modal === 'export' || modal === 'print' ? (
+        <ExportModal
+          claim={claim}
+          intent={modal}
+          onClose={() => setModal(null)}
+          onNotice={onNotice}
+        />
       ) : null}
       {modal === 'archive' || modal === 'delete' ? (
         <ConfirmModal
@@ -334,7 +351,7 @@ function DuplicateModal({
 }: {
   claim: ClaimSummary
   onClose: () => void
-  onNotice: (m: string) => void
+  onNotice: (m: string, tone?: 'error') => void
 }) {
   const [name, setName] = useState(`${claim.name} (copy)`)
   const queryClient = useQueryClient()
@@ -347,7 +364,7 @@ function DuplicateModal({
       onNotice(`Copied to ${result.name}.`)
       onClose()
     },
-    onError: (error) => onNotice(error instanceof Error ? error.message : 'Duplicate failed.'),
+    onError: (error) => onNotice(error instanceof Error ? error.message : 'Duplicate failed.', 'error'),
   })
 
   return (
@@ -388,28 +405,43 @@ function DuplicateModal({
   )
 }
 
+/**
+ * Export or print, from the claims menu.
+ *
+ * Both hit the Proof of Loss endpoint, and the FIRST call on a claim stamps
+ * `exported_at` permanently. This dialog used to say nothing about that -- only
+ * a code comment did -- so the dashboard offered two unguarded ways to date a
+ * claim while the worksheet's Export asked first. It now shows the same warning
+ * on a claim not yet exported, and says the date is already set on one that is.
+ */
 function ExportModal({
   claim,
+  intent,
   onClose,
   onNotice,
 }: {
   claim: ClaimSummary
+  intent: 'export' | 'print'
   onClose: () => void
-  onNotice: (m: string) => void
+  onNotice: (m: string, tone?: 'error') => void
 }) {
-  const [format, setFormat] = useState<'xlsx' | 'pdf'>('xlsx')
+  const printing = intent === 'print'
+  // Printing is the PDF by definition; there is nothing to choose.
+  const [format, setFormat] = useState<'xlsx' | 'pdf'>(printing ? 'pdf' : 'xlsx')
   const [busy, setBusy] = useState(false)
   const queryClient = useQueryClient()
+  const firstExport = !claim.exported_at
 
   const run = async () => {
     setBusy(true)
     try {
-      await downloadExport(claim.claim_id, format)
+      if (printing) await printExport(claim.claim_id)
+      else await downloadExport(claim.claim_id, format)
       // Exporting stamps exported_at, so the derived status moves.
       void queryClient.invalidateQueries({ queryKey: ['claims'] })
       onClose()
     } catch (error) {
-      onNotice(error instanceof Error ? error.message : 'Export failed.')
+      onNotice(error instanceof Error ? error.message : 'Export failed.', 'error')
     } finally {
       setBusy(false)
     }
@@ -417,7 +449,7 @@ function ExportModal({
 
   return (
     <Shell
-      kicker="Export claim"
+      kicker={printing ? 'Print claim' : 'Export claim'}
       title={claim.name}
       onClose={onClose}
       footer={
@@ -426,26 +458,43 @@ function ExportModal({
             Cancel
           </button>
           <button type="button" className="k-btn" disabled={busy} onClick={() => void run()}>
-            {busy ? 'Preparing…' : 'Download'}
+            {busy ? 'Preparing…' : printing ? 'Print' : 'Download'}
           </button>
         </>
       }
     >
-      <label className="k-insp-field">
-        <span className="k-modal-label">Format</span>
-        <select
-          className="k-insp-input"
-          value={format}
-          onChange={(e) => setFormat(e.target.value as 'xlsx' | 'pdf')}
-        >
-          <option value="xlsx">Xactimate (Excel) · .xlsx · XactContents template</option>
-          <option value="pdf">Inventory PDF</option>
-        </select>
-      </label>
-      <div className="k-modal-note">
-        Saves as <span className="k-mono">{claim.claim_id}-inventory.{format}</span>. Every cell is
-        a static value — the file is a snapshot of the claim record.
-      </div>
+      {printing ? null : (
+        <label className="k-insp-field">
+          <span className="k-modal-label">Format</span>
+          <select
+            className="k-insp-input"
+            value={format}
+            onChange={(e) => setFormat(e.target.value as 'xlsx' | 'pdf')}
+          >
+            <option value="xlsx">Xactimate (Excel) · .xlsx · XactContents template</option>
+            <option value="pdf">Inventory PDF</option>
+          </select>
+        </label>
+      )}
+      {firstExport ? (
+        <div className="k-modal-note k-modal-note--danger">
+          This is the finished document, not a preview.{' '}
+          {printing ? 'Printing' : 'Exporting'} it dates your <strong>Proof of Loss</strong> as
+          today, and that date is permanent — it is what a client or carrier reads as the day the
+          schedule was produced.
+        </div>
+      ) : (
+        <div className="k-modal-note">
+          Already exported {fmtDate(claim.exported_at)}.{' '}
+          {printing ? 'Printing' : 'Downloading'} again never moves that date.
+        </div>
+      )}
+      {printing ? null : (
+        <div className="k-modal-note">
+          Saves as <span className="k-mono">{claim.claim_id}-inventory.{format}</span>. Every cell
+          is a static value — the file is a snapshot of the claim record.
+        </div>
+      )}
     </Shell>
   )
 }
@@ -491,9 +540,14 @@ function ConfirmModal({
       <div className={danger ? 'k-modal-note k-modal-note--danger' : 'k-modal-note'}>
         {danger ? (
           <>
-            Permanently deletes this claim and all {fmtInt(claim.item_count)} of its items.{' '}
-            <strong>Photos are kept</strong> — they stay in storage, detached. This cannot be
-            undone.
+            Permanently deletes this claim, its {fmtInt(claim.item_count)} item
+            {claim.item_count === 1 ? '' : 's'}
+            {(claim.photo_count ?? 0) > 0
+              ? ` and ${fmtInt(claim.photo_count)} photo${claim.photo_count === 1 ? '' : 's'}`
+              : ''}
+            . This cannot be undone.{' '}
+            <strong>To keep everything, archive it instead</strong> — archived claims stay under
+            the Archived filter and can be restored.
             {busy ? ' Lines are still pricing; deleting now fails those jobs.' : ''}
           </>
         ) : (

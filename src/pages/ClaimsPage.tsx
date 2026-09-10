@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
@@ -35,7 +35,22 @@ export default function ClaimsPage() {
   const { session } = useAuth()
   const [search, setSearch] = useState('')
   const [chip, setChip] = useState<Chip>('All')
-  const [notice, setNotice] = useState<string | null>(null)
+  /**
+   * Success notices clear themselves; errors stay until dismissed.
+   *
+   * Every notice here used to wait for a click on "Dismiss", so confirming a
+   * delete left a banner the adjuster then had to clear -- after they had
+   * already typed DELETE and confirmed. An error is different: one that
+   * vanished before it was read is worse than one you had to close.
+   */
+  const [notice, setNoticeState] = useState<{ text: string; error: boolean } | null>(null)
+  const setNotice = (text: string, tone?: 'error') =>
+    setNoticeState({ text, error: tone === 'error' })
+  useEffect(() => {
+    if (!notice || notice.error) return
+    const t = window.setTimeout(() => setNoticeState(null), 5000)
+    return () => window.clearTimeout(t)
+  }, [notice])
 
   const status = SERVER_STATUS[chip]
 
@@ -163,8 +178,8 @@ export default function ClaimsPage() {
 
         {notice ? (
           <div className="k-ws-bar">
-            <span>{notice}</span>
-            <button type="button" className="k-link" onClick={() => setNotice(null)}>
+            <span>{notice.text}</span>
+            <button type="button" className="k-link" onClick={() => setNoticeState(null)}>
               Dismiss
             </button>
           </div>
@@ -212,7 +227,13 @@ export default function ClaimsPage() {
   )
 }
 
-function Row({ claim, onNotice }: { claim: ClaimSummary; onNotice: (m: string) => void }) {
+function Row({
+  claim,
+  onNotice,
+}: {
+  claim: ClaimSummary
+  onNotice: (m: string, tone?: 'error') => void
+}) {
   return (
     <div className="k-claim-row">
       <div>

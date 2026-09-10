@@ -158,8 +158,11 @@ export const portal = {
 /**
  * Exports are server-generated binaries (xlsx | pdf) with a
  * Content-Disposition filename -- not JSON, so they bypass request().
+ *
+ * Fetching is separate from what happens next, because "download it" and
+ * "print it" are different endings to the same request.
  */
-async function downloadBinary(path: string, fallbackName: string) {
+async function fetchBinary(path: string): Promise<{ blob: Blob; filename: string | null }> {
   const { data } = await (await import('./supabase')).getSupabase().auth.getSession()
   const token = data.session?.access_token
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -168,14 +171,17 @@ async function downloadBinary(path: string, fallbackName: string) {
   if (!response.ok) {
     throw new ApiError(response.status, await response.text(), response.headers.get('X-Request-ID'))
   }
-
   const disposition = response.headers.get('Content-Disposition') ?? ''
   const match = /filename="?([^"]+)"?/.exec(disposition)
-  const blob = await response.blob()
+  return { blob: await response.blob(), filename: match?.[1] ?? null }
+}
+
+async function downloadBinary(path: string, fallbackName: string) {
+  const { blob, filename } = await fetchBinary(path)
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
-  link.download = match?.[1] ?? fallbackName
+  link.download = filename ?? fallbackName
   document.body.appendChild(link)
   link.click()
   link.remove()
@@ -188,6 +194,49 @@ export function downloadExport(claimId: string, format: 'xlsx' | 'pdf' = 'xlsx')
     `/v1/claims/${encodeURIComponent(claimId)}/export?format=${format}`,
     `${claimId}-inventory.${format}`,
   )
+}
+
+/**
+ * Print the inventory PDF: open the browser's print dialog on it.
+ *
+ * "Print" in the claims menu used to call downloadExport(…, 'pdf'), so it put
+ * up a save-to-computer dialog instead of a print dialog. Worse, it hits the
+ * SAME endpoint, so on a claim not yet exported it silently and permanently
+ * stamped the Proof of Loss date -- the one irreversible action the worksheet
+ * guards behind a confirm. THIS STILL STAMPS: there is no non-stamping PDF
+ * route (the old /preview was removed). Callers must confirm first on an
+ * unexported claim, exactly as they do before downloadExport.
+ *
+ * Printed from a hidden iframe over a blob URL. That opens the real print
+ * dialog in Chrome, Edge and Firefox; where the browser refuses to print a PDF
+ * from a frame, it falls back to opening the PDF in a tab, which carries its
+ * own print button -- a new tab beats a silent no-op.
+ */
+export async function printExport(claimId: string): Promise<void> {
+  const { blob } = await fetchBinary(
+    `/v1/claims/${encodeURIComponent(claimId)}/export?format=pdf`,
+  )
+  const url = URL.createObjectURL(blob)
+  const frame = document.createElement('iframe')
+  frame.setAttribute('aria-hidden', 'true')
+  frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;'
+  frame.src = url
+  document.body.appendChild(frame)
+  await new Promise<void>((resolve) => {
+    frame.onload = () => resolve()
+  })
+  try {
+    frame.contentWindow?.focus()
+    frame.contentWindow?.print()
+  } catch {
+    window.open(url, '_blank', 'noopener')
+  }
+  // The print dialog holds the document until it closes, and there is no
+  // reliable "printed" event, so the frame is cleaned up well after.
+  window.setTimeout(() => {
+    frame.remove()
+    URL.revokeObjectURL(url)
+  }, 60_000)
 }
 
 /**
