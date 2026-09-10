@@ -208,9 +208,23 @@ export type DeleteClaimResponse = {
   status: string
   claim_id: string
   deleted_items: number
+  /**
+   * FILES, not photos (backend 6db3299): a staged photo is two files
+   * (original + grid thumbnail), and receipts and delivered documents count
+   * too. Never render this as "N photos".
+   */
+  deleted_files?: number
+  /** Files kept because a duplicate of this claim still uses them. */
+  kept_shared?: number
+  /** Storage was briefly down; queued for cleanup. Not an error -- never shown. */
+  queued_files?: number
 }
 
-/** Cascades to items and rooms. Evidence images are left in storage. */
+/**
+ * Cascades to items and rooms, AND deletes the claim's stored files (backend
+ * 6db3299) -- except files a duplicate still shares, which go when the last
+ * claim using them is deleted.
+ */
 export function deleteClaim(claimId: string) {
   return api.delete<DeleteClaimResponse>(`/v1/claims/${encodeURIComponent(claimId)}`)
 }

@@ -517,7 +517,7 @@ function ConfirmModal({
             {(claim.photo_count ?? 0) > 0
               ? ` and ${fmtInt(claim.photo_count)} photo${claim.photo_count === 1 ? '' : 's'}`
               : ''}
-            . This cannot be undone.{' '}
+            . This cannot be undone. Photos shared with a copy of this claim are kept.{' '}
             <strong>To keep everything, archive it instead</strong> — archived claims stay under
             the Archived filter and can be restored.
             {busy ? ' Lines are still pricing; deleting now fails those jobs.' : ''}
