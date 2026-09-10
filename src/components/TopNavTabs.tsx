@@ -1,8 +1,11 @@
 import { Link, useLocation } from 'react-router-dom'
 
-/** Ported from top-nav.jsx. Routes not built yet stay visible but inert. */
+/**
+ * Ported from top-nav.jsx, minus its "New claim" tab. Tabs are places; starting
+ * a claim is an action, and it lives in the header as NewClaimButton instead.
+ * Routes not built yet stay visible but inert.
+ */
 const TABS: [string, string | null][] = [
-  ['New claim', '/claims/new'],
   ['My claims', '/claims'],
   ['Exports', '/exports'],
   ['Settings', '/settings'],
@@ -11,9 +14,10 @@ const TABS: [string, string | null][] = [
 export default function TopNavTabs() {
   const { pathname } = useLocation()
 
-  // startsWith alone lights BOTH "New claim" and "My claims" on /claims/new,
-  // because /claims is a prefix of it. Exactly one tab is active: the one with
-  // the LONGEST matching path.
+  // Exactly one tab is active: the one with the LONGEST matching path. Every
+  // claim screen (/claims/new, /claims/:id/...) sits under /claims, so they
+  // light My claims -- you are inside the claims area. Longest-match keeps that
+  // correct if a tab ever nests under another.
   const activeTo = TABS.reduce<string | null>((best, [, to]) => {
     if (to === null) return best
     const matches = pathname === to || pathname.startsWith(to + '/')

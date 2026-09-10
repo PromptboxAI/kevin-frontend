@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
+import NewClaimButton from '../components/NewClaimButton'
 import Badge from '../components/Badge'
 import ClaimRowMenu from '../components/ClaimRowMenu'
 import ClaimStatusChip from '../components/ClaimStatusChip'
@@ -97,13 +98,7 @@ export default function ClaimsPage() {
 
   return (
     <div className="k-shell">
-      <AppHeader
-        actions={
-          <Link to="/claims/new" className="k-btn">
-            <Icon d={I.plus} size={12} /> New claim
-          </Link>
-        }
-      />
+      <AppHeader actions={<NewClaimButton />} />
 
       <div className="k-claims-body">
         <div className="k-claims-head">

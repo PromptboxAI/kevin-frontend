@@ -680,7 +680,7 @@ export default function WorksheetPage() {
                 ? 'Preparing…'
                 : claim.data?.exported_at
                   ? 'Download export'
-                  : 'Generate carrier export'}
+                  : 'Export'}
             </button>
             {/* Finishing a claim happens while looking at it, not on the walk
                 back to the dashboard. */}
@@ -1270,7 +1270,7 @@ export default function WorksheetPage() {
           <div className="k-notemodal" onClick={(e) => e.stopPropagation()}>
             <div className="k-notemodal-hd">
               <div>
-                <div className="k-notemodal-t">Generate the carrier export?</div>
+                <div className="k-notemodal-t">Export this claim?</div>
                 <div className="k-notemodal-s">
                   {fmtInt(claim.data?.item_count ?? 0)} line items ·{' '}
                   {claim.data?.claim_number ?? claimId}
@@ -1290,8 +1290,8 @@ export default function WorksheetPage() {
               <p className="k-notemodal-lede">
                 This is the finished document, not a preview. Generating it dates your{' '}
                 <strong style={{ color: 'var(--k-fg-2)' }}>Proof of Loss</strong> as today, and
-                that date is permanent — it is what the carrier reads as the day the schedule
-                was produced.
+                that date is permanent — it is what a client or carrier reads as the day the
+                schedule was produced.
               </p>
               <p className="k-notemodal-lede">
                 You can re-download the file as often as you like afterwards, and keep editing
@@ -1313,7 +1313,7 @@ export default function WorksheetPage() {
                 disabled={exporting}
                 onClick={() => void runExport()}
               >
-                {exporting ? 'Preparing…' : 'Generate export'}
+                {exporting ? 'Preparing…' : 'Export'}
               </button>
             </div>
           </div>

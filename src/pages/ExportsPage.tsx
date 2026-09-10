@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
+import NewClaimButton from '../components/NewClaimButton'
 import Badge from '../components/Badge'
 import { I, Icon } from '../components/Icon'
 import { ApiError, api, downloadExport, downloadRecovery } from '../lib/api'
@@ -63,7 +64,7 @@ export default function ExportsPage() {
 
   return (
     <div className="k-shell">
-      <AppHeader />
+      <AppHeader actions={<NewClaimButton />} />
 
       <div className="k-claims-body">
         <div style={{ padding: '22px 28px 0' }}>

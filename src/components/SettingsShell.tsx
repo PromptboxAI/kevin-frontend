@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import AppHeader from './AppHeader'
+import NewClaimButton from './NewClaimButton'
 
 /**
  * The settings frame: sidebar nav plus a titled pane.
@@ -85,7 +86,7 @@ export default function SettingsShell({
 }) {
   return (
     <div className="k-settings">
-      <AppHeader />
+      <AppHeader actions={<NewClaimButton />} />
 
       <div className="k-settings-body">
         <aside className="k-settings-side">
