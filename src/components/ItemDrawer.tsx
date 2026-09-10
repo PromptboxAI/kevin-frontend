@@ -7,6 +7,8 @@ import EditableCell from './EditableCell'
 import { ApiError, api } from '../lib/api'
 import { fmtCompPrice, fmtConfidence, fmtPct, fmtUSD } from '../lib/format'
 import { editDisplayLine, overrideItem, repriceItem } from '../lib/mutations'
+import { useDepreciationRules } from '../lib/depreciation-rules'
+import ClassOptionList from './ClassOptionList'
 import { QUERY_MAX, composeQuery, isQueryValid, trimQuery } from '../lib/query'
 import { CAPACITY_REASONS } from '../lib/types'
 import type { ClaimItemDetail, ClaimSummary, Comp, ThumbnailsResponse } from '../lib/types'
@@ -66,12 +68,8 @@ export default function ItemDrawer({
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
-  /** The live 24-class taxonomy -- never a retyped list. */
-  const rules = useQuery({
-    queryKey: ['depreciation-rules'],
-    queryFn: () => api.get<{ categories: string[] }>('/v1/depreciation-rules'),
-    staleTime: Infinity,
-  })
+  /** The live class schedule -- never a retyped list. */
+  const rules = useDepreciationRules()
 
   const { data, error, isPending } = useQuery({
     queryKey: ['claim-item', rowId],
@@ -296,11 +294,7 @@ export default function ItemDrawer({
                       }
                     >
                       {data.category ? null : <option value="">—</option>}
-                      {(rules.data?.categories ?? []).map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
+                      <ClassOptionList rules={rules.data} current={data.category} />
                     </select>
                   </div>
                   <EditField

@@ -33,6 +33,9 @@ import {
   retryDeferred,
 } from '../lib/mutations'
 import { moneyFrom } from '../lib/mutations'
+import { useDepreciationRules } from '../lib/depreciation-rules'
+import type { DepreciationRules } from '../lib/schedule-rules'
+import ClassOptionList from '../components/ClassOptionList'
 import type {
   ClaimTotals,
   MoneyBlock,
@@ -180,12 +183,7 @@ export default function WorksheetPage() {
   }, [filterOpen])
 
   /** GET /v1/depreciation-rules is the live taxonomy; do not retype the classes. */
-  const rules = useQuery({
-    queryKey: ['depreciation-rules'],
-    queryFn: () =>
-      api.get<{ categories: string[]; rules: Record<string, unknown> }>('/v1/depreciation-rules'),
-    staleTime: Infinity,
-  })
+  const rules = useDepreciationRules()
 
   /**
    * Client proposals waiting on the adjuster.
@@ -965,11 +963,7 @@ export default function WorksheetPage() {
               }}
             >
               <option value="">Re-categorize…</option>
-              {(rules.data?.categories ?? []).map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
+              <ClassOptionList rules={rules.data} />
             </select>
             {confirmDel ? (
               <>
@@ -1117,7 +1111,7 @@ export default function WorksheetPage() {
                       onOpen={() => setOpenRow(item.id)}
                       onRowClick={docked ? () => setOpenRow(item.id) : undefined}
                       pendingField={pending.get(item.id) ?? null}
-                      categories={rules.data?.categories ?? []}
+                      classRules={rules.data}
                       depRules={rules.data?.rules}
                       onNotice={setNotice}
                       onOverride={(body) => override.mutate({ id: item.id, body })}
@@ -1142,7 +1136,7 @@ export default function WorksheetPage() {
                   onOpen={() => setOpenRow(item.id)}
                     onRowClick={docked ? () => setOpenRow(item.id) : undefined}
                     pendingField={pending.get(item.id) ?? null}
-                    categories={rules.data?.categories ?? []}
+                    classRules={rules.data}
                     depRules={rules.data?.rules}
                     onNotice={setNotice}
                     onOverride={(body) => override.mutate({ id: item.id, body })}
@@ -1553,7 +1547,7 @@ function Row({
   selected,
   active,
   pendingField,
-  categories,
+  classRules,
   depRules,
   onSelect,
   onOpen,
@@ -1571,7 +1565,8 @@ function Row({
   active: boolean
   /** Which single field is awaiting the server, if any. */
   pendingField: string | null
-  categories: string[]
+  /** The live schedule; the class cell builds its options from it. */
+  classRules: DepreciationRules | undefined
   /** The server's depreciation schedule, rendered verbatim in the explainer. */
   depRules?: Record<string, unknown>
   onSelect: () => void
@@ -1719,11 +1714,10 @@ function Row({
             }}
           >
             {item.category ? null : <option value="">—</option>}
-            {categories.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
+            <ClassOptionList
+              rules={classRules}
+              current={pickedCategory ?? item.category}
+            />
           </select>
           <Icon d={I.chevdown} size={10} />
         </span>

@@ -18,8 +18,10 @@ export default function IntakeSelect({
   addLabel,
   hint,
   width = 240,
+  children,
 }: {
   label: string
+  /** Flat options. Ignored when `children` supplies grouped ones instead. */
   options: string[]
   value: string
   onChange: (value: string) => void
@@ -27,6 +29,12 @@ export default function IntakeSelect({
   addLabel?: string
   hint?: string
   width?: number
+  /**
+   * Pre-built <option>/<optgroup> nodes, for pickers that need grouping — the
+   * Content Class picker's 85 schedule lines across 31 categories. Optional,
+   * so every existing flat caller is unchanged.
+   */
+  children?: React.ReactNode
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 5, width }}>
@@ -67,11 +75,12 @@ export default function IntakeSelect({
             outline: 0,
           }}
         >
-          {options.map((o) => (
-            <option key={o} value={o}>
-              {o}
-            </option>
-          ))}
+          {children ??
+            options.map((o) => (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ))}
           {addLabel ? <option value="__add">{addLabel}</option> : null}
         </select>
         <span

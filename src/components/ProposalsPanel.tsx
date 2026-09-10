@@ -3,8 +3,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Badge from './Badge'
 import IntakeField from './IntakeField'
 import IntakeSelect from './IntakeSelect'
+import ClassOptionList from './ClassOptionList'
+import { useDepreciationRules } from '../lib/depreciation-rules'
+import type { DepreciationRules } from '../lib/schedule-rules'
 import { I, Icon } from './Icon'
-import { ApiError, api } from '../lib/api'
+import { ApiError } from '../lib/api'
 import { fmtDate, fmtInt, fmtUSD } from '../lib/format'
 import {
   acceptProposal,
@@ -45,12 +48,7 @@ export default function ProposalsPanel({
 
   /** The live taxonomy (rule 13) -- fetched, never retyped. Shared cache key
       with the worksheet, so opening this costs no extra request. */
-  const rules = useQuery({
-    queryKey: ['depreciation-rules'],
-    queryFn: () =>
-      api.get<{ categories: string[]; rules: Record<string, unknown> }>('/v1/depreciation-rules'),
-    staleTime: Infinity,
-  })
+  const rules = useDepreciationRules()
 
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ['proposals', claimId] })
@@ -188,7 +186,7 @@ export default function ProposalsPanel({
         {editing ? (
           <AcceptForm
             proposal={editing}
-            categories={rules.data?.categories ?? []}
+            classRules={rules.data}
             saving={accept.isPending}
             onCancel={() => setEditing(null)}
             onAccept={(body) => accept.mutate({ id: editing.id, body })}
@@ -254,13 +252,14 @@ function ProposalRow({
 
 function AcceptForm({
   proposal,
-  categories,
+  classRules,
   saving,
   onCancel,
   onAccept,
 }: {
   proposal: Proposal
-  categories: string[]
+  /** The live schedule, for the Content Class picker. */
+  classRules: DepreciationRules | undefined
   saving: boolean
   onCancel: () => void
   onAccept: (body: ProposalAccept) => void
@@ -326,10 +325,15 @@ function AcceptForm({
             <IntakeSelect
               label="Content class"
               value={category}
-              options={['', ...categories]}
+              options={[]}
               width={220}
               onChange={setCategory}
-            />
+            >
+              {/* Blank first: an insured's proposal may carry no class, and
+                  accepting it must not silently assign the first schedule line. */}
+              <option value="" />
+              <ClassOptionList rules={classRules} current={category} />
+            </IntakeSelect>
             <IntakeField label="Qty" value={quantity} mono width={80} onChange={setQuantity} />
             <IntakeField
               label="Age (years)"
