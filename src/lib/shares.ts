@@ -57,16 +57,16 @@ export type MintShareBody = {
 /**
  * The link to send, or null for a revoked share.
  *
- * The API's `url` is null unless the backend has SHARE_BASE_URL configured --
- * it ships only the bare token rather than guess the portal's origin. The
- * portal is THIS app's `/p/:token` route, so when `url` is missing the link is
- * built on the origin the adjuster is using. Before this, Copy wrote nothing
- * to the clipboard and still said "Copied".
+ * Built from the TOKEN on the origin the adjuster is using, because the portal
+ * is this app's own `/p/:token` route -- correct by construction. The API's
+ * `url` is only a fallback. It comes from the backend's SHARE_BASE_URL, which
+ * was left pointing at an old Vercel preview host that answers 403, so every
+ * copied link opened an error page for the client. (It is also null when that
+ * setting is absent, which made Copy write nothing and still say "Copied".)
  */
 export function shareLink(share: Pick<ShareSummary, 'url' | 'token'>): string | null {
-  if (share.url) return share.url
-  if (!share.token) return null
-  return `${window.location.origin}/p/${encodeURIComponent(share.token)}`
+  if (share.token) return `${window.location.origin}/p/${encodeURIComponent(share.token)}`
+  return share.url ?? null
 }
 
 export function listShares(claimId: string) {
