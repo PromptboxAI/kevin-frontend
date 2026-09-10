@@ -254,7 +254,9 @@ export default function LegalPage({ initialTab = 'privacy' }: { initialTab?: Tab
 
   return (
     <div className="k-docs">
-      <Seo path="/legal" />
+      {/* /security is its own route rendering its own sections, so it gets
+          its own title and canonical. Every other path here is the legal hub. */}
+      <Seo path={pathname === '/security' ? '/security' : '/legal'} />
       <header className="k-topbar">
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <KevinWordmark size={16} suffix to="/" />

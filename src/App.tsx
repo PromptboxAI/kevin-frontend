@@ -45,6 +45,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage'
 import WorksheetPage from './pages/WorksheetPage'
 import SampleBanner from './components/SampleBanner'
 import { SAMPLE_CLAIM_ID } from './lib/worksheet-preview'
+import Seo from './components/Seo'
 
 /**
  * The one claim id that is public. Backed by a real, owner-scoped row on the
@@ -64,6 +65,12 @@ function ClaimRoute() {
   if (claimId === SAMPLE_CLAIM_ID) {
     return (
       <>
+        {/* The sample is a public marketing surface reached from every "Open
+            sample claim" CTA, but nothing here declared a head, so it served
+            the landing page's title and a canonical pointing at the homepage.
+            Declared on the route rather than inside WorksheetPage, which is
+            shared with real claims and must stay signed-in-only. */}
+        <Seo path="/claims/sample" />
         <SampleBanner />
         <div className="k-sample-frame">
           <WorksheetPage />

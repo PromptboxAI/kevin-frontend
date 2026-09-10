@@ -20,6 +20,17 @@ export type SeoEntry = {
   description: string
   /** 1200x630 card in /og/. Falls back to og-default.png. */
   image?: string
+  /**
+   * Canonical ROUTE, when it is not this one. Only for a path that redirects:
+   * /sample bounces to /claims/sample, so a canonical pointing at itself would
+   * name a URL that never renders anything.
+   *
+   * A path and not an absolute URL on purpose — scripts/prerender-meta.mjs
+   * evaluates this table in an isolated Function, so it has to stay pure data:
+   * no imports, no expressions, no template literals. `${ORIGIN}/x` here throws
+   * at build time.
+   */
+  canonicalPath?: string
 }
 
 export const SEO_PAGES: Record<string, SeoEntry> = {
@@ -93,6 +104,37 @@ export const SEO_PAGES: Record<string, SeoEntry> = {
     title: 'Documentation — Kevin',
     description:
       'Guides for every step: uploading photos, staging and grouping, the review worksheet, pricing, depreciation, and exporting to Xactimate.',
+  },
+
+  /**
+   * Its own entry, not a tab of /legal. LegalPage renders ONLY the active
+   * tab's sections, so /security serves genuinely different copy — and it is
+   * the page a carrier's procurement asks for by name. Without this it
+   * declared a canonical of /legal at runtime and of the HOMEPAGE in the
+   * static shell, either of which invites Google to fold it away as a
+   * duplicate and drop it.
+   */
+  '/security': {
+    title: 'Security — Kevin',
+    description:
+      'How Kevin protects claim photos and inventories: AES-256 at rest, TLS 1.3 in transit, least-privilege access, and a full audit trail on every change.',
+  },
+
+  /**
+   * /sample only redirects; /claims/sample is what actually renders. Both get
+   * an entry so a shared link resolves either way, and /sample canonicalises
+   * to the URL that exists rather than to itself.
+   */
+  '/sample': {
+    title: 'Sample claim — Kevin',
+    description:
+      'A real worksheet on a demo claim: 51 identified items with live retail comps, depreciation and ACV. Edit anything — nothing saves, and no account is needed.',
+    canonicalPath: '/claims/sample',
+  },
+  '/claims/sample': {
+    title: 'Sample claim — Kevin',
+    description:
+      'A real worksheet on a demo claim: 51 identified items with live retail comps, depreciation and ACV. Edit anything — nothing saves, and no account is needed.',
   },
 }
 

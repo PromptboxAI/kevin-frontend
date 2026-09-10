@@ -46,14 +46,44 @@ async function loadPages() {
   // The file is data, not code: no expressions, no imports, no template
   // literals. Function-constructing it keeps the script dependency-free.
   const origin = /export const ORIGIN = '([^']+)'/.exec(src)[1]
-  return { origin, pages: new Function(`return ${objectText}`)() }
+
+  // The noindex screens need a shell too. Without one they fall through to
+  // index.html, so a crawler that does not run JS sees the LANDING PAGE's
+  // title and a canonical pointing at the homepage -- i.e. /sign-in announces
+  // itself as a duplicate of / and asks to be indexed. The runtime <Seo> marks
+  // them noindex, but that is exactly the reader this file exists for.
+  const noindexBody = src.slice(src.indexOf('export const NOINDEX_TITLES'))
+  const nOpen = noindexBody.indexOf('{')
+  let nDepth = 0
+  let nClose = -1
+  for (let i = nOpen; i < noindexBody.length; i++) {
+    if (noindexBody[i] === '{') nDepth++
+    else if (noindexBody[i] === '}' && --nDepth === 0) {
+      nClose = i
+      break
+    }
+  }
+  if (nClose < 0) throw new Error('prerender: NOINDEX_TITLES object is unterminated')
+  const noindex = new Function(`return ${noindexBody.slice(nOpen, nClose + 1)}`)()
+
+  return { origin, pages: new Function(`return ${objectText}`)(), noindex }
 }
+
+const NL = String.fromCharCode(10)
 
 const esc = (s) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
-function head({ origin, path, title, description, image }) {
-  const url = `${origin}${path === '/' ? '' : path}`
+/** Title and robots only -- mirrors the noindex branch of <Seo>. */
+function noindexHead(title) {
+  return [`<title>${esc(title)}</title>`, `<meta name="robots" content="noindex, nofollow" />`]
+    .map((tag) => `    ${tag.replace(/^<(meta|link|title)/, '<$1 data-default')}`)
+    .join(NL)
+}
+
+function head({ origin, path, title, description, image, canonicalPath }) {
+  const c = canonicalPath ?? path
+  const url = `${origin}${c === '/' ? '' : c}`
   const card = `${origin}/og/${image ?? 'og-default.png'}`
   const t = esc(title)
   const d = esc(description)
@@ -77,7 +107,7 @@ function head({ origin, path, title, description, image }) {
 }
 
 const shell = await readFile(join(dist, 'index.html'), 'utf8')
-const { origin, pages } = await loadPages()
+const { origin, pages, noindex } = await loadPages()
 
 // Everything between the fallback block's first tag and its last, replaced
 // wholesale per route. Anchored on data-default so it cannot catch the
@@ -89,14 +119,27 @@ if (firstDefault < 0 || lastDefault < 0) {
   throw new Error('prerender: no data-default block in dist/index.html — did index.html change?')
 }
 
-let written = 0
-for (const [path, entry] of Object.entries(pages)) {
-  if (path === '/') continue // dist/index.html already carries the landing tags
-  const html = shell.slice(0, firstDefault) + head({ origin, path, ...entry }).trimStart() + shell.slice(endOfLast)
+async function write(path, headHtml) {
+  const html = shell.slice(0, firstDefault) + headHtml.trimStart() + shell.slice(endOfLast)
   const dir = join(dist, path.replace(/^\//, ''))
   await mkdir(dir, { recursive: true })
   await writeFile(join(dir, 'index.html'), html, 'utf8')
+}
+
+let written = 0
+for (const [path, entry] of Object.entries(pages)) {
+  if (path === '/') continue // dist/index.html already carries the landing tags
+  await write(path, head({ origin, path, ...entry }))
   written++
 }
 
-console.log(`prerender-meta: ${written} route shells written (plus / from index.html)`)
+let blocked = 0
+for (const [path, title] of Object.entries(noindex)) {
+  if (pages[path]) continue // an indexable entry wins; nothing is both
+  await write(path, noindexHead(title))
+  blocked++
+}
+
+console.log(
+  `prerender-meta: ${written} indexable + ${blocked} noindex route shells written (plus / from index.html)`,
+)

@@ -40,7 +40,8 @@ export default function Seo({ path, noindex, title: titleOverride }: SeoProps) {
   const entry = SEO_PAGES[path]
   const title = titleOverride ?? entry?.title ?? NOINDEX_TITLES[path] ?? 'Kevin'
   const description = entry?.description ?? ''
-  const url = `${ORIGIN}${path === '/' ? '' : path}`
+  const canonical = entry?.canonicalPath ?? path
+  const url = `${ORIGIN}${canonical === '/' ? '' : canonical}`
   const card = `${ORIGIN}/og/${entry?.image ?? 'og-default.png'}`
 
   // Retire the static fallback once the real tags are mounted. Runs once —
