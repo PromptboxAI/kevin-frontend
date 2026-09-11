@@ -237,6 +237,22 @@ export default function WorksheetPage() {
       const next = last.offset + last.items.length
       return next < last.count ? next : undefined
     },
+    /**
+     * The PUBLIC sample rides out a backend wobble; a real claim does not.
+     *
+     * /sample is where every "See a finished claim" lands, and the backend's
+     * cold path still 5xxes there in bursts -- sometimes a gateway 502, which
+     * carries no CORS headers, so the browser reports it as a CORS failure and
+     * fetch rejects with a TypeError rather than an ApiError. Six tries at
+     * 1/2/4/8/8/8s covers a ~30s burst; an adjuster's own claim keeps the
+     * default three, because there the error state is the honest answer.
+     */
+    retry: (count, err) => {
+      if (err instanceof ApiError && err.isMissing) return false
+      const transient = !(err instanceof ApiError) || err.status >= 500
+      return count < (isSample && transient ? 6 : 3)
+    },
+    retryDelay: (count) => Math.min(1000 * 2 ** count, 8000),
   })
 
   const queryClient = useQueryClient()
