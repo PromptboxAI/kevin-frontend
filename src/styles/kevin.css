@@ -453,6 +453,14 @@
       margin-top: 32px; display: flex; gap: 10px; align-items: center;
       font-size: 11.5px; color: var(--k-fg-4);
       font-family: var(--k-font-mono); letter-spacing: 0.01em;
+      /* Shares the lede's 560px measure rather than running the full 638px
+         column. With four fragments the row filled the column and each one
+         wrapped; dropping the security line let the remaining three stretch to
+         the column edge, which read as stretched copy and left only 60px
+         between the last fragment and the hero card. Capped here they keep
+         their old footprint, line up under the paragraph, and the gap before
+         the card comes back. */
+      max-width: 560px; flex-wrap: wrap; row-gap: 4px;
     }
     .k-trust-dot { color: var(--k-line-2); }
     .k-hero-r { position: relative; }
@@ -5384,6 +5392,12 @@
        stray line. Scoped to the adjacency rather than removed outright, so
        .k-pg keeps its divider anywhere the banner does not precede it. */
     .k-midcta + .k-pg { border-top: 0; }
+    /* .k-midcta has no bottom padding on purpose -- it was built to sit flush
+       against .k-pg, which supplied its own. On the short homepage the next
+       section is .k-roi, which draws a border-top, so the banner landed
+       directly on that rule. Scoped to the adjacency, like the rule above, so
+       the .k-pg arrangement on /landing-full is untouched. */
+    .k-midcta + .k-roi { margin-top: 56px; }
     .k-midcta-inner {
       position: relative; overflow: hidden;
       display: grid; grid-template-columns: minmax(0, 1fr) auto;
