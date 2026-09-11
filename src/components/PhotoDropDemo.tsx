@@ -470,7 +470,7 @@ export default function PhotoDropDemo() {
             </dl>
 
             <div className="k-demo-foot">
-              <span className="k-demo-note">
+              <span className="k-demo-disclosure">
                 {state.own
                   ? 'Identified and priced from your photo just now. Nothing was saved.'
                   : 'A real capture from the sample claim, with the output the pipeline produced for it.'}
