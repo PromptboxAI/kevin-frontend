@@ -81,12 +81,6 @@ export default function LandingFullPage() {
             <span>$249/mo · 2,000 items included</span>
             <span className="k-trust-dot">·</span>
             <span>No per-claim or per-seat fees</span>
-            <span className="k-trust-dot">·</span>
-            {/* Plain language here on purpose. The cipher name meant
-                nothing to an adjuster reading a trust line; the exact
-                algorithms still appear on /security, where precision is
-                the point and rule 7 wants them. */}
-            <span>Your photos stay encrypted</span>
           </div>
         </div>
 
@@ -724,8 +718,6 @@ export default function LandingFullPage() {
           </div>
           <div className="k-cta-trust">
             <span>250 free items</span>
-            <span className="k-cta-dot">·</span>
-            <span>Encrypted at rest</span>
             <span className="k-cta-dot">·</span>
             <span>Cancel anytime</span>
           </div>

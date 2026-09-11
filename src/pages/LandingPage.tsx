@@ -422,13 +422,13 @@ export default function LandingPage() {
             <span className="k-trust-dot">·</span>
             <span>$249/mo · 2,000 items included</span>
             <span className="k-trust-dot">·</span>
+            {/* No security line in the hero trust strip at all. "AES-256 at
+                rest" was a cipher name nobody reading this recognises; "Your
+                photos stay encrypted" was the plain-language version and the
+                owner did not want it either. The trust strip is about price
+                and terms. The security detail lives on /security, where a
+                reader has come for it. */}
             <span>No per-claim or per-seat fees</span>
-            <span className="k-trust-dot">·</span>
-            {/* Plain language here on purpose. The cipher name meant
-                nothing to an adjuster reading a trust line; the exact
-                algorithms still appear on /security, where precision is
-                the point and rule 7 wants them. */}
-            <span>Your photos stay encrypted</span>
           </div>
         </div>
 
@@ -639,6 +639,36 @@ export default function LandingPage() {
            is the real home for detailed product information. — */}
       <PhotoDropDemo />
 
+      {/* — Where the rest of the story went —
+
+           The demo shows ONE item. Somebody who wants the whole pipeline --
+           ingestion, clustering, review, depreciation, the Xactimate export --
+           should have somewhere to go, and /product is that page. Without this
+           the short homepage just ends, and the detail that used to be here
+           becomes unreachable from the front door. Reuses the mid-funnel CTA
+           band this page already had rather than inventing a new shape. — */}
+      <section className="k-midcta">
+        <div className="k-midcta-inner">
+          <div className="k-midcta-l">
+            <div className="k-midcta-eyebrow">That was one item</div>
+            <h2 className="k-midcta-h">See the whole process.</h2>
+            <p className="k-midcta-p">
+              A real claim is three hundred photos, not one: bulk ingest, automatic photo sets,
+              one grid to review, class depreciation, and an .xlsx your carrier's XactContents
+              already accepts. The product page walks the whole run, end to end.
+            </p>
+          </div>
+          <div className="k-midcta-r">
+            <Link className="k-cta-primary" to="/product">
+              How Kevin works
+            </Link>
+            <Link className="k-cta-secondary" to="/sample">
+              See a finished claim
+            </Link>
+          </div>
+        </div>
+      </section>
+
 
       <MktROISection />
 
@@ -661,8 +691,6 @@ export default function LandingPage() {
           </div>
           <div className="k-cta-trust">
             <span>250 free items</span>
-            <span className="k-cta-dot">·</span>
-            <span>Encrypted at rest</span>
             <span className="k-cta-dot">·</span>
             <span>Cancel anytime</span>
           </div>

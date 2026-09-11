@@ -243,8 +243,6 @@ export default function SignInPage() {
         </div>
 
         <div className="k-auth-l-foot">
-          <span>Your photos stay encrypted</span>
-          <span>·</span>
           <span>TLS 1.3 in transit</span>
           <span>·</span>
           <span>© 2026</span>
