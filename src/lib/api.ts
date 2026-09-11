@@ -103,9 +103,18 @@ export function setAnonymousMode(on: boolean) {
   anonymousMode = on
 }
 
-async function authHeader(): Promise<Record<string, string>> {
+/**
+ * Calls about the VIEWER, not the claim, keep the token even in anonymous
+ * mode: /v1/me is the signed-in account (the header's avatar reads it), and
+ * sending it anonymously just 401s and caches that as the account.
+ */
+function keepsToken(path: string): boolean {
+  return path === '/v1/me' || path.startsWith('/v1/me?') || path.startsWith('/v1/me/')
+}
+
+async function authHeader(path: string): Promise<Record<string, string>> {
   // Public routes (the client portal) run with no session and no Supabase keys.
-  if (!isAuthConfigured || anonymousMode) return {}
+  if (!isAuthConfigured || (anonymousMode && !keepsToken(path))) return {}
   const { data } = await getSupabase().auth.getSession()
   const token = data.session?.access_token
   return token ? { Authorization: `Bearer ${token}` } : {}
@@ -120,7 +129,7 @@ export async function request<T>(path: string, options: Options = {}): Promise<T
 
   const send = async (): Promise<Response> => {
     const merged: Record<string, string> = {
-      ...(await authHeader()),
+      ...(await authHeader(path)),
       // Echoed back by the backend; log it to make support trivial.
       'X-Request-ID': crypto.randomUUID(),
       ...(headers as Record<string, string> | undefined),
