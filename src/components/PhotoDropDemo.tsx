@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../lib/auth'
 import { API_BASE_URL } from '../lib/env'
 
 /**
@@ -226,6 +227,21 @@ type State =
   | { k: 'unavailable'; src: string }
 
 export default function PhotoDropDemo() {
+  /**
+   * The payoff CTA has to land somewhere useful for BOTH visitors.
+   *
+   * It pointed at /sign-up unconditionally, which put an adjuster who is
+   * already signed in on a signup page -- the one place they have no use for.
+   * MktNav solves the same problem in this file's neighbour by offering the way
+   * back into the app instead; this follows it, but goes to /claims/new rather
+   * than /claims, because the button promises a folder upload and that is the
+   * screen that takes one.
+   *
+   * No `loading` guard needed here, unlike the nav: the session lookup settles
+   * during page load, and this button cannot exist until the visitor has
+   * dropped a photo and read a result.
+   */
+  const { session } = useAuth()
   const [state, setState] = useState<State>({ k: 'idle' })
   const [over, setOver] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -479,7 +495,7 @@ export default function PhotoDropDemo() {
                 <button type="button" className="k-btn k-btn--ghost" onClick={reset}>
                   Try another photo
                 </button>
-                <Link className="k-btn" to="/sign-up">
+                <Link className="k-btn" to={session ? '/claims/new' : '/sign-up'}>
                   Do this to a whole folder
                 </Link>
               </div>
