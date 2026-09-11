@@ -495,7 +495,7 @@ export default function SignUpPage() {
           <span>
             <Icon d={I.lock} size={11} /> Stripe-secured checkout
           </span>
-          <span>AES-256 at rest</span>
+          <span>Your photos stay encrypted</span>
           <span>TLS 1.3 in transit</span>
         </div>
       </main>

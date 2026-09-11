@@ -467,8 +467,8 @@ export default function RequestAccessPage() {
               <Link className="k-link" to="/legal">
                 Privacy Policy
               </Link>{' '}
-              and to us contacting you within two business days. AES-256 at rest, TLS 1.3 in transit
-              — your data stays yours.
+              and to us contacting you within two business days. Your data is encrypted in
+              storage and in transit — and it stays yours.
             </div>
             <div className="k-hero-actions" style={{ marginTop: 0 }}>
               <Link className="k-btn k-btn--ghost" to="/book-call">

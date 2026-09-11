@@ -421,7 +421,11 @@ export default function LandingPage() {
             <span className="k-trust-dot">·</span>
             <span>No per-claim or per-seat fees</span>
             <span className="k-trust-dot">·</span>
-            <span>AES-256 at rest</span>
+            {/* Plain language here on purpose. The cipher name meant
+                nothing to an adjuster reading a trust line; the exact
+                algorithms still appear on /security, where precision is
+                the point and rule 7 wants them. */}
+            <span>Your photos stay encrypted</span>
           </div>
         </div>
 

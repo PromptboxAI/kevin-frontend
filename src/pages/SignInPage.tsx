@@ -30,7 +30,7 @@ import { isAuthConfigured } from '../lib/env'
  * not a button).
  *
  * Deviations, noted: design `.html` hrefs become app routes, and the footer
- * says "AES-256 at rest" — the design's own wording on this screen, and rule 7
+ * says the data stays encrypted — plain wording on this screen, and rule 7
  * language, rather than the vaguer "Carrier-grade encryption" its shared
  * AuthShell uses.
  */
@@ -243,7 +243,7 @@ export default function SignInPage() {
         </div>
 
         <div className="k-auth-l-foot">
-          <span>AES-256 at rest</span>
+          <span>Your photos stay encrypted</span>
           <span>·</span>
           <span>TLS 1.3 in transit</span>
           <span>·</span>

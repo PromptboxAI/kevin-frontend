@@ -8,7 +8,9 @@ import KevinWordmark from './KevinWordmark'
  * own quote and its own two figures; it stays inlined here for the same reason,
  * since its right panel differs in content from the reset screens'.
  *
- * Rule 7: the security figures are concrete (TLS 1.3, AES-256). No SOC 2.
+ * Rule 7: no SOC 2 claim. The cipher names (TLS 1.3, AES-256) moved to
+ * /security, where a reader is there for precision; a sign-in panel gets
+ * the promise in plain words instead.
  */
 
 export type AuthQuote = { text: string; who: string }
@@ -82,8 +84,8 @@ export default function AuthShell({
               }}
             >
               {[
-                ['TLS 1.3', 'Encrypted in transit'],
-                ['AES-256', 'Encryption at rest'],
+                ['Encrypted', 'In transit and at rest'],
+                ['Yours', 'Deleted when you say so'],
               ].map(([figure, label]) => (
                 <div key={figure}>
                   <div
