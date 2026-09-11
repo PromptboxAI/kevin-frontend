@@ -433,7 +433,7 @@
        things competing, which is what made the page feel busy before anyone
        scrolled. 210px lets the hero own the screen with the stats peeking
        below it as the invitation to scroll. */
-    .k-hero { display: grid; grid-template-columns: 1.05fr minmax(0, 1fr); gap: 60px; padding: 72px 40px 210px; max-width: 1280px; margin: 0 auto; align-items: center; }
+    .k-hero { display: grid; grid-template-columns: 1.12fr minmax(0, 0.88fr); gap: 60px; padding: 72px 40px 128px; max-width: 1280px; margin: 0 auto; align-items: center; }
     .k-h1 {
       font-family: var(--k-font-display); font-weight: 400;
       font-size: 60px; line-height: 1.02; letter-spacing: -0.028em;
@@ -487,7 +487,13 @@
     .k-anno--1 { top: -22px; right: -28px; }
     .k-anno--2 { bottom: -22px; left: -36px; }
 
+    /* 210px of padding under the hero pushed the stats a long way down and
+       still left the BUILT FOR strip in view. The two pull against each other:
+       raising the stats raises the strip with them. So the hero keeps 128px
+       and the separation is spent HERE instead -- the stats rise, and the
+       strip is held below the fold by its own leading margin. */
     .k-audience {
+      margin-top: 96px;
       border-top: 1px solid var(--k-line);
       border-bottom: 1px solid var(--k-line);
       background: var(--k-bg);
@@ -5141,6 +5147,28 @@
       /* 19px is set for a 560px desktop measure; at 343px it runs long, so the
          phone takes 17.5 -- still a full point up from the old 16.5. */
       .k-lede { font-size: 17.5px; }
+
+      /* The rest of the reading copy was shipping its DESKTOP size to phones:
+         explanatory paragraphs at 14.5px, proof bullets and step copy at
+         13.5px, card body at 13px, the footer line at 12.5px. 16px is the
+         mobile body-copy floor, and none of this cleared it -- which is what
+         made the page hard to read rather than any single block.
+
+         Raised to 15-16px. Deliberately NOT touched: the mono eyebrows,
+         badges and column labels at 10.5-11px. Those are typographic
+         furniture, set in caps with tracking, and sizing them like prose
+         would flatten the hierarchy this page depends on. */
+      .k-proof-body { font-size: 16px; line-height: 1.6; }
+      .k-proof-sub { font-size: 16.5px; }
+      .k-proof-list li { font-size: 15px; line-height: 1.5; }
+      .k-pg-sub { font-size: 16px; }
+      .k-pg-body { font-size: 15px; line-height: 1.55; }
+      .k-roi-sub { font-size: 16px; line-height: 1.55; }
+      /* `.k-midcta-p` is declared again LATER in this file at equal
+         specificity, so a bare class here loses on source order. */
+      .k-landing .k-midcta-p { font-size: 15.5px; line-height: 1.5; }
+      .k-step p { font-size: 15px; line-height: 1.5; }
+      .k-footx-brand p { font-size: 14px; line-height: 1.5; }
       /* The headline sat at 8.5vw = 31.9px, which put its two balanced lines
          at 255px and 234px inside a 343px column -- ~90px of unused width, so
          it read as condensed rather than as a hero. 10.2vw takes the long line
