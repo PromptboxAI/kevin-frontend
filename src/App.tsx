@@ -10,6 +10,7 @@ import AboutPage from './pages/AboutPage'
 import ContactPage from './pages/ContactPage'
 import DoneForYouPage from './pages/DoneForYouPage'
 import LegalPage from './pages/LegalPage'
+import LandingFullPage from './pages/LandingFullPage'
 import BookCallPage from './pages/BookCallPage'
 import RequestAccessPage from './pages/RequestAccessPage'
 import DocsPage from './pages/DocsPage'
@@ -116,6 +117,10 @@ export default function App() {
         <Route path="/legal" element={<LegalPage />} />
         {/* The footer's "Security" link. Same document, Security tab preselected. */}
         <Route path="/security" element={<LegalPage initialTab="security" />} />
+        {/* The long-form homepage, preserved whole and deliberately unlinked.
+            Not in the nav, noindex, reachable only by typing the path. See the
+            header of LandingFullPage.tsx. */}
+        <Route path="/landing-full" element={<LandingFullPage />} />
         <Route path="/sign-in" element={<SignInPage />} />
         <Route path="/sign-up" element={<SignUpPage />} />
 

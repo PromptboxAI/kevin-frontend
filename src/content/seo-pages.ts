@@ -145,4 +145,7 @@ export const NOINDEX_TITLES: Record<string, string> = {
   '/forgot-password': 'Reset your password — Kevin',
   '/reset-sent': 'Check your email — Kevin',
   '/reset-password': 'Choose a new password — Kevin',
+  /* Preserved long-form homepage. Unlinked; kept out of search so it cannot
+     compete with / for the same intent. */
+  '/landing-full': 'Kevin — long-form homepage (archived)',
 }

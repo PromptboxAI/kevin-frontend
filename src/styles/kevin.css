@@ -5179,6 +5179,123 @@
       .k-trust { display: none; }
     }
 
+    /* -- Try-it demo (homepage) ------------------------------------------
+       Drop one photo, watch it resolve. Built from the existing tokens only;
+       no new colours. The result is a CARD rather than a worksheet row on
+       purpose -- a 17-column grid needs side-scrolling on a phone, and the
+       thing being demonstrated is one line, not the grid. */
+    .k-demo { max-width: 1280px; margin: 0 auto; padding: 88px 40px; }
+    .k-demo-hd { text-align: center; max-width: 620px; margin: 0 auto 32px; }
+    .k-demo-h2 {
+      font-family: var(--k-font-display); font-size: clamp(28px, 3.4vw, 40px);
+      line-height: 1.12; letter-spacing: -0.02em; margin: 10px 0 12px; color: var(--k-fg);
+    }
+    .k-demo-sub { font-size: 17px; line-height: 1.55; color: var(--k-fg-2); margin: 0; }
+    .k-demo-body { max-width: 680px; margin: 0 auto; }
+
+    /* the drop target */
+    .k-demo-drop {
+      border: 1.5px dashed var(--k-line-2); border-radius: 16px;
+      background: var(--k-bg); padding: 44px 24px; text-align: center;
+      cursor: pointer; transition: border-color 0.14s, background 0.14s;
+    }
+    .k-demo-drop:hover, .k-demo-drop:focus-visible { border-color: var(--k-accent); background: var(--k-bg-2); }
+    .k-demo-drop--over { border-color: var(--k-accent); background: var(--k-bg-2); }
+    .k-demo-drop-i {
+      width: 40px; height: 40px; margin: 0 auto 14px; border-radius: 99px;
+      background: var(--k-bg-3); color: var(--k-accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; line-height: 1;
+    }
+    .k-demo-drop-t { font-size: 16.5px; font-weight: 700; color: var(--k-fg); }
+    .k-demo-drop-s { font-size: 13px; color: var(--k-fg-4); margin-top: 6px; font-family: var(--k-font-mono); }
+    .k-demo-err { margin-top: 14px; font-size: 13.5px; color: var(--k-warn); font-weight: 600; }
+
+    .k-demo-or {
+      text-align: center; font-size: 11px; color: var(--k-fg-4); margin: 22px 0 12px;
+      font-family: var(--k-font-mono); text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .k-demo-samples { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .k-demo-sample {
+      display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+      border: 1px solid var(--k-line); border-radius: 10px; background: var(--k-bg);
+      cursor: pointer; font-size: 13.5px; color: var(--k-fg-2); text-align: left;
+    }
+    .k-demo-sample:hover { border-color: var(--k-accent); color: var(--k-fg); }
+    .k-demo-sample img { width: 34px; height: 34px; border-radius: 5px; object-fit: cover; flex: 0 0 auto; }
+
+    /* the run */
+    .k-demo-run {
+      display: grid; grid-template-columns: 148px minmax(0, 1fr); gap: 22px;
+      align-items: center; border: 1px solid var(--k-line); border-radius: 16px;
+      background: var(--k-bg); padding: 22px;
+    }
+    .k-demo-run-img { width: 100%; border-radius: 10px; object-fit: cover; aspect-ratio: 1; display: block; }
+    .k-demo-stages { list-style: none; margin: 0; padding: 0; display: grid; gap: 11px; }
+    .k-demo-stage { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--k-fg-4); }
+    .k-demo-stage-dot { width: 7px; height: 7px; border-radius: 99px; background: var(--k-line-2); flex: 0 0 auto; }
+    .k-demo-stage--now { color: var(--k-fg); font-weight: 600; }
+    .k-demo-stage--now .k-demo-stage-dot { background: var(--k-accent); animation: k-pulse 1.4s ease-in-out infinite; }
+    .k-demo-stage--done { color: var(--k-fg-3); }
+    .k-demo-stage--done .k-demo-stage-dot { background: var(--k-ok); }
+
+    .k-demo-unavail { font-size: 14px; color: var(--k-fg-2); }
+    .k-demo-unavail strong { display: block; color: var(--k-fg); margin-bottom: 6px; }
+    .k-demo-unavail p { margin: 0 0 14px; line-height: 1.55; }
+
+    /* the result */
+    .k-demo-result { border: 1px solid var(--k-line); border-radius: 16px; background: var(--k-bg); overflow: hidden; }
+    .k-demo-result-top { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 16px; padding: 20px; align-items: start; }
+    .k-demo-result-img { width: 96px; height: 96px; border-radius: 10px; object-fit: cover; display: block; }
+    .k-demo-result-desc { font-size: 16.5px; font-weight: 700; color: var(--k-fg); line-height: 1.3; }
+    .k-demo-result-meta { font-size: 13.5px; color: var(--k-fg-3); margin-top: 5px; }
+    .k-demo-basis {
+      margin-top: 9px; display: inline-block; font-size: 11.5px; font-weight: 600;
+      color: var(--k-fg-2); background: var(--k-bg-3); border-radius: 6px; padding: 4px 8px;
+    }
+
+    .k-demo-comps { border-top: 1px solid var(--k-line); padding: 16px 20px; }
+    .k-demo-comps-h {
+      font-size: 11px; font-family: var(--k-font-mono); text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--k-fg-4); margin-bottom: 10px;
+    }
+    .k-demo-comp { display: grid; grid-template-columns: 130px minmax(0, 1fr) auto; gap: 10px; padding: 5px 0; font-size: 13.5px; align-items: baseline; }
+    .k-demo-comp-src { color: var(--k-fg-2); font-weight: 600; }
+    .k-demo-comp-t { color: var(--k-fg-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .k-demo-comp-p { font-family: var(--k-font-mono); color: var(--k-fg); font-feature-settings: "tnum"; }
+    .k-demo-comp-link { display: inline-block; margin-top: 9px; font-size: 13px; color: var(--k-accent); }
+
+    .k-demo-money {
+      border-top: 1px solid var(--k-line); margin: 0; padding: 16px 20px;
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 18px;
+    }
+    .k-demo-money div { margin: 0; }
+    .k-demo-money dt { font-size: 11px; color: var(--k-fg-4); font-family: var(--k-font-mono); text-transform: uppercase; letter-spacing: 0.05em; }
+    .k-demo-money dd { margin: 3px 0 0; font-size: 15px; font-family: var(--k-font-mono); color: var(--k-fg-2); font-feature-settings: "tnum"; }
+    .k-demo-money--acv dd { color: var(--k-fg); font-weight: 700; }
+
+    .k-demo-foot {
+      border-top: 1px solid var(--k-line); background: var(--k-bg-2); padding: 14px 20px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    }
+    .k-demo-note { font-size: 12.5px; color: var(--k-fg-3); }
+    .k-demo-foot-a { display: flex; gap: 10px; flex-shrink: 0; }
+
+    @media (max-width: 640px) {
+      .k-demo { padding: 56px 20px; }
+      .k-demo-sub { font-size: 16px; }
+      .k-demo-samples { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+      .k-demo-run { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+      .k-demo-run-img { max-width: 180px; margin: 0 auto; }
+      .k-demo-result-top { grid-template-columns: 72px minmax(0, 1fr); padding: 16px; }
+      .k-demo-result-img { width: 72px; height: 72px; }
+      .k-demo-comp { grid-template-columns: minmax(0, 1fr) auto; }
+      .k-demo-comp-t { display: none; }
+      .k-demo-money { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 16px; }
+      .k-demo-foot { flex-direction: column; align-items: stretch; }
+      .k-demo-foot-a { flex-direction: column; }
+    }
+
     /* — 2 · Condensed vertical rhythm —
        Desktop padding (72-88px blocks) reads as luxury on a 1440px canvas
        and as dead air on a 375px one. Roughly halved below 768px. */
