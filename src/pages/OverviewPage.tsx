@@ -43,7 +43,18 @@ export default function OverviewPage() {
     retry: retryUnlessMissing,
   })
 
-  const { data: itemsPage } = useQuery({
+  /**
+   * The items behind every card below. Its failure is SAID, not absorbed: an
+   * error used to fall through to `[]`, and the page announced "No items on
+   * this claim yet" over a claim full of them. A transient 500 on this read
+   * was live in production (backend fixed it in 26f1d8b), so it happens.
+   */
+  const {
+    data: itemsPage,
+    error: itemsError,
+    refetch: refetchItems,
+    isFetching: itemsFetching,
+  } = useQuery({
     queryKey: ['claim-items-flat', claimId],
     queryFn: () =>
       api.get<ClaimItemListResponse>(
@@ -218,6 +229,32 @@ export default function OverviewPage() {
       </section>
 
       <div className="k-claim-ov-body">
+        {itemsError ? (
+          <p className="k-error" style={{ margin: 0 }}>
+            Couldn’t load this claim’s items, so the cards below are incomplete.
+            {itemsError instanceof ApiError ? (
+              <>
+                {' '}
+                HTTP {itemsError.status}
+                {itemsError.requestId ? (
+                  <>
+                    {' · '}
+                    <span className="k-portal-ref">Reference {itemsError.requestId}</span>
+                  </>
+                ) : null}
+              </>
+            ) : null}{' '}
+            <button
+              type="button"
+              className="k-btn k-btn--sm k-btn--ghost"
+              onClick={() => void refetchItems()}
+              disabled={itemsFetching}
+            >
+              {itemsFetching ? 'Retrying…' : 'Retry'}
+            </button>
+          </p>
+        ) : null}
+
         {notice ? (
           <section className="k-flags-band k-flags-band--one">
             <div className="k-flag-card">
@@ -335,7 +372,8 @@ export default function OverviewPage() {
                     </span>
                   </div>
                 ))}
-                {classes.length === 0 ? (
+                {/* Only a successful read may say there are none. */}
+                {classes.length === 0 && itemsPage ? (
                   <p style={{ fontSize: 12, color: 'var(--k-fg-4)', padding: '4px 0' }}>
                     No items on this claim yet.
                   </p>
