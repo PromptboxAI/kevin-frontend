@@ -46,6 +46,10 @@ import type { PortalItem, PortalResponse } from '../lib/portal'
  * rendered it, while the paywall promised "the photos".
  */
 const COLS = '40px 48px 90px 40px 1.5fr 1fr 74px 78px 64px 84px 42px 52px 74px 84px 46px'
+/** An `inventory` link carries no photo URLs, so it has no Photo column. */
+const COLS_NO_PHOTO = '40px 90px 40px 1.5fr 1fr 74px 78px 64px 84px 42px 52px 74px 84px 46px'
+/** A `photos` link: #, a larger photo, room, description -- nothing else exists. */
+const PHOTO_COLS = '48px 88px 160px 1fr'
 const NUM: React.CSSProperties = {
   textAlign: 'right',
   fontFamily: 'var(--k-font-mono)',
@@ -68,6 +72,56 @@ const STAT_V: React.CSSProperties = {
   fontWeight: 600,
 }
 
+/** A share-page download: the two worksheet formats, or a photo document. */
+type DownloadKind = 'xlsx' | 'pdf' | 'photos' | 'packet'
+
+/** Every refusal `/p/{token}/export` can give, in words (FRONTEND.md, 0054). */
+function downloadErrorCopy(err: unknown): string {
+  if (!(err instanceof ApiError)) return 'The download failed. Please try again.'
+  switch (err.status) {
+    case 410:
+      return 'This link is no longer active. Ask your adjuster for a new one.'
+    case 402:
+      return 'Unlock this link to download its files.'
+    case 403:
+      return 'This link doesn’t include that download. Ask your adjuster if you need it.'
+    case 409:
+      return 'No photos are linked to items yet, so there is nothing for a photos PDF.'
+    case 413:
+      return 'This claim has more photos than fit in one PDF. Ask your adjuster for the file.'
+    case 429: {
+      const minutes = err.retryAfter ? Math.max(1, Math.ceil(err.retryAfter / 60)) : null
+      return `This link has reached its photo downloads for the hour.${minutes ? ` Try again in ${minutes} minute${minutes === 1 ? '' : 's'}.` : ' Try again later.'}`
+    }
+    default:
+      return `The download failed (HTTP ${err.status}). Please try again.`
+  }
+}
+
+/**
+ * Every line, not just the first page.
+ *
+ * The page used to make one call at the default page size (100), so a claim
+ * with 300 lines showed 100 and said nothing about the rest. Pages of the
+ * server's maximum (500) are read until `count` is reached. A LOCKED link is
+ * left alone: its items are the paywall sample, and `count` is the claim's
+ * total, which the page shows as locked skeletons -- paging would ask for
+ * rows the server will never send.
+ */
+async function getAllPortal(token: string): Promise<PortalResponse> {
+  const PAGE = 500
+  const first = await getPortal(token, 0, PAGE)
+  const locked = first.locked_count > 0 && !first.paid
+  if (locked) return first
+  const items = [...first.items]
+  while (items.length < first.count) {
+    const next = await getPortal(token, items.length, PAGE)
+    if (next.items.length === 0) break
+    items.push(...next.items)
+  }
+  return { ...first, items }
+}
+
 export default function PortalPage() {
   const { token = '' } = useParams()
   const queryClient = useQueryClient()
@@ -83,7 +137,7 @@ export default function PortalPage() {
 
   const { data, error, isPending } = useQuery({
     queryKey: ['portal', token],
-    queryFn: () => getPortal(token),
+    queryFn: () => getAllPortal(token),
     enabled: isApiConfigured && token !== '',
     // A dead link is a settled answer, not a blip.
     retry: (count, err) => !(err instanceof ApiError) && count < 2,
@@ -227,22 +281,18 @@ function Portal({
   const [rowError, setRowError] = useState<string | null>(null)
   /** The photo open full-size, if any. */
   const [viewing, setViewing] = useState<PortalItem | null>(null)
-  const [downloading, setDownloading] = useState<'xlsx' | 'pdf' | null>(null)
+  const [downloading, setDownloading] = useState<DownloadKind | null>(null)
   const [downloadError, setDownloadError] = useState<string | null>(null)
+  const [perPage, setPerPage] = useState<1 | 2 | 4 | 6>(2)
 
-  const download = async (format: 'xlsx' | 'pdf') => {
-    setDownloading(format)
+  const download = async (kind: DownloadKind) => {
+    setDownloading(kind)
     setDownloadError(null)
     try {
-      await downloadPortalExport(token, format)
+      if (kind === 'xlsx' || kind === 'pdf') await downloadPortalExport(token, kind)
+      else await downloadPortalExport(token, 'pdf', kind, perPage)
     } catch (err) {
-      setDownloadError(
-        err instanceof ApiError && err.status === 410
-          ? 'This link is no longer active. Ask your adjuster for a new one.'
-          : err instanceof ApiError && err.status === 403
-            ? 'Downloads are not turned on for this link. Ask your adjuster to enable them.'
-            : `The download failed${err instanceof ApiError ? ` (HTTP ${err.status})` : ''}. Please try again.`,
-      )
+      setDownloadError(downloadErrorCopy(err))
     } finally {
       setDownloading(null)
     }
@@ -322,6 +372,20 @@ function Portal({
   const shown = items.length
   const total = data.count
 
+  /**
+   * What the link grants (0054). The SERVER enforces it -- a photos link's
+   * payload has no money in it at all -- so this only decides layout: which
+   * columns exist, which copy fits, which downloads to offer. A pre-0054
+   * payload has no `contents` and reads as `both`.
+   */
+  const contents = data.contents ?? 'both'
+  const photosOnly = contents === 'photos'
+  const showPhotos = contents !== 'inventory'
+  const documents = data.documents ?? ['worksheet']
+  const cols = photosOnly ? PHOTO_COLS : showPhotos ? COLS : COLS_NO_PHOTO
+  // Photos links are read-only server-side (403 on every write).
+  const editable = (!paywalled || paid) && !photosOnly
+
   return (
     <div className="k-landing" style={{ minHeight: '100vh', background: 'var(--k-bg-2)' }}>
       <header className="k-topbar" style={{ background: 'var(--k-bg)' }}>
@@ -330,7 +394,7 @@ function Portal({
             Kevin<span>.</span>
           </span>
           <span style={{ fontSize: 12, color: 'var(--k-fg-4)' }}>
-            Contents inventory · read-only
+            {photosOnly ? 'Contents photos · read-only' : 'Contents inventory · read-only'}
           </span>
         </div>
         <Badge tone={paid || !paywalled ? 'ok' : 'quiet'} dot>
@@ -387,19 +451,23 @@ function Portal({
                 <div style={STAT_L}>Items</div>
                 <div style={STAT_V}>{fmtInt(totals?.item_count ?? total)}</div>
               </div>
-              {/* A dash, never $0.00, when the payload has no totals: the API
-                  sends them only on PAYWALLED links today, and "$0.00" on a
-                  priced inventory told the insured it was worth nothing. */}
-              <div>
-                <div style={STAT_L}>Total RCV + tax</div>
-                <div style={STAT_V}>{fmtUSD(totals?.total_rcv)}</div>
-              </div>
-              <div>
-                <div style={STAT_L}>Total ACV</div>
-                <div style={{ ...STAT_V, color: 'var(--k-accent)' }}>
-                  {fmtUSD(totals?.total_acv)}
-                </div>
-              </div>
+              {/* No money stats on a photos link -- there is no money in its
+                  payload. Elsewhere a dash, never $0.00, if totals are absent:
+                  "$0.00" over a priced inventory says it is worth nothing. */}
+              {photosOnly ? null : (
+                <>
+                  <div>
+                    <div style={STAT_L}>Total RCV + tax</div>
+                    <div style={STAT_V}>{fmtUSD(totals?.total_rcv)}</div>
+                  </div>
+                  <div>
+                    <div style={STAT_L}>Total ACV</div>
+                    <div style={{ ...STAT_V, color: 'var(--k-accent)' }}>
+                      {fmtUSD(totals?.total_acv)}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -413,7 +481,7 @@ function Portal({
               paddingTop: 8,
             }}
           >
-            {locked > 0 && !paid
+            {locked > 0 && !paid && !photosOnly
               ? `Totals cover all ${fmtInt(total)} items, including the ${fmtInt(locked)} not shown below. `
               : ''}
             {data.disclaimer}
@@ -475,12 +543,22 @@ function Portal({
             }}
           >
             <div style={{ flex: 1, minWidth: 260 }}>
+              {/* Promise exactly what the link grants: an inventory link has no
+                  photos to unlock, a photos link no prices or spreadsheet. */}
               <div style={{ fontSize: 14.5, fontWeight: 600 }}>
-                Your full inventory is ready — {fmtInt(total)} items, photographed and priced.
+                {photosOnly
+                  ? `Your photos are ready — ${fmtInt(total)} items, photographed.`
+                  : contents === 'inventory'
+                    ? `Your full inventory is ready — ${fmtInt(total)} items, priced.`
+                    : `Your full inventory is ready — ${fmtInt(total)} items, photographed and priced.`}
               </div>
               <div style={{ fontSize: 12, opacity: 0.85, marginTop: 3 }}>
-                Preview shows {fmtInt(shown)} of {fmtInt(total)} lines. Pay once to unlock every
-                line, the photos, and the download files (Excel + PDF).
+                Preview shows {fmtInt(shown)} of {fmtInt(total)} lines. Pay once to unlock{' '}
+                {photosOnly
+                  ? 'every photo and the photos PDF.'
+                  : contents === 'inventory'
+                    ? 'every line and the download files (Excel + PDF).'
+                    : 'every line, the photos, and the download files (Excel + PDF).'}
               </div>
             </div>
             <button
@@ -489,7 +567,7 @@ function Portal({
               style={{ background: '#fff', color: 'var(--k-fg)' }}
               onClick={onOpenCheckout}
             >
-              Unlock full inventory · {priceLabel}
+              {photosOnly ? 'Unlock all photos' : 'Unlock full inventory'} · {priceLabel}
             </button>
           </section>
         ) : null}
@@ -508,7 +586,7 @@ function Portal({
           </div>
         ) : null}
 
-        {paid || !paywalled ? (
+        {editable ? (
           <div
             style={{
               fontSize: 12,
@@ -530,11 +608,11 @@ function Portal({
 
         {/* Export-parity column set minus the adjuster-only internals. */}
         <section style={{ ...CARD, overflow: 'auto' }}>
-          <div style={{ minWidth: 1100 }}>
+          <div style={{ minWidth: photosOnly ? 0 : 1100 }}>
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: COLS,
+                gridTemplateColumns: cols,
                 gap: 8,
                 padding: '9px 16px',
                 fontSize: 10,
@@ -545,36 +623,54 @@ function Portal({
               }}
             >
               <span>#</span>
-              <span>Photo</span>
+              {showPhotos ? <span>Photo</span> : null}
               <span>Room</span>
-              <span style={{ textAlign: 'right' }}>Qty</span>
-              <span>Description</span>
-              <span>Make · Model</span>
-              <span style={{ textAlign: 'right' }}>Unit Cost</span>
-              <span style={{ textAlign: 'right' }}>Ext. Cost</span>
-              <span style={{ textAlign: 'right' }}>Tax</span>
-              <span style={{ textAlign: 'right' }}>RCV + Tax</span>
-              <span style={{ textAlign: 'right' }}>Age</span>
-              <span style={{ textAlign: 'right' }}>% Depr.</span>
-              <span style={{ textAlign: 'right' }}>$ Depr.</span>
-              <span style={{ textAlign: 'right' }}>ACV</span>
-              <span style={{ textAlign: 'center' }}>Source</span>
+              {photosOnly ? (
+                <span>Description</span>
+              ) : (
+                <>
+                  <span style={{ textAlign: 'right' }}>Qty</span>
+                  <span>Description</span>
+                  <span>Make · Model</span>
+                  <span style={{ textAlign: 'right' }}>Unit Cost</span>
+                  <span style={{ textAlign: 'right' }}>Ext. Cost</span>
+                  <span style={{ textAlign: 'right' }}>Tax</span>
+                  <span style={{ textAlign: 'right' }}>RCV + Tax</span>
+                  <span style={{ textAlign: 'right' }}>Age</span>
+                  <span style={{ textAlign: 'right' }}>% Depr.</span>
+                  <span style={{ textAlign: 'right' }}>$ Depr.</span>
+                  <span style={{ textAlign: 'right' }}>ACV</span>
+                  <span style={{ textAlign: 'center' }}>Source</span>
+                </>
+              )}
             </div>
 
-            {items.map((item, i) => (
-              <Row
-                key={item.id}
-                item={item}
-                n={i + 1}
-                /* Locked/preview rows are read-only: a withheld inventory is
-                   not one the holder has bought the right to correct. */
-                editable={!paywalled || paid}
-                pending={pending.has(item.id)}
-                onAge={(years) => void saveAge(item, years)}
-                onPhoto={() => setViewing(item)}
-                onPhotoError={refreshImages}
-              />
-            ))}
+            {items.map((item, i) =>
+              photosOnly ? (
+                <PhotoOnlyRow
+                  key={item.id}
+                  item={item}
+                  n={i + 1}
+                  onPhoto={() => setViewing(item)}
+                  onPhotoError={refreshImages}
+                />
+              ) : (
+                <Row
+                  key={item.id}
+                  item={item}
+                  n={i + 1}
+                  cols={cols}
+                  showPhoto={showPhotos}
+                  /* Locked/preview rows are read-only: a withheld inventory is
+                     not one the holder has bought the right to correct. */
+                  editable={editable}
+                  pending={pending.has(item.id)}
+                  onAge={(years) => void saveAge(item, years)}
+                  onPhoto={() => setViewing(item)}
+                  onPhotoError={refreshImages}
+                />
+              ),
+            )}
 
             {locked > 0 && !paid ? (
               <div style={{ position: 'relative' }}>
@@ -586,7 +682,7 @@ function Portal({
                     aria-hidden="true"
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: COLS,
+                      gridTemplateColumns: cols,
                       gap: 8,
                       padding: '9px 16px',
                       fontSize: 12,
@@ -598,20 +694,26 @@ function Portal({
                     <span style={{ fontFamily: 'var(--k-font-mono)', fontSize: 10.5 }}>
                       {String(shown + i + 1).padStart(3, '0')}
                     </span>
-                    <span className="k-portal-thumb k-portal-thumb--ghost" />
+                    {showPhotos ? <span className="k-portal-thumb k-portal-thumb--ghost" /> : null}
                     <span>██████</span>
-                    <span style={{ textAlign: 'right' }}>█</span>
-                    <span>█████ ████████ ██████</span>
-                    <span>████ · █████</span>
-                    <span style={{ textAlign: 'right' }}>$███.██</span>
-                    <span style={{ textAlign: 'right' }}>$███.██</span>
-                    <span style={{ textAlign: 'right' }}>$██.██</span>
-                    <span style={{ textAlign: 'right' }}>$███.██</span>
-                    <span style={{ textAlign: 'right' }}>█</span>
-                    <span style={{ textAlign: 'right' }}>██%</span>
-                    <span style={{ textAlign: 'right' }}>$██.██</span>
-                    <span style={{ textAlign: 'right' }}>$███.██</span>
-                    <span style={{ textAlign: 'center' }}>█</span>
+                    {photosOnly ? (
+                      <span>█████ ████████ ██████</span>
+                    ) : (
+                      <>
+                        <span style={{ textAlign: 'right' }}>█</span>
+                        <span>█████ ████████ ██████</span>
+                        <span>████ · █████</span>
+                        <span style={{ textAlign: 'right' }}>$███.██</span>
+                        <span style={{ textAlign: 'right' }}>$███.██</span>
+                        <span style={{ textAlign: 'right' }}>$██.██</span>
+                        <span style={{ textAlign: 'right' }}>$███.██</span>
+                        <span style={{ textAlign: 'right' }}>█</span>
+                        <span style={{ textAlign: 'right' }}>██%</span>
+                        <span style={{ textAlign: 'right' }}>$██.██</span>
+                        <span style={{ textAlign: 'right' }}>$███.██</span>
+                        <span style={{ textAlign: 'center' }}>█</span>
+                      </>
+                    )}
                   </div>
                 ))}
                 <div
@@ -634,7 +736,7 @@ function Portal({
                       style={{ marginTop: 10 }}
                       onClick={onOpenCheckout}
                     >
-                      Unlock full inventory · {priceLabel}
+                      {photosOnly ? 'Unlock all photos' : 'Unlock full inventory'} · {priceLabel}
                     </button>
                     <div style={{ fontSize: 11, color: 'var(--k-fg-4)', marginTop: 6 }}>
                       Secure checkout via Stripe · one-time payment
@@ -648,28 +750,70 @@ function Portal({
 
         {/* can_download is allow_download AND released_at -- the adjuster's own
             export stamps exported_at, which never means "I have been paid". */}
+        {/* The picker is built from `documents` -- what this link's grant
+            lets the export serve -- never guessed from `contents`. */}
         {data.can_download ? (
           <section style={{ marginTop: 16 }}>
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                className="k-btn"
-                disabled={downloading !== null}
-                onClick={() => void download('xlsx')}
-              >
-                <Icon d={I.download} size={13} />{' '}
-                {downloading === 'xlsx' ? 'Preparing…' : 'Inventory · .xlsx'}
-              </button>
-              <button
-                type="button"
-                className="k-btn k-btn--ghost"
-                disabled={downloading !== null}
-                onClick={() => void download('pdf')}
-              >
-                <Icon d={I.download} size={13} />{' '}
-                {downloading === 'pdf' ? 'Preparing…' : 'PDF inventory'}
-              </button>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+              {documents.includes('worksheet') ? (
+                <>
+                  <DownloadButton
+                    label="Inventory · .xlsx"
+                    busy={downloading === 'xlsx'}
+                    disabled={downloading !== null}
+                    primary
+                    onClick={() => void download('xlsx')}
+                  />
+                  <DownloadButton
+                    label="Inventory PDF"
+                    busy={downloading === 'pdf'}
+                    disabled={downloading !== null}
+                    onClick={() => void download('pdf')}
+                  />
+                </>
+              ) : null}
+              {documents.includes('photos') ? (
+                <DownloadButton
+                  label="Photos PDF"
+                  busy={downloading === 'photos'}
+                  disabled={downloading !== null}
+                  primary={!documents.includes('worksheet')}
+                  onClick={() => void download('photos')}
+                />
+              ) : null}
+              {documents.includes('packet') ? (
+                <DownloadButton
+                  label="Inventory + photos PDF"
+                  busy={downloading === 'packet'}
+                  disabled={downloading !== null}
+                  onClick={() => void download('packet')}
+                />
+              ) : null}
+              {documents.includes('photos') || documents.includes('packet') ? (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--k-fg-3)' }}>
+                  Photos per page
+                  <span className="k-segwrap" role="radiogroup" aria-label="Photos per page">
+                    {([1, 2, 4, 6] as const).map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        role="radio"
+                        aria-checked={perPage === n}
+                        className={`k-seg ${perPage === n ? 'k-seg--on' : ''}`}
+                        onClick={() => setPerPage(n)}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                  </span>
+                </span>
+              ) : null}
             </div>
+            {downloading === 'photos' || downloading === 'packet' ? (
+              <p style={{ marginTop: 8, fontSize: 12, color: 'var(--k-fg-3)' }}>
+                Building the PDF with photos — this can take up to a minute.
+              </p>
+            ) : null}
             {downloadError ? (
               <p className="k-error" style={{ marginTop: 8 }}>
                 {downloadError}
@@ -790,9 +934,73 @@ function Portal({
   )
 }
 
+function DownloadButton({
+  label,
+  busy,
+  disabled,
+  primary,
+  onClick,
+}: {
+  label: string
+  busy: boolean
+  disabled: boolean
+  primary?: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      className={primary ? 'k-btn' : 'k-btn k-btn--ghost'}
+      disabled={disabled}
+      onClick={onClick}
+    >
+      <Icon d={I.download} size={13} /> {busy ? 'Preparing…' : label}
+    </button>
+  )
+}
+
+/**
+ * A row on a `photos` link: number, photo, room, description -- the only
+ * fields the payload carries. Read-only (the server 403s every write).
+ */
+function PhotoOnlyRow({
+  item,
+  n,
+  onPhoto,
+  onPhotoError,
+}: {
+  item: PortalItem
+  n: number
+  onPhoto: () => void
+  onPhotoError: () => void
+}) {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: PHOTO_COLS,
+        gap: 8,
+        padding: '10px 16px',
+        fontSize: 13,
+        borderBottom: '1px solid var(--k-line)',
+        alignItems: 'center',
+      }}
+    >
+      <span style={{ fontFamily: 'var(--k-font-mono)', fontSize: 10.5, color: 'var(--k-fg-4)' }}>
+        {String(n).padStart(4, '0')}
+      </span>
+      <PhotoThumb item={item} onOpen={onPhoto} onError={onPhotoError} large />
+      <span style={{ color: 'var(--k-fg-3)', fontSize: 12 }}>{item.room_area ?? '—'}</span>
+      <span>{item.description || '—'}</span>
+    </div>
+  )
+}
+
 function Row({
   item,
   n,
+  cols,
+  showPhoto,
   editable,
   pending,
   onAge,
@@ -801,6 +1009,9 @@ function Row({
 }: {
   item: PortalItem
   n: number
+  cols: string
+  /** False on an `inventory` link, which carries no photo URLs. */
+  showPhoto: boolean
   editable: boolean
   pending: boolean
   onAge: (years: number | null) => void
@@ -814,7 +1025,7 @@ function Row({
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: COLS,
+        gridTemplateColumns: cols,
         gap: 8,
         padding: '9px 16px',
         fontSize: 12,
@@ -825,7 +1036,7 @@ function Row({
       <span style={{ fontFamily: 'var(--k-font-mono)', fontSize: 10.5, color: 'var(--k-fg-4)' }}>
         {String(n).padStart(4, '0')}
       </span>
-      <PhotoThumb item={item} onOpen={onPhoto} onError={onPhotoError} />
+      {showPhoto ? <PhotoThumb item={item} onOpen={onPhoto} onError={onPhotoError} /> : null}
       <span
         style={{
           color: 'var(--k-fg-3)',
@@ -906,32 +1117,38 @@ function PhotoThumb({
   item,
   onOpen,
   onError,
+  large,
 }: {
   item: PortalItem
   onOpen: () => void
   onError: () => void
+  /** The bigger cell a photos-only link uses. */
+  large?: boolean
 }) {
+  // The ~240px thumbnail (~13 KB) where the API sends one; the full original
+  // (~2.7 MB) was the only option before 0054 and stays the fallback.
+  const src = item.thumb_url || item.image_url
   const [broken, setBroken] = useState(false)
   // A fresh URL after a refresh gets a fresh try.
-  const [triedUrl, setTriedUrl] = useState(item.image_url)
-  if (triedUrl !== item.image_url) {
-    setTriedUrl(item.image_url)
+  const [triedUrl, setTriedUrl] = useState(src)
+  if (triedUrl !== src) {
+    setTriedUrl(src)
     setBroken(false)
   }
 
-  if (!item.image_url || broken) {
+  if (!src || broken) {
     return <span style={{ color: 'var(--k-fg-4)', fontSize: 11.5 }}>—</span>
   }
   return (
     <button
       type="button"
-      className="k-portal-thumb"
+      className={large ? 'k-portal-thumb k-portal-thumb--lg' : 'k-portal-thumb'}
       onClick={onOpen}
       title="View photo"
       aria-label={`View photo of ${item.description || `line ${item.id}`}`}
     >
       <img
-        src={item.image_url}
+        src={src}
         alt=""
         loading="lazy"
         onError={() => {

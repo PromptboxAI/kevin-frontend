@@ -54,10 +54,23 @@ export type PortalItem = {
   replaced_qty: number | null
   recoverable: number
   receipt_url: string | null
+  /** The full original, for the full-size view. Null on `inventory` links. */
   image_url: string | null
+  /** ~240px, signed like image_url -- for the row thumbnail. Null with no photo. */
+  thumb_url?: string | null
   /** Populated ONLY on paywall sample rows. The link IS the disclosure. */
   source_link: string | null
 }
+
+/**
+ * What a share link GRANTS (backend 0054), frozen when it was created:
+ * `inventory` = priced lines, no photos · `photos` = description, room and
+ * photo ONLY -- no money anywhere in the payload, read-only · `both` = all.
+ */
+export type ShareContents = 'inventory' | 'photos' | 'both'
+
+/** The documents `/p/{token}/export?contents=` will serve this link. */
+export type PortalDocument = 'worksheet' | 'photos' | 'packet'
 
 /** The caller's OWN pending new-item proposals, echoed so they don't vanish. */
 export type PortalProposal = {
@@ -94,8 +107,18 @@ export type PortalResponse = {
   paid: boolean
   /** How many lines are withheld; the UI renders skeletons from the count. */
   locked_count: number
-  /** Visible while locked ON PURPOSE: the total is the proof, not the product. */
+  /**
+   * On every link that carries money (free links too, since 0054); null only
+   * on `photos` links.
+   */
   totals: PortalTotals | null
+  /** The link's grant. Absent on a pre-0054 backend -- read as `both`. */
+  contents?: ShareContents
+  /**
+   * What the download picker may offer. Listed even before `can_download`, so
+   * a locked page can say what unlocking buys. Render from THIS, never guess.
+   */
+  documents?: PortalDocument[]
   proposals: PortalProposal[]
   /** Every figure is the ADJUSTER'S ESTIMATE. Rendered, never paraphrased. */
   disclaimer: string
@@ -151,12 +174,30 @@ export const POLL_ATTEMPTS = 20
  * error on the API's host. Portal routes are unauthenticated, so there is no
  * header to add; the filename is the server's, from Content-Disposition.
  */
-export async function downloadPortalExport(token: string, format: 'xlsx' | 'pdf'): Promise<void> {
+export async function downloadPortalExport(
+  token: string,
+  format: 'xlsx' | 'pdf',
+  doc: PortalDocument = 'worksheet',
+  photosPerPage: 1 | 2 | 4 | 6 = 2,
+): Promise<void> {
+  // Same parameters as the claim export (0054). Photo documents are PDF only.
+  const qs = new URLSearchParams({ format })
+  if (doc !== 'worksheet') {
+    qs.set('format', 'pdf')
+    qs.set('contents', doc)
+    qs.set('photos_per_page', String(photosPerPage))
+  }
   const response = await fetch(
-    `${API_BASE_URL}/p/${encodeURIComponent(token)}/export?format=${format}`,
+    `${API_BASE_URL}/p/${encodeURIComponent(token)}/export?${qs.toString()}`,
   )
   if (!response.ok) {
-    throw new ApiError(response.status, await response.text(), response.headers.get('X-Request-ID'))
+    const retry = Number(response.headers.get('Retry-After'))
+    throw new ApiError(
+      response.status,
+      await response.text(),
+      response.headers.get('X-Request-ID'),
+      Number.isFinite(retry) && retry > 0 ? retry : null,
+    )
   }
   const disposition = response.headers.get('Content-Disposition') ?? ''
   const match = /filename="?([^";]+)"?/.exec(disposition)

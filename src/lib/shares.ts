@@ -41,12 +41,25 @@ export type ShareSummary = {
   created_at: string | null
   /** Null = no paywall. FROZEN at mint -- a different price is a different link. */
   unlock_price: number | null
+  /** What the link grants (0054), FROZEN at mint. Absent pre-0054 = `both`. */
+  contents?: ShareContents
+}
+
+/** `inventory` | `photos` | `both` -- see ShareContents in portal.ts. */
+export type ShareContents = 'inventory' | 'photos' | 'both'
+
+export const SHARE_CONTENTS_LABEL: Record<ShareContents, string> = {
+  both: 'Inventory + photos',
+  inventory: 'Inventory only',
+  photos: 'Photos only',
 }
 
 export type MintShareBody = {
   audience?: 'client' | 'carrier'
   ttl_days?: number | null
   allow_download?: boolean
+  /** Default `both`. Frozen once the link exists; a different grant is a new link. */
+  contents?: ShareContents
   /**
    * Strictly positive when present. A zero-price paywall renders a lock screen
    * that charges nothing, which is a broken screen rather than a free one.

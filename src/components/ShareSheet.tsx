@@ -14,10 +14,11 @@ import {
   redeliverShare,
   releaseShare,
   revokeShare,
+  SHARE_CONTENTS_LABEL,
   shareLink,
   shareState,
 } from '../lib/shares'
-import type { ShareSummary } from '../lib/shares'
+import type { ShareContents, ShareSummary } from '../lib/shares'
 
 /**
  * Share links — the adjuster's side of the client portal.
@@ -45,6 +46,8 @@ export default function ShareSheet({
   const queryClient = useQueryClient()
   const [price, setPrice] = useState('')
   const [allowDownload, setAllowDownload] = useState(true)
+  /** What the new link grants. Frozen once it exists (0054). */
+  const [includes, setIncludes] = useState<ShareContents>('both')
   /** Which link's Copy just ran, and whether the clipboard took it. */
   const [copied, setCopied] = useState<{ id: string; ok: boolean } | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
@@ -74,6 +77,7 @@ export default function ShareSheet({
         audience: 'client',
         allow_download: allowDownload,
         unlock_price: unlockPrice,
+        contents: includes,
       })
       /**
        * "Allow downloads" has to MEAN downloads. On a free link the API wants
@@ -226,9 +230,38 @@ export default function ShareSheet({
                 Allow downloads
               </label>
             </div>
+
+            {/* What the link grants -- enforced by the server, not this UI. */}
+            <div
+              style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}
+            >
+              <span style={{ fontSize: 12, color: 'var(--k-fg-3)' }}>Includes</span>
+              <div className="k-segwrap" role="radiogroup" aria-label="What the link includes">
+                {(['both', 'inventory', 'photos'] as ShareContents[]).map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    role="radio"
+                    aria-checked={includes === c}
+                    className={`k-seg ${includes === c ? 'k-seg--on' : ''}`}
+                    onClick={() => setIncludes(c)}
+                  >
+                    {SHARE_CONTENTS_LABEL[c]}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {includes !== 'both' ? (
+              <span style={{ display: 'block', fontSize: 11.5, color: 'var(--k-fg-3)', marginBottom: 6 }}>
+                {includes === 'photos'
+                  ? 'Each item’s description, room and photo — no prices, and nothing can be edited. Downloads offer the photos PDF.'
+                  : 'The priced inventory without photos. Downloads offer the spreadsheet and inventory PDF.'}
+              </span>
+            ) : null}
+
             <span style={{ fontSize: 11.5, color: 'var(--k-fg-4)' }}>
-              Anyone with the link sees a read-only snapshot. Only Revoke disables it. A price is
-              frozen at creation — a different price is a different link.
+              Anyone with the link sees a read-only snapshot. Only Revoke disables it. A price and
+              what the link includes are fixed when it’s created — to change either, make a new link.
             </span>
           </section>
 
@@ -399,6 +432,7 @@ function ShareRow({
         <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 12.5, fontWeight: 500 }}>
             {share.audience === 'carrier' ? 'Carrier link' : 'Client link'}
+            {` · ${SHARE_CONTENTS_LABEL[share.contents ?? 'both']}`}
             {paywalled ? ` · ${fmtUSD(share.unlock_price)}` : ''}
           </span>
           <Badge tone={SHARE_STATE_TONE[state]}>{SHARE_STATE_LABEL[state]}</Badge>
