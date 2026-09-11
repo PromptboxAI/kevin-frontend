@@ -471,21 +471,25 @@ function Portal({
             </div>
           </div>
 
-          {/* Stated in the payload so a client cannot render the money without it. */}
-          <div
-            style={{
-              fontSize: 11,
-              color: 'var(--k-fg-4)',
-              marginTop: 10,
-              borderTop: '1px solid var(--k-line)',
-              paddingTop: 8,
-            }}
-          >
-            {locked > 0 && !paid && !photosOnly
-              ? `Totals cover all ${fmtInt(total)} items, including the ${fmtInt(locked)} not shown below. `
-              : ''}
-            {data.disclaimer}
-          </div>
+          {/* Stated in the payload so a client cannot render the money without
+              it -- and so not shown where there is no money: the disclaimer
+              is about dollar figures, and a photos link has none. */}
+          {photosOnly ? null : (
+            <div
+              style={{
+                fontSize: 11,
+                color: 'var(--k-fg-4)',
+                marginTop: 10,
+                borderTop: '1px solid var(--k-line)',
+                paddingTop: 8,
+              }}
+            >
+              {locked > 0 && !paid
+                ? `Totals cover all ${fmtInt(total)} items, including the ${fmtInt(locked)} not shown below. `
+                : ''}
+              {data.disclaimer}
+            </div>
+          )}
         </section>
 
         {awaitingWebhook ? (
