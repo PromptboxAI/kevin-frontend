@@ -1039,3 +1039,79 @@ rename costs the frontend no change.
 `/v1/me`. For an anonymous visitor that call has no session. Whether AppHeader
 degrades cleanly or needs a guard is a frontend problem, not part of this
 contract — noted here only so it is not a surprise.
+
+---
+
+## 38 · `POST /v1/demo/identify` — identify and price ONE photo, anonymously
+
+Blocks the own-photo half of the new homepage. The page was rebuilt around a
+try-it demo (`src/components/PhotoDropDemo.tsx`): drop one photo, watch it come
+back identified and priced. The three **sample** photos work today — they carry
+the real output the pipeline produced for them. The **drop your own photo** path
+has nowhere to post, so it currently renders an honest "live identification is
+not answering" state and sends the visitor to the samples. It never fabricates
+a result, so nothing is broken or misleading in the meantime — it is just the
+half that actually sells.
+
+**The ask, in one line:** accept one image without a bearer token, run the
+existing identify-and-price path on it, return one item-shaped object, and
+store nothing.
+
+### Contract we have already built against
+
+`POST /v1/demo/identify`, `multipart/form-data`, one part named `photo`.
+
+The 200 body uses the **same field names as `claim_items`**, so the frontend
+renders it with the same code and the two cannot drift:
+
+```
+description, make_mfr, model_number, category,
+rcv, quantity, age_years, depreciation_pct,
+ext_cost, tax, rcv_total_incl, depreciation_amount, acv_total_incl,
+valuation_basis, confidence, source_link, alternative_sources[]
+```
+
+`alternative_sources[]` entries are `{title, source, price, link}` — and if
+`kind` (retail/resale) ships on comps elsewhere, send it here too. The card
+labels the basis on screen, so a like-kind or resale price can never read as a
+new-replacement one.
+
+### Three decisions that are yours, not ours
+
+1. **Tax.** An anonymous visitor has no loss ZIP, so there is no jurisdiction to
+   resolve a rate from. Either return `tax: 0` and let the card show a pre-tax
+   line, or apply a stated default and tell us which — the card prints whatever
+   you send and we will label it. What we must not do is print a tax figure that
+   implies a jurisdiction nobody chose.
+2. **Age and depreciation.** A stranger's photo has no age. `age_years: 0` →
+   `depreciation_pct: 0` → `acv_total_incl == rcv_total_incl` is consistent with
+   how items land from processing, and the card reads correctly that way. Say so
+   if you would rather omit the depreciation fields entirely.
+3. **Unidentifiable photos.** Someone will drop a blurry wall. Please return the
+   normal `needs_manual` shape with a `manual_reason` rather than a 4xx — rule 12
+   already gives us a non-embarrassing way to render "Kevin would not guess at
+   this", and an error page reads like the product broke when it actually
+   behaved correctly.
+
+### Cost and abuse, because this one is exposed
+
+Each run is roughly **$0.08** (one vision call, two vendor searches), on an
+endpoint with no account behind it. It needs limits at the edge, not in the
+client:
+
+- one photo per request, rejected if more;
+- a per-IP rate limit (we suggest a handful per hour) and a **global daily
+  ceiling**, so a script cannot run up a bill overnight;
+- `429` with a plain reason when either trips — the client shows a "come back
+  later" state, so the number just needs to be honest.
+
+Server-side file limits should match the existing ingest rules (rule 21: 15 MB a
+photo, the same format allowlist). The client pre-checks both so a doomed upload
+never leaves the browser, but the client is not a security boundary.
+
+### What it must NOT do
+
+No claim created, no row persisted, no quota consumed, no `photo_id` minted,
+nothing attributable to a user. Same posture as
+`GET /v1/worksheet/preview`: it computes, answers and forgets. The visitor is
+told on screen that nothing was saved, so that has to be true.
