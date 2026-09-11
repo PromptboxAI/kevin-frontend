@@ -142,6 +142,8 @@ export function MktShot({
   size,
   caption,
   ratio,
+  mobileSrc,
+  mobileRatio,
 }: {
   src?: string
   alt?: string
@@ -150,6 +152,15 @@ export function MktShot({
   size?: string
   caption?: string
   ratio?: string
+  /**
+   * A phone-sized CROP of the same screen, not a scaled copy. The desktop
+   * captures are 1740px wide and render at ~325px on a phone -- about 19%,
+   * where none of the text can be read and the shot is decoration. A crop of
+   * the part that matters displays near 1:1 instead.
+   */
+  mobileSrc?: string
+  /** Aspect of mobileSrc; it is a different shape from the full shot. */
+  mobileRatio?: string
 }) {
   // Remember WHICH src failed rather than a bare boolean, so fixing the path
   // recovers on the next render with no effect and no reset to sequence.
@@ -165,15 +176,29 @@ export function MktShot({
         </span>
         <span className="k-shot-label">{label}</span>
       </div>
-      <div className="k-shot-body" style={ratio ? { aspectRatio: ratio } : undefined}>
+      {/* The ratio travels as a CUSTOM PROPERTY rather than as `aspectRatio`
+          directly: an inline aspect-ratio cannot be overridden by a media
+          query, and the mobile crop is a different shape from the full shot.
+          kevin.css reads --shot-ar, and --shot-ar-m below 640px. */}
+      <div
+        className="k-shot-body"
+        style={
+          ratio
+            ? ({ '--shot-ar': ratio, ...(mobileRatio ? { '--shot-ar-m': mobileRatio } : {}) } as React.CSSProperties)
+            : undefined
+        }
+      >
         {src && !broken ? (
-          <img
-            src={src}
-            alt={alt || slot || label}
-            loading="lazy"
-            decoding="async"
-            onError={() => setFailedSrc(src ?? null)}
-          />
+          <picture>
+            {mobileSrc ? <source media="(max-width: 640px)" srcSet={mobileSrc} /> : null}
+            <img
+              src={src}
+              alt={alt || slot || label}
+              loading="lazy"
+              decoding="async"
+              onError={() => setFailedSrc(src ?? null)}
+            />
+          </picture>
         ) : (
           <div className="k-shot-ph">
             <span className="k-shot-ph-badge">Screenshot slot</span>
@@ -379,7 +404,7 @@ export default function LandingPage() {
               says twice more anyway. */}
           <p className="k-lede">
             Bulk-ingest hundreds of photos and Kevin returns a complete, Xactimate-ready personal
-            property inventory — reviewed in one grid, not one at a time.
+            property inventory.
           </p>
           <div className="k-hero-actions">
             <Link className="k-btn k-btn--lg" to="/sign-up">
@@ -465,7 +490,12 @@ export default function LandingPage() {
                     />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
+                    {/* Classed so the phone crop can let it wrap; the inline
+                        nowrap below is right on the wide desktop card and
+                        wrong in a 333px row, where it left 87px for the name
+                        and cut it mid-word. */}
                     <div
+                      className="k-card-row-title"
                       style={{
                         fontSize: 12.5,
                         color: 'var(--k-fg)',
@@ -625,6 +655,8 @@ export default function LandingPage() {
           </div>
           <MktShot
             src="/marketing/staging-sets-2x.webp"
+            mobileSrc="/marketing/staging-sets-mobile.webp"
+            mobileRatio="388 / 266"
             ratio="3156 / 1720"
             alt="Kevin photo staging — proposed photo sets awaiting review, one merged into a single item with an adjuster note"
             label="kevin.co/claims/CLM-2026-04412/staging"
@@ -657,6 +689,8 @@ export default function LandingPage() {
           </div>
           <MktShot
             src="/marketing/worksheet-review-2x.webp"
+            mobileSrc="/marketing/worksheet-review-mobile.webp"
+            mobileRatio="770 / 418"
             ratio="3186 / 1766"
             alt="Kevin review worksheet — priced line items with make, model, content class, depreciation and ACV columns"
             label="kevin.co/claims/CLM-2026-04412/worksheet"
@@ -691,6 +725,8 @@ export default function LandingPage() {
           </div>
           <MktShot
             src="/marketing/export-modal-2x.webp"
+            mobileSrc="/marketing/export-modal-mobile.webp"
+            mobileRatio="508 / 216"
             ratio="3156 / 1916"
             alt="Kevin export modal — Xactimate Excel XactContents template, client PDF and full bundle, with download and share actions"
             label="Export claim · CLM-2026-04412"

@@ -540,7 +540,7 @@
     .k-footx-brand { max-width: 260px; margin-right: auto; }
     .k-footx-brand p { font-size: 12.5px; color: var(--k-fg-4); line-height: 1.55; margin: 10px 0 0; }
     .k-footx-col { display: flex; flex-direction: column; gap: 9px; min-width: 120px; }
-    .k-footx-h { font-family: var(--k-font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--k-fg-4); font-weight: 600; margin-bottom: 3px; }
+    .k-footx-h { font-family: var(--k-font-mono); font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--k-fg-4); font-weight: 600; margin-bottom: 3px; }
     .k-footx-col a { font-size: 13px; color: var(--k-fg-3); text-decoration: none; }
     .k-footx-col a:hover { color: var(--k-fg); }
     .k-footx-base { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; padding: 16px 40px 22px; max-width: 1120px; margin: 0 auto; border-top: 1px solid var(--k-line); font-size: 12px; color: var(--k-fg-4); }
@@ -2386,18 +2386,21 @@
       max-width: 1280px; margin: 0 auto;
       padding: 12px 40px 40px;
     }
+    /* No card, no dividers. The hero shot above it is already a bordered
+       container and the section below opens with a rule, so boxing four
+       numbers between them made the page read as a stack of panels rather
+       than as a page. The figures carry themselves at this size; the grid
+       alone is enough structure. (Phones get the same treatment in a 2x2 --
+       see the 640px block, where the bordered rows were also reading as four
+       more buttons under the CTA.) */
     .k-stats-ribbon-inner {
       display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
-      background: var(--k-bg); border: 1px solid var(--k-line);
-      border-radius: 14px; overflow: hidden;
-      box-shadow: 0 1px 2px rgba(20,30,60,0.03);
+      column-gap: 32px;
     }
     .k-stat-cell {
-      padding: 26px 28px 22px;
-      border-right: 1px solid var(--k-line);
+      padding: 26px 4px 22px;
       text-align: left; position: relative;
     }
-    .k-stat-cell:last-child { border-right: 0; }
     .k-stat-cell:hover { background: var(--k-bg-2); }
     .k-stat-cell-n {
       font-family: var(--k-font-display); font-weight: 400;
@@ -4299,7 +4302,14 @@
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
 
-.k-shot-body { position: relative; width: 100%; aspect-ratio: 16 / 10; background: var(--k-bg-2); }
+/* Aspect comes from --shot-ar (set inline by MktShot) rather than from an
+   inline `aspect-ratio`, which a media query cannot override. Below 640px a
+   mobile CROP supplies its own shape via --shot-ar-m; 16/10 stays the default
+   for shots that pass no ratio at all. */
+.k-shot-body { position: relative; width: 100%; aspect-ratio: var(--shot-ar, 16 / 10); background: var(--k-bg-2); }
+@media (max-width: 640px) {
+  .k-shot-body { aspect-ratio: var(--shot-ar-m, var(--shot-ar, 16 / 10)); }
+}
 
 .k-shot-body img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; }
 
@@ -4917,6 +4927,54 @@
       }
       .k-stat-cell-l { grid-column: 2; grid-row: 1; margin-top: 0; font-size: 13.5px; }
       .k-stat-cell-s { grid-column: 2; grid-row: 2; margin-top: 5px; line-height: 1.45; }
+
+      /* The row layout above fixed the SHAPE and not the HEIGHT: four stats
+         still ran 511px, over half a screen of equal-weight content directly
+         under the hero CTA, which is what made the CTA stop reading as the one
+         action on the page.
+
+         The supporting notes are what cost the height -- "You touch exceptions
+         only, not a day of searching, typing and adjusting" is three lines on a
+         235px column. They are corroboration for someone already reading
+         closely, which on a phone happens further down the page, not in the
+         second screen. Figure and label carry the claim on their own.
+
+         ~200px instead of 511px, and the ribbon stops competing with the CTA. */
+      .k-stat-cell-s { display: none; }
+
+      /* Shorter was not enough. Four full-width 333px rows, each bordered,
+         sitting directly under two 343px bordered buttons read as SIX STACKED
+         BUTTONS -- same width, same weight, same shape -- so the eye could not
+         tell the one action from the supporting numbers.
+
+         Breaking the WIDTH MATCH fixes it; trimming more height does not. A
+         2x2 grid halves each cell to ~160px, and dropping the card's border,
+         radius, shadow and dividers stops the block being a container of rows
+         at all. It becomes four numbers on the page, and the buttons stay the
+         only bordered, full-width things in the hero. */
+      .k-stats-ribbon-inner {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        column-gap: 14px;
+        row-gap: 20px;
+      }
+      .k-stat-cell {
+        display: block;
+        padding: 0;
+        border: 0;
+        text-align: center;
+      }
+      .k-stat-cell:hover { background: none; }
+      .k-stat-cell-n {
+        /* "~29 min" was the one figure of four that wrapped, which read as a
+           layout fault rather than as a value. */
+        font-size: 26px;
+        white-space: nowrap;
+      }
+      .k-stat-cell-l { font-size: 12.5px; margin-top: 3px; line-height: 1.35; }
     }
 
     /* Landing gallery cards on a phone. The four viz mock-ups are miniatures of
@@ -5014,15 +5072,55 @@
          existed only to push the shot below the fold; with no shot there is
          nothing to push, and the min-height would only re-introduce the dead
          air above the eyebrow badge. */
-      .k-hero-r { display: none; }
+
+      /* The hero card returns on a phone, but CROPPED and BELOW the CTAs. The
+         original objection stands unchanged: a full product shot ABOVE the
+         fold competed with the headline and pushed the CTA down. Three
+         worksheet rows sitting AFTER the buttons is a different thing --
+         evidence the grid is real, at a size where its text can be read,
+         without taking the first screen away from the headline. */
+      .k-hero-r { display: block; margin-top: 26px; }
+      /* No card chrome: the bar, the floating callouts, and everything past
+         the third row. What survives is the part that reads at 375px. */
+      .k-hero-r .k-anno,
+      .k-hero-r .k-card-bar,
+      .k-hero-r .k-card-row:nth-child(n + 4) { display: none; }
+      .k-hero-r .k-card-row { padding-left: 12px; padding-right: 12px; }
+      /* In a 333px row the badge took 94px and the item name got 87 -- so
+         every name truncated mid-word ("Guess Branded Leather Belt with...").
+         The name is the thing being proved; the badge is a secondary signal
+         that still appears in the staging shot further down. Drop it here and
+         let the name take two lines. */
+      .k-hero-r .k-card-row .k-badge { display: none; }
+      .k-hero-r .k-card-row-title {
+        white-space: normal !important;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
       /* A little air above the eyebrow badge so the block does not start hard
          against the nav -- 32px read as cramped, 52px sits it down without
          costing a screen. */
       .k-hero { gap: 0 !important; padding-top: 48px !important; padding-bottom: 40px !important; }
-      /* The display leading is 1.02 — set for three short hand-written lines,
-         where near-touching baselines read as deliberate. The headline wraps
-         to two long balanced lines now and 1.02 just looks cramped. */
-      .k-h1 { line-height: 1.12 !important; }
+      /* The headline sat at 8.5vw = 31.9px, which put its two balanced lines
+         at 255px and 234px inside a 343px column -- ~90px of unused width, so
+         it read as condensed rather than as a hero. 10.2vw takes the long line
+         to ~306px (89% of the column) and still breaks in two. Leading rises
+         with it: 1.1 x 38px = 42px, MORE air than the 35.7px it had, despite
+         the tighter ratio. */
+      /* `.k-landing h1` (0,1,1) is declared with !important elsewhere in this
+         file and beats a bare `.k-h1` (0,1,0) even when both are important --
+         so this has to be at least as specific to land. Checked the computed
+         value rather than trusting the rule: the first attempt read back as
+         31.875px, unchanged. */
+      .k-landing .k-h1 { font-size: clamp(34px, 10.2vw, 46px) !important; line-height: 1.1 !important; }
+
+      /* Centered to match the sections below and /done-for-you. The hero was
+         the only left-aligned block on the page, which is most of what read as
+         "messy" on a phone. */
+      .k-hero-l { text-align: center; }
+      .k-hero-actions { justify-content: center; }
       /* The trust strip repeats the pricing line the CTA and the mid-funnel
          banner both make, and on a phone it is four fragments wrapping across
          three lines directly under the buttons. Desktop keeps it. */
