@@ -85,9 +85,27 @@ type Options = Omit<RequestInit, 'body'> & {
   retryOnRateLimit?: boolean
 }
 
+/**
+ * While the public sample claim is on screen, every API call goes out WITHOUT
+ * the signed-in user's token.
+ *
+ * The sample is served to anonymous callers. Send a token and the backend
+ * reads the call as "one of MY claims" and answers 404 -- measured on
+ * 2026-09-11: /v1/claims/sample, its rooms, photos and proposals, and
+ * /v1/claim_items/{id} for its rows were all 200 anonymous and 404 signed in.
+ * So a signed-in adjuster who clicked "See a finished claim" got "Claim not
+ * found", and the item panel could not open a row. A path rule cannot catch
+ * it -- /v1/claim_items/8081 does not say "sample" -- so the worksheet sets
+ * this for as long as it shows the sample, and clears it on the way out.
+ */
+let anonymousMode = false
+export function setAnonymousMode(on: boolean) {
+  anonymousMode = on
+}
+
 async function authHeader(): Promise<Record<string, string>> {
   // Public routes (the client portal) run with no session and no Supabase keys.
-  if (!isAuthConfigured) return {}
+  if (!isAuthConfigured || anonymousMode) return {}
   const { data } = await getSupabase().auth.getSession()
   const token = data.session?.access_token
   return token ? { Authorization: `Bearer ${token}` } : {}
@@ -179,7 +197,7 @@ async function fetchBinary(
   path: string,
 ): Promise<{ blob: Blob; filename: string | null; headers: Headers }> {
   const { data } = await (await import('./supabase')).getSupabase().auth.getSession()
-  const token = data.session?.access_token
+  const token = anonymousMode ? undefined : data.session?.access_token
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   })

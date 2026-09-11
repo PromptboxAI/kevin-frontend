@@ -14,7 +14,8 @@ import ProposalsPanel from '../components/ProposalsPanel'
 import RoomsPopover from '../components/RoomsPopover'
 import ClaimStateMenu from '../components/ClaimStateMenu'
 import { I, Icon } from '../components/Icon'
-import { ApiError, api, downloadExport, retryUnlessMissing } from '../lib/api'
+import { ApiError, api, downloadExport, retryUnlessMissing, setAnonymousMode } from '../lib/api'
+import { SAMPLE_CLAIM_ID } from '../lib/worksheet-preview'
 import {
   DEPR_ERROR_COPY,
   deprCellValue,
@@ -110,6 +111,19 @@ const OVERSCAN = 8
 
 export default function WorksheetPage() {
   const { claimId = '' } = useParams()
+  /**
+   * The public sample reads anonymously even when someone is signed in --
+   * with a token the backend treats it as the user's own claim and 404s (see
+   * setAnonymousMode). Set during render as well as in the effect, so the
+   * queries below already go out without the token on their first fetch; the
+   * cleanup restores the token before the next page's queries run.
+   */
+  const isSample = claimId === SAMPLE_CLAIM_ID
+  if (isSample) setAnonymousMode(true)
+  useEffect(() => {
+    setAnonymousMode(isSample)
+    return () => setAnonymousMode(false)
+  }, [isSample])
   const [openRow, setOpenRow] = useState<number | null>(null)
   const [status, setStatus] = useState('')
   const [search, setSearch] = useState('')
