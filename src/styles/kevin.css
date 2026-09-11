@@ -2445,9 +2445,15 @@
     }
 
     /* ── Final CTA band ─────────────────────────────────────────── */
+    /* Sized for the long homepage, which is now archived at /landing-full.
+       On the short page this band was 552px of a 3,246px document -- 17% of
+       it, taller than the whole ROI calculator, and its headline was 64px
+       against the hero's 60px, so the closer shouted louder than the opening.
+       The mid-funnel banner 215px above it already asks for action too.
+       Trimmed to sit under the hero in the hierarchy rather than over it. */
     .k-cta {
       position: relative; overflow: hidden;
-      padding: 96px 40px;
+      padding: 64px 40px;
       background: linear-gradient(135deg, oklch(0.22 0.05 250) 0%, oklch(0.15 0.04 252) 100%);
       color: #fff;
     }
@@ -2469,7 +2475,8 @@
     }
     .k-cta-h {
       font-family: var(--k-font-display); font-weight: 400;
-      font-size: 64px; letter-spacing: -0.030em; line-height: 1.02;
+      /* Below the hero's 60px on purpose -- see .k-cta above. */
+      font-size: 46px; letter-spacing: -0.030em; line-height: 1.05;
       margin: 0 0 20px; text-wrap: balance;
     }
     .k-cta-sub {

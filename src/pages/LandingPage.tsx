@@ -653,7 +653,7 @@ export default function LandingPage() {
             <div className="k-midcta-eyebrow">That was one item</div>
             <h2 className="k-midcta-h">See the whole process.</h2>
             <p className="k-midcta-p">
-              A real claim is three hundred photos, not one: bulk ingest, automatic photo sets,
+              A real claim is hundreds of photos, not one: bulk ingest, automatic photo sets,
               one grid to review, class depreciation, and an .xlsx your carrier's XactContents
               already accepts. The product page walks the whole run, end to end.
             </p>
