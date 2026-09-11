@@ -5129,7 +5129,14 @@
         padding-top: 48px !important;
         padding-bottom: 64px !important;
         min-height: calc(100svh - 40px);
-        align-content: start;
+        /* space-between, not start: the min-height above guarantees a full
+           screen, and `start` piled all of the leftover room UNDER the card --
+           a thin gap below the CTA and then a large empty block. Distributing
+           it puts the air between the buttons and the card and drops the card
+           toward the bottom of the screen, which is where it belongs as the
+           last thing before the fold. It also adapts: a tall phone gets a
+           bigger gap, a short one gets none, with no value to re-tune. */
+        align-content: space-between;
       }
       /* 19px is set for a 560px desktop measure; at 343px it runs long, so the
          phone takes 17.5 -- still a full point up from the old 16.5. */
