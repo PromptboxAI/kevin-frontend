@@ -8,9 +8,10 @@ import KevinWordmark from './KevinWordmark'
  * own quote and its own two figures; it stays inlined here for the same reason,
  * since its right panel differs in content from the reset screens'.
  *
- * Rule 7: no SOC 2 claim. The cipher names (TLS 1.3, AES-256) moved to
- * /security, where a reader is there for precision; a sign-in panel gets
- * the promise in plain words instead.
+ * Rule 7: no SOC 2 claim, and no security boilerplate on this panel at all.
+ * The cipher names, the plain-language rewrite and the protocol were each
+ * tried here and each said nothing to an adjuster signing in. That detail
+ * lives on /security, where a reader has gone looking for it.
  */
 
 export type AuthQuote = { text: string; who: string }
@@ -31,11 +32,10 @@ export default function AuthShell({
           <KevinWordmark size={18} suffix={true} to="/" />
         </div>
         <div className="k-auth-l-body">{children}</div>
+        {/* No security boilerplate. The cipher names went first, then the
+            plain-language version, then the protocol -- all of it said nothing
+            to an adjuster signing in. The real detail is on /security. */}
         <div className="k-auth-l-foot">
-          <span>Carrier-grade encryption at rest</span>
-          <span>·</span>
-          <span>TLS 1.3 in transit</span>
-          <span>·</span>
           <span>© 2026</span>
         </div>
       </div>

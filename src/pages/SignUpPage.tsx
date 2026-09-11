@@ -495,12 +495,11 @@ export default function SignUpPage() {
           <span>
             <Icon d={I.lock} size={11} /> Stripe-secured checkout
           </span>
-          <span>TLS 1.3 in transit</span>
         </div>
       </main>
 
       <footer className="k-onb-bot">
-        Carrier-grade encryption at rest · TLS 1.3 in transit · © 2026
+        © 2026
       </footer>
     </div>
   )
