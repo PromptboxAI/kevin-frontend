@@ -12,7 +12,7 @@ const { KevinWordmark: ADM_Wordmark, Icon: ADM_Icon, I: ADM_I, Badge: ADM_Badge 
 // ─── Demo data (seed only — replaced by real backend) ───────────────────────
 const ADM_ACCOUNTS = [
   { id: 'acct_4412', biz: 'Reyes Adjusting, LLC', owner: 'Mariana Reyes', email: 'mariana@reyesadjusting.com', plan: 'Pro', status: 'Active',   mrr: 249,  claims30: 14, claimsTotal: 168, joined: 'Jan 2026', last: '2h ago',  loc: 'Austin, TX' },
-  { id: 'acct_3981', biz: 'Long Island Public Adjusters', owner: 'Kevin Godfrey', email: 'kevin@lipublicadjusters.com', plan: 'Pro', status: 'Active', mrr: 249, claims30: 22, claimsTotal: 341, joined: 'Nov 2025', last: '40m ago', loc: 'Long Island, NY' },
+  { id: 'acct_3981', biz: 'Seaboard Public Adjusters', owner: 'Dana Whitfield', email: 'dana@seaboardpa.com', plan: 'Pro', status: 'Active', mrr: 249, claims30: 22, claimsTotal: 341, joined: 'Nov 2025', last: '40m ago', loc: 'Long Island, NY' },
   { id: 'acct_5120', biz: 'Gulf Coast Claims Group', owner: 'Devon Alvarez', email: 'devon@gulfcoastclaims.com', plan: 'Enterprise', status: 'Active', mrr: 2400, claims30: 186, claimsTotal: 2140, joined: 'Aug 2025', last: '1h ago', loc: 'Tampa, FL' },
   { id: 'acct_5566', biz: 'Brightwater Estate Sales', owner: 'Tricia O\'Connell', email: 'tricia@brightwaterestates.com', plan: 'Pro', status: 'Trial', mrr: 0, claims30: 2, claimsTotal: 2, joined: 'Aug 2026', last: '3h ago', loc: 'Bridgeport, CT' },
   { id: 'acct_5604', biz: 'Cunningham Loss Consulting', owner: 'James Cunningham', email: 'james@cunninghamloss.com', plan: 'Pro', status: 'Past due', mrr: 249, claims30: 9, claimsTotal: 77, joined: 'Feb 2026', last: '6 days ago', loc: 'Phoenix, AZ' },

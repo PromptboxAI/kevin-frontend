@@ -93,7 +93,7 @@ const AccountCreate = () => {
                 <span style={{ fontSize: 11.5, color: strength >= 3 ? 'var(--k-ok)' : strength === 2 ? 'var(--k-warn)' : strength === 1 ? 'var(--k-danger)' : 'var(--k-fg-4)', fontFamily: 'var(--k-font-mono)', fontWeight: 600, minWidth: 80 }}>{label || 'No password yet'}</span>
               </div>
             </AccField>
-            <AccField label="Firm name (optional)"><input className="k-insp-input" value={firm} onChange={(e) => setFirm(e.target.value)} placeholder="e.g. Long Island Public Adjusters, LLC" style={ACC_INPUT} /></AccField>
+            <AccField label="Firm name (optional)"><input className="k-insp-input" value={firm} onChange={(e) => setFirm(e.target.value)} placeholder="Your firm or agency" style={ACC_INPUT} /></AccField>
             <AccField label="What will you inventory?">
               <div className="k-onb-worktypes">
                 {ONB_WORKTYPES.map(([id, t, sub]) => (

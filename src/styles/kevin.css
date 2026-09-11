@@ -427,16 +427,27 @@
     }
     .k-nav a { font-size: 13px; cursor: pointer; }
     .k-nav a:hover { color: var(--k-fg); }
-    .k-hero { display: grid; grid-template-columns: 1.05fr minmax(0, 1fr); gap: 60px; padding: 72px 40px 90px; max-width: 1280px; margin: 0 auto; align-items: center; }
+    /* padding-bottom was 90px, which put the hero's bottom edge at 594px of a
+       900px viewport -- so the first screen showed the hero, the whole stats
+       ribbon, the BUILT FOR strip AND the top of the proof section. Four
+       things competing, which is what made the page feel busy before anyone
+       scrolled. 210px lets the hero own the screen with the stats peeking
+       below it as the invitation to scroll. */
+    .k-hero { display: grid; grid-template-columns: 1.05fr minmax(0, 1fr); gap: 60px; padding: 72px 40px 210px; max-width: 1280px; margin: 0 auto; align-items: center; }
     .k-h1 {
       font-family: var(--k-font-display); font-weight: 400;
       font-size: 60px; line-height: 1.02; letter-spacing: -0.028em;
       margin: 22px 0 22px; color: var(--k-fg); text-wrap: balance;
     }
     .k-h1 em { font-style: italic; color: var(--k-accent); font-weight: 400; }
+    /* 16.5px was the same size at 1440px and at 375px, and it was too small at
+       both: under a 60px display headline it read as caption text rather than
+       as the sentence that explains the product, and on a phone under a 38px
+       headline it was simply hard to read. 19px gives the copy column enough
+       weight to hold its side of the hero against the product card. */
     .k-lede {
-      font-size: 16.5px; line-height: 1.55; color: var(--k-fg-2);
-      max-width: 540px; margin: 0; text-wrap: pretty;
+      font-size: 19px; line-height: 1.55; color: var(--k-fg-2);
+      max-width: 560px; margin: 0; text-wrap: pretty;
     }
     .k-trust {
       margin-top: 32px; display: flex; gap: 10px; align-items: center;
@@ -5102,7 +5113,27 @@
       /* A little air above the eyebrow badge so the block does not start hard
          against the nav -- 32px read as cramped, 52px sits it down without
          costing a screen. */
-      .k-hero { gap: 0 !important; padding-top: 48px !important; padding-bottom: 40px !important; }
+      /* The hero OWNS the first screen: nothing from the next section may
+         peek under the card. A fixed padding cannot do this -- it is tuned to
+         one device height and wrong on every other, showing stats on a tall
+         phone and wasting a screen on a short one. A min-height in `svh`
+         (small viewport height, so mobile browser chrome is accounted for)
+         pins the next section to the fold at any size. 40px is subtracted for
+         the nav bar above, which is outside this element.
+
+         This is the `min-height: 100svh` that was retired when the hero had no
+         shot on a phone. There is a shot again, and it is the last thing in
+         the first screen by design. */
+      .k-hero {
+        gap: 0 !important;
+        padding-top: 48px !important;
+        padding-bottom: 64px !important;
+        min-height: calc(100svh - 40px);
+        align-content: start;
+      }
+      /* 19px is set for a 560px desktop measure; at 343px it runs long, so the
+         phone takes 17.5 -- still a full point up from the old 16.5. */
+      .k-lede { font-size: 17.5px; }
       /* The headline sat at 8.5vw = 31.9px, which put its two balanced lines
          at 255px and 234px inside a 343px column -- ~90px of unused width, so
          it read as condensed rather than as a hero. 10.2vw takes the long line

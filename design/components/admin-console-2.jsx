@@ -812,7 +812,7 @@ const AdminSystem = () => {
   const [svcKey, setSvcKey] = React.useState(null);
   const [refQ, setRefQ] = React.useState('');
   const [queue, setQueue] = React.useState([
-    { id: 'EXP-2026-1142',  biz: 'Long Island Public Adjusters', err: 'Export failed · XLSX_WRITE_TIMEOUT', stage: 'Export → rebuild the XactContents workbook', state: 'failed' },
+    { id: 'EXP-2026-1142',  biz: 'Seaboard Public Adjusters', err: 'Export failed · XLSX_WRITE_TIMEOUT', stage: 'Export → rebuild the XactContents workbook', state: 'failed' },
     { id: 'CLM-2026-05120', biz: 'Gulf Coast Claims', err: '2 photos failed OCR', stage: 'Vision → re-run OCR on the 2 failed photos', state: 'failed' },
     { id: 'CLM-2026-05301', biz: 'Cardinal TPA',      err: 'Comp source timeout',  stage: 'Pricing → re-fetch comps for affected items', state: 'failed' },
     { id: 'CLM-2026-04999', biz: 'Meridian Adjusters', err: '.zip partially corrupt', stage: 'Ingest → re-unpack the archive', state: 'blocked' },

@@ -260,11 +260,15 @@ export default function SignUpPage() {
                   </div>
                 </AccField>
                 <AccField label="Firm name (optional)">
+                  {/* No example COMPANY in the placeholder, on purpose: this
+                      field is filled in by competing adjusting firms, and an
+                      example naming a real one -- least of all ours -- reads
+                      as either an endorsement or a rival. */}
                   <input
                     className="k-insp-input"
                     value={firm}
                     onChange={(e) => setFirm(e.target.value)}
-                    placeholder="e.g. Long Island Public Adjusters, LLC"
+                    placeholder="Your firm or agency"
                     autoComplete="organization"
                     style={ACC_INPUT}
                   />

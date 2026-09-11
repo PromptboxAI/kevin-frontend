@@ -395,7 +395,7 @@ export default function LandingPage() {
               instead, and still lands on three lines, which is what sets this
               column's height against the hero card. */}
           <h1 className="k-h1" style={{ textWrap: 'balance' }}>
-            The Contents List that writes itself
+            The Content List that writes itself
           </h1>
           {/* Short at every width. The long version listed items identified,
               brands matched, depreciation suggested and three comps per line —
