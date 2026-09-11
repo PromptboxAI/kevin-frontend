@@ -204,7 +204,7 @@ export default function SettingsPricingPage() {
             on={ceilings}
             set={setCeilings}
             title="Enforce class depreciation ceilings"
-            desc="Cap each item's depreciation at the maximum for its content class, so a salvage floor is always retained no matter the age. Off, straight-line runs uncapped to the schedule's own limit."
+            desc="Cap each item's depreciation at the maximum its content class sets. Most classes set none, so depreciation runs to 100% once an item is past its useful life and its ACV is $0.00. Off, straight-line always runs to 100%."
           />
           <Toggle
             on={tiebreak}
