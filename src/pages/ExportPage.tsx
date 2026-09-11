@@ -40,13 +40,13 @@ import type { ClaimItem, ClaimItemListResponse, ClaimSummary } from '../lib/type
  */
 
 /**
- * What the backend can build. `contents=packet` shipped in 3c193aa, so Photos
- * can be ticked -- alongside Inventory. `contents=photos` (photos alone) is
- * the pending addendum and 422s today, so Inventory stays locked on until it
- * ships. Flip PHOTOS_ONLY_LIVE when the backend confirms it.
+ * What the backend can build: `contents=packet` (3c193aa) and `contents=photos`
+ * (dae921c), so both toggles are free. Photos alone does NOT stamp
+ * `exported_at` -- the Proof of Loss is the schedule -- so no copy on this page
+ * may say it marks the claim exported.
  */
 const PHOTO_PACKET_LIVE = true
-const PHOTOS_ONLY_LIVE = false
+const PHOTOS_ONLY_LIVE = true
 
 const PER_PAGE: PhotosPerPage[] = [1, 2, 4, 6]
 
@@ -134,7 +134,11 @@ export default function ExportPage() {
       setError(
         err instanceof ApiError && err.status === 413
           ? 'This claim has more than 500 photos linked to items, too many for one PDF. Export the inventory alone, or contact support.'
-          : err instanceof ApiError
+          : // Photos alone with nothing linked: the API refuses rather than
+            // hand back an empty PDF that looks finished.
+            err instanceof ApiError && err.status === 409 && pdfContents === 'photos'
+            ? 'No photos are linked to line items yet, so there is nothing for a photos PDF.'
+            : err instanceof ApiError
             ? `The export failed — HTTP ${err.status}.${err.requestId ? ` Reference ${err.requestId}.` : ''}`
             : 'The export failed.',
       )
