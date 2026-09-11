@@ -10,11 +10,11 @@ import {
   AGE_MAX,
   POLL_ATTEMPTS,
   RETURNED_FROM_CHECKOUT,
+  downloadPortalExport,
   getPortal,
   parseAge,
   patchPortalItem,
   pollDelay,
-  portalExportUrl,
   startCheckout,
 } from '../lib/portal'
 import type { PortalItem, PortalResponse } from '../lib/portal'
@@ -227,6 +227,26 @@ function Portal({
   const [rowError, setRowError] = useState<string | null>(null)
   /** The photo open full-size, if any. */
   const [viewing, setViewing] = useState<PortalItem | null>(null)
+  const [downloading, setDownloading] = useState<'xlsx' | 'pdf' | null>(null)
+  const [downloadError, setDownloadError] = useState<string | null>(null)
+
+  const download = async (format: 'xlsx' | 'pdf') => {
+    setDownloading(format)
+    setDownloadError(null)
+    try {
+      await downloadPortalExport(token, format)
+    } catch (err) {
+      setDownloadError(
+        err instanceof ApiError && err.status === 410
+          ? 'This link is no longer active. Ask your adjuster for a new one.'
+          : err instanceof ApiError && err.status === 403
+            ? 'Downloads are not turned on for this link. Ask your adjuster to enable them.'
+            : `The download failed${err instanceof ApiError ? ` (HTTP ${err.status})` : ''}. Please try again.`,
+      )
+    } finally {
+      setDownloading(null)
+    }
+  }
 
   /**
    * `image_url` is a signed URL that lives ~5 minutes (FRONTEND.md), so a page
@@ -629,13 +649,32 @@ function Portal({
         {/* can_download is allow_download AND released_at -- the adjuster's own
             export stamps exported_at, which never means "I have been paid". */}
         {data.can_download ? (
-          <section style={{ marginTop: 16, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <a className="k-btn" href={portalExportUrl(token, 'xlsx')}>
-              <Icon d={I.download} size={13} /> Inventory · .xlsx
-            </a>
-            <a className="k-btn k-btn--ghost" href={portalExportUrl(token, 'pdf')}>
-              <Icon d={I.download} size={13} /> PDF inventory
-            </a>
+          <section style={{ marginTop: 16 }}>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="k-btn"
+                disabled={downloading !== null}
+                onClick={() => void download('xlsx')}
+              >
+                <Icon d={I.download} size={13} />{' '}
+                {downloading === 'xlsx' ? 'Preparing…' : 'Inventory · .xlsx'}
+              </button>
+              <button
+                type="button"
+                className="k-btn k-btn--ghost"
+                disabled={downloading !== null}
+                onClick={() => void download('pdf')}
+              >
+                <Icon d={I.download} size={13} />{' '}
+                {downloading === 'pdf' ? 'Preparing…' : 'PDF inventory'}
+              </button>
+            </div>
+            {downloadError ? (
+              <p className="k-error" style={{ marginTop: 8 }}>
+                {downloadError}
+              </p>
+            ) : null}
           </section>
         ) : null}
 

@@ -1,4 +1,5 @@
-import { portal } from './api'
+import { ApiError, portal } from './api'
+import { API_BASE_URL } from './env'
 
 /**
  * The client portal — the insured's read-only view of a shared claim.
@@ -140,14 +141,35 @@ export const POLL_ATTEMPTS = 20
 /**
  * The claim document for a released link.
  *
- * Gated by BOTH `allow_download` and `released_at`, which the payload has
- * already collapsed into `can_download` -- so the button only exists when the
- * server would answer. The bytes are the same builder the adjuster's own export
- * uses; a plain link is enough, and it keeps the filename the server sets.
+ * Gated by BOTH `allow_download` and `released_at` (or payment), which the
+ * payload has already collapsed into `can_download` -- so the button only
+ * exists when the server should answer.
+ *
+ * Fetched, then saved -- not a plain <a href> to the API. The plain link had
+ * no pending state and no failure state: a slow build looked like a dead
+ * button, and an expired or revoked link navigated the insured to a raw JSON
+ * error on the API's host. Portal routes are unauthenticated, so there is no
+ * header to add; the filename is the server's, from Content-Disposition.
  */
-export function portalExportUrl(token: string, format: 'xlsx' | 'pdf'): string {
-  const base = import.meta.env.VITE_API_BASE_URL ?? ''
-  return `${base}/p/${encodeURIComponent(token)}/export?format=${format}`
+export async function downloadPortalExport(token: string, format: 'xlsx' | 'pdf'): Promise<void> {
+  const response = await fetch(
+    `${API_BASE_URL}/p/${encodeURIComponent(token)}/export?format=${format}`,
+  )
+  if (!response.ok) {
+    throw new ApiError(response.status, await response.text(), response.headers.get('X-Request-ID'))
+  }
+  const disposition = response.headers.get('Content-Disposition') ?? ''
+  const match = /filename="?([^";]+)"?/.exec(disposition)
+  const blob = await response.blob()
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = match?.[1] ?? `inventory.${format}`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  // Revoked on the next tick: some browsers start the save asynchronously.
+  window.setTimeout(() => URL.revokeObjectURL(url), 0)
 }
 
 /**
