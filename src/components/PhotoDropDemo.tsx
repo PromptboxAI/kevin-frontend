@@ -1,212 +1,172 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
-import { API_BASE_URL } from '../lib/env'
+import {
+  createDrop,
+  demoConfigured,
+  DropRefused,
+  isTerminal,
+  pollDrop,
+  previewDepreciation,
+  type Drop,
+  type DropIdentified,
+  type DropRefusal,
+  type DropResult,
+  type NotPricedReason,
+  type PreviewMoney,
+} from '../lib/demo-drop'
+import { TURNSTILE_SITE_KEY } from '../lib/env'
 
 /**
- * Drop ONE photo, watch it come back identified and priced.
+ * Drop ONE photo, watch the product identify and price it.
  *
- * This replaced most of the old homepage. The page used to spend six sections
- * arguing that photos go in and a defensible inventory comes out; a visitor
- * can now watch it happen to their own belt in about fifteen seconds, which is
- * a shorter and far less arguable version of the same claim. Neither
- * competitor lets you try anything without booking a call.
+ * This replaced most of the old homepage, which spent six sections ASSERTING
+ * that photos go in and a defensible inventory comes out. A visitor can now
+ * watch it happen to something in their own house.
  *
- * ONE photo on purpose. The product ingests hundreds, but a demo that asks for
- * a folder is a demo nobody finishes, and each processed item costs real money
- * to produce (~$0.08 in vision and pricing calls).
+ * Runs on the real pipeline: POST /v1/demo/drops then poll, per
+ * kevin-backend/FRONTEND.md "Home-page demo". Identification takes 5-10s and a
+ * live price 30-70s, because the price is real and carries a merchant deep
+ * link. The `identified` block lands first and is shown while the price is
+ * still coming, so the wait has something in it.
  *
- * TWO PATHS, and the difference is disclosed on screen:
+ * WHAT THE COPY MUST NOT SAY -- both straight from the contract:
  *
- *   Sample photos -- real captures from the sample claim, with the REAL output
- *   the pipeline produced for them, held in SAMPLE_RESULTS below. The values
- *   are not illustrative and not rounded: they were read from
- *   GET /v1/claim_items?claim_id=sample on 2026-09-11 and they foot.
+ *   1. It does NOT assess damage. It identifies the item and prices its
+ *      REPLACEMENT. "Analyzing image damage" promises a thing the product does
+ *      not do, and on an insurance product that is the worst kind of wrong.
+ *   2. `not_priced` is NOT a failure. Each reason gets its own sentence.
+ *      "No single household item in the frame" is the engine working.
  *
- *   Your own photo -- posted to the live endpoint and identified for real.
+ * AND IT NEVER INVENTS A RESULT. If the demo is off, at capacity, or the
+ * visitor is rate-limited, it says so and offers the samples. A canned answer
+ * dressed as a reading of someone's photo would be a lie on the homepage of a
+ * product whose whole promise is a number that holds up.
  *
- * WHY NOT FAKE THE SECOND PATH. A scripted animation that pretends to read the
- * visitor's photo and then shows a canned answer would be a lie on the
- * homepage of a product whose entire promise is a defensible number. If the
- * endpoint is unavailable the drop path says so plainly and offers the samples
- * instead -- see the `unavailable` state. It never invents a result.
+ * The three sample photos are real captures whose real output is held below,
+ * normalised into the SAME shape a live drop returns, so there is one render
+ * path and the two cannot drift. Once the backend pins them as presets they
+ * will come back from the API instantly (`cached: true`) and these go.
  */
 
-/* ── the contract ─────────────────────────────────────────────────────── */
+/* -- sample photos: real output, in the live result shape --------------- */
 
-type Comp = { title: string; source: string; price: number; link: string }
+type Sample = { photo: string; label: string; identified: DropIdentified; result: DropResult }
 
-type DemoItem = {
-  description: string
-  make_mfr: string | null
-  model_number: string | null
-  category: string | null
-  rcv: number
-  quantity: number
-  age_years: number
-  depreciation_pct: number
-  ext_cost: number
-  tax: number
-  rcv_total_incl: number
-  depreciation_amount: number
-  acv_total_incl: number
-  valuation_basis: string
-  confidence: number
-  source_link: string
-  alternative_sources: Comp[]
-}
-
-/** Proposed: anonymous, one photo, stores nothing. See BACKEND-ASKS.md #38. */
-const DEMO_ENDPOINT = `${API_BASE_URL}/v1/demo/identify`
-
-/* ── sample photos: real captures, real output ────────────────────────── */
-
-type Sample = { photo: string; label: string; item: DemoItem }
-
-const SAMPLE_RESULTS: Sample[] = [
+const SAMPLES: Sample[] = [
   {
     photo: '20260805_144542.jpg',
     label: 'A belt',
-    item: {
+    identified: {
       description: "Chico's Silver Studded Rhinestone Belt",
-      make_mfr: "Chico's",
-      model_number: null,
+      make: "Chico's",
+      model: null,
       category: 'Clothing — Adult',
+      pcs_code: null,
+    },
+    result: {
       rcv: 74.94,
-      quantity: 1,
-      age_years: 3,
-      depreciation_pct: 0.6,
-      ext_cost: 74.94,
-      tax: 6.46,
-      rcv_total_incl: 81.4,
-      depreciation_amount: 48.84,
-      acv_total_incl: 32.56,
-      valuation_basis: 'retail',
-      confidence: 0.6,
       source_link: 'https://romanvalleyranch.com/products/bella-silver-rhinestones-belt',
-      alternative_sources: [
-        {
-          title: 'Bella Silver Rhinestones Belt',
-          source: 'Roman Valley Ranch',
-          price: 69.99,
-          link: 'https://romanvalleyranch.com/products/bella-silver-rhinestones-belt',
-        },
-        { title: 'Rhinestone Western Cowboy Belt', source: 'Arimonz', price: 79.9, link: '' },
-        { title: 'Studded Rhinestone Belt', source: 'Google Shopping', price: 74.94, link: '' },
-      ],
+      source_name: 'Roman Valley Ranch',
+      comp_count: 3,
+      basis: 'retail',
     },
   },
   {
     photo: '20260805_143757.jpg',
     label: 'A vacuum filter',
-    item: {
+    identified: {
       description: 'Honeywell FilterPower Replacement Vacuum Filter for Bissell 7.9',
-      make_mfr: 'Honeywell',
-      model_number: 'FilterPower',
+      make: 'Honeywell',
+      model: 'FilterPower',
       category: 'Small Appliances',
+      pcs_code: null,
+    },
+    result: {
       rcv: 14.47,
-      quantity: 1,
-      age_years: 2,
-      depreciation_pct: 0.2857,
-      ext_cost: 14.47,
-      tax: 1.25,
-      rcv_total_incl: 15.72,
-      depreciation_amount: 4.49,
-      acv_total_incl: 11.23,
-      valuation_basis: 'like_kind_new',
-      confidence: 0.427,
-      source_link:
-        'https://www.myvacuumplace.com/hepa-filter-bissell-envirocare-style-7-9.html',
-      alternative_sources: [
-        {
-          title: 'Bissell Style 7 & 9 Exhaust Filter',
-          source: 'MyVacuumPlace',
-          price: 10.95,
-          link: 'https://www.myvacuumplace.com/hepa-filter-bissell-envirocare-style-7-9.html',
-        },
-        {
-          title: 'Bissell PowerForce & Helix Turbo Filter Set',
-          source: 'Vacuum Center',
-          price: 17.99,
-          link: '',
-        },
-        { title: 'Style 7/9 Replacement Filter', source: 'Google Shopping', price: 14.47, link: '' },
-      ],
+      source_link: 'https://www.myvacuumplace.com/hepa-filter-bissell-envirocare-style-7-9.html',
+      source_name: 'MyVacuumPlace',
+      comp_count: 3,
+      basis: 'like_kind_new',
     },
   },
   {
     photo: '20260805_144556.jpg',
     label: 'Scissors',
-    item: {
+    identified: {
       description: 'Fiskars Yellow-Handled Household Scissors',
-      make_mfr: 'Fiskars',
-      model_number: null,
+      make: 'Fiskars',
+      model: null,
       category: 'Tools & Garage',
+      pcs_code: null,
+    },
+    result: {
       rcv: 13.0,
-      quantity: 1,
-      age_years: 5,
-      depreciation_pct: 0.5,
-      ext_cost: 13.0,
-      tax: 1.12,
-      rcv_total_incl: 14.12,
-      depreciation_amount: 7.06,
-      acv_total_incl: 7.06,
-      valuation_basis: 'retail',
-      confidence: 0.6,
       source_link:
         'https://www.walmart.com/ip/LIVINGO-Office-Scissors-Titanium-Non-Stick-Sharp-Steel-for-Adult-8-2-Pack-Yellow/2554926370',
-      alternative_sources: [
-        {
-          title: 'Livingo Office Scissors',
-          source: 'Walmart',
-          price: 12.99,
-          link: 'https://www.walmart.com/ip/LIVINGO-Office-Scissors-Titanium-Non-Stick-Sharp-Steel-for-Adult-8-2-Pack-Yellow/2554926370',
-        },
-        { title: 'Yellow Stainless Steel Straight Scissor', source: 'Walmart', price: 11.9, link: '' },
-        { title: 'Household Scissors, 8in', source: 'Google Shopping', price: 13.0, link: '' },
-      ],
+      source_name: 'Walmart',
+      comp_count: 3,
+      basis: 'retail',
     },
   },
 ]
 
-/* ── upload limits, matching the server ───────────────────────────────── */
+/* -- copy tables -------------------------------------------------------- */
 
-/** Rule 21: the server caps a photo at 15 MB. Checked here so a doomed
- *  upload never leaves the browser. */
-const MAX_BYTES = 15 * 1024 * 1024
-const OK_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
-
-function rejectReason(file: File): string | null {
-  if (!file.type.startsWith('image/')) return 'That is not an image — try a JPEG, PNG or HEIC.'
-  if (!OK_TYPES.includes(file.type) && file.type !== '')
-    return `Kevin cannot read ${file.type.replace('image/', '.')} — try a JPEG, PNG or HEIC.`
-  if (file.size === 0) return 'That file is empty.'
-  if (file.size > MAX_BYTES)
-    return `That photo is ${(file.size / 1024 / 1024).toFixed(0)} MB. The limit is 15 MB.`
-  return null
+/** Every one of these is a normal outcome, not an error page. */
+const NOT_PRICED: Record<NotPricedReason, { head: string; body: string }> = {
+  not_an_item: {
+    head: 'No single item in that frame',
+    body: 'Kevin prices one household item at a time. A whole room, a person, or a close-up of a surface has nothing to look up, so no search was spent. Try a photo of one object.',
+  },
+  needs_adjuster: {
+    head: 'This one goes to an adjuster',
+    body: 'Jewellery, fine art, firearms and furs are valued by a person rather than a search — exactly as in the product, where they arrive unpriced for you to fill in.',
+  },
+  no_price: {
+    head: 'Not enough live listings',
+    body: 'Kevin found the item but too few current listings to stand behind a number. In the worksheet that arrives as a blank, editable price rather than a guess.',
+  },
+  budget_paused: {
+    head: 'Live pricing is paused for today',
+    body: "Kevin identified it, but today's share of live pricing is spent. Every price is a real lookup, so the demo has a daily ceiling. The samples below are already priced.",
+  },
+  unavailable: {
+    head: 'Something went wrong',
+    body: 'That one did not make it through. Try another photo.',
+  },
 }
 
-/* ── formatting ───────────────────────────────────────────────────────── */
-
-const usd = (n: number) =>
-  n.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 })
-
-/**
- * The depreciation rate, NOT rounded to whole percent.
- *
- * `Math.round(0.2857 * 100)` printed "29%" beside "-$4.49" -- and 29% of the
- * $15.72 inclusive total is $4.56, not $4.49. Two numbers on one line that
- * cannot both be right is the precise failure this product exists to avoid, so
- * the rate is shown to the precision the server actually used. Whole rates
- * still print clean: 60, not 60.00.
- */
-const pct = (fraction: number) => {
-  const v = fraction * 100
-  return (Number.isInteger(v) ? v : Number(v.toFixed(2))).toString()
+const REFUSAL: Record<DropRefusal['kind'], { head: string; body: string }> = {
+  not_configured: {
+    head: 'Live drops are not switched on yet',
+    body: 'Rather than show a made-up answer for your own photo, here is nothing. The sample photos below are real output from the same pipeline.',
+  },
+  turnstile: {
+    head: 'That check did not pass',
+    body: 'The bot check failed or expired. Complete it again and re-drop the photo.',
+  },
+  too_large: {
+    head: 'That photo is too large',
+    body: 'The limit is 15 MB. Most phone photos are well under it.',
+  },
+  not_a_photo: { head: 'That is not a photo', body: 'Try a JPEG, PNG or HEIC of one item.' },
+  rate_limited: {
+    head: 'That is the limit for now',
+    body: 'Three photos an hour, ten a day — each live price is a lookup we pay for. The samples below are free and already priced.',
+  },
+  capacity: {
+    head: 'The demo is busy',
+    body: "Too many photos at once, or today's ceiling is reached. Try a sample below — those are instant — or come back a little later.",
+  },
+  network: {
+    head: 'Could not reach Kevin',
+    body: 'The request did not get through. Check your connection and try again.',
+  },
 }
 
-/** Rule 10/11: the basis is shown, never inferred, and a resale price is
- *  never allowed to read as a new-replacement one. */
+/** Rule 10/11: the basis is stated, never inferred, so a like-kind or resale
+ *  price can never read as a new-replacement one. */
 const BASIS_COPY: Record<string, string> = {
   retail: 'Retail comp — still sold new',
   like_kind_new: 'Like-kind substitute — priced as the nearest new equivalent',
@@ -215,110 +175,207 @@ const BASIS_COPY: Record<string, string> = {
   manual: 'Entered by hand',
 }
 
-const STAGES = ['Reading the photo', 'Identifying the item', 'Matching make and model', 'Pricing from live comps']
+/* -- client-side pre-checks, matching the server ------------------------ */
 
-/* ── component ────────────────────────────────────────────────────────── */
+const MAX_BYTES = 15 * 1024 * 1024
 
-type State =
+function clientReject(file: File): DropRefusal | null {
+  if (!file.type.startsWith('image/')) return { kind: 'not_a_photo' }
+  if (file.size === 0) return { kind: 'not_a_photo' }
+  if (file.size > MAX_BYTES) return { kind: 'too_large' }
+  return null
+}
+
+/* -- formatting --------------------------------------------------------- */
+
+const usd = (n: number) =>
+  n.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 })
+
+/** Not rounded to whole percent: "29%" beside "-$4.49" on a $15.72 total is
+ *  two numbers that cannot both be right, which is the one error this product
+ *  cannot afford. */
+const pct = (fraction: number) => {
+  const v = fraction * 100
+  return (Number.isInteger(v) ? v : Number(v.toFixed(2))).toString()
+}
+
+/* -- Turnstile ---------------------------------------------------------- */
+
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (el: HTMLElement, opts: Record<string, unknown>) => string
+      reset: (id?: string) => void
+      remove: (id?: string) => void
+    }
+  }
+}
+
+/**
+ * The bot check. Rendered only when a site key exists, because the widget
+ * cannot draw without one and every drop needs its token.
+ */
+function Turnstile({ onToken }: { onToken: (t: string | null) => void }) {
+  const box = useRef<HTMLDivElement>(null)
+  const widget = useRef<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    const mount = () => {
+      if (cancelled || !box.current || !window.turnstile || widget.current) return
+      widget.current = window.turnstile.render(box.current, {
+        sitekey: TURNSTILE_SITE_KEY,
+        callback: (t: string) => onToken(t),
+        'expired-callback': () => onToken(null),
+        'error-callback': () => onToken(null),
+        theme: 'light',
+      })
+    }
+
+    if (window.turnstile) {
+      mount()
+    } else {
+      const existing = document.querySelector<HTMLScriptElement>('script[data-turnstile]')
+      if (existing) {
+        existing.addEventListener('load', mount)
+      } else {
+        const s = document.createElement('script')
+        s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js'
+        s.async = true
+        s.defer = true
+        s.dataset.turnstile = 'true'
+        s.addEventListener('load', mount)
+        document.head.appendChild(s)
+      }
+    }
+    return () => {
+      cancelled = true
+      if (widget.current && window.turnstile) window.turnstile.remove(widget.current)
+      widget.current = null
+    }
+  }, [onToken])
+
+  return <div className="k-demo-turnstile" ref={box} />
+}
+
+/* -- component ---------------------------------------------------------- */
+
+type View =
   | { k: 'idle' }
-  | { k: 'working'; src: string; stage: number; own: boolean }
-  | { k: 'done'; src: string; item: DemoItem; own: boolean }
-  | { k: 'rejected'; why: string }
-  | { k: 'unavailable'; src: string }
+  | { k: 'running'; src: string; stage: Drop['stage']; identified: DropIdentified | null }
+  | { k: 'done'; src: string; identified: DropIdentified; result: DropResult; own: boolean }
+  | { k: 'not_priced'; src: string; reason: NotPricedReason; identified: DropIdentified | null }
+  | { k: 'refused'; src: string | null; refusal: DropRefusal }
+
+const AGES = [0, 1, 2, 3, 5, 8, 12]
 
 export default function PhotoDropDemo() {
-  /**
-   * The payoff CTA has to land somewhere useful for BOTH visitors.
-   *
-   * It pointed at /sign-up unconditionally, which put an adjuster who is
-   * already signed in on a signup page -- the one place they have no use for.
-   * MktNav solves the same problem in this file's neighbour by offering the way
-   * back into the app instead; this follows it, but goes to /claims/new rather
-   * than /claims, because the button promises a folder upload and that is the
-   * screen that takes one.
-   *
-   * No `loading` guard needed here, unlike the nav: the session lookup settles
-   * during page load, and this button cannot exist until the visitor has
-   * dropped a photo and read a result.
-   */
+  /** The payoff CTA has to land somewhere useful for both visitors: /sign-up
+   *  is the one page a signed-in adjuster has no use for. */
   const { session } = useAuth()
-  const [state, setState] = useState<State>({ k: 'idle' })
+  const [view, setView] = useState<View>({ k: 'idle' })
   const [over, setOver] = useState(false)
+  const [token, setToken] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
-  const timers = useRef<number[]>([])
-
-  // Object URLs are revoked on unmount; a leaked blob keeps the whole photo in
-  // memory for the life of the tab.
   const objectUrls = useRef<string[]>([])
+  const stopped = useRef(false)
+
   useEffect(
     () => () => {
-      timers.current.forEach(clearTimeout)
+      stopped.current = true
       objectUrls.current.forEach((u) => URL.revokeObjectURL(u))
     },
     [],
   )
 
-  const runStages = useCallback((src: string, own: boolean, total: number) => {
-    setState({ k: 'working', src, stage: 0, own })
-    timers.current.forEach(clearTimeout)
-    timers.current = STAGES.slice(1).map((_, i) =>
-      window.setTimeout(
-        () => setState((s) => (s.k === 'working' ? { ...s, stage: i + 1 } : s)),
-        (total / STAGES.length) * (i + 1),
-      ),
-    )
-  }, [])
-
-  const runSample = useCallback(
-    (s: Sample) => {
-      const src = `/marketing/items/w480/${s.photo}`
-      runStages(src, false, 2400)
-      const t = window.setTimeout(() => setState({ k: 'done', src, item: s.item, own: false }), 2600)
-      timers.current.push(t)
-    },
-    [runStages],
-  )
+  /* the age slider, straight off the product's own depreciation endpoint */
+  const [age, setAge] = useState(3)
+  const [money, setMoney] = useState<PreviewMoney | null>(null)
+  const rcv = view.k === 'done' ? view.result.rcv : null
+  const category = view.k === 'done' ? view.identified.category : null
+  useEffect(() => {
+    if (rcv == null) {
+      setMoney(null)
+      return
+    }
+    let live = true
+    previewDepreciation(rcv, age, category)
+      .then((m) => {
+        if (live) setMoney(m)
+      })
+      .catch(() => {
+        if (live) setMoney(null)
+      })
+    return () => {
+      live = false
+    }
+  }, [rcv, age, category])
 
   const runOwn = useCallback(
     async (file: File) => {
-      const why = rejectReason(file)
-      if (why) return setState({ k: 'rejected', why })
+      const bad = clientReject(file)
+      if (bad) {
+        setView({ k: 'refused', src: null, refusal: bad })
+        return
+      }
+      if (!demoConfigured()) {
+        setView({ k: 'refused', src: null, refusal: { kind: 'not_configured' } })
+        return
+      }
+      if (!token) {
+        setView({ k: 'refused', src: null, refusal: { kind: 'turnstile' } })
+        return
+      }
 
       const src = URL.createObjectURL(file)
       objectUrls.current.push(src)
-      // The stages are paced for a typical run, but the RESULT waits on the
-      // real response -- the animation never reports a finish that has not
-      // happened.
-      runStages(src, true, 9000)
+      setView({ k: 'running', src, stage: 'queued', identified: null })
 
       try {
-        const body = new FormData()
-        body.append('photo', file)
-        const res = await fetch(DEMO_ENDPOINT, { method: 'POST', body })
-        if (!res.ok) throw new Error(String(res.status))
-        const item = (await res.json()) as DemoItem
-        if (!item || typeof item.rcv !== 'number') throw new Error('shape')
-        timers.current.forEach(clearTimeout)
-        setState({ k: 'done', src, item, own: true })
-      } catch {
-        timers.current.forEach(clearTimeout)
-        setState({ k: 'unavailable', src })
+        let drop = await createDrop(file, token)
+        // The token is single-use; make the widget issue a fresh one.
+        setToken(null)
+        window.turnstile?.reset()
+
+        while (!isTerminal(drop.stage)) {
+          if (stopped.current) return
+          setView({ k: 'running', src, stage: drop.stage, identified: drop.identified })
+          await new Promise((r) => setTimeout(r, 2000))
+          drop = await pollDrop(drop.drop_id)
+        }
+        if (stopped.current) return
+
+        if (drop.stage === 'done' && drop.result && drop.identified) {
+          setAge(3)
+          setView({ k: 'done', src, identified: drop.identified, result: drop.result, own: true })
+        } else {
+          setView({
+            k: 'not_priced',
+            src,
+            reason: drop.reason ?? 'unavailable',
+            identified: drop.identified,
+          })
+        }
+      } catch (e) {
+        const refusal: DropRefusal = e instanceof DropRefused ? e.refusal : { kind: 'network' }
+        setView({ k: 'refused', src, refusal })
       }
     },
-    [runStages],
+    [token],
   )
 
-  const onDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setOver(false)
-    const file = e.dataTransfer.files?.[0]
-    if (file) runOwn(file)
-  }
+  const runSample = useCallback((s: Sample) => {
+    setAge(3)
+    setView({
+      k: 'done',
+      src: `/marketing/items/w480/${s.photo}`,
+      identified: s.identified,
+      result: s.result,
+      own: false,
+    })
+  }, [])
 
-  const reset = () => {
-    timers.current.forEach(clearTimeout)
-    setState({ k: 'idle' })
-  }
+  const reset = () => setView({ k: 'idle' })
 
   return (
     <section className="k-demo">
@@ -326,12 +383,12 @@ export default function PhotoDropDemo() {
         <div className="k-proof-eyebrow">Try it on one photo</div>
         <h2 className="k-demo-h2">Drop a photo. Watch it get priced.</h2>
         <p className="k-demo-sub">
-          One photo, about fifteen seconds, no account. The same pipeline that runs a
-          three-hundred-photo claim — just stopped at one item so you can read it.
+          One item, about a minute, no account. The same pipeline that runs a claim of hundreds of
+          photos — stopped at one item so you can read it.
         </p>
       </div>
 
-      {state.k === 'idle' || state.k === 'rejected' ? (
+      {view.k === 'idle' ? (
         <div className="k-demo-body">
           <div
             className={`k-demo-drop${over ? ' k-demo-drop--over' : ''}`}
@@ -340,7 +397,12 @@ export default function PhotoDropDemo() {
               setOver(true)
             }}
             onDragLeave={() => setOver(false)}
-            onDrop={onDrop}
+            onDrop={(e) => {
+              e.preventDefault()
+              setOver(false)
+              const f = e.dataTransfer.files?.[0]
+              if (f) runOwn(f)
+            }}
             onClick={() => fileRef.current?.click()}
             role="button"
             tabIndex={0}
@@ -363,14 +425,22 @@ export default function PhotoDropDemo() {
               +
             </div>
             <div className="k-demo-drop-t">Drop a photo of one item</div>
-            <div className="k-demo-drop-s">or tap to choose · JPEG, PNG or HEIC · up to 15 MB</div>
-            {state.k === 'rejected' ? <div className="k-demo-err">{state.why}</div> : null}
+            <div className="k-demo-drop-s">
+              or tap to choose · JPEG, PNG or HEIC · up to 15 MB · nothing is saved
+            </div>
           </div>
+
+          {demoConfigured() ? <Turnstile onToken={setToken} /> : null}
 
           <div className="k-demo-or">or try one of ours</div>
           <div className="k-demo-samples">
-            {SAMPLE_RESULTS.map((s) => (
-              <button key={s.photo} type="button" className="k-demo-sample" onClick={() => runSample(s)}>
+            {SAMPLES.map((s) => (
+              <button
+                key={s.photo}
+                type="button"
+                className="k-demo-sample"
+                onClick={() => runSample(s)}
+              >
                 <img src={`/marketing/items/w192/${s.photo}`} alt={s.label} loading="lazy" />
                 <span>{s.label}</span>
               </button>
@@ -379,41 +449,69 @@ export default function PhotoDropDemo() {
         </div>
       ) : null}
 
-      {state.k === 'working' ? (
+      {view.k === 'running' ? (
         <div className="k-demo-body">
           <div className="k-demo-run">
-            <img className="k-demo-run-img" src={state.src} alt="" />
-            <ol className="k-demo-stages">
-              {STAGES.map((label, i) => (
+            <img className="k-demo-run-img" src={view.src} alt="" />
+            <div>
+              {view.identified ? (
+                <div className="k-demo-seen">
+                  <span className="k-demo-seen-l">We see</span>
+                  <strong>{view.identified.description}</strong>
+                </div>
+              ) : null}
+              <ol className="k-demo-stages">
                 <li
-                  key={label}
-                  className={
-                    i < state.stage ? 'k-demo-stage k-demo-stage--done' : i === state.stage ? 'k-demo-stage k-demo-stage--now' : 'k-demo-stage'
-                  }
+                  className={`k-demo-stage${
+                    view.stage === 'pricing' ? ' k-demo-stage--done' : ' k-demo-stage--now'
+                  }`}
                 >
-                  <span className="k-demo-stage-dot" />
-                  {label}
+                  <span className="k-demo-stage-dot" /> Identifying the item
                 </li>
-              ))}
-            </ol>
+                <li
+                  className={`k-demo-stage${view.stage === 'pricing' ? ' k-demo-stage--now' : ''}`}
+                >
+                  <span className="k-demo-stage-dot" /> Pricing a replacement from live listings
+                </li>
+              </ol>
+              <div className="k-demo-wait">
+                {view.stage === 'pricing'
+                  ? 'Checking live retail prices — this is the slow part, about a minute.'
+                  : 'Identifying the item…'}
+              </div>
+            </div>
           </div>
         </div>
       ) : null}
 
-      {state.k === 'unavailable' ? (
+      {view.k === 'not_priced' ? (
         <div className="k-demo-body">
           <div className="k-demo-run">
-            <img className="k-demo-run-img" src={state.src} alt="" />
+            <img className="k-demo-run-img" src={view.src} alt="" />
             <div className="k-demo-unavail">
-              <strong>Live identification is not answering right now.</strong>
-              <p>
-                We would rather show you nothing than a made-up answer for your own photo. Go back
-                and run one of the sample photos to see real output, or{' '}
-                <Link className="k-link" to="/sample">
-                  open a finished claim
-                </Link>
-                .
-              </p>
+              {view.identified ? (
+                <div className="k-demo-seen">
+                  <span className="k-demo-seen-l">We see</span>
+                  <strong>{view.identified.description}</strong>
+                </div>
+              ) : null}
+              <strong>{NOT_PRICED[view.reason].head}</strong>
+              <p>{NOT_PRICED[view.reason].body}</p>
+              <button type="button" className="k-btn k-btn--ghost" onClick={reset}>
+                Try another photo
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {view.k === 'refused' ? (
+        <div className="k-demo-body">
+          <div className="k-demo-run">
+            {view.src ? <img className="k-demo-run-img" src={view.src} alt="" /> : null}
+            <div className="k-demo-unavail">
+              <strong>{REFUSAL[view.refusal.kind].head}</strong>
+              <p>{REFUSAL[view.refusal.kind].body}</p>
               <button type="button" className="k-btn k-btn--ghost" onClick={reset}>
                 Back to the samples
               </button>
@@ -422,74 +520,93 @@ export default function PhotoDropDemo() {
         </div>
       ) : null}
 
-      {state.k === 'done' ? (
+      {view.k === 'done' ? (
         <div className="k-demo-body">
           <div className="k-demo-result">
             <div className="k-demo-result-top">
-              <img className="k-demo-result-img" src={state.src} alt={state.item.description} />
+              <img className="k-demo-result-img" src={view.src} alt={view.identified.description} />
               <div className="k-demo-result-id">
-                <div className="k-demo-result-desc">{state.item.description}</div>
+                <div className="k-demo-result-desc">{view.identified.description}</div>
                 <div className="k-demo-result-meta">
-                  {[state.item.make_mfr, state.item.model_number, state.item.category]
+                  {[view.identified.make, view.identified.model, view.identified.category]
                     .filter(Boolean)
                     .join(' · ')}
                 </div>
-                <div className="k-demo-basis">
-                  {BASIS_COPY[state.item.valuation_basis] ?? state.item.valuation_basis}
-                </div>
+                {view.result.basis ? (
+                  <div className="k-demo-basis">
+                    {BASIS_COPY[view.result.basis] ?? view.result.basis}
+                  </div>
+                ) : null}
               </div>
             </div>
 
             <div className="k-demo-comps">
-              <div className="k-demo-comps-h">Priced from live comps</div>
-              {state.item.alternative_sources.slice(0, 3).map((c, i) => (
-                <div key={i} className="k-demo-comp">
-                  <span className="k-demo-comp-src">{c.source}</span>
-                  <span className="k-demo-comp-t">{c.title}</span>
-                  <span className="k-demo-comp-p">{usd(c.price)}</span>
-                </div>
-              ))}
-              {state.item.source_link ? (
-                <a className="k-demo-comp-link" href={state.item.source_link} target="_blank" rel="noreferrer noopener">
-                  Open the source listing →
+              <div className="k-demo-comps-h">Replacement cost, new</div>
+              <div className="k-demo-rcv">{usd(view.result.rcv)}</div>
+              <div className="k-demo-prov">
+                {view.result.comp_count
+                  ? `Based on ${view.result.comp_count} live listing${
+                      view.result.comp_count === 1 ? '' : 's'
+                    }`
+                  : 'From live retail listings'}
+                {view.result.source_name ? ` · ${view.result.source_name}` : ''}
+              </div>
+              {view.result.source_link ? (
+                <a
+                  className="k-demo-comp-link"
+                  href={view.result.source_link}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  Open the listing Kevin priced it from →
                 </a>
               ) : null}
             </div>
 
-            <dl className="k-demo-money">
-              <div>
-                <dt>Unit cost</dt>
-                <dd>{usd(state.item.rcv)}</dd>
+            {/* The slider runs on GET /v1/worksheet/preview -- the product's own
+                depreciation, so the demo cannot disagree with the worksheet. */}
+            <div className="k-demo-dep">
+              <label className="k-demo-dep-l" htmlFor="k-demo-age">
+                How old is it?
+                <span className="k-demo-dep-v">
+                  {age === 0 ? 'New' : `${age} year${age === 1 ? '' : 's'}`}
+                </span>
+              </label>
+              <input
+                id="k-demo-age"
+                className="k-demo-dep-range"
+                type="range"
+                min={0}
+                max={AGES.length - 1}
+                step={1}
+                value={AGES.indexOf(age) === -1 ? 3 : AGES.indexOf(age)}
+                onChange={(e) => setAge(AGES[Number(e.target.value)])}
+              />
+              <dl className="k-demo-money">
+                <div>
+                  <dt>Depreciation</dt>
+                  <dd>
+                    {money
+                      ? `${pct(money.depreciation_pct)}% · −${usd(money.depreciation_amount)}`
+                      : '—'}
+                  </dd>
+                </div>
+                <div className="k-demo-money--acv">
+                  <dt>Actual cash value</dt>
+                  <dd>{money ? usd(money.acv_total_incl) : '—'}</dd>
+                </div>
+              </dl>
+              <div className="k-demo-taxnote">
+                Figures are pre-tax — sales tax depends on the loss address, which a demo does not
+                have. On a claim Kevin adds it per line.
               </div>
-              <div>
-                <dt>Sales tax</dt>
-                <dd>{usd(state.item.tax)}</dd>
-              </div>
-              <div>
-                <dt>RCV + tax</dt>
-                <dd>{usd(state.item.rcv_total_incl)}</dd>
-              </div>
-              <div>
-                <dt>Age</dt>
-                <dd>{state.item.age_years}</dd>
-              </div>
-              <div>
-                <dt>Depreciation</dt>
-                <dd>
-                  {pct(state.item.depreciation_pct)}% · −{usd(state.item.depreciation_amount)}
-                </dd>
-              </div>
-              <div className="k-demo-money--acv">
-                <dt>ACV</dt>
-                <dd>{usd(state.item.acv_total_incl)}</dd>
-              </div>
-            </dl>
+            </div>
 
             <div className="k-demo-foot">
               <span className="k-demo-disclosure">
-                {state.own
-                  ? 'Identified and priced from your photo just now. Nothing was saved.'
-                  : 'A real capture from the sample claim, with the output the pipeline produced for it.'}
+                {view.own
+                  ? 'Identified and priced from your photo just now. The photo is already deleted.'
+                  : 'A real capture, with the output the pipeline produced for it.'}
               </span>
               <div className="k-demo-foot-a">
                 <button type="button" className="k-btn k-btn--ghost" onClick={reset}>

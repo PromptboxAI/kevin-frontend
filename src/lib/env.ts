@@ -43,6 +43,16 @@ function normalizeApiBase(raw: string): string {
 }
 
 export const API_BASE_URL = normalizeApiBase(read('VITE_API_BASE_URL'))
+
+/**
+ * Cloudflare Turnstile site key for the home-page demo.
+ *
+ * Every drop needs a token, and `POST /v1/demo/drops` answers 503 until the
+ * matching TURNSTILE_SECRET is set on the API. Absent here, the demo renders
+ * its sample photos and says plainly that live drops are not switched on --
+ * it does not pretend to read a visitor's photo.
+ */
+export const TURNSTILE_SITE_KEY = read('VITE_TURNSTILE_SITE_KEY')
 export const SUPABASE_URL = read('VITE_SUPABASE_URL')
 export const SUPABASE_ANON_KEY = read('VITE_SUPABASE_ANON_KEY')
 
