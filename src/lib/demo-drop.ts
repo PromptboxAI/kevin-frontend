@@ -62,6 +62,11 @@ export type DropRefusal =
   | { kind: 'rate_limited'; retryAfter: number | null }
   | { kind: 'capacity'; retryAfter: number | null }
   | { kind: 'network' }
+  /** The drop ran past the deadline without reaching a terminal stage. */
+  | { kind: 'timeout' }
+  /** Anything we did not plan for -- kept separate from `network` so a bug in
+   *  our own code never reads to the visitor as "check your connection". */
+  | { kind: 'unexpected'; detail: string }
 
 export class DropRefused extends Error {
   refusal: DropRefusal
@@ -98,7 +103,14 @@ export async function createDrop(file: File, turnstileToken: string): Promise<Dr
 
   // 202 = running (poll). 200 = a preset or a photo already seen, answered
   // from cache: instant, free, and not counted against the visitor.
-  if (res.status === 202 || res.ok) return (await res.json()) as Drop
+  if (res.status === 202 || res.ok) {
+    try {
+      return (await res.json()) as Drop
+    } catch {
+      // Reading the body failed, which is OUR problem, not the network's.
+      throw new DropRefused({ kind: 'unexpected', detail: `drop ${res.status}: unreadable body` })
+    }
+  }
 
   if (res.status === 403) throw new DropRefused({ kind: 'turnstile' })
   if (res.status === 413) throw new DropRefused({ kind: 'too_large' })
@@ -122,7 +134,11 @@ export async function pollDrop(dropId: string): Promise<Drop> {
   // long, but a backgrounded tab can come back to a 404.
   if (res.status === 404) throw new DropRefused({ kind: 'capacity', retryAfter: null })
   if (!res.ok) throw new DropRefused({ kind: 'network' })
-  return (await res.json()) as Drop
+  try {
+    return (await res.json()) as Drop
+  } catch {
+    throw new DropRefused({ kind: 'unexpected', detail: 'poll: unreadable body' })
+  }
 }
 
 /* ── depreciation, via the product's own endpoint ─────────────────────── */

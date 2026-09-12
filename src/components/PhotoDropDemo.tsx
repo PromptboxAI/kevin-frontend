@@ -163,6 +163,14 @@ const REFUSAL: Record<DropRefusal['kind'], { head: string; body: string }> = {
     head: 'Could not reach Kevin',
     body: 'The request did not get through. Check your connection and try again.',
   },
+  timeout: {
+    head: 'That one is taking too long',
+    body: 'A live price is usually under a minute and this went past three. It may still finish server-side, but nothing is kept, so the quickest thing is another photo. The samples below are instant.',
+  },
+  unexpected: {
+    head: 'Something broke on our side',
+    body: 'Not your photo and not your connection — Kevin hit an error handling the response. The details are in the browser console if you want to send them over. The samples below still work.',
+  },
 }
 
 /** Rule 10/11: the basis is stated, never inferred, so a like-kind or resale
@@ -258,6 +266,26 @@ function Turnstile({ onToken }: { onToken: (t: string | null) => void }) {
   return <div className="k-demo-turnstile" ref={box} />
 }
 
+/**
+ * Retire the single-use token WITHOUT letting Cloudflare's bookkeeping abort a
+ * drop that already succeeded.
+ *
+ * `turnstile.reset()` throws "Nothing to reset found for provided container"
+ * when the widget is no longer mounted -- and it never is by the time we call
+ * it, because submitting switches the view away from the idle state that
+ * renders it. That exception escaped into the drop's catch and was reported as
+ * "Could not reach Kevin" immediately after a 202, which is the opposite of
+ * what had happened. Resetting a widget is housekeeping; it is never worth
+ * failing a job the server already accepted.
+ */
+function retireToken() {
+  try {
+    window.turnstile?.reset()
+  } catch {
+    /* the widget is gone; nothing to retire */
+  }
+}
+
 /* -- component ---------------------------------------------------------- */
 
 type View =
@@ -323,13 +351,34 @@ export default function PhotoDropDemo() {
       let drop = await createDrop(file, tok)
       // The token is single-use; make the widget issue a fresh one.
       setToken(null)
-      window.turnstile?.reset()
+      retireToken()
 
+      // THE POLL RIDES OUT BLIPS. A live price is 30-70s, so this loop runs
+      // 20-35 times, and this backend throws intermittent 5xx bursts. Letting
+      // one failed poll abandon the whole drop threw away a job that had
+      // already uploaded and was very likely still running server-side --
+      // which is what produced "Could not reach Kevin" AFTER the photo had
+      // gone up. Consecutive failures are what matter; a single one is noise.
+      const deadline = Date.now() + 180_000
+      let misses = 0
       while (!isTerminal(drop.stage)) {
         if (stopped.current) return
         setView({ k: 'running', src, stage: drop.stage, identified: drop.identified })
         await new Promise((r) => setTimeout(r, 2000))
-        drop = await pollDrop(drop.drop_id)
+        if (stopped.current) return
+
+        if (Date.now() > deadline) throw new DropRefused({ kind: 'timeout' })
+
+        try {
+          drop = await pollDrop(drop.drop_id)
+          misses = 0
+        } catch (e) {
+          // A 404 means the drop is genuinely gone; retrying cannot help.
+          if (e instanceof DropRefused && e.refusal.kind === 'capacity') throw e
+          misses += 1
+          if (misses >= 6) throw e
+          // Keep the last good stage on screen and try again.
+        }
       }
       if (stopped.current) return
 
@@ -345,7 +394,14 @@ export default function PhotoDropDemo() {
         })
       }
     } catch (e) {
-      const refusal: DropRefusal = e instanceof DropRefused ? e.refusal : { kind: 'network' }
+      // An unplanned exception is OURS, not the visitor's connection. Saying
+      // "check your connection" for a TypeError sends them to reboot a router
+      // over our bug, and hides the bug from us.
+      const refusal: DropRefusal =
+        e instanceof DropRefused
+          ? e.refusal
+          : { kind: 'unexpected', detail: e instanceof Error ? e.message : String(e) }
+      if (refusal.kind === 'unexpected') console.error('[demo] drop failed:', e)
       // A rejected token is usually an EXPIRED one -- Turnstile tokens last
       // about five minutes and this section sits below a hero people read. So
       // take a fresh one and resubmit the same photo, once, without saying
@@ -354,7 +410,7 @@ export default function PhotoDropDemo() {
       if (refusal.kind === 'turnstile' && !retried.current) {
         retried.current = true
         setToken(null)
-        window.turnstile?.reset()
+        retireToken()
         pending.current = { file, src }
         setView({ k: 'awaiting', src })
         return
