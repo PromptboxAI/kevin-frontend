@@ -307,6 +307,34 @@ function retireToken() {
   }
 }
 
+/**
+ * The visitor's own photo, with a fallback for formats the BROWSER cannot draw.
+ *
+ * We invite HEIC on purpose -- it is what an iPhone shoots and the server reads
+ * it fine -- but Chrome cannot decode HEIC in an <img> at all. So
+ * createObjectURL hands back a perfectly valid URL that the browser then
+ * refuses to render: a broken-image icon sitting next to a result that
+ * succeeded, which reads as "my upload failed" when nothing failed.
+ *
+ * There is no client-side rescue available: converting through a canvas needs
+ * a decode, and the decode is the part that is missing. So the tile says what
+ * is true instead, and the pipeline carries on regardless.
+ */
+function Shot({ src, alt, className }: { src: string; alt: string; className: string }) {
+  const [broken, setBroken] = useState(false)
+  if (broken) {
+    return (
+      <div className={`${className} k-demo-shot--none`} role="img" aria-label={alt || 'Your photo'}>
+        <span className="k-demo-shot-glyph" aria-hidden>
+          ▣
+        </span>
+        <span className="k-demo-shot-note">This browser cannot preview that format — the photo itself is fine</span>
+      </div>
+    )
+  }
+  return <img className={className} src={src} alt={alt} onError={() => setBroken(true)} />
+}
+
 /* -- component ---------------------------------------------------------- */
 
 type View =
@@ -565,7 +593,7 @@ export default function PhotoDropDemo() {
       {view.k === 'awaiting' ? (
         <div className="k-demo-body">
           <div className="k-demo-run">
-            <img className="k-demo-run-img" src={view.src} alt="" />
+            <Shot className="k-demo-run-img" src={view.src} alt="Your photo" />
             <div>
               <div className="k-demo-seen">
                 <span className="k-demo-seen-l">Holding your photo</span>
@@ -586,7 +614,7 @@ export default function PhotoDropDemo() {
       {view.k === 'running' ? (
         <div className="k-demo-body">
           <div className="k-demo-run">
-            <img className="k-demo-run-img" src={view.src} alt="" />
+            <Shot className="k-demo-run-img" src={view.src} alt="Your photo" />
             <div>
               {view.identified ? (
                 <div className="k-demo-seen">
@@ -621,7 +649,7 @@ export default function PhotoDropDemo() {
       {view.k === 'not_priced' ? (
         <div className="k-demo-body">
           <div className="k-demo-run">
-            <img className="k-demo-run-img" src={view.src} alt="" />
+            <Shot className="k-demo-run-img" src={view.src} alt="Your photo" />
             <div className="k-demo-unavail">
               {view.identified ? (
                 <div className="k-demo-seen">
@@ -642,7 +670,7 @@ export default function PhotoDropDemo() {
       {view.k === 'refused' ? (
         <div className="k-demo-body">
           <div className="k-demo-run">
-            {view.src ? <img className="k-demo-run-img" src={view.src} alt="" /> : null}
+            {view.src ? <Shot className="k-demo-run-img" src={view.src} alt="Your photo" /> : null}
             <div className="k-demo-unavail">
               <strong>{REFUSAL[view.refusal.kind].head}</strong>
               <p>{REFUSAL[view.refusal.kind].body}</p>
@@ -658,7 +686,7 @@ export default function PhotoDropDemo() {
         <div className="k-demo-body">
           <div className="k-demo-result">
             <div className="k-demo-result-top">
-              <img className="k-demo-result-img" src={view.src} alt={view.identified.description} />
+              <Shot className="k-demo-result-img" src={view.src} alt={view.identified.description} />
               <div className="k-demo-result-id">
                 <div className="k-demo-result-desc">{view.identified.description}</div>
                 <div className="k-demo-result-meta">
