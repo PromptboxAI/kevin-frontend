@@ -68,7 +68,15 @@ const SAMPLES: Sample[] = [
       rcv: 74.94,
       source_link: 'https://romanvalleyranch.com/products/bella-silver-rhinestones-belt',
       source_name: 'Roman Valley Ranch',
-      comp_count: 3,
+      // NOT a count. These fixtures were read off the sample claim, where
+      // `alternative_sources` holds 3 comps -- but that is the number of comps
+      // KEPT, and the backend reports the engine actually searched 28 for a
+      // price. Asserting "based on 3 live listings" therefore understates the
+      // evidence by roughly 9x, on the one number whose whole job is to make
+      // the price look defensible. Until a preset comes back from the API with
+      // the engine's own figure, the card says "from live retail listings"
+      // and counts nothing.
+      comp_count: null,
       basis: 'retail',
     },
   },
@@ -86,7 +94,15 @@ const SAMPLES: Sample[] = [
       rcv: 14.47,
       source_link: 'https://www.myvacuumplace.com/hepa-filter-bissell-envirocare-style-7-9.html',
       source_name: 'MyVacuumPlace',
-      comp_count: 3,
+      // NOT a count. These fixtures were read off the sample claim, where
+      // `alternative_sources` holds 3 comps -- but that is the number of comps
+      // KEPT, and the backend reports the engine actually searched 28 for a
+      // price. Asserting "based on 3 live listings" therefore understates the
+      // evidence by roughly 9x, on the one number whose whole job is to make
+      // the price look defensible. Until a preset comes back from the API with
+      // the engine's own figure, the card says "from live retail listings"
+      // and counts nothing.
+      comp_count: null,
       basis: 'like_kind_new',
     },
   },
@@ -105,7 +121,15 @@ const SAMPLES: Sample[] = [
       source_link:
         'https://www.walmart.com/ip/LIVINGO-Office-Scissors-Titanium-Non-Stick-Sharp-Steel-for-Adult-8-2-Pack-Yellow/2554926370',
       source_name: 'Walmart',
-      comp_count: 3,
+      // NOT a count. These fixtures were read off the sample claim, where
+      // `alternative_sources` holds 3 comps -- but that is the number of comps
+      // KEPT, and the backend reports the engine actually searched 28 for a
+      // price. Asserting "based on 3 live listings" therefore understates the
+      // evidence by roughly 9x, on the one number whose whole job is to make
+      // the price look defensible. Until a preset comes back from the API with
+      // the engine's own figure, the card says "from live retail listings"
+      // and counts nothing.
+      comp_count: null,
       basis: 'retail',
     },
   },
