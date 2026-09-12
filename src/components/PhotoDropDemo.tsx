@@ -143,8 +143,8 @@ const REFUSAL: Record<DropRefusal['kind'], { head: string; body: string }> = {
     body: 'Rather than show a made-up answer for your own photo, here is nothing. The sample photos below are real output from the same pipeline.',
   },
   turnstile: {
-    head: 'That check did not pass',
-    body: 'The bot check failed or expired. Complete it again and re-drop the photo.',
+    head: 'The bot check would not clear',
+    body: 'Kevin took a fresh check and tried your photo again, and the server turned it down both times. That is usually a configuration problem on our side rather than anything you did. The samples below are unaffected.',
   },
   too_large: {
     head: 'That photo is too large',
@@ -262,6 +262,7 @@ function Turnstile({ onToken }: { onToken: (t: string | null) => void }) {
 
 type View =
   | { k: 'idle' }
+  | { k: 'awaiting'; src: string }
   | { k: 'running'; src: string; stage: Drop['stage']; identified: DropIdentified | null }
   | { k: 'done'; src: string; identified: DropIdentified; result: DropResult; own: boolean }
   | { k: 'not_priced'; src: string; reason: NotPricedReason; identified: DropIdentified | null }
@@ -279,6 +280,10 @@ export default function PhotoDropDemo() {
   const fileRef = useRef<HTMLInputElement>(null)
   const objectUrls = useRef<string[]>([])
   const stopped = useRef(false)
+  /** A photo picked before a token existed, waiting for one. */
+  const pending = useRef<{ file: File; src: string } | null>(null)
+  /** One silent retry with a fresh token, then we stop and say so. */
+  const retried = useRef(false)
 
   useEffect(
     () => () => {
@@ -311,8 +316,55 @@ export default function PhotoDropDemo() {
     }
   }, [rcv, age, category])
 
+  /** Post the drop and follow it to a terminal stage. */
+  const submit = useCallback(async (file: File, src: string, tok: string) => {
+    setView({ k: 'running', src, stage: 'queued', identified: null })
+    try {
+      let drop = await createDrop(file, tok)
+      // The token is single-use; make the widget issue a fresh one.
+      setToken(null)
+      window.turnstile?.reset()
+
+      while (!isTerminal(drop.stage)) {
+        if (stopped.current) return
+        setView({ k: 'running', src, stage: drop.stage, identified: drop.identified })
+        await new Promise((r) => setTimeout(r, 2000))
+        drop = await pollDrop(drop.drop_id)
+      }
+      if (stopped.current) return
+
+      if (drop.stage === 'done' && drop.result && drop.identified) {
+        setAge(3)
+        setView({ k: 'done', src, identified: drop.identified, result: drop.result, own: true })
+      } else {
+        setView({
+          k: 'not_priced',
+          src,
+          reason: drop.reason ?? 'unavailable',
+          identified: drop.identified,
+        })
+      }
+    } catch (e) {
+      const refusal: DropRefusal = e instanceof DropRefused ? e.refusal : { kind: 'network' }
+      // A rejected token is usually an EXPIRED one -- Turnstile tokens last
+      // about five minutes and this section sits below a hero people read. So
+      // take a fresh one and resubmit the same photo, once, without saying
+      // anything: the token lifecycle is not the visitor's problem. Only a
+      // second rejection is worth a message.
+      if (refusal.kind === 'turnstile' && !retried.current) {
+        retried.current = true
+        setToken(null)
+        window.turnstile?.reset()
+        pending.current = { file, src }
+        setView({ k: 'awaiting', src })
+        return
+      }
+      setView({ k: 'refused', src, refusal })
+    }
+  }, [])
+
   const runOwn = useCallback(
-    async (file: File) => {
+    (file: File) => {
       const bad = clientReject(file)
       if (bad) {
         setView({ k: 'refused', src: null, refusal: bad })
@@ -322,47 +374,31 @@ export default function PhotoDropDemo() {
         setView({ k: 'refused', src: null, refusal: { kind: 'not_configured' } })
         return
       }
-      if (!token) {
-        setView({ k: 'refused', src: null, refusal: { kind: 'turnstile' } })
-        return
-      }
 
       const src = URL.createObjectURL(file)
       objectUrls.current.push(src)
-      setView({ k: 'running', src, stage: 'queued', identified: null })
+      retried.current = false
 
-      try {
-        let drop = await createDrop(file, token)
-        // The token is single-use; make the widget issue a fresh one.
-        setToken(null)
-        window.turnstile?.reset()
-
-        while (!isTerminal(drop.stage)) {
-          if (stopped.current) return
-          setView({ k: 'running', src, stage: drop.stage, identified: drop.identified })
-          await new Promise((r) => setTimeout(r, 2000))
-          drop = await pollDrop(drop.drop_id)
-        }
-        if (stopped.current) return
-
-        if (drop.stage === 'done' && drop.result && drop.identified) {
-          setAge(3)
-          setView({ k: 'done', src, identified: drop.identified, result: drop.result, own: true })
-        } else {
-          setView({
-            k: 'not_priced',
-            src,
-            reason: drop.reason ?? 'unavailable',
-            identified: drop.identified,
-          })
-        }
-      } catch (e) {
-        const refusal: DropRefusal = e instanceof DropRefused ? e.refusal : { kind: 'network' }
-        setView({ k: 'refused', src, refusal })
+      // No token yet, or it expired while they were reading: HOLD the photo and
+      // go as soon as one lands. Refusing here is what produced "That check did
+      // not pass" for people who had in fact passed it.
+      if (!token) {
+        pending.current = { file, src }
+        setView({ k: 'awaiting', src })
+        return
       }
+      void submit(file, src, token)
     },
-    [token],
+    [token, submit],
   )
+
+  // A token arrived and a photo is waiting on it.
+  useEffect(() => {
+    if (!token || !pending.current) return
+    const held = pending.current
+    pending.current = null
+    void submit(held.file, held.src, token)
+  }, [token, submit])
 
   const runSample = useCallback((s: Sample) => {
     setAge(3)
@@ -446,6 +482,27 @@ export default function PhotoDropDemo() {
               </button>
             ))}
           </div>
+        </div>
+      ) : null}
+
+      {view.k === 'awaiting' ? (
+        <div className="k-demo-body">
+          <div className="k-demo-run">
+            <img className="k-demo-run-img" src={view.src} alt="" />
+            <div>
+              <div className="k-demo-seen">
+                <span className="k-demo-seen-l">Holding your photo</span>
+                <strong>Waiting on the bot check</strong>
+              </div>
+              <p className="k-demo-unavail">
+                Nothing to do — Kevin sends the photo the moment the check below clears. If it is
+                asking you to tick a box, that is the last step.
+              </p>
+            </div>
+          </div>
+          {/* The widget stays mounted here, so a fresh token can arrive without
+              sending the visitor back to the start. */}
+          {demoConfigured() ? <Turnstile onToken={setToken} /> : null}
         </div>
       ) : null}
 
