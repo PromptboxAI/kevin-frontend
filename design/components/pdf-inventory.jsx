@@ -22,8 +22,8 @@ const pdfLineTotals = (r) => ({
 const PDF_METHODS = {
   straight_line: {
     label: 'Straight-line',
-    meta: 'Straight-line · (age ÷ useful life), capped at 90%',
-    note: 'Depreciation was calculated on a straight-line basis: each item’s age divided by the useful life for its content class, capped at 90% so a salvage floor is always retained.',
+    meta: 'Straight-line · (age ÷ useful life), to a class ceiling where one is set',
+    note: 'Depreciation was calculated on a straight-line basis: each item’s age divided by the useful life for its content class. It runs to 100% unless the schedule sets a lower ceiling for that class, so an item past its useful life carries an actual cash value of $0.00.',
   },
   bracketed: {
     label: 'Bracketed',

@@ -738,7 +738,7 @@ export const DOC_ARTICLES: Record<string, DocArticle> = {
   },
   "depreciation-overrides": {
     "title": "Depreciation overrides",
-    "summary": "Three methods, one cap, and what happens when you type over the number.",
+    "summary": "Three methods, how far depreciation runs, and what happens when you type over the number.",
     "blocks": [
       [
         "p",
@@ -757,7 +757,7 @@ export const DOC_ARTICLES: Record<string, DocArticle> = {
           ],
           [
             "Straight-line (default)",
-            "Age divided by the useful life for the class, capped so a salvage floor remains."
+            "Age divided by the useful life for the class. It runs to 100% unless the schedule sets a lower ceiling for that class."
           ],
           [
             "Bracketed",
@@ -771,11 +771,15 @@ export const DOC_ARTICLES: Record<string, DocArticle> = {
       ],
       [
         "h2",
-        "The cap"
+        "How far it runs"
       ],
       [
         "p",
-        "Straight-line is capped at 90%, so a twenty-year-old five-year-life item does not depreciate to nothing. Something old and still present has salvage value, and a carrier will expect to see it."
+        "Straight-line runs all the way to 100%. An item past its useful life depreciates to an actual cash value of $0.00, and that is the figure Kevin shows — a five-year-life item at five years or older reads 100%."
+      ],
+      [
+        "p",
+        "There is no across-the-board salvage floor. A ceiling applies only where the schedule sets one for that content class, and most classes set none. If your carrier expects a floor, put it in the schedule as a maximum for the classes it should cover, or type over the percentage on the line — both are recorded."
       ],
       [
         "h2",
@@ -783,7 +787,7 @@ export const DOC_ARTICLES: Record<string, DocArticle> = {
       ],
       [
         "p",
-        "Type a percentage into the cell and it stops following the schedule — the row is marked as manually set, and the change is recorded with your name and the time. Click the information icon in the cell to see how the figure was reached: the method, the useful life, the age, and whether the cap applied."
+        "Type a percentage into the cell and it stops following the schedule — the row is marked as manually set, and the change is recorded with your name and the time. Click the information icon in the cell to see how the figure was reached: the method, the useful life, the age, and whether a class ceiling applied."
       ],
       [
         "note",
@@ -795,7 +799,7 @@ export const DOC_ARTICLES: Record<string, DocArticle> = {
       ],
       [
         "p",
-        "On intake, choose Add new schedule to define one: a name, the method, useful life by class, and a maximum. It is then selectable on any future claim."
+        "On intake, choose Add new schedule to define one: a name, the method, useful life by class, and an optional maximum per class — that maximum is where a salvage floor belongs if you want one. It is then selectable on any future claim."
       ]
     ]
   },
