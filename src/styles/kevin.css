@@ -5383,7 +5383,15 @@
       border: 1px dashed var(--k-line-2);
       box-sizing: border-box;
     }
-    .k-demo-shot-glyph { font-size: 20px; color: var(--k-fg-4); line-height: 1; }
+    /* The K mark stands in for a photo the browser will not decode. Drawn as a
+       background because favicon.svg declares only a viewBox: in an <img> it
+       has zero intrinsic size and Chrome shows its broken-image glyph, which
+       is the exact thing this placeholder exists to replace. */
+    .k-demo-shot-k {
+      width: 30px; height: 30px; flex: 0 0 auto; display: block;
+      background: url('/favicon.svg') center / contain no-repeat;
+      border-radius: 7px;
+    }
     .k-demo-shot-note { font-size: 10.5px; line-height: 1.35; color: var(--k-fg-4); }
 
     /* The result card's thumbnail is only 96px (72px on a phone), so the

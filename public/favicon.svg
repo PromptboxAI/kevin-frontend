@@ -2,7 +2,7 @@
   <!--
     Kevin favicon — navy tile, white K, accent period.
 
-    NOTE: design/CLAUDE.md line 71 says a K-monogram "was explored and
+    NOTE: the CLAUDE.md rule on the wordmark says a K-monogram "was explored and
     rejected". The owner overrode that on 2026-09-09 and asked for a K, so this
     is a deliberate exception to a locked rule rather than an oversight. If the
     rule still holds elsewhere, update CLAUDE.md so the two stop disagreeing.
@@ -12,7 +12,7 @@
 
     Geometry is stroked rather than outlined so the weight stays even at 16px,
     and the colours are the kevin.css tokens converted from OKLCH:
-    --k-accent oklch(0.38 0.085 252) = #1c446e. Hex, not oklch(), because
+    the k-accent token, oklch(0.38 0.085 252) = #1c446e. Hex, not oklch(), because
     browser chrome renders favicons outside the page's colour context.
 
     Replaces a purple gradient bolt (#863bff) left over from the scaffold.

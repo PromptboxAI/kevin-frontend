@@ -325,9 +325,13 @@ function Shot({ src, alt, className }: { src: string; alt: string; className: st
   if (broken) {
     return (
       <div className={`${className} k-demo-shot--none`} role="img" aria-label={alt || 'Your photo'}>
-        <span className="k-demo-shot-glyph" aria-hidden>
-          ▣
-        </span>
+        {/* The favicon file itself, so the placeholder cannot drift from the
+            mark -- but drawn as a CSS BACKGROUND, not an <img>. favicon.svg
+            carries only a viewBox and no width/height, so in an <img> it has
+            zero intrinsic size and Chrome renders the broken-image glyph even
+            with CSS dimensions set. A background is sized by its own box and
+            has no such problem. */}
+        <span className="k-demo-shot-k" aria-hidden />
         <span className="k-demo-shot-note">This browser cannot preview that format — the photo itself is fine</span>
       </div>
     )
