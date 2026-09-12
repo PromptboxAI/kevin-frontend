@@ -35,10 +35,17 @@ const MANUAL_COPY: Record<string, string> = {
   enqueue_failed: 'The valuation job could not be queued. A reprice retries it.',
 }
 
+/**
+ * Rule 11: a RESALE price must be visibly labelled wherever comps are shown,
+ * so nobody reads a used-market figure as a new-replacement one. "Comparable
+ * sale" alone did not say that -- it is the contract's field value, not a
+ * sentence an adjuster reads as "used". This is the only place any basis is
+ * shown, so it has to carry the whole disclosure.
+ */
 const BASIS_LABEL: Record<string, string> = {
-  retail: 'Retail comp',
-  like_kind_new: 'Like-kind substitute',
-  comparable_sale: 'Comparable sale',
+  retail: 'Retail comp (new)',
+  like_kind_new: 'Like-kind substitute (nearest new equivalent)',
+  comparable_sale: 'Comparable sale (resale market, not a new-replacement price)',
   manual: 'Manual / appraisal',
 }
 
