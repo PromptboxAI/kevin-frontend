@@ -73,7 +73,10 @@ export type DropRefusal =
   | { kind: 'nothing_dropped' }
   | { kind: 'rate_limited'; retryAfter: number | null }
   | { kind: 'capacity'; retryAfter: number | null }
-  | { kind: 'network' }
+  /** The request failed or came back with a status we do not map. `status`
+   *  is null when fetch itself threw -- which is ALSO what a server 500 looks
+   *  like, because this backend's error handler sends no CORS header. */
+  | { kind: 'network'; phase: 'upload' | 'poll'; status: number | null; requestId: string | null }
   /** The drop ran past the deadline without reaching a terminal stage. */
   | { kind: 'timeout' }
   /** Anything we did not plan for -- kept separate from `network` so a bug in
@@ -110,7 +113,7 @@ export async function createDrop(file: File, turnstileToken: string): Promise<Dr
   try {
     res = await fetch(`${API_BASE_URL}/v1/demo/drops`, { method: 'POST', body })
   } catch {
-    throw new DropRefused({ kind: 'network' })
+    throw new DropRefused({ kind: 'network', phase: 'upload', status: null, requestId: null })
   }
 
   // 202 = running (poll). 200 = a preset or a photo already seen, answered
@@ -133,7 +136,12 @@ export async function createDrop(file: File, turnstileToken: string): Promise<Dr
   // 503 covers three states -- off, at today's capacity, or busy. All three
   // mean the same thing to a visitor: not now, try a sample.
   if (res.status === 503) throw new DropRefused({ kind: 'capacity', retryAfter: retryAfter(res) })
-  throw new DropRefused({ kind: 'network' })
+  throw new DropRefused({
+    kind: 'network',
+    phase: 'upload',
+    status: res.status,
+    requestId: res.headers.get('X-Request-ID'),
+  })
 }
 
 export async function pollDrop(dropId: string): Promise<Drop> {
@@ -141,12 +149,18 @@ export async function pollDrop(dropId: string): Promise<Drop> {
   try {
     res = await fetch(`${API_BASE_URL}/v1/demo/drops/${encodeURIComponent(dropId)}`)
   } catch {
-    throw new DropRefused({ kind: 'network' })
+    throw new DropRefused({ kind: 'network', phase: 'poll', status: null, requestId: null })
   }
   // A drop expires an hour after it was made; nobody is watching one that
   // long, but a backgrounded tab can come back to a 404.
   if (res.status === 404) throw new DropRefused({ kind: 'capacity', retryAfter: null })
-  if (!res.ok) throw new DropRefused({ kind: 'network' })
+  if (!res.ok)
+    throw new DropRefused({
+      kind: 'network',
+      phase: 'poll',
+      status: res.status,
+      requestId: res.headers.get('X-Request-ID'),
+    })
   try {
     return (await res.json()) as Drop
   } catch {

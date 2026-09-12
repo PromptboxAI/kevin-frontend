@@ -206,7 +206,11 @@ const REFUSAL: Record<DropRefusal['kind'], { head: string; body: string }> = {
   },
   network: {
     head: 'Could not reach Kevin',
-    body: 'The request did not get through. Check your connection and try again.',
+    // Not "check your connection": from the browser a server error on this
+    // backend is indistinguishable from a dropped connection, and it is far
+    // more often the former. Sending someone to fix their wifi over our 500
+    // is the wrong instruction.
+    body: 'The request did not complete. That is more often on our side than your connection. Dropping the photo again in a moment is worth a try; the samples below are unaffected.',
   },
   timeout: {
     head: 'That one is taking too long',
@@ -515,6 +519,18 @@ export default function PhotoDropDemo() {
           ? e.refusal
           : { kind: 'unexpected', detail: e instanceof Error ? e.message : String(e) }
       if (refusal.kind === 'unexpected') console.error('[demo] drop failed:', e)
+      // "Could not reach Kevin" used to log nothing, so a live failure left no
+      // trace of WHICH request broke. Upload vs poll, and the status (null =
+      // fetch threw, which is also how a CORS-less server 500 arrives), is the
+      // whole diagnosis.
+      if (refusal.kind === 'network')
+        console.error('[demo] request failed:', {
+          phase: refusal.phase,
+          status: refusal.status,
+          requestId: refusal.requestId,
+          at: new Date().toISOString(),
+          file: { name: file.name, size: file.size, type: file.type },
+        })
       if (refusal.kind === 'turnstile')
         console.error('[demo] server rejected the Turnstile token (403).', {
           wasARetry: retried.current,
@@ -818,6 +834,15 @@ export default function PhotoDropDemo() {
               {'name' in view.refusal ? (
                 <div className="k-demo-filefact">
                   {view.refusal.name} · type {view.refusal.type}
+                </div>
+              ) : null}
+              {/* Which request failed, and how. Readable off a screenshot, so a
+                  visitor's report is a diagnosis without opening DevTools. */}
+              {view.refusal.kind === 'network' ? (
+                <div className="k-demo-filefact">
+                  {view.refusal.phase === 'upload' ? 'Upload' : 'Status check'} ·{' '}
+                  {view.refusal.status == null ? 'no response' : `HTTP ${view.refusal.status}`}
+                  {view.refusal.requestId ? ` · ref ${view.refusal.requestId.slice(0, 8)}` : ''}
                 </div>
               ) : null}
               <button type="button" className="k-btn k-btn--ghost" onClick={reset}>
