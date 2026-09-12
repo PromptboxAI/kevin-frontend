@@ -671,9 +671,33 @@ export default function PhotoDropDemo() {
               accept="image/*"
               hidden
               onChange={(e) => {
-                const f = e.target.files?.[0]
-                if (f) runOwn(f)
-                e.target.value = ''
+                // The input is cleared only AFTER the work settles, and that
+                // ordering is the whole fix.
+                //
+                // `runOwn` is async: it returns a promise and yields. Clearing
+                // `value` on the next line therefore ran while the file was
+                // still being read, and clearing a file input INVALIDATES the
+                // OS-backed File handles in its FileList. The subsequent read
+                // then saw zero bytes — for a 5.5 MB JPEG that was perfectly
+                // fine on disk (verified: 5,518,587 bytes, valid 4000x3000).
+                //
+                // It is a race, which is why it looked random: when the read
+                // won, the drop worked. Before the byte probe existed it lost
+                // later, posting an invalidated file and earning the server's
+                // 400 — that was the original "came through empty".
+                //
+                // `el` is captured synchronously because `e.currentTarget` is
+                // null by the time the promise settles. The clear still has to
+                // happen, or picking the SAME file twice fires no change event.
+                const el = e.currentTarget
+                const f = el.files?.[0]
+                if (!f) {
+                  el.value = ''
+                  return
+                }
+                void runOwn(f).finally(() => {
+                  el.value = ''
+                })
               }}
             />
             <div className="k-demo-drop-i" aria-hidden>
