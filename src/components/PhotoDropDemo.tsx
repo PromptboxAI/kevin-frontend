@@ -415,6 +415,16 @@ export default function PhotoDropDemo() {
   const pending = useRef<{ file: File; src: string } | null>(null)
   /** One silent retry with a fresh token, then we stop and say so. */
   const retried = useRef(false)
+  /**
+   * Bumped to force a genuinely NEW Turnstile widget.
+   *
+   * Turnstile tokens are single-use, and Cloudflare caches a solve per widget:
+   * re-rendering the same widget can hand back the token it already spent, so
+   * the retry posts a dead token, the server 403s again, and the visitor is
+   * told "the bot check would not clear" on a valid key pair. Changing the
+   * React key discards the widget instance and its cached solve.
+   */
+  const [checkNonce, setCheckNonce] = useState(0)
 
   useEffect(
     () => () => {
@@ -505,6 +515,11 @@ export default function PhotoDropDemo() {
           ? e.refusal
           : { kind: 'unexpected', detail: e instanceof Error ? e.message : String(e) }
       if (refusal.kind === 'unexpected') console.error('[demo] drop failed:', e)
+      if (refusal.kind === 'turnstile')
+        console.error('[demo] server rejected the Turnstile token (403).', {
+          wasARetry: retried.current,
+          note: 'a single-use token replayed from a cached solve looks exactly like this',
+        })
       // A rejected token is usually an EXPIRED one -- Turnstile tokens last
       // about five minutes and this section sits below a hero people read. So
       // take a fresh one and resubmit the same photo, once, without saying
@@ -514,6 +529,7 @@ export default function PhotoDropDemo() {
         retried.current = true
         setToken(null)
         retireToken()
+        setCheckNonce((n) => n + 1)
         pending.current = { file, src }
         setView({ k: 'awaiting', src })
         return
@@ -669,7 +685,7 @@ export default function PhotoDropDemo() {
             </div>
           </div>
 
-          {demoConfigured() ? <Turnstile onToken={setToken} /> : null}
+          {demoConfigured() ? <Turnstile key={checkNonce} onToken={setToken} /> : null}
 
           <div className="k-demo-or">or try one of ours</div>
           <div className="k-demo-samples">
@@ -705,7 +721,7 @@ export default function PhotoDropDemo() {
           </div>
           {/* The widget stays mounted here, so a fresh token can arrive without
               sending the visitor back to the start. */}
-          {demoConfigured() ? <Turnstile onToken={setToken} /> : null}
+          {demoConfigured() ? <Turnstile key={checkNonce} onToken={setToken} /> : null}
         </div>
       ) : null}
 
