@@ -151,6 +151,10 @@ const REFUSAL: Record<DropRefusal['kind'], { head: string; body: string }> = {
     body: 'The limit is 15 MB. Most phone photos are well under it.',
   },
   not_a_photo: { head: 'That is not a photo', body: 'Try a JPEG, PNG or HEIC of one item.' },
+  empty_file: {
+    head: 'That file came through empty',
+    body: 'It read as zero bytes, which usually means it had not finished downloading from cloud storage yet. Wait a moment and drop it again — the same file normally works second time.',
+  },
   rate_limited: {
     head: 'That is the limit for now',
     body: 'Three photos an hour, ten a day — each live price is a lookup we pay for. The samples below are free and already priced.',
@@ -187,9 +191,26 @@ const BASIS_COPY: Record<string, string> = {
 
 const MAX_BYTES = 15 * 1024 * 1024
 
+/**
+ * Pre-checks that mirror the server WITHOUT being stricter than it.
+ *
+ * The first version rejected anything whose `file.type` did not start with
+ * "image/" — and a perfectly good .jpg often arrives with an EMPTY type: the
+ * browser could not determine it, which happens with some drag sources and
+ * with files the OS has not fully materialised. A real JPEG was told "that is
+ * not a photo" and then worked on a second attempt.
+ *
+ * So an empty type is no longer a rejection. The server sniffs the bytes and
+ * answers 415 if it really is not an image; guessing from a hint the browser
+ * itself declined to supply is worse than asking.
+ *
+ * Zero bytes gets its own answer too. On Windows a OneDrive placeholder reads
+ * as 0 until it hydrates, which is why a retry succeeds — that is a "try
+ * again", not "this is not a photo".
+ */
 function clientReject(file: File): DropRefusal | null {
-  if (!file.type.startsWith('image/')) return { kind: 'not_a_photo' }
-  if (file.size === 0) return { kind: 'not_a_photo' }
+  if (file.type && !file.type.startsWith('image/')) return { kind: 'not_a_photo' }
+  if (file.size === 0) return { kind: 'empty_file' }
   if (file.size > MAX_BYTES) return { kind: 'too_large' }
   return null
 }

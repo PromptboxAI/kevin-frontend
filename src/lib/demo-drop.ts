@@ -59,6 +59,9 @@ export type DropRefusal =
   | { kind: 'turnstile' }
   | { kind: 'too_large' }
   | { kind: 'not_a_photo' }
+  /** Read back as zero bytes — usually a cloud placeholder that has not
+   *  hydrated yet, not a corrupt file. Worth a retry, not a rejection. */
+  | { kind: 'empty_file' }
   | { kind: 'rate_limited'; retryAfter: number | null }
   | { kind: 'capacity'; retryAfter: number | null }
   | { kind: 'network' }
@@ -114,7 +117,8 @@ export async function createDrop(file: File, turnstileToken: string): Promise<Dr
 
   if (res.status === 403) throw new DropRefused({ kind: 'turnstile' })
   if (res.status === 413) throw new DropRefused({ kind: 'too_large' })
-  if (res.status === 415 || res.status === 400) throw new DropRefused({ kind: 'not_a_photo' })
+  if (res.status === 415) throw new DropRefused({ kind: 'not_a_photo' })
+  if (res.status === 400) throw new DropRefused({ kind: 'empty_file' })
   if (res.status === 429)
     throw new DropRefused({ kind: 'rate_limited', retryAfter: retryAfter(res) })
   // 503 covers three states -- off, at today's capacity, or busy. All three
