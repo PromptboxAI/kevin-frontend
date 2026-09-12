@@ -5350,6 +5350,23 @@
       .k-demo-dep { padding: 16px; }
     }
 
+    /* The review line on the demo result card. Reads as product fact, not as a
+       disclaimer, so it sits on the card's own ground rather than in a tinted
+       warning box -- an amber panel here would imply something went wrong, and
+       amber is reserved for special-limits coverage warnings anyway (rule 6). */
+    .k-demo-review {
+      border-top: 1px solid var(--k-line);
+      padding: 14px 20px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--k-fg-3);
+    }
+    .k-demo-review strong { color: var(--k-fg); font-weight: 700; }
+
+    @media (max-width: 640px) {
+      .k-demo-review { padding: 14px 16px; font-size: 13.5px; }
+    }
+
     /* — 2 · Condensed vertical rhythm —
        Desktop padding (72-88px blocks) reads as luxury on a 1440px canvas
        and as dead air on a 375px one. Roughly halved below 768px. */

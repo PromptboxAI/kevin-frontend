@@ -697,6 +697,22 @@ export default function PhotoDropDemo() {
               ) : null}
             </div>
 
+            {/* WHY THIS LINE EXISTS. The card reads as a finished answer, and the
+                engine will sometimes be wrong -- it returned a generic replica
+                for a photo whose plate plainly said WORLD WRESTLING
+                ENTERTAINMENT. A visitor who knows their own item and sees a
+                miss concludes "their AI is wrong" when the truthful reading is
+                "this is the row I would correct". The product's promise is that
+                Kevin proposes and the adjuster reviews; the demo was not saying
+                so. Stated as fact, not apology: rule 12 is exactly this -- type
+                into the cell, the basis becomes manual, the row takes your
+                proof link. */}
+            <div className="k-demo-review">
+              <strong>Kevin proposes the line. You review it.</strong> In a claim this is a row you
+              edit: correct the description and it re-prices, or type your own figure and attach the
+              source you trust. Nothing leaves for a carrier until you say so.
+            </div>
+
             {/* The slider runs on GET /v1/worksheet/preview -- the product's own
                 depreciation, so the demo cannot disagree with the worksheet. */}
             <div className="k-demo-dep">
