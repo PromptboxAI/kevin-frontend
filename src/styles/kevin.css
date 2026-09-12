@@ -5285,12 +5285,22 @@
     .k-demo-comp-p { font-family: var(--k-font-mono); color: var(--k-fg); font-feature-settings: "tnum"; }
     .k-demo-comp-link { display: inline-block; margin-top: 9px; font-size: 13px; color: var(--k-accent); }
 
+    /* Content-width columns packed to the left, not three equal thirds of the
+       card. Equal thirds spread the trio across 680px and right-aligned each
+       value inside its own column, which left ~200px of dead space before
+       "% Depr." while the figures themselves sat far apart. The worksheet's
+       money columns are snug for the same reason: a figure column is read by
+       comparing digits, which only works when the columns are adjacent. */
     .k-demo-money {
       border-top: 1px solid var(--k-line); margin: 0; padding: 16px 20px;
-      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 18px;
+      display: grid; grid-template-columns: repeat(3, max-content);
+      justify-content: start; column-gap: 40px; row-gap: 0;
     }
     .k-demo-money div { margin: 0; }
-    .k-demo-money dt { font-size: 11px; color: var(--k-fg-4); font-family: var(--k-font-mono); text-transform: uppercase; letter-spacing: 0.05em; }
+    /* Right-aligned like the worksheet's money columns -- a figure column
+       reads down its last digit, which is the whole point of tabular numerals. */
+    .k-demo-money dt { font-size: 11px; color: var(--k-fg-4); font-family: var(--k-font-mono); text-transform: uppercase; letter-spacing: 0.05em; text-align: right; }
+    .k-demo-money dd { text-align: right; }
     .k-demo-money dd { margin: 3px 0 0; font-size: 15px; font-family: var(--k-font-mono); color: var(--k-fg-2); font-feature-settings: "tnum"; }
     .k-demo-money--acv dd { color: var(--k-fg); font-weight: 700; }
 
@@ -5314,7 +5324,14 @@
       .k-demo-result-img { width: 72px; height: 72px; }
       .k-demo-comp { grid-template-columns: minmax(0, 1fr) auto; }
       .k-demo-comp-t { display: none; }
-      .k-demo-money { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 16px; }
+      /* Three across even on a phone: the money row reads as ONE row the way
+         the worksheet's does. At 375px each column is ~105px and the widest
+         value is ($44.96) at 11 mono characters, which fits. Two columns
+         pushed ACV onto a line of its own, where a total right-aligned in the
+         left column reads as a stray figure. */
+      .k-demo-money { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 10px; padding: 16px; }
+      .k-demo-money dt { font-size: 10px; letter-spacing: 0.04em; }
+      .k-demo-money dd { font-size: 14px; }
       .k-demo-foot { flex-direction: column; align-items: stretch; }
       .k-demo-foot-a { flex-direction: column; }
     }

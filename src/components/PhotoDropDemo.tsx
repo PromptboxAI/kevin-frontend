@@ -906,17 +906,29 @@ export default function PhotoDropDemo() {
                 value={AGES.indexOf(age) === -1 ? 3 : AGES.indexOf(age)}
                 onChange={(e) => setAge(AGES[Number(e.target.value)])}
               />
+              {/* Laid out like the worksheet's money columns rather than as a
+                  two-item list: the rate and the dollars are separate columns
+                  there, with the same labels (rule 8 -- "Depr.", never "Dep"),
+                  right-aligned and tabular. Age is not repeated as a column
+                  because the slider above IS the age control here.
+
+                  The dollars are parenthesised per the owner's accounting
+                  convention: ($28.50), not -$28.50. NOTE this diverges from
+                  the worksheet, which prints the amount POSITIVE and unsigned
+                  on the documented grounds that ACV already subtracts it, so a
+                  sign would read as a second subtraction. Raised with the
+                  owner; the worksheet is another session's file. */}
               <dl className="k-demo-money">
                 <div>
-                  <dt>Depreciation</dt>
-                  <dd>
-                    {money
-                      ? `${pct(money.depreciation_pct)}% · −${usd(money.depreciation_amount)}`
-                      : '—'}
-                  </dd>
+                  <dt>% Depr.</dt>
+                  <dd>{money ? `${pct(money.depreciation_pct)}%` : '—'}</dd>
+                </div>
+                <div>
+                  <dt>$ Depr.</dt>
+                  <dd>{money ? `(${usd(money.depreciation_amount)})` : '—'}</dd>
                 </div>
                 <div className="k-demo-money--acv">
-                  <dt>Actual cash value</dt>
+                  <dt>ACV</dt>
                   <dd>{money ? usd(money.acv_total_incl) : '—'}</dd>
                 </div>
               </dl>
