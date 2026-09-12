@@ -913,18 +913,26 @@ export default function PhotoDropDemo() {
                   because the slider above IS the age control here.
 
                   The dollars are parenthesised per the owner's accounting
-                  convention: ($28.50), not -$28.50. NOTE this diverges from
-                  the worksheet, which prints the amount POSITIVE and unsigned
-                  on the documented grounds that ACV already subtracts it, so a
-                  sign would read as a second subtraction. Raised with the
-                  owner; the worksheet is another session's file. */}
+                  convention: ($28.50), not -$28.50.
+
+                  AND THE WORKSHEET MUST NOT FOLLOW. It prints $ Depr. positive
+                  and unsigned because that grid is the source of the
+                  XactContents .xlsx, and a parenthesised figure would not
+                  import -- the same reason rule 2b bans formulas there. So
+                  this card and the worksheet differ on purpose: one is read by
+                  a person, the other is ingested by Xactimate.
+
+                  The LABELS differ for the same reason. The worksheet's
+                  "% Depr." / "$ Depr." are Xactimate-parity column headers
+                  (rule 18) and are fixed; this card is not the export, so it
+                  uses the owner's preferred reading order instead. */}
               <dl className="k-demo-money">
                 <div>
-                  <dt>% Depr.</dt>
+                  <dt>Depr. %</dt>
                   <dd>{money ? `${pct(money.depreciation_pct)}%` : '—'}</dd>
                 </div>
                 <div>
-                  <dt>$ Depr.</dt>
+                  <dt>Depr. $</dt>
                   <dd>{money ? `(${usd(money.depreciation_amount)})` : '—'}</dd>
                 </div>
                 <div className="k-demo-money--acv">
