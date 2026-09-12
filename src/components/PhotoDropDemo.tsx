@@ -8,6 +8,7 @@ import {
   isTerminal,
   pollDrop,
   previewDepreciation,
+  probeFile,
   type Drop,
   type DropIdentified,
   type DropRefusal,
@@ -175,9 +176,25 @@ const REFUSAL: Record<DropRefusal['kind'], { head: string; body: string }> = {
     body: 'The limit is 15 MB. Most phone photos are well under it.',
   },
   not_a_photo: { head: 'That is not a photo', body: 'Try a JPEG, PNG or HEIC of one item.' },
-  empty_file: {
-    head: 'That file came through empty',
-    body: 'It read as zero bytes, which usually means it had not finished downloading from cloud storage yet. Wait a moment and drop it again — the same file normally works second time.',
+  empty_local: {
+    head: 'That file has no data in it',
+    body: 'Your browser reports the file as zero bytes, so nothing was sent — this is not a rejection by Kevin. It usually means the photo lives in iCloud or another cloud library and only a placeholder is on this device. Open it once in your photo app so it downloads in full, then drop it again. A screenshot of it will also work.',
+  },
+  unreadable: {
+    head: 'That photo could not be read',
+    body: 'The file was picked but its contents would not load — the photo may be cloud-only, or it may have moved since you chose it. Opening it in your photo app first, or dropping a screenshot, both get around it.',
+  },
+  dragged_from_web: {
+    head: 'That came from a web page, not a file',
+    body: 'Dragging a picture straight out of a web page or an image-search tab hands Kevin a link rather than the picture — the browser never makes a file, so there are no bytes to read. Save the image to your device first (right-click, Save image as…), then drop the saved file. Nothing was wrong with the photo itself.',
+  },
+  nothing_dropped: {
+    head: 'Nothing came through in that drop',
+    body: 'The drop carried no file Kevin could read. Tapping the box to choose a photo from your device is the reliable route.',
+  },
+  rejected_empty: {
+    head: 'The upload arrived empty',
+    body: 'The photo read fine here but reached Kevin with no data in it. That is on us rather than on your file. Dropping it again is worth one try; if it repeats, the samples below are unaffected.',
   },
   rate_limited: {
     head: 'That is the limit for now',
@@ -232,10 +249,19 @@ const MAX_BYTES = 15 * 1024 * 1024
  * as 0 until it hydrates, which is why a retry succeeds — that is a "try
  * again", not "this is not a photo".
  */
-function clientReject(file: File): DropRefusal | null {
+async function clientReject(file: File): Promise<DropRefusal | null> {
   if (file.type && !file.type.startsWith('image/')) return { kind: 'not_a_photo' }
-  if (file.size === 0) return { kind: 'empty_file' }
   if (file.size > MAX_BYTES) return { kind: 'too_large' }
+
+  // Read a byte rather than trusting `size`. The name and type ride along on
+  // the refusal so the screen can say WHICH file failed and how -- the old
+  // single "came through empty" message covered a zero-byte read and a server
+  // 400 with identical words, so there was no way to tell them apart from the
+  // page, which is exactly the position we were in.
+  const state = await probeFile(file)
+  if (state === 'empty') return { kind: 'empty_local', name: file.name, type: file.type || '(none)' }
+  if (state === 'unreadable')
+    return { kind: 'unreadable', name: file.name, type: file.type || '(none)' }
   return null
 }
 
@@ -497,9 +523,15 @@ export default function PhotoDropDemo() {
   }, [])
 
   const runOwn = useCallback(
-    (file: File) => {
-      const bad = clientReject(file)
+    async (file: File) => {
+      const bad = await clientReject(file)
       if (bad) {
+        console.error('[demo] file rejected before upload:', bad.kind, {
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          lastModified: file.lastModified,
+        })
         setView({ k: 'refused', src: null, refusal: bad })
         return
       }
@@ -530,7 +562,27 @@ export default function PhotoDropDemo() {
     if (!token || !pending.current) return
     const held = pending.current
     pending.current = null
-    void submit(held.file, held.src, token)
+    // RE-PROBE. The photo was readable when it was picked, but it has been
+    // held while the bot check cleared, and on mobile a picker handle can go
+    // stale in that window -- which would post an empty body and come back as
+    // the server's 400. Better to say the file went away than to blame the
+    // upload for it.
+    void (async () => {
+      const state = await probeFile(held.file)
+      if (state !== 'ok') {
+        console.error('[demo] held file went stale:', state, {
+          name: held.file.name,
+          size: held.file.size,
+        })
+        setView({
+          k: 'refused',
+          src: held.src,
+          refusal: { kind: 'unreadable', name: held.file.name, type: held.file.type || '(none)' },
+        })
+        return
+      }
+      void submit(held.file, held.src, token)
+    })()
   }, [token, submit])
 
   const runSample = useCallback((s: Sample) => {
@@ -570,7 +622,25 @@ export default function PhotoDropDemo() {
               e.preventDefault()
               setOver(false)
               const f = e.dataTransfer.files?.[0]
-              if (f) runOwn(f)
+              // A picture dragged out of a web page or an image-search result
+              // arrives as a URL, not bytes: dataTransfer.files is empty or
+              // holds a zero-byte placeholder, and the image itself is only in
+              // text/uri-list. Previously an empty drop did NOTHING AT ALL --
+              // no message, no state change -- and a zero-byte one was blamed
+              // on cloud storage, which is wrong for a file that was never on
+              // the device.
+              const types = Array.from(e.dataTransfer.types || [])
+              const looksLikeALink =
+                types.includes('text/uri-list') || types.includes('text/html')
+              if (!f || f.size === 0) {
+                setView({
+                  k: 'refused',
+                  src: null,
+                  refusal: looksLikeALink ? { kind: 'dragged_from_web' } : { kind: 'nothing_dropped' },
+                })
+                return
+              }
+              void runOwn(f)
             }}
             onClick={() => fileRef.current?.click()}
             role="button"
@@ -702,6 +772,14 @@ export default function PhotoDropDemo() {
             <div className="k-demo-unavail">
               <strong>{REFUSAL[view.refusal.kind].head}</strong>
               <p>{REFUSAL[view.refusal.kind].body}</p>
+              {/* Name the file and its type when the refusal knows them. "That
+                  file has no data" with no indication of WHICH file, on a page
+                  where someone may have tried three, is not a diagnosis. */}
+              {'name' in view.refusal ? (
+                <div className="k-demo-filefact">
+                  {view.refusal.name} · type {view.refusal.type}
+                </div>
+              ) : null}
               <button type="button" className="k-btn k-btn--ghost" onClick={reset}>
                 Back to the samples
               </button>

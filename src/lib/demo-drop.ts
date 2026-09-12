@@ -59,9 +59,18 @@ export type DropRefusal =
   | { kind: 'turnstile' }
   | { kind: 'too_large' }
   | { kind: 'not_a_photo' }
-  /** Read back as zero bytes — usually a cloud placeholder that has not
-   *  hydrated yet, not a corrupt file. Worth a retry, not a rejection. */
-  | { kind: 'empty_file' }
+  /** The browser read the file as zero bytes before we sent anything. */
+  | { kind: 'empty_local'; name: string; type: string }
+  /** The bytes could not be read at all — the File reference no longer
+   *  resolves to data. Distinct from empty: nothing was there to measure. */
+  | { kind: 'unreadable'; name: string; type: string }
+  /** WE sent something and the SERVER called it empty (400). */
+  | { kind: 'rejected_empty' }
+  /** Dragged straight off a web page, so the browser handed us a URL and no
+   *  bytes. Nothing was wrong with the picture; it was never a file here. */
+  | { kind: 'dragged_from_web' }
+  /** A drop carrying nothing we can read at all. */
+  | { kind: 'nothing_dropped' }
   | { kind: 'rate_limited'; retryAfter: number | null }
   | { kind: 'capacity'; retryAfter: number | null }
   | { kind: 'network' }
@@ -118,7 +127,7 @@ export async function createDrop(file: File, turnstileToken: string): Promise<Dr
   if (res.status === 403) throw new DropRefused({ kind: 'turnstile' })
   if (res.status === 413) throw new DropRefused({ kind: 'too_large' })
   if (res.status === 415) throw new DropRefused({ kind: 'not_a_photo' })
-  if (res.status === 400) throw new DropRefused({ kind: 'empty_file' })
+  if (res.status === 400) throw new DropRefused({ kind: 'rejected_empty' })
   if (res.status === 429)
     throw new DropRefused({ kind: 'rate_limited', retryAfter: retryAfter(res) })
   // 503 covers three states -- off, at today's capacity, or busy. All three
@@ -142,6 +151,28 @@ export async function pollDrop(dropId: string): Promise<Drop> {
     return (await res.json()) as Drop
   } catch {
     throw new DropRefused({ kind: 'unexpected', detail: 'poll: unreadable body' })
+  }
+}
+
+/**
+ * Can we actually READ this file?
+ *
+ * `file.size` is metadata and it lies in the cases that matter. A photo that
+ * lives only in iCloud, or one whose picker handle has gone stale, can report
+ * a plausible size and then yield nothing when read — and a File whose backing
+ * resource is gone throws on read rather than returning zero. Those are three
+ * different problems with three different answers, and a size check cannot
+ * tell them apart.
+ *
+ * Reading ONE byte settles it, and costs nothing.
+ */
+export async function probeFile(file: File): Promise<'ok' | 'empty' | 'unreadable'> {
+  if (file.size === 0) return 'empty'
+  try {
+    const head = await file.slice(0, 1).arrayBuffer()
+    return head.byteLength === 1 ? 'ok' : 'unreadable'
+  } catch {
+    return 'unreadable'
   }
 }
 
