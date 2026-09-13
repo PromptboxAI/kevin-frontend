@@ -178,11 +178,13 @@ const REFUSAL: Record<DropRefusal['kind'], { head: string; body: string }> = {
   not_a_photo: { head: 'That is not a photo', body: 'Try a JPEG, PNG or HEIC of one item.' },
   empty_local: {
     head: 'That file has no data in it',
-    body: 'Your browser reports the file as zero bytes, so nothing was sent — this is not a rejection by Kevin. It usually means the photo lives in iCloud or another cloud library and only a placeholder is on this device. Open it once in your photo app so it downloads in full, then drop it again. A screenshot of it will also work.',
+    // No guessed cause. This copy used to blame iCloud, and the file that
+    // produced it was a complete local JPEG -- the fault was ours.
+    body: 'Your browser handed the page this file with nothing in it, so nothing was sent. The photo itself is very likely fine. Reloading the page and choosing it again usually clears it.',
   },
   unreadable: {
     head: 'That photo could not be read',
-    body: 'The file was picked but its contents would not load — the photo may be cloud-only, or it may have moved since you chose it. Opening it in your photo app first, or dropping a screenshot, both get around it.',
+    body: 'The file was picked but its contents would not load — it may have moved or changed since you chose it. Reloading the page and choosing it again usually clears it.',
   },
   dragged_from_web: {
     head: 'That came from a web page, not a file',
@@ -253,6 +255,30 @@ const MAX_BYTES = 15 * 1024 * 1024
  * as 0 until it hydrates, which is why a retry succeeds — that is a "try
  * again", not "this is not a photo".
  */
+/**
+ * Read a picked file into memory now, while its handle is known-good.
+ *
+ * `size` is NOT trusted to skip the read -- a handle that reports 0 has been
+ * seen to be the stale one, so we read anyway and retry once after a beat.
+ * Anything that still comes back empty or unreadable is returned as-is, and
+ * clientReject's probe reports it. Capped by MAX_BYTES upstream, so holding
+ * up to 15 MB in memory for one photo is fine.
+ */
+async function snapshotFile(file: File): Promise<File> {
+  if (file.size > MAX_BYTES) return file
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const buf = await file.arrayBuffer()
+      if (buf.byteLength > 0)
+        return new File([buf], file.name, { type: file.type, lastModified: file.lastModified })
+    } catch {
+      /* fall through to the retry */
+    }
+    await new Promise((r) => setTimeout(r, 250))
+  }
+  return file
+}
+
 async function clientReject(file: File): Promise<DropRefusal | null> {
   if (file.type && !file.type.startsWith('image/')) return { kind: 'not_a_photo' }
   if (file.size > MAX_BYTES) return { kind: 'too_large' }
@@ -430,6 +456,21 @@ export default function PhotoDropDemo() {
    */
   const [checkNonce, setCheckNonce] = useState(0)
 
+  /**
+   * The file input is REMOUNTED after each pick, never cleared.
+   *
+   * Setting `input.value = ''` releases the OS-backed File handles in its
+   * FileList, and the earlier fix only moved that clear to "after runOwn
+   * settles" -- but runOwn settles as soon as the upload is started or the
+   * photo is held for the bot check, so the clear still landed while the
+   * file was in use. Worse, the damage outlived the drop: the next pick of
+   * the SAME path in that tab came back as a zero-byte File (a 5,289,414-byte
+   * JPEG, verified intact on disk), which is why the second try failed and a
+   * fresh tab worked. A new element gets a fresh FileList and nobody ever
+   * clears the old one.
+   */
+  const [pickerKey, setPickerKey] = useState(0)
+
   useEffect(
     () => () => {
       stopped.current = true
@@ -555,7 +596,11 @@ export default function PhotoDropDemo() {
   }, [])
 
   const runOwn = useCallback(
-    async (file: File) => {
+    async (picked: File) => {
+      // Copy the bytes into memory FIRST. An in-memory File cannot be
+      // invalidated by anything the input does later, and it is the same
+      // object for the upload, the preview and a photo held for the bot check.
+      const file = await snapshotFile(picked)
       const bad = await clientReject(file)
       if (bad) {
         console.error('[demo] file rejected before upload:', bad.kind, {
@@ -682,38 +727,18 @@ export default function PhotoDropDemo() {
             }}
           >
             <input
+              key={pickerKey}
               ref={fileRef}
               type="file"
               accept="image/*"
               hidden
               onChange={(e) => {
-                // The input is cleared only AFTER the work settles, and that
-                // ordering is the whole fix.
-                //
-                // `runOwn` is async: it returns a promise and yields. Clearing
-                // `value` on the next line therefore ran while the file was
-                // still being read, and clearing a file input INVALIDATES the
-                // OS-backed File handles in its FileList. The subsequent read
-                // then saw zero bytes — for a 5.5 MB JPEG that was perfectly
-                // fine on disk (verified: 5,518,587 bytes, valid 4000x3000).
-                //
-                // It is a race, which is why it looked random: when the read
-                // won, the drop worked. Before the byte probe existed it lost
-                // later, posting an invalidated file and earning the server's
-                // 400 — that was the original "came through empty".
-                //
-                // `el` is captured synchronously because `e.currentTarget` is
-                // null by the time the promise settles. The clear still has to
-                // happen, or picking the SAME file twice fires no change event.
-                const el = e.currentTarget
-                const f = el.files?.[0]
-                if (!f) {
-                  el.value = ''
-                  return
-                }
-                void runOwn(f).finally(() => {
-                  el.value = ''
-                })
+                // Never `e.currentTarget.value = ''` -- see pickerKey. Remount
+                // instead, which is also what lets the same file be picked
+                // twice (a cleared value was only ever for that).
+                const f = e.currentTarget.files?.[0]
+                setPickerKey((k) => k + 1)
+                if (f) void runOwn(f)
               }}
             />
             <div className="k-demo-drop-i" aria-hidden>
