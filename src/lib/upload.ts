@@ -40,6 +40,37 @@ export function planUploadChunks<T extends { size: number }>(files: T[]): Chunk<
   return chunks
 }
 
+/**
+ * Retrying a chunk that failed in TRANSIT -- a 5xx, a gateway 502/504, a 429, or
+ * a network drop (fetch rejects with a TypeError, not an ApiError).
+ *
+ * Before this, anything but a 413 aborted the whole upload, and the next click
+ * re-sent every photo from the start. Re-sending is SAFE -- claim-wide content
+ * hashing turns repeats into `duplicate` -- but it re-posts hundreds of MB over
+ * site wifi. So a chunk now gets a few tries with backoff, and a click after a
+ * real failure resumes from the rows still pending rather than the whole drop.
+ *
+ * Phone capture already retries this way (capture-rules: 5 tries, 2s doubling
+ * to a 30s ceiling). Desktop sits on steadier networks, so fewer, shorter tries.
+ */
+export const MAX_CHUNK_ATTEMPTS = 3
+
+/** Wait before the next try: 2s, 4s, capped at 8s -- or the server's Retry-After. */
+export function chunkRetryDelayMs(attempt: number, retryAfterSeconds?: number | null): number {
+  if (retryAfterSeconds && retryAfterSeconds > 0) return Math.min(retryAfterSeconds * 1000, 60_000)
+  return Math.min(8_000, 2_000 * 2 ** Math.max(0, attempt - 1))
+}
+
+/**
+ * Is this failure worth another try? `status` is the HTTP status, or undefined
+ * for a network failure that never got a response. A 4xx other than 408/429
+ * will fail the same way again, so it stops.
+ */
+export function isTransientUploadFailure(status: number | undefined): boolean {
+  if (status === undefined) return true
+  return status >= 500 || status === 408 || status === 429
+}
+
 /** A 413 means the chunk was too big: halve it and retry the halves alone. */
 export function splitChunk<T>(chunk: Chunk<T>): Chunk<T>[] {
   if (chunk.length <= 1) return [chunk]

@@ -26,7 +26,7 @@ import {
   tallyQueue,
 } from '../lib/capture-rules'
 import type { Shot } from '../lib/capture-rules'
-import { REJECT_COPY } from '../lib/upload'
+import { planUploadChunks, REJECT_COPY } from '../lib/upload'
 import type { RejectReason } from '../lib/upload'
 import type { CaptureToken } from '../lib/pair-rules'
 import {
@@ -267,97 +267,112 @@ export default function CapturePage() {
     setFailure(null)
 
     for (const batch of batchByRoom(queued)) {
-      const usable = batch.shots.filter((s) => blobs.current.has(s.key))
-      if (!usable.length) continue
-      const keys = new Set(usable.map((s) => s.key))
-      setShots((prev) => prev.map((s) => (keys.has(s.key) ? { ...s, state: 'uploading' } : s)))
+      const carried = batch.shots.filter((s) => blobs.current.has(s.key))
+      /**
+       * A room's shots are CHUNKED before they are sent, like desktop.
+       *
+       * Shots taken one at a time go up one at a time, but when signal returns
+       * or a recovered queue flushes, a whole room waits at once -- 80 basement
+       * shots at ~4 MB was ONE ~320 MB request: over the server's 50-photo cap
+       * and past the gateway size that 502s around 160 MB. The 413 that came
+       * back maps to too_big, which never auto-retries, so the whole room
+       * stayed failed. planUploadChunks bounds each request at 20 files / 65 MB,
+       * and every chunk keeps its room (room is a per-request field).
+       */
+      for (const usable of planUploadChunks(carried)) {
+        const keys = new Set(usable.map((s) => s.key))
+        setShots((prev) => prev.map((s) => (keys.has(s.key) ? { ...s, state: 'uploading' } : s)))
 
-      try {
-        const ack = await captureUpload(
-          cred,
-          usable.map((s) => {
-            const blob = blobs.current.get(s.key) as Blob
-            // KEEP THE TYPE. `new File([blob], name)` defaults to '', and a
-            // recovered photo sent with no content type is rejected as
-            // `unsupported_format` -- which is how a whole basement's worth of
-            // photos got marked stored and deleted while the server held none.
-            return new File([blob], s.name, { type: blob.type || 'image/jpeg' })
-          }),
-          batch.room,
-        )
-
-        // Rejections are never silent (rule 21) -- but a duplicate is a
-        // SUCCESS, and an .AAE sidecar is quiet. REJECT_COPY owns that split.
-        const loud: { filename: string; text: string }[] = []
-        for (const r of ack.rejected ?? []) {
-          const copy = REJECT_COPY[r.reason as RejectReason]
-          if (!copy || (!copy.stored && !copy.quiet)) {
-            loud.push({
-              filename: r.filename,
-              text: copy ? copy.text(r.filename, r.detail) : r.reason,
-            })
-          }
-        }
-        if (loud.length) setRejected((prev) => [...prev, ...loud])
-
-        /**
-         * Pair ids to shots BEFORE touching state. This was a counter
-         * incremented inside the updater, which React may invoke more than
-         * once -- it ran past the end of `photo_ids` and every shot got
-         * `undefined`, so notes silently never saved.
-         */
-        /**
-         * Believe the ACK, not the status code.
-         *
-         * A 202 means the request was accepted, NOT that the photos were.
-         * Marking everything stored on a 2xx -- and then deleting the local
-         * copy -- destroyed a queue the server had rejected outright. The ack
-         * names every file that did not make it, so only the ones it did are
-         * treated as safe.
-         */
-        const refused = new Map(
-          (ack.rejected ?? []).map((r) => [r.filename, r.reason as RejectReason]),
-        )
-        const landed = usable.filter((s) => {
-          const reason = refused.get(s.name)
-          // A duplicate IS on the server already (rule 21): a success.
-          return reason === undefined || REJECT_COPY[reason]?.stored === true
-        })
-        const ids = ack.photo_ids ?? []
-        const assigned = new Map(landed.map((s, i) => [s.key, ids[i]]))
-        const landedKeys = new Set(landed.map((s) => s.key))
-
-        setShots((prev) =>
-          prev.map((s) => {
-            if (!keys.has(s.key)) return s
-            if (landedKeys.has(s.key)) {
-              return { ...s, state: 'stored', photoId: assigned.get(s.key) }
-            }
-            // Refused: it is NOT on the claim, so it stays on the phone.
-            return { ...s, state: 'failed', error: refused.get(s.name) }
-          }),
-        )
-        // Only what actually landed stops being carried.
-        for (const s of landed) {
-          blobs.current.delete(s.key)
-          void dropPending(s.key)
-        }
-      } catch (error) {
-        const status = error instanceof ApiError ? error.status : undefined
-        const kind = failureFor(status)
-        setFailure(CAPTURE_FAILURE_COPY[kind])
-        if (kind === 'expired') {
-          clearCredential()
-          setCred(null)
-        }
-        for (const shot of usable) {
-          const attempts = await bumpAttempts(shot.key)
-          setShots((prev) =>
-            prev.map((s) =>
-              s.key === shot.key ? { ...s, state: 'failed', error: kind, attempts } : s,
-            ),
+        try {
+          const ack = await captureUpload(
+            cred,
+            usable.map((s) => {
+              const blob = blobs.current.get(s.key) as Blob
+              // KEEP THE TYPE. `new File([blob], name)` defaults to '', and a
+              // recovered photo sent with no content type is rejected as
+              // `unsupported_format` -- which is how a whole basement's worth of
+              // photos got marked stored and deleted while the server held none.
+              return new File([blob], s.name, { type: blob.type || 'image/jpeg' })
+            }),
+            batch.room,
           )
-          if (shouldAutoRetry(kind, attempts)) scheduleRetry(shot.key, attempts)
+
+          // Rejections are never silent (rule 21) -- but a duplicate is a
+          // SUCCESS, and an .AAE sidecar is quiet. REJECT_COPY owns that split.
+          const loud: { filename: string; text: string }[] = []
+          for (const r of ack.rejected ?? []) {
+            const copy = REJECT_COPY[r.reason as RejectReason]
+            if (!copy || (!copy.stored && !copy.quiet)) {
+              loud.push({
+                filename: r.filename,
+                text: copy ? copy.text(r.filename, r.detail) : r.reason,
+              })
+            }
+          }
+          if (loud.length) setRejected((prev) => [...prev, ...loud])
+
+          /**
+           * Pair ids to shots BEFORE touching state. This was a counter
+           * incremented inside the updater, which React may invoke more than
+           * once -- it ran past the end of `photo_ids` and every shot got
+           * `undefined`, so notes silently never saved.
+           */
+          /**
+           * Believe the ACK, not the status code.
+           *
+           * A 202 means the request was accepted, NOT that the photos were.
+           * Marking everything stored on a 2xx -- and then deleting the local
+           * copy -- destroyed a queue the server had rejected outright. The ack
+           * names every file that did not make it, so only the ones it did are
+           * treated as safe.
+           */
+          const refused = new Map(
+            (ack.rejected ?? []).map((r) => [r.filename, r.reason as RejectReason]),
+          )
+          const landed = usable.filter((s) => {
+            const reason = refused.get(s.name)
+            // A duplicate IS on the server already (rule 21): a success.
+            return reason === undefined || REJECT_COPY[reason]?.stored === true
+          })
+          const ids = ack.photo_ids ?? []
+          const assigned = new Map(landed.map((s, i) => [s.key, ids[i]]))
+          const landedKeys = new Set(landed.map((s) => s.key))
+
+          setShots((prev) =>
+            prev.map((s) => {
+              if (!keys.has(s.key)) return s
+              if (landedKeys.has(s.key)) {
+                return { ...s, state: 'stored', photoId: assigned.get(s.key) }
+              }
+              // Refused: it is NOT on the claim, so it stays on the phone.
+              return { ...s, state: 'failed', error: refused.get(s.name) }
+            }),
+          )
+          // Only what actually landed stops being carried.
+          for (const s of landed) {
+            blobs.current.delete(s.key)
+            void dropPending(s.key)
+          }
+        } catch (error) {
+          const status = error instanceof ApiError ? error.status : undefined
+          const kind = failureFor(status)
+          setFailure(CAPTURE_FAILURE_COPY[kind])
+          if (kind === 'expired') {
+            clearCredential()
+            setCred(null)
+          }
+          for (const shot of usable) {
+            const attempts = await bumpAttempts(shot.key)
+            setShots((prev) =>
+              prev.map((s) =>
+                s.key === shot.key ? { ...s, state: 'failed', error: kind, attempts } : s,
+              ),
+            )
+            if (shouldAutoRetry(kind, attempts)) scheduleRetry(shot.key, attempts)
+          }
+          // A dead or mismatched credential fails every remaining chunk the same
+          // way; stop instead of posting them all with it.
+          if (kind === 'expired' || kind === 'wrong_claim') return
         }
       }
     }

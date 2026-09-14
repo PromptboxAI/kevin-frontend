@@ -7,11 +7,16 @@ import { startStagingSession, uploadStagingPhotos } from '../lib/mutations'
 import {
   ACCEPT_TYPES,
   CHUNK_FILES,
+  MAX_CHUNK_ATTEMPTS,
   REJECT_COPY,
+  chunkRetryDelayMs,
+  isTransientUploadFailure,
   planUploadChunks,
   reconciles,
   splitChunk,
 } from '../lib/upload'
+import { hasDirectory, walkEntries } from '../lib/drop-walk'
+import type { WalkEntry } from '../lib/drop-walk'
 import type { RejectReason } from '../lib/upload'
 import { expandZip, keepPhotos } from '../lib/zip'
 import type { ZipProgress } from '../lib/zip'
@@ -60,6 +65,8 @@ export default function PhotoUpload({
   const [sending, setSending] = useState(false)
   const [chunk, setChunk] = useState<{ index: number; total: number } | null>(null)
   const [error, setError] = useState<string | null>(null)
+  /** Set while a chunk waits to be retried after a transient failure. */
+  const [retrying, setRetrying] = useState<{ attempt: number; of: number } | null>(null)
   const [shortAcks, setShortAcks] = useState(0)
   const [done, setDone] = useState(false)
   /** Pause finishes the batch in flight, then stops before the next one. */
@@ -73,6 +80,8 @@ export default function PhotoUpload({
     [rows],
   )
   const skipped = rows.filter((r) => r.status === 'skip')
+  /** What the next Upload click sends: rows not yet acknowledged. */
+  const pendingCount = rows.filter((r) => r.status === 'queued' || r.status === 'up').length
   const sentCount = rows.filter((r) => r.status === 'done' || r.status === 'dup').length
   const oversize = rows.filter((r) => r.status === 'fail')
   const totalBytes = sendable.reduce((a, r) => a + r.file.size, 0)
@@ -131,7 +140,34 @@ export default function PhotoUpload({
       // Idempotent -- a re-click or a flaky-wifi retry never spawns duplicates.
       await startStagingSession(claimId)
 
-      const queue = planUploadChunks(sendable.map((r) => r.file))
+      /**
+       * Only rows still PENDING. `sendable` also holds rows already done or
+       * duplicate, so after a failure the next click re-posted the whole drop.
+       * Safe (claim-wide hashing makes repeats `duplicate`) but hundreds of MB
+       * again over site wifi; now a click resumes where the last one stopped.
+       */
+      const pending = rows.filter((r) => r.status === 'queued' || r.status === 'up')
+      const queue = planUploadChunks(pending.map((r) => r.file))
+
+      /** One chunk, retried on transient failures; a 413 is rethrown to be halved. */
+      const sendWithRetry = async (batch: File[]) => {
+        for (let attempt = 1; ; attempt += 1) {
+          try {
+            return await uploadStagingPhotos(claimId, batch, room || undefined)
+          } catch (err) {
+            // fetch rejects with a TypeError on a network drop: no status.
+            const status = err instanceof ApiError ? err.status : undefined
+            if (status === 413 || attempt >= MAX_CHUNK_ATTEMPTS || !isTransientUploadFailure(status)) {
+              throw err
+            }
+            setRetrying({ attempt: attempt + 1, of: MAX_CHUNK_ATTEMPTS })
+            await new Promise((resolve) =>
+              setTimeout(resolve, chunkRetryDelayMs(attempt, err instanceof ApiError ? err.retryAfter : null)),
+            )
+            setRetrying(null)
+          }
+        }
+      }
       const total = queue.length
       let index = 0
       let short = 0
@@ -144,7 +180,7 @@ export default function PhotoUpload({
         mark(batch, 'up')
 
         try {
-          const ack = await uploadStagingPhotos(claimId, batch, room || undefined)
+          const ack = await sendWithRetry(batch)
           // uploaded + rejected must equal what we sent. A short ack means a
           // photo went missing without being reported -- surfaced, never
           // averaged away.
@@ -178,6 +214,8 @@ export default function PhotoUpload({
             mark(batch, 'queued')
             continue
           }
+          // Out of tries: back to queued, so the next click sends it again.
+          mark(batch, 'queued')
           throw err
         }
       }
@@ -185,14 +223,17 @@ export default function PhotoUpload({
       setShortAcks(short)
       if (!pausedRef.current) setDone(true)
     } catch (err) {
+      // Photos already acknowledged are safe on the claim; say so, and that a
+      // click picks up from here rather than starting over.
       setError(
         err instanceof ApiError
-          ? `Upload failed — HTTP ${err.status}: ${err.message422}`
-          : 'Upload failed.',
+          ? `Upload stopped — HTTP ${err.status}: ${err.message422}. Photos already sent are safe; Upload again continues with the rest.`
+          : 'Upload stopped — the connection dropped. Photos already sent are safe; Upload again continues with the rest.',
       )
     } finally {
       setSending(false)
       setChunk(null)
+      setRetrying(null)
     }
   }
 
@@ -219,11 +260,39 @@ export default function PhotoUpload({
           e.preventDefault()
           e.currentTarget.classList.remove('k-dropzone--over')
           if (locked) return
+          /**
+           * A dropped FOLDER arrives in `files` as one entry -- the folder, not
+           * its photos -- so reading `files` alone turned a 300-photo drop into
+           * "1 file skipped". Walk the entries instead (drop-walk.ts). They must
+           * be taken synchronously, here: the DataTransfer is emptied once this
+           * handler returns.
+           */
+          const entries = [...e.dataTransfer.items].map(
+            (it) => (it.webkitGetAsEntry?.() ?? null) as unknown as WalkEntry | null,
+          )
           const dropped = [...e.dataTransfer.files]
-          const zip = dropped.find((f) => /\.zip$/i.test(f.name))
-          if (zip) void takeZip(zip)
-          const { kept, junk: dropCount } = keepPhotos(dropped.filter((f) => !/\.zip$/i.test(f.name)))
-          if (kept.length || dropCount) take(kept, dropCount)
+          const handle = (files: File[]) => {
+            const zip = files.find((f) => /\.zip$/i.test(f.name))
+            if (zip) void takeZip(zip)
+            const { kept, junk: dropCount } = keepPhotos(files.filter((f) => !/\.zip$/i.test(f.name)))
+            if (kept.length || dropCount) take(kept, dropCount)
+          }
+          if (hasDirectory(entries)) {
+            const folder = entries.find((en) => en?.isDirectory)
+            setExpanding({ name: folder?.name ?? 'the folder', read: 0, total: 0 })
+            void walkEntries(entries.filter((en): en is WalkEntry => en !== null))
+              .then(({ files, unreadable }) => {
+                handle(files)
+                if (unreadable) {
+                  setError(
+                    `${unreadable} file${unreadable === 1 ? '' : 's'} in that folder could not be read — use Choose folder to add ${unreadable === 1 ? 'it' : 'them'}.`,
+                  )
+                }
+              })
+              .finally(() => setExpanding(null))
+          } else {
+            handle(dropped)
+          }
         }}
         style={locked ? { opacity: 0.5, pointerEvents: 'none' } : undefined}
       >
@@ -609,11 +678,18 @@ export default function PhotoUpload({
                   ? sentCount === 0
                     ? 'Nothing was stored'
                     : `All ${fmtInt(sentCount)} photos uploaded`
-                  : chunk
-                    ? `Uploading batch ${chunk.index} of ${chunk.total} · ${fmtInt(CHUNK_FILES)} photos`
-                    : sendable.length === 0
-                      ? 'Nothing can be sent'
-                      : `${fmtInt(sendable.length)} ${sendable.length === 1 ? 'photo' : 'photos'} ready`}
+                  : chunk && retrying
+                    ? // A transient failure is being retried, not ignored: say so,
+                      // or a backoff wait of a few seconds reads as a frozen upload.
+                      `Batch ${chunk.index} of ${chunk.total} didn’t go through — retrying (try ${retrying.attempt} of ${retrying.of})`
+                    : chunk
+                      ? `Uploading batch ${chunk.index} of ${chunk.total} · ${fmtInt(CHUNK_FILES)} photos`
+                      : sendable.length === 0
+                        ? 'Nothing can be sent'
+                        : sentCount > 0 && pendingCount > 0
+                          ? // After a stopped upload: what the next click actually sends.
+                            `${fmtInt(pendingCount)} ${pendingCount === 1 ? 'photo' : 'photos'} still to send`
+                          : `${fmtInt(sendable.length)} ${sendable.length === 1 ? 'photo' : 'photos'} ready`}
               </div>
               <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', marginTop: 2 }}>
                 {done
