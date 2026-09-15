@@ -28,8 +28,14 @@ const MANUAL_COPY: Record<string, string> = {
     'Kevin could not read these photos, and the label it does have is not one it will price from. Describe the item and reprice.',
   low_confidence_high_value: 'We found a price, but this line needs your eyes.',
   valuation_error: 'The comp lookup failed. A reprice will usually fix it.',
-  quota_exhausted: 'Waiting on pricing capacity — retry shortly.',
-  budget_exhausted: 'Waiting on pricing capacity — retry shortly.',
+  // Since backend 3c766bd a search-provider OUTAGE also arrives as
+  // quota_exhausted (the vendor-health breaker defers instead of failing), so
+  // this copy must hold for both an hourly ceiling and an outage. It names the
+  // pause, not the hour: "retry shortly" was false for a multi-hour outage.
+  quota_exhausted:
+    'Pricing is paused — the search provider is at capacity or temporarily unavailable. Nothing is wrong with this item; it prices once pricing resumes.',
+  budget_exhausted:
+    'Pricing is paused for today’s search limit. Nothing is wrong with this item; it prices once the limit resets.',
   placeholder_row: 'A template line — enter the price.',
   not_priced: 'Created deliberately unpriced.',
   enqueue_failed: 'The valuation job could not be queued. A reprice retries it.',
@@ -245,7 +251,7 @@ export default function ItemDrawer({
                 {unpriced && data.manual_reason ? (
                   <div className={waiting ? 'k-lkq-note' : 'k-lkq-note k-lkq-note--warn'}>
                     <span className="k-lkq-note-l">
-                      {waiting ? 'Waiting on capacity' : 'Needs your input'}
+                      {waiting ? 'Pricing paused' : 'Needs your input'}
                     </span>
                     <span className="k-lkq-note-b">
                       {MANUAL_COPY[data.manual_reason] ?? 'This line needs a manual price.'}

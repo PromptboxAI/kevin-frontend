@@ -273,7 +273,7 @@ export default function WorksheetPage() {
     mutationFn: () => retryDeferred(claimId, true),
     onSuccess: (plan) => {
       if (plan.eligible === 0) {
-        setNotice('Nothing to retry — no lines are waiting on capacity.')
+        setNotice('Nothing to retry — no lines are waiting on paused pricing.')
         return
       }
       setRetryPlan(plan)
@@ -933,8 +933,10 @@ export default function WorksheetPage() {
       {deferred.length > 0 ? (
         <div className="k-ws-bar k-ws-bar--quiet">
           <span>
-            {deferred.length} row{deferred.length === 1 ? '' : 's'} deferred — the pricing service
-            was at capacity, not a problem with these items.
+            {/* Holds for both causes the API files under these codes: an hourly
+                ceiling and a search-provider outage (backend 3c766bd). */}
+            {deferred.length} row{deferred.length === 1 ? '' : 's'} deferred — pricing was paused
+            (capacity or a search-provider outage), not a problem with these items.
           </span>
           <button
             type="button"
@@ -1236,9 +1238,10 @@ export default function WorksheetPage() {
             <div className="k-modal-body">
               <div className="k-modal-note">
                 <strong>{fmtInt(retryPlan.eligible)}</strong> line
-                {retryPlan.eligible === 1 ? '' : 's'} were deferred on capacity, not judged —
-                the engine never looked at them. Re-running costs about{' '}
-                <strong>{fmtInt(retryPlan.estimated_searches)}</strong> vendor searches.
+                {retryPlan.eligible === 1 ? '' : 's'} were deferred while pricing was paused, not
+                judged — the engine never looked at them. Re-running costs about{' '}
+                <strong>{fmtInt(retryPlan.estimated_searches)}</strong> vendor searches. If the
+                search provider is still down they wait again; a skipped search isn’t charged.
                 {retryPlan.skipped ? (
                   <>
                     {' '}
