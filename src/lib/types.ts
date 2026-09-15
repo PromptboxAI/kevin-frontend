@@ -125,11 +125,20 @@ export const CLOSED_STATUSES: readonly string[] = ['closed', 'archived']
 export type ManualReason =
   | 'manual_class' | 'luxury_brand' | 'low_sample' | 'no_comps' | 'no_query'
   | 'no_description' | 'vision_unavailable' | 'low_confidence_high_value'
-  | 'valuation_error' | 'quota_exhausted' | 'budget_exhausted'
+  | 'valuation_error' | 'quota_exhausted' | 'budget_exhausted' | 'vendor_unavailable'
   | 'placeholder_row' | 'not_priced' | 'enqueue_failed'
 
-/** The two reasons that mean "the pricing service is throttled", not "act on this". */
-export const CAPACITY_REASONS: ReadonlySet<string> = new Set(['quota_exhausted', 'budget_exhausted'])
+/**
+ * Reasons that mean "pricing was paused", not "act on this": deferred, never
+ * attempted, re-run by Retry deferred. `vendor_unavailable` (backend 0fe58d9)
+ * is a search-provider outage; rows deferred between 3c766bd and that release
+ * carry quota_exhausted for the same cause.
+ */
+export const CAPACITY_REASONS: ReadonlySet<string> = new Set([
+  'quota_exhausted',
+  'budget_exhausted',
+  'vendor_unavailable',
+])
 
 /**
  * One comparable listing behind a price.

@@ -933,10 +933,10 @@ export default function WorksheetPage() {
       {deferred.length > 0 ? (
         <div className="k-ws-bar k-ws-bar--quiet">
           <span>
-            {/* Holds for both causes the API files under these codes: an hourly
-                ceiling and a search-provider outage (backend 3c766bd). */}
+            {/* Covers every paused-pricing reason: a search limit, today's
+                capacity, or a provider outage (vendor_unavailable, 0fe58d9). */}
             {deferred.length} row{deferred.length === 1 ? '' : 's'} deferred — pricing was paused
-            (capacity or a search-provider outage), not a problem with these items.
+            (a search limit or a provider outage), not a problem with these items.
           </span>
           <button
             type="button"

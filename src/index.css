@@ -1072,6 +1072,15 @@
   color: var(--k-fg-2);
 }
 
+/* The site-wide pricing-pause notice: a quiet bar under the top bar, reusing
+   the worksheet's deferred-bar look (capacity waits are never amber). */
+.k-status-bar {
+  margin: 8px 16px 0;
+  justify-content: flex-start;
+  gap: 10px;
+  line-height: 1.45;
+}
+
 .k-ws-bar--sel {
   border-color: var(--k-accent);
   background: var(--k-accent-soft);

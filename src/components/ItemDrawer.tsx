@@ -28,14 +28,18 @@ const MANUAL_COPY: Record<string, string> = {
     'Kevin could not read these photos, and the label it does have is not one it will price from. Describe the item and reprice.',
   low_confidence_high_value: 'We found a price, but this line needs your eyes.',
   valuation_error: 'The comp lookup failed. A reprice will usually fix it.',
-  // Since backend 3c766bd a search-provider OUTAGE also arrives as
-  // quota_exhausted (the vendor-health breaker defers instead of failing), so
-  // this copy must hold for both an hourly ceiling and an outage. It names the
-  // pause, not the hour: "retry shortly" was false for a multi-hour outage.
+  // Paused-pricing reasons, one per cause (FRONTEND.md line 551-552). Each says
+  // the line was deferred, not judged, and that Retry deferred prices it --
+  // pricing resumes by itself, but a deferred line does not.
+  // quota_exhausted is the hourly ceiling or a spent monthly plan, and ALSO a
+  // provider outage on rows written between backend 3c766bd and 0fe58d9, so
+  // its copy cannot promise "within the hour".
   quota_exhausted:
-    'Pricing is paused — the search provider is at capacity or temporarily unavailable. Nothing is wrong with this item; it prices once pricing resumes.',
+    'Pricing was paused — a search limit was reached, or the provider was briefly unavailable. Nothing is wrong with this item; use Retry deferred once pricing resumes.',
   budget_exhausted:
-    'Pricing is paused for today’s search limit. Nothing is wrong with this item; it prices once the limit resets.',
+    'Pricing was paused for today’s capacity, which resets at midnight UTC. Nothing is wrong with this item; use Retry deferred after it resets.',
+  vendor_unavailable:
+    'Pricing was paused during a search provider outage. Nothing is wrong with this item; use Retry deferred once the outage clears.',
   placeholder_row: 'A template line — enter the price.',
   not_priced: 'Created deliberately unpriced.',
   enqueue_failed: 'The valuation job could not be queued. A reprice retries it.',
