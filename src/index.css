@@ -1072,13 +1072,28 @@
   color: var(--k-fg-2);
 }
 
-/* The site-wide pricing-pause notice: a quiet bar under the top bar, reusing
-   the worksheet's deferred-bar look (capacity waits are never amber). */
-.k-status-bar {
+/* The site-wide pricing-pause notice, under the top bar.
+   Solid navy (--k-accent) with white text, by request: on the worksheet's quiet
+   grey it blended into the page. Not amber -- amber is reserved for
+   special-limits flags, and a pricing pause is never styled as a warning (rule
+   12b). Two-class selectors so it beats .k-ws-bar--quiet's grey regardless of
+   source order. */
+.k-ws-bar.k-status-bar {
   margin: 8px 16px 0;
   justify-content: flex-start;
   gap: 10px;
   line-height: 1.45;
+  background: var(--k-accent);
+  border-color: var(--k-accent);
+  color: var(--k-bg);
+}
+
+.k-ws-bar.k-status-bar strong {
+  color: var(--k-bg);
+}
+
+.k-ws-bar.k-status-bar .k-paused-dot {
+  background: var(--k-bg);
 }
 
 .k-ws-bar--sel {
