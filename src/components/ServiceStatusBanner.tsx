@@ -48,7 +48,11 @@ export default function ServiceStatusBanner() {
   if (!banner) return null
 
   return (
-    <div className="k-ws-bar k-ws-bar--quiet k-status-bar" role="status" aria-live="polite">
+    <div
+      className={`k-ws-bar k-ws-bar--quiet k-status-bar${banner.tone === 'degraded' ? ' k-status-bar--soft' : ''}`}
+      role="status"
+      aria-live="polite"
+    >
       <span className="k-paused-dot" aria-hidden="true" />
       <span>
         <strong>{banner.message}</strong> {banner.detail}

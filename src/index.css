@@ -1135,6 +1135,24 @@
   color: var(--k-bg);
 }
 
+/* Degraded is NOT a pause: pricing is running, so it keeps the quiet grey
+   bar rather than the accent one. Not amber either -- that is special limits. */
+.k-ws-bar.k-status-bar--soft {
+  background: var(--k-bg-2);
+  border-color: var(--k-line);
+  color: var(--k-fg-2);
+}
+
+.k-ws-bar.k-status-bar--soft strong,
+.k-ws-bar.k-status-bar--soft .k-paused-dot {
+  color: var(--k-fg);
+  background: unset;
+}
+
+.k-ws-bar.k-status-bar--soft .k-paused-dot {
+  background: var(--k-fg-3);
+}
+
 .k-ws-bar.k-status-bar strong {
   color: var(--k-bg);
 }

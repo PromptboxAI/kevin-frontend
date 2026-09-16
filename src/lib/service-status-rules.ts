@@ -35,6 +35,12 @@ export type StatusBanner = {
   message: string
   /** What still works and what the adjuster should do. */
   detail: string
+  /**
+   * `paused` = nothing is pricing (the accent bar). `degraded` = pricing is
+   * RUNNING on an impaired provider, so it must not wear the paused styling or
+   * an adjuster stops working for no reason.
+   */
+  tone: 'paused' | 'degraded'
 }
 
 /** Everything else keeps working during either pause (FRONTEND.md). */
@@ -50,6 +56,25 @@ function isServiceStatus(value: unknown): value is ServiceStatus {
 export function bannerFor(status: unknown, formatTime: (iso: string) => string): StatusBanner | null {
   if (!isServiceStatus(status)) return null
   const { state, reason, next_check_at: next } = status.pricing
+
+  /**
+   * `degraded` (backend, 2026-09-16): the provider publicly reports a
+   * component we price with as impaired, but our own searches still answer.
+   * Pricing RUNS -- so this says so, and never borrows the pause's words or
+   * colour. Precedence is the server's (budget > paused > degraded > ok); the
+   * payload carries one state and this renders it.
+   */
+  if (state === 'degraded') {
+    return {
+      message: 'Search provider reporting degraded service.',
+      detail: 'Pricing is still running; results may be thinner than usual. Nothing needs doing.',
+      tone: 'degraded',
+    }
+  }
+
+  // Any OTHER unknown state shows nothing. Never assume a new state means
+  // paused: telling adjusters pricing stopped while it runs is worse than
+  // silence, and silence is what a build predating the state already does.
   if (state !== 'paused') return null
 
   if (reason === 'budget') {
@@ -61,6 +86,7 @@ export function bannerFor(status: unknown, formatTime: (iso: string) => string):
     return {
       message: `Pricing paused until ${when.replace(/^at /, '')}: today’s pricing capacity is used up.`,
       detail: `${STILL_WORKS} ${RETRY}`,
+      tone: 'paused',
     }
   }
 
@@ -68,6 +94,7 @@ export function bannerFor(status: unknown, formatTime: (iso: string) => string):
     return {
       message: 'Pricing temporarily paused: search provider outage.',
       detail: `${STILL_WORKS} Kevin keeps checking and resumes pricing as soon as it recovers. ${RETRY}`,
+      tone: 'paused',
     }
   }
 
@@ -75,5 +102,6 @@ export function bannerFor(status: unknown, formatTime: (iso: string) => string):
   return {
     message: 'Pricing temporarily paused.',
     detail: `${STILL_WORKS} ${RETRY}`,
+    tone: 'paused',
   }
 }
