@@ -1135,6 +1135,8 @@
   line-height: 1.45;
   background: var(--k-warn);
   border-color: var(--k-warn);
+  /* A pause is the heavier of the two: a deep amber edge down its left side. */
+  border-left: 4px solid oklch(0.42 0.12 62);
   color: oklch(0.28 0.07 70);
 }
 
@@ -1146,20 +1148,25 @@
   background: oklch(0.30 0.08 70);
 }
 
-/* Degraded is NOT a pause: pricing is running, so it wears the tint rather
-   than the solid fill. */
+/* Degraded is SOLID too. A service notice may never blend into a page of
+   grey, black and white (owner's rule, 2026-09-16), and the 14% tint did
+   exactly that. The two states differ by WEIGHT, not by paleness: a pause
+   carries a deep amber edge and a filled dot, degraded a lighter edge and a
+   hollow one. */
 .k-ws-bar.k-status-bar.k-status-bar--soft {
-  background: var(--k-warn-soft);
+  background: var(--k-warn);
   border-color: var(--k-warn);
-  color: oklch(0.40 0.13 65);
+  border-left: 4px solid oklch(0.62 0.15 68);
+  color: oklch(0.28 0.07 70);
 }
 
 .k-ws-bar.k-status-bar.k-status-bar--soft strong {
-  color: oklch(0.32 0.10 68);
+  color: oklch(0.22 0.06 70);
 }
 
 .k-ws-bar.k-status-bar.k-status-bar--soft .k-paused-dot {
-  background: var(--k-warn);
+  background: transparent;
+  box-shadow: inset 0 0 0 2px oklch(0.30 0.08 70);
 }
 
 .k-ws-bar--sel {
