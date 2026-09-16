@@ -52,7 +52,10 @@ export default function PortalReturnPage() {
              list because each answers a different fear -- did it work, does it
              expire, must I do something. */
           <div className="k-empty">
-            <div className={`k-empty-art ${paid ? 'k-empty-art--accent' : ''}`}>
+            {/* Solid accent for the paid mark: --k-empty-art--accent is a 10%
+                tint, which read as a grey placeholder on the one screen that
+                has to say "this worked". A cancel keeps the neutral tile. */}
+            <div className={`k-empty-art ${paid ? 'k-return-mark' : ''}`}>
               <Icon d={paid ? I.check : I.info} size={26} />
             </div>
             <h1 className="k-empty-t" style={{ fontSize: 26 }}>

@@ -1083,6 +1083,12 @@
   box-sizing: border-box;
 }
 
+.k-return-mark {
+  background: var(--k-accent);
+  border-color: transparent;
+  color: var(--k-bg);
+}
+
 .k-return-facts {
   list-style: none;
   width: 100%;
