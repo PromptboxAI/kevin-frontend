@@ -1119,47 +1119,47 @@
   color: var(--k-accent);
 }
 
-/* The site-wide pricing-pause notice, under the top bar.
-   Solid navy (--k-accent) with white text, by request: on the worksheet's quiet
-   grey it blended into the page. Not amber -- amber is reserved for
-   special-limits flags, and a pricing pause is never styled as a warning (rule
-   12b). Two-class selectors so it beats .k-ws-bar--quiet's grey regardless of
-   source order. */
+/* The site-wide service banner, under the top bar.
+   AMBER, by owner decision 2026-09-16 (CLAUDE.md rule 6 amended): a service
+   notice is the one thing on screen that should read as "something is off
+   with the service". Paused is solid amber, degraded its 14% tint, so the
+   two still differ at a glance -- pricing stopped vs pricing running.
+   Text is DARK on both: --k-warn sits at 0.72 lightness, so white on it fails
+   contrast. Row-level amber is untouched: special-limits rows keep it, and a
+   deferred row keeps its quiet chip (rule 12b). Two- and three-class
+   selectors keep these above .k-ws-bar--quiet regardless of source order. */
 .k-ws-bar.k-status-bar {
   margin: 8px 16px 0;
   justify-content: flex-start;
   gap: 10px;
   line-height: 1.45;
-  background: var(--k-accent);
-  border-color: var(--k-accent);
-  color: var(--k-bg);
-}
-
-/* Degraded is NOT a pause: pricing is running, so it keeps the quiet grey
-   bar rather than the accent one. Not amber either -- that is special limits.
-   THREE classes on purpose: the paused rules below are two-class selectors of
-   equal weight, so a two-class version here lost the tie on source order and
-   painted the headline white on grey -- invisible. */
-.k-ws-bar.k-status-bar.k-status-bar--soft {
-  background: var(--k-bg-2);
-  border-color: var(--k-line);
-  color: var(--k-fg-2);
-}
-
-.k-ws-bar.k-status-bar.k-status-bar--soft strong {
-  color: var(--k-fg);
-}
-
-.k-ws-bar.k-status-bar.k-status-bar--soft .k-paused-dot {
-  background: var(--k-fg-3);
+  background: var(--k-warn);
+  border-color: var(--k-warn);
+  color: oklch(0.28 0.07 70);
 }
 
 .k-ws-bar.k-status-bar strong {
-  color: var(--k-bg);
+  color: oklch(0.22 0.06 70);
 }
 
 .k-ws-bar.k-status-bar .k-paused-dot {
-  background: var(--k-bg);
+  background: oklch(0.30 0.08 70);
+}
+
+/* Degraded is NOT a pause: pricing is running, so it wears the tint rather
+   than the solid fill. */
+.k-ws-bar.k-status-bar.k-status-bar--soft {
+  background: var(--k-warn-soft);
+  border-color: var(--k-warn);
+  color: oklch(0.40 0.13 65);
+}
+
+.k-ws-bar.k-status-bar.k-status-bar--soft strong {
+  color: oklch(0.32 0.10 68);
+}
+
+.k-ws-bar.k-status-bar.k-status-bar--soft .k-paused-dot {
+  background: var(--k-warn);
 }
 
 .k-ws-bar--sel {
