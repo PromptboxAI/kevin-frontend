@@ -135,6 +135,35 @@ export function getPortal(token: string, offset = 0, limit = 100) {
 }
 
 /**
+ * The share token, kept for the round trip through Stripe.
+ *
+ * Since backend 7965a71 the checkout returns to `/p/return` WITHOUT the token
+ * -- it is a bearer credential for the whole claim, and it used to be stored
+ * in Stripe's session record. sessionStorage, not localStorage: it is scoped
+ * to this tab and dies with it, which is the shortest life that still survives
+ * the redirect. Every access is guarded -- a private window can throw on the
+ * accessor itself, and the page must still work (the client just reopens their
+ * emailed link).
+ */
+const RETURN_TOKEN_KEY = 'kevin.portal.return-token'
+
+export function rememberShareToken(token: string): void {
+  try {
+    sessionStorage.setItem(RETURN_TOKEN_KEY, token)
+  } catch {
+    // No storage: /p/return will tell them to reopen their link.
+  }
+}
+
+export function recallShareToken(): string | null {
+  try {
+    return sessionStorage.getItem(RETURN_TOKEN_KEY)
+  } catch {
+    return null
+  }
+}
+
+/**
  * Start the hosted Stripe Checkout.
  *
  * Takes NO body: the amount is read from the share row. The browser can see

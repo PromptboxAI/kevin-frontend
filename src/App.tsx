@@ -31,6 +31,7 @@ import PhotosPage from './pages/PhotosPage'
 import CapturePage from './pages/CapturePage'
 import PairPage from './pages/PairPage'
 import PortalPage from './pages/PortalPage'
+import PortalReturnPage from './pages/PortalReturnPage'
 import RecoveryPage from './pages/RecoveryPage'
 import SettingsApiPage from './pages/SettingsApiPage'
 import SettingsBusinessPage from './pages/SettingsBusinessPage'
@@ -139,6 +140,10 @@ export default function App() {
         {/* Public, token-scoped. The backend mints these links as
             <SHARE_BASE_URL>/p/<token> -- this route is why they resolve.
             Deliberately outside RequireAuth: the insured has no account. */}
+        {/* Stripe's return, WITHOUT the share token (backend 7965a71). The
+            browser restores its own link from sessionStorage. Declared before
+            the token route so "return" is never read as a token. */}
+        <Route path="/p/return" element={<PortalReturnPage />} />
         <Route path="/p/:token" element={<PortalPage />} />
 
         {/* The phone. PUBLIC on purpose: it has no account, and requiring one

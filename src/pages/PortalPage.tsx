@@ -11,6 +11,7 @@ import {
   POLL_ATTEMPTS,
   RETURNED_FROM_CHECKOUT,
   downloadPortalExport,
+  rememberShareToken,
   getPortal,
   parseAge,
   patchPortalItem,
@@ -178,6 +179,9 @@ export default function PortalPage() {
     setRedirecting(true)
     try {
       const { checkout_url } = await startCheckout(token)
+      // Stripe returns to /p/return with no token (backend 7965a71), so the
+      // browser has to carry its own link across the redirect.
+      rememberShareToken(token)
       window.location.assign(checkout_url)
     } catch (err) {
       setRedirecting(false)
