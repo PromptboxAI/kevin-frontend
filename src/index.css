@@ -1136,20 +1136,21 @@
 }
 
 /* Degraded is NOT a pause: pricing is running, so it keeps the quiet grey
-   bar rather than the accent one. Not amber either -- that is special limits. */
-.k-ws-bar.k-status-bar--soft {
+   bar rather than the accent one. Not amber either -- that is special limits.
+   THREE classes on purpose: the paused rules below are two-class selectors of
+   equal weight, so a two-class version here lost the tie on source order and
+   painted the headline white on grey -- invisible. */
+.k-ws-bar.k-status-bar.k-status-bar--soft {
   background: var(--k-bg-2);
   border-color: var(--k-line);
   color: var(--k-fg-2);
 }
 
-.k-ws-bar.k-status-bar--soft strong,
-.k-ws-bar.k-status-bar--soft .k-paused-dot {
+.k-ws-bar.k-status-bar.k-status-bar--soft strong {
   color: var(--k-fg);
-  background: unset;
 }
 
-.k-ws-bar.k-status-bar--soft .k-paused-dot {
+.k-ws-bar.k-status-bar.k-status-bar--soft .k-paused-dot {
   background: var(--k-fg-3);
 }
 
