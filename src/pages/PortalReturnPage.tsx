@@ -42,35 +42,46 @@ export default function PortalReturnPage() {
         </span>
       </header>
 
-      <main style={{ maxWidth: 560, margin: '0 auto', padding: '64px 24px' }}>
+      <main className="k-return-main">
         {decision.kind === 'open' ? (
           <p style={{ fontSize: 13.5, color: 'var(--k-fg-3)' }}>Returning to your inventory…</p>
         ) : (
-          <div
-            style={{
-              background: 'var(--k-bg)',
-              border: '1px solid var(--k-line)',
-              borderRadius: 12,
-              padding: '26px 28px',
-            }}
-          >
-            <Icon d={paid ? I.check : I.info} size={20} />
-            <h1 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 24, margin: '10px 0 6px' }}>
+          /* The system's empty-state anatomy (k-empty), not a bespoke card: this
+             screen is rare, and a stranger meeting it after paying should read
+             the same design language as everything else. The reassurances are a
+             list because each answers a different fear -- did it work, does it
+             expire, must I do something. */
+          <div className="k-empty">
+            <div className={`k-empty-art ${paid ? 'k-empty-art--accent' : ''}`}>
+              <Icon d={paid ? I.check : I.info} size={26} />
+            </div>
+            <h1 className="k-empty-t" style={{ fontSize: 26 }}>
               {paid ? 'Payment received' : 'Payment cancelled'}
             </h1>
-            <p style={{ fontSize: 13.5, color: 'var(--k-fg-3)', lineHeight: 1.55, margin: 0 }}>
-              {paid ? (
-                <>
-                  Reopen the link your adjuster sent you and your full inventory will be there. The
-                  unlock lives on that link, not in this browser, so it works on any device.
-                </>
-              ) : (
-                <>
-                  Nothing was charged. Reopen the link your adjuster sent you whenever you want to
-                  try again.
-                </>
-              )}
+            <p className="k-empty-s">
+              {paid
+                ? 'Your inventory is unlocked. Open the link your adjuster sent you and everything will be there.'
+                : 'Nothing was charged. Open the link your adjuster sent you whenever you want to try again.'}
             </p>
+
+            <ul className="k-return-facts">
+              {(paid
+                ? [
+                    [I.lock, 'Unlocked for good — it does not expire when this tab closes.'],
+                    [I.link, 'Works on any device: the unlock lives on your link, not in this browser.'],
+                    [I.check, 'Nothing else is needed from you.'],
+                  ]
+                : [
+                    [I.check, 'No charge — your card was not billed.'],
+                    [I.link, 'Your link still works, exactly as you left it.'],
+                  ]
+              ).map(([icon, text]) => (
+                <li className="k-return-fact" key={String(text)}>
+                  <Icon d={icon as string} size={14} />
+                  <span>{text as string}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
       </main>
