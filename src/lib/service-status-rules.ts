@@ -67,7 +67,12 @@ export function bannerFor(status: unknown, formatTime: (iso: string) => string):
   if (state === 'degraded') {
     return {
       message: 'Search provider reporting degraded service.',
-      detail: 'Pricing is still running; results may be thinner than usual. Nothing needs doing.',
+      // NOT "nothing needs doing": during the 2026-09-16 event a control
+      // search took 46.5s against a 35s threshold, so a large claim crawls.
+      // Telling an adjuster to sit tight while that happens is what earns the
+      // support ticket; saying it will be slow lets them plan the day.
+      detail:
+        'Pricing is still running, but searches are slower than usual — a large claim will take noticeably longer to finish. Lines price as they land; nothing is lost.',
       tone: 'degraded',
     }
   }
