@@ -26,9 +26,9 @@
          is visibly redder than amber's 75, so a service notice can never be
          read as a flagged row, and it is not --k-danger's red either. One
          colour, one meaning. */
-      --k-service: oklch(0.66 0.17 45);
-      --k-service-deep: oklch(0.40 0.13 42);
-      --k-service-edge: oklch(0.56 0.16 45);
+      --k-service: oklch(0.55 0.19 42);
+      --k-service-deep: oklch(0.38 0.15 40);
+      --k-service-edge: oklch(0.72 0.16 48);
       --k-danger: oklch(0.58 0.19 25);
     }
 

@@ -1124,8 +1124,9 @@
    and nothing else (rule 6). A service notice may never blend into a page of
    grey, black and white, so BOTH states are solid; they differ by weight --
    a pause carries a deep edge and a filled dot, degraded a lighter edge and a
-   hollow one. Dark text on both: --k-service is 0.66 lightness, so white on it
-   fails contrast. Two- and three-class selectors keep these above
+   hollow one. WHITE text on both: dark-on-orange measured 5.03:1 but read
+   muddy at 12.5px, so the fill dropped to 0.55 lightness where white measures
+   5.24:1 (both measured in-browser, not guessed). Two- and three-class selectors keep these above
    .k-ws-bar--quiet regardless of source order. */
 .k-ws-bar.k-status-bar {
   margin: 8px 16px 0;
@@ -1135,15 +1136,15 @@
   background: var(--k-service);
   border-color: var(--k-service);
   border-left: 4px solid var(--k-service-deep);
-  color: oklch(0.24 0.08 45);
+  color: var(--k-bg);
 }
 
 .k-ws-bar.k-status-bar strong {
-  color: oklch(0.18 0.06 45);
+  color: var(--k-bg);
 }
 
 .k-ws-bar.k-status-bar .k-paused-dot {
-  background: oklch(0.24 0.08 45);
+  background: var(--k-bg);
 }
 
 /* Degraded: pricing is RUNNING, so it is the lighter of the two -- same fill,
@@ -1152,16 +1153,16 @@
   background: var(--k-service);
   border-color: var(--k-service);
   border-left: 4px solid var(--k-service-edge);
-  color: oklch(0.24 0.08 45);
+  color: var(--k-bg);
 }
 
 .k-ws-bar.k-status-bar.k-status-bar--soft strong {
-  color: oklch(0.18 0.06 45);
+  color: var(--k-bg);
 }
 
 .k-ws-bar.k-status-bar.k-status-bar--soft .k-paused-dot {
   background: transparent;
-  box-shadow: inset 0 0 0 2px oklch(0.24 0.08 45);
+  box-shadow: inset 0 0 0 2px var(--k-bg);
 }
 
 .k-ws-bar--sel {
