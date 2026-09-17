@@ -20,8 +20,15 @@
       --k-accent-soft: oklch(0.38 0.085 252 / 0.10);
       --k-ok:    oklch(0.66 0.13 175);            /* mint/teal — barcode found, in-stock */
       --k-ok-soft: oklch(0.66 0.13 175 / 0.14);
-      --k-warn:  oklch(0.72 0.14 75);             /* amber — special limits */
+      --k-warn:  oklch(0.72 0.14 75);             /* amber — special limits ONLY */
       --k-warn-soft: oklch(0.72 0.14 75 / 0.14);
+      /* Service status (the site-wide banner), deliberately NOT amber: hue 45
+         is visibly redder than amber's 75, so a service notice can never be
+         read as a flagged row, and it is not --k-danger's red either. One
+         colour, one meaning. */
+      --k-service: oklch(0.66 0.17 45);
+      --k-service-deep: oklch(0.40 0.13 42);
+      --k-service-edge: oklch(0.56 0.16 45);
       --k-danger: oklch(0.58 0.19 25);
     }
 

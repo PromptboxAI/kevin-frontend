@@ -1120,53 +1120,48 @@
 }
 
 /* The site-wide service banner, under the top bar.
-   AMBER, by owner decision 2026-09-16 (CLAUDE.md rule 6 amended): a service
-   notice is the one thing on screen that should read as "something is off
-   with the service". Paused is solid amber, degraded its 14% tint, so the
-   two still differ at a glance -- pricing stopped vs pricing running.
-   Text is DARK on both: --k-warn sits at 0.72 lightness, so white on it fails
-   contrast. Row-level amber is untouched: special-limits rows keep it, and a
-   deferred row keeps its quiet chip (rule 12b). Two- and three-class
-   selectors keep these above .k-ws-bar--quiet regardless of source order. */
+   Its own colour (--k-service, hue 45), not amber: amber means special limits
+   and nothing else (rule 6). A service notice may never blend into a page of
+   grey, black and white, so BOTH states are solid; they differ by weight --
+   a pause carries a deep edge and a filled dot, degraded a lighter edge and a
+   hollow one. Dark text on both: --k-service is 0.66 lightness, so white on it
+   fails contrast. Two- and three-class selectors keep these above
+   .k-ws-bar--quiet regardless of source order. */
 .k-ws-bar.k-status-bar {
   margin: 8px 16px 0;
   justify-content: flex-start;
   gap: 10px;
   line-height: 1.45;
-  background: var(--k-warn);
-  border-color: var(--k-warn);
-  /* A pause is the heavier of the two: a deep amber edge down its left side. */
-  border-left: 4px solid oklch(0.42 0.12 62);
-  color: oklch(0.28 0.07 70);
+  background: var(--k-service);
+  border-color: var(--k-service);
+  border-left: 4px solid var(--k-service-deep);
+  color: oklch(0.24 0.08 45);
 }
 
 .k-ws-bar.k-status-bar strong {
-  color: oklch(0.22 0.06 70);
+  color: oklch(0.18 0.06 45);
 }
 
 .k-ws-bar.k-status-bar .k-paused-dot {
-  background: oklch(0.30 0.08 70);
+  background: oklch(0.24 0.08 45);
 }
 
-/* Degraded is SOLID too. A service notice may never blend into a page of
-   grey, black and white (owner's rule, 2026-09-16), and the 14% tint did
-   exactly that. The two states differ by WEIGHT, not by paleness: a pause
-   carries a deep amber edge and a filled dot, degraded a lighter edge and a
-   hollow one. */
+/* Degraded: pricing is RUNNING, so it is the lighter of the two -- same fill,
+   softer edge, hollow dot. */
 .k-ws-bar.k-status-bar.k-status-bar--soft {
-  background: var(--k-warn);
-  border-color: var(--k-warn);
-  border-left: 4px solid oklch(0.62 0.15 68);
-  color: oklch(0.28 0.07 70);
+  background: var(--k-service);
+  border-color: var(--k-service);
+  border-left: 4px solid var(--k-service-edge);
+  color: oklch(0.24 0.08 45);
 }
 
 .k-ws-bar.k-status-bar.k-status-bar--soft strong {
-  color: oklch(0.22 0.06 70);
+  color: oklch(0.18 0.06 45);
 }
 
 .k-ws-bar.k-status-bar.k-status-bar--soft .k-paused-dot {
   background: transparent;
-  box-shadow: inset 0 0 0 2px oklch(0.30 0.08 70);
+  box-shadow: inset 0 0 0 2px oklch(0.24 0.08 45);
 }
 
 .k-ws-bar--sel {
