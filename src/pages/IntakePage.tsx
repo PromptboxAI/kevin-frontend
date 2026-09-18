@@ -8,13 +8,9 @@ import PhotoUpload from '../components/PhotoUpload'
 import { I, Icon } from '../components/Icon'
 import { ApiError, api } from '../lib/api'
 import { isValidClaimId, parseMoney, slugify, toIsoDate } from '../lib/claim-id'
-import {
-  COVERAGE_LABELS,
-  TAX_BY_ZIP,
-  US_STATES,
-  taxOptionsFor,
-  type Jurisdiction,
-} from '../lib/us-states'
+import { COVERAGE_LABELS, US_STATES } from '../lib/us-states'
+import { useTaxRate } from '../lib/tax-rate'
+import { pct, taxPlanFor } from '../lib/tax-rate-rules'
 import {
   RECENT_BUSINESS,
   RECENT_ESTIMATOR,
@@ -161,18 +157,30 @@ export default function IntakePage() {
   const [error, setError] = useState<string | null>(null)
   const [created, setCreated] = useState<string | null>(null)
 
-  const zipTax: Jurisdiction | null =
-    added.find((j) => j.zip === zip) ?? TAX_BY_ZIP[zip] ?? null
-  const taxOptions = useMemo(() => taxOptionsFor(zip, zipTax), [zip, zipTax])
+  /**
+   * The rate comes from the live table (GET /v1/tax-rate) -- every US ZIP,
+   * not the five the prototype carried. It is a SUGGESTION the adjuster
+   * confirms by picking it (tax-rate-rules.ts), never prefilled.
+   */
+  const taxLookup = useTaxRate(zip)
+  const taxAnswer = taxLookup.data ?? null
+  const manualTax = added.find((j) => j.zip === zip) ?? null
+  const taxPlan = taxPlanFor(zip, taxAnswer, manualTax, taxLookup.isFetching)
+  const taxOptions = taxPlan.options
   // The ZIP owns the rate, so a new ZIP resets the choice to that ZIP's first
   // option rather than carrying the previous jurisdiction across.
   const taxLabel =
     taxChoice && taxOptions.some((o) => o.label === taxChoice) ? taxChoice : taxOptions[0].label
-  const taxRate = taxOptions.find((o) => o.label === taxLabel)?.rate ?? 0
+  /** Percent, or null when nothing is chosen -- then no tax_rate is sent. */
+  const taxRate = taxOptions.find((o) => o.label === taxLabel)?.rate ?? null
+  const taxUnconfirmed = taxPlan.needsChoice && taxRate === null
+
+  /** Blank until chosen, then the ZIP's own state fills it -- real data. */
+  const stateShown = state || (taxAnswer?.zip === zip ? (taxAnswer?.state ?? '') : '')
 
 
   const insuredName = [insuredFirst.trim(), insuredLast.trim()].filter(Boolean).join(' ')
-  const lossAddress = [street.trim(), city.trim(), [state, zip].filter(Boolean).join(' ').trim()]
+  const lossAddress = [street.trim(), city.trim(), [stateShown, zip].filter(Boolean).join(' ').trim()]
     .filter(Boolean)
     .join(', ')
 
@@ -183,7 +191,12 @@ export default function IntakePage() {
   const dateInvalid = dateOfLoss.trim() !== '' && toIsoDate(dateOfLoss) === null
 
   const canSubmit =
-    claimId !== '' && idValid && !dateInvalid && !ppLimitInvalid && !alreadyInvalid
+    claimId !== '' &&
+    idValid &&
+    !dateInvalid &&
+    !ppLimitInvalid &&
+    !alreadyInvalid &&
+    !taxUnconfirmed
 
   const create = useMutation({
     mutationFn: async () => {
@@ -218,7 +231,7 @@ export default function IntakePage() {
           ...(toIsoDate(dateOfLoss) ? { date_of_loss: toIsoDate(dateOfLoss) } : {}),
           ...(lossAddress ? { loss_address: lossAddress } : {}),
           // The select carries a percentage; the API stores a fraction.
-          ...(zipTax ? { tax_rate: Math.round((taxRate / 100) * 1e6) / 1e6 } : {}),
+          ...(taxRate !== null ? { tax_rate: Math.round((taxRate / 100) * 1e6) / 1e6 } : {}),
           ...(policyForm.trim() ? { policy_form: policyForm.trim() } : {}),
           ...(estimatorName.trim() ? { estimator_name: estimatorName.trim() } : {}),
           ...(businessName.trim() ? { business_name: businessName.trim() } : {}),
@@ -261,6 +274,9 @@ export default function IntakePage() {
       // The project name is the form's first input.
       document.querySelector<HTMLInputElement>('.k-intake-form input')?.focus()
       throw new Error('Add a project name under Claim details first — it’s how you’ll find this claim in My claims.')
+    }
+    if (taxUnconfirmed) {
+      throw new Error('Confirm the local tax rate under Claim details, then upload again.')
     }
     if (!canSubmit) {
       throw new Error('Fix the highlighted fields under Claim details, then upload again.')
@@ -376,7 +392,7 @@ export default function IntakePage() {
             />
             <IntakeSelect
               label="State"
-              value={state}
+              value={stateShown}
               options={US_STATES}
               width={92}
               onChange={setState}
@@ -397,11 +413,9 @@ export default function IntakePage() {
               width={120}
               onChange={(v) => setZip(v.replace(/[^0-9]/g, '').slice(0, 5))}
               hint={
-                zipTax
-                  ? `${zipTax.label} · ${zipTax.rate}%`
-                  : zip
-                    ? 'Not recognised — add the jurisdiction'
-                    : 'Sets the sales tax rate'
+                taxAnswer?.zip === zip && typeof taxAnswer?.suggested_rate === 'number'
+                  ? `Suggests ${pct(taxAnswer.suggested_rate)}% — confirm below`
+                  : 'Suggests the sales tax rate'
               }
             />
 
@@ -443,9 +457,9 @@ export default function IntakePage() {
               options={taxOptions.map((o) => o.label)}
               addLabel="+ Add tax jurisdiction…"
               onAdd={() => setJurOpen(true)}
-              width={230}
+              width={300}
               onChange={setTaxChoice}
-              hint={zipTax ? 'Resolved from the loss ZIP' : 'No lookup for this ZIP — add it'}
+              hint={taxUnconfirmed ? `Required · ${taxPlan.hint}` : taxPlan.hint}
             />
             <IntakeSelect
               label="Contents coverage label"
