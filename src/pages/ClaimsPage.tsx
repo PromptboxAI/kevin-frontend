@@ -7,6 +7,8 @@ import ClaimRowMenu from '../components/ClaimRowMenu'
 import ClaimStatusChip from '../components/ClaimStatusChip'
 import { I, Icon } from '../components/Icon'
 import { ApiError, api } from '../lib/api'
+import { useDeferred } from '../lib/deferred'
+import { rosterSummary } from '../lib/deferred-rules'
 import { fmtInt, fmtSince, fmtUSD, greetingFor } from '../lib/format'
 import { useAuth } from '../lib/auth'
 import { CLOSED_STATUSES } from '../lib/types'
@@ -224,6 +226,17 @@ export default function ClaimsPage() {
   const now = Date.now()
   const lastSignIn = fmtSince(user?.last_sign_in_at, now)
 
+  /**
+   * Lines stranded by a pause, across every claim (GET /v1/deferred).
+   *
+   * This list is where an adjuster decides what to open, and a claim whose
+   * lines deferred looks finished from here -- the row count is right, the
+   * total just quietly isn't. The server orders the claims most-stuck-first,
+   * so the one worth opening is named. Nothing renders on the healthy answer
+   * (`total: 0`) or on a failed read.
+   */
+  const stranded = rosterSummary(useDeferred().data)
+
   return (
     <div className="k-shell">
       <AppHeader actions={<NewClaimButton />} />
@@ -291,6 +304,19 @@ export default function ClaimsPage() {
             <Icon d={I.filter} size={12} /> Sort: Most recent
           </button>
         </section>
+
+        {stranded ? (
+          <div className="k-ws-bar k-ws-bar--quiet">
+            <span>{stranded.text}</span>
+            <Link
+              className="k-btn k-btn--sm"
+              to={`/claims/${encodeURIComponent(stranded.lead.claim_id)}`}
+              title="The retry lives on the claim, where the estimate is shown before anything is spent"
+            >
+              Open {stranded.lead.name?.trim() || stranded.lead.claim_id}
+            </Link>
+          </div>
+        ) : null}
 
         {notice ? (
           <div className="k-ws-bar">

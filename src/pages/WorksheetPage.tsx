@@ -49,6 +49,8 @@ import { listProposals } from '../lib/proposals'
 import { assignRoom, listRooms, setRoomArea } from '../lib/rooms'
 import { assignPlan, assignSummary, planTextChunks } from '../lib/room-rules'
 import type { NumberedItem } from '../lib/rows'
+import { useDeferred } from '../lib/deferred'
+import { deferredFor, pricingState, reasonLines, retryCall } from '../lib/deferred-rules'
 import { CAPACITY_REASONS } from '../lib/types'
 import type { ClaimItem, ClaimItemListResponse, ClaimSummary } from '../lib/types'
 
@@ -286,6 +288,8 @@ export default function WorksheetPage() {
     mutationFn: () => retryDeferred(claimId, false),
     onSuccess: (result) => {
       setRetryPlan(null)
+      // The stranded count is now wrong by exactly what we just re-queued.
+      queryClient.invalidateQueries({ queryKey: ['deferred'] })
       setNotice(
         `Re-queued ${fmtInt(result.enqueued)} line${result.enqueued === 1 ? '' : 's'}` +
           (result.skipped ? ` · ${fmtInt(result.skipped)} skipped` : '') +
@@ -598,6 +602,27 @@ export default function WorksheetPage() {
       CAPACITY_REASONS.has(item.manual_reason) &&
       (item.query ?? '').length >= 3,
   )
+
+  /**
+   * The same lines, counted by the SERVER (GET /v1/deferred, backend 177d9d9)
+   * -- and this is the authority, for two reasons the local filter cannot fix:
+   * the worksheet holds one page of rows at a time, so a stranded line on page
+   * four is invisible to it, and the endpoint reports exactly the set the
+   * retry button re-runs.
+   *
+   * It also carries live pricing in the same payload, which is what turns the
+   * button from a guess into an answer: while pricing is paused a retry just
+   * defers them again. The counts underneath stay per reason -- they clear on
+   * different clocks and a single number would promise the wrong one.
+   *
+   * Authenticated, so it is off on the public sample; the local count still
+   * draws the bar there, and whenever the read fails.
+   */
+  const deferredReport = useDeferred(!isSample)
+  const stranded = deferredFor(deferredReport.data, claimId)
+  const strandedLines = reasonLines(stranded?.counts)
+  const strandedTotal = stranded?.total ?? deferred.length
+  const retryAsk = retryCall(pricingState(deferredReport.data), strandedTotal)
 
   const saving =
     override.isPending || editLine.isPending || addItem.isPending || removeRows.isPending
@@ -930,22 +955,27 @@ export default function WorksheetPage() {
         </div>
       ) : null}
 
-      {deferred.length > 0 ? (
+      {strandedTotal > 0 ? (
         <div className="k-ws-bar k-ws-bar--quiet">
           <span>
-            {/* Covers every paused-pricing reason: a search limit, today's
-                capacity, or a provider outage (vendor_unavailable, 0fe58d9). */}
-            {deferred.length} row{deferred.length === 1 ? '' : 's'} deferred — pricing was paused
-            (a search limit or a provider outage), not a problem with these items.
+            <strong>
+              {fmtInt(strandedTotal)} line{strandedTotal === 1 ? '' : 's'}{' '}
+              {strandedTotal === 1 ? 'is' : 'are'} waiting on a retry
+            </strong>{' '}
+            — pricing was paused, not a problem with these items.
+            {/* Per reason, in the order they unstick. Never merged: a provider
+                outage and today's capacity clear on different clocks. */}
+            {strandedLines.length > 0 ? ` ${strandedLines.map((l) => l.text).join(' · ')}.` : ''}
+            {retryAsk.hint ? ` ${retryAsk.hint}` : ''}
           </span>
           <button
             type="button"
-            className="k-btn k-btn--sm"
+            className={`k-btn k-btn--sm${retryAsk.soften ? ' k-btn--ghost' : ''}`}
             disabled={retryPreview.isPending || retryRun.isPending}
             onClick={() => retryPreview.mutate()}
             title="Check what would re-run, then confirm"
           >
-            {retryPreview.isPending ? 'Checking…' : `Retry ${deferred.length} deferred`}
+            {retryPreview.isPending ? 'Checking…' : retryAsk.label}
           </button>
         </div>
       ) : null}
