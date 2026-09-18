@@ -167,6 +167,13 @@ export type ClaimItem = {
   status: ItemStatus
   manual_reason: ManualReason | null
   /**
+   * Special-limits class (Jewelry, Firearms, Fine Arts, Furs): the coverage-cap
+   * cue, amber on the row. Its OWN signal -- never `manual_reason`, which marks
+   * adjuster edits and is never flagged (owner, 2026-09-18). Requested from the
+   * backend; absent until it ships, and then no row is amber.
+   */
+  special_limits?: boolean
+  /**
    * What vision read off the photos, post-promote and adjuster-facing.
    *
    * Deliberately NOT on the staging card (rule 23): a machine's guess at an

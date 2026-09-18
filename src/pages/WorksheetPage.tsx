@@ -1633,11 +1633,14 @@ function Row({
   // Capacity waits are NOT adjuster work -- quiet pending state, never amber.
   const waiting = Boolean(unpriced && item.manual_reason && CAPACITY_REASONS.has(item.manual_reason))
   /**
-   * No row tint from `manual_reason`. OWNER, 2026-09-18: `manual_class` marks
-   * a line an adjuster changed by hand -- a price or an input -- and that is
-   * never flagged. It used to paint the row amber as a special-limits cue,
-   * which lit up a collectible the moment its class was changed.
+   * Two signals that used to share one code (owner, 2026-09-18):
+   *  - special limits -- amber, from the payload's own `special_limits` flag,
+   *    never derived from `category` (rule 20);
+   *  - an adjuster edit (`manual_reason: manual_class`) -- never flagged. It
+   *    used to paint the row amber, which lit up a collectible the moment its
+   *    class was changed.
    */
+  const specialLimits = item.special_limits === true
   const depAmount = item.depreciation_amount
   // Depreciation is server-owned, so it spins only while age or class -- the
   // two inputs that drive it -- are actually in flight.
@@ -1658,7 +1661,7 @@ function Row({
   return (
     <div
       data-row-id={item.id}
-      className={`k-row${isNew ? ' k-row--new' : ''}${selected ? ' k-row--sel' : ''}${active ? ' k-row--active' : ''}`}
+      className={`k-row${specialLimits ? ' k-row--manual' : ''}${isNew ? ' k-row--new' : ''}${selected ? ' k-row--sel' : ''}${active ? ' k-row--active' : ''}`}
       onClick={onRowClick}
     >
       <div className="k-c k-c--check">
