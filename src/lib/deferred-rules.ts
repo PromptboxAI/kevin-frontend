@@ -28,7 +28,14 @@ export type DeferredClaim = {
   claim_id: string
   /** May be null: an unnamed claim still counts. */
   name: string | null
+  /** Every stranded line, including ones Retry will skip. */
   total: number
+  /**
+   * What Retry deferred will actually enqueue: `total` minus the rows with
+   * neither a query nor a description, which the retry skips as
+   * `no_query_or_description`. Backend is adding it; absent until then.
+   */
+  actionable?: number
   counts: Record<string, number>
 }
 
@@ -40,8 +47,18 @@ export type DeferredReport = {
     next_check_at: string | null
   }
   total: number
+  /** Cross-claim `actionable`, same meaning as on a claim. */
+  actionable?: number
   claims: DeferredClaim[]
   updated_at: string
+}
+
+/**
+ * The number to render: what the button will re-run. `actionable` once the
+ * backend sends it, `total` before -- never a sum of `counts`.
+ */
+export function retryable(x: { total: number; actionable?: number }): number {
+  return typeof x.actionable === 'number' ? x.actionable : x.total
 }
 
 /**
@@ -103,7 +120,9 @@ export function deferredFor(report: unknown, claimId: string): DeferredClaim | n
   for (const claim of report.claims) {
     if (!claim || typeof claim !== 'object') continue
     if (claim.claim_id !== claimId) continue
-    if (typeof claim.total !== 'number' || claim.total <= 0) return null
+    // Nothing the button can re-run is nothing to offer: rows it would skip
+    // need a description, which the worksheet's blank cells already ask for.
+    if (typeof claim.total !== 'number' || retryable(claim) <= 0) return null
     return claim
   }
   return null
@@ -164,7 +183,7 @@ export function retryCall(state: string | null, total: number): RetryCall {
 }
 
 export type RosterSummary = {
-  /** The SERVER's cross-claim total. */
+  /** The SERVER's cross-claim retryable count. */
   total: number
   /** How many claims carry stranded lines. */
   claims: number
@@ -182,15 +201,16 @@ export type RosterSummary = {
 export function rosterSummary(report: unknown): RosterSummary | null {
   if (!isReport(report)) return null
   const claims = report.claims.filter(
-    (c) => c && typeof c === 'object' && typeof c.total === 'number' && c.total > 0,
+    (c) => c && typeof c === 'object' && typeof c.total === 'number' && retryable(c) > 0,
   )
-  if (report.total <= 0 || claims.length === 0) return null
+  const total = retryable(report)
+  if (total <= 0 || claims.length === 0) return null
   const lead = claims[0]
   const name = lead.name?.trim() || lead.claim_id
-  const lines = `${report.total} line${report.total === 1 ? '' : 's'}`
+  const lines = `${total} line${total === 1 ? '' : 's'}`
   const text =
     claims.length === 1
       ? `${lines} on ${name} are waiting on a retry — pricing was paused, not a problem with the items.`
-      : `${lines} across ${claims.length} claims are waiting on a retry — ${name} has the most (${lead.total}).`
-  return { total: report.total, claims: claims.length, lead, text }
+      : `${lines} across ${claims.length} claims are waiting on a retry — ${name} has the most (${retryable(lead)}).`
+  return { total, claims: claims.length, lead, text }
 }

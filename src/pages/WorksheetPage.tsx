@@ -50,7 +50,7 @@ import { assignRoom, listRooms, setRoomArea } from '../lib/rooms'
 import { assignPlan, assignSummary, planTextChunks } from '../lib/room-rules'
 import type { NumberedItem } from '../lib/rows'
 import { useDeferred } from '../lib/deferred'
-import { deferredFor, pricingState, reasonLines, retryCall } from '../lib/deferred-rules'
+import { deferredFor, pricingState, reasonLines, retryable, retryCall } from '../lib/deferred-rules'
 import { CAPACITY_REASONS } from '../lib/types'
 import type { ClaimItem, ClaimItemListResponse, ClaimSummary } from '../lib/types'
 
@@ -621,7 +621,7 @@ export default function WorksheetPage() {
   const deferredReport = useDeferred(!isSample)
   const stranded = deferredFor(deferredReport.data, claimId)
   const strandedLines = reasonLines(stranded?.counts)
-  const strandedTotal = stranded?.total ?? deferred.length
+  const strandedTotal = stranded ? retryable(stranded) : deferred.length
   const retryAsk = retryCall(pricingState(deferredReport.data), strandedTotal)
 
   const saving =
