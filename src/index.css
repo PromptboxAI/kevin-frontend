@@ -1119,86 +1119,6 @@
   color: var(--k-accent);
 }
 
-/* The site-wide service banner, under the top bar.
-   Its own colour (--k-service, hue 45), not amber: amber means special limits
-   and nothing else (rule 6). A service notice may never blend into a page of
-   grey, black and white, so BOTH states are solid; they differ by weight --
-   a pause carries a deep edge and a filled dot, degraded a lighter edge and a
-   hollow one. WHITE text on both: dark-on-orange measured 5.03:1 but read
-   muddy at 12.5px, so the fill dropped to 0.55 lightness where white measures
-   5.24:1 (both measured in-browser, not guessed). Two- and three-class selectors keep these above
-   .k-ws-bar--quiet regardless of source order. */
-.k-ws-bar.k-status-bar {
-  margin: 8px 16px 0;
-  justify-content: flex-start;
-  gap: 10px;
-  line-height: 1.45;
-  background: var(--k-service);
-  border-color: var(--k-service);
-  border-left: 4px solid var(--k-service-deep);
-  color: var(--k-bg);
-}
-
-.k-ws-bar.k-status-bar strong {
-  color: var(--k-bg);
-}
-
-/* Two lines, not one paragraph: the headline is what an adjuster needs at a
-   glance, the detail is for whoever reads on. */
-.k-ws-bar.k-status-bar {
-  align-items: flex-start;
-  padding: 11px 16px 12px 14px;
-}
-
-.k-status-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.k-status-h {
-  font-size: 13.5px;
-  font-weight: 700;
-  line-height: 1.35;
-}
-
-.k-status-d {
-  font-size: 13px;
-  line-height: 1.45;
-  max-width: 92ch;
-  opacity: 0.94;
-}
-
-/* Centred on the headline's first line, not the block. */
-.k-ws-bar.k-status-bar .k-paused-dot {
-  width: 8px;
-  height: 8px;
-  margin-top: 5px;
-}
-
-.k-ws-bar.k-status-bar .k-paused-dot {
-  background: var(--k-bg);
-}
-
-/* Degraded: pricing is RUNNING, so it is the lighter of the two -- same fill,
-   softer edge, hollow dot. */
-.k-ws-bar.k-status-bar.k-status-bar--soft {
-  background: var(--k-service);
-  border-color: var(--k-service);
-  border-left: 4px solid var(--k-service-edge);
-  color: var(--k-bg);
-}
-
-.k-ws-bar.k-status-bar.k-status-bar--soft strong {
-  color: var(--k-bg);
-}
-
-.k-ws-bar.k-status-bar.k-status-bar--soft .k-paused-dot {
-  background: transparent;
-  box-shadow: inset 0 0 0 2px var(--k-bg);
-}
-
 .k-ws-bar--sel {
   border-color: var(--k-accent);
   background: var(--k-accent-soft);
@@ -1715,12 +1635,6 @@ button.k-avatar-menu-item {
 }
 .k-cap-secondary { background: var(--k-bg-2); color: var(--k-fg); border: 1px solid var(--k-line); }
 .k-cap-primary:disabled { opacity: 0.4; }
-.k-cap-alert {
-  display: flex; gap: 8px; align-items: flex-start;
-  margin: 12px 14px 0; padding: 12px 14px; border-radius: 10px;
-  background: var(--k-bg-2); border: 1px solid var(--k-line);
-  font-size: 13px; line-height: 1.5; color: var(--k-fg-2);
-}
 .k-cap-top {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 14px 16px; border-bottom: 1px solid var(--k-line);
@@ -1822,3 +1736,88 @@ button.k-avatar-menu-item {
   padding-top: var(--k-sample-banner-h, 34px);
   box-sizing: border-box;
 }
+
+/* ---- Alert banners (components/Alert.tsx) ---------------------------------
+   One shape for every in-page notice, from the owner's reference: tinted
+   panel, 1px edge, icon, bold title over a body line, optional action and
+   close. Tokens live in kevin.css. */
+.k-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 16px;
+  padding: 11px 12px 12px 14px;
+  border: 1px solid var(--k-line-2);
+  border-radius: 8px;
+  background: var(--k-alert-neutral-bg);
+  color: var(--k-fg);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.k-alert-ic {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  margin-top: 1px;
+  color: var(--k-fg-2);
+}
+
+.k-alert-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.k-alert-h {
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--k-fg);
+}
+
+.k-alert-d {
+  color: var(--k-fg-2);
+  max-width: 96ch;
+}
+
+.k-alert-act {
+  flex: 0 0 auto;
+  align-self: center;
+}
+
+.k-alert-x {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin: -2px -4px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--k-fg);
+  cursor: pointer;
+}
+
+.k-alert-x:hover {
+  background: oklch(0.20 0.02 250 / 0.07);
+}
+
+.k-alert--service { background: var(--k-alert-service-bg); border-color: var(--k-alert-service-line); }
+.k-alert--service .k-alert-ic { color: var(--k-alert-service-ic); }
+.k-alert--error { background: var(--k-alert-error-bg); border-color: var(--k-alert-error-line); }
+.k-alert--error .k-alert-ic { color: var(--k-danger); }
+.k-alert--success { background: var(--k-alert-success-bg); border-color: var(--k-alert-success-line); }
+.k-alert--success .k-alert-ic { color: var(--k-alert-success-ic); }
+.k-alert--info { background: var(--k-alert-info-bg); border-color: var(--k-alert-info-line); }
+.k-alert--info .k-alert-ic { color: var(--k-accent); }
+
+/* The service banner sits under the top bar with a little air. */
+.k-alert.k-alert--banner { margin: 8px 16px 0; }
+
+/* Mobile capture screens: their own gutter. */
+.k-alert.k-alert--cap { margin: 12px 14px 0; }

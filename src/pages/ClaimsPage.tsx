@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
+import Alert from '../components/Alert'
 import AppHeader from '../components/AppHeader'
 import NewClaimButton from '../components/NewClaimButton'
 import ClaimRowMenu from '../components/ClaimRowMenu'
@@ -306,34 +307,40 @@ export default function ClaimsPage() {
         </section>
 
         {stranded ? (
-          <div className="k-ws-bar k-ws-bar--quiet">
-            <span>{stranded.text}</span>
-            <Link
-              className="k-btn k-btn--sm"
-              to={`/claims/${encodeURIComponent(stranded.lead.claim_id)}`}
-              title="The retry lives on the claim, where the estimate is shown before anything is spent"
-            >
-              Open {stranded.lead.name?.trim() || stranded.lead.claim_id}
-            </Link>
-          </div>
+          <Alert
+            tone={stranded.total > 0 ? 'neutral' : 'info'}
+            title={stranded.total > 0 ? 'Lines waiting on a retry' : 'Lines waiting on a description'}
+            action={
+              <Link
+                className="k-btn k-btn--sm"
+                to={`/claims/${encodeURIComponent(stranded.lead.claim_id)}`}
+                title="The retry lives on the claim, where the estimate is shown before anything is spent"
+              >
+                Open {stranded.lead.name?.trim() || stranded.lead.claim_id}
+              </Link>
+            }
+          >
+            {stranded.text}
+          </Alert>
         ) : null}
 
         {notice ? (
-          <div className="k-ws-bar">
-            <span>{notice.text}</span>
-            <button type="button" className="k-link" onClick={() => setNoticeState(null)}>
-              Dismiss
-            </button>
-          </div>
+          <Alert
+            tone={notice.error ? 'error' : 'success'}
+            title={notice.error ? 'That didn’t go through' : undefined}
+            onDismiss={() => setNoticeState(null)}
+          >
+            {notice.text}
+          </Alert>
         ) : null}
 
         {isPending ? <p className="k-note">Loading claims…</p> : null}
 
         {error ? (
-          <p className="k-error">
-            Couldn&rsquo;t load claims
-            {error instanceof ApiError ? ` (HTTP ${error.status})` : ''}.
-          </p>
+          <Alert tone="error" title="Couldn’t load claims">
+            The list didn’t come back
+            {error instanceof ApiError ? ` (HTTP ${error.status})` : ''}. Reload the page to try again.
+          </Alert>
         ) : null}
 
         {data && visible.length === 0 ? (

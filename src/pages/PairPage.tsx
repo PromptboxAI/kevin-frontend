@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import Alert from '../components/Alert'
 import { useNavigate } from 'react-router-dom'
-import { I, Icon } from '../components/Icon'
 import { ApiError } from '../lib/api'
 import { saveCredential } from '../lib/capture'
 import { redeemPair } from '../lib/pairing'
@@ -119,10 +119,9 @@ export default function PairPage() {
         )}
 
         {failure ? (
-          <div className="k-cap-alert">
-            <Icon d={I.info} size={14} />
-            <span>{PAIR_FAILURE_COPY[failure]}</span>
-          </div>
+          <Alert tone="error" className="k-alert--cap">
+            {PAIR_FAILURE_COPY[failure]}
+          </Alert>
         ) : null}
       </div>
     </div>

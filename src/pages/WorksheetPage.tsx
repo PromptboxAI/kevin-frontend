@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { InfiniteData } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
+import Alert from '../components/Alert'
 import AppHeader from '../components/AppHeader'
 import ClaimMissing from '../components/ClaimMissing'
 import ClaimStatusChip from '../components/ClaimStatusChip'
@@ -965,47 +966,54 @@ export default function WorksheetPage() {
         </div>
       ) : null}
 
+      {/* Capacity waits are a state, not a failure: neutral, never amber or
+          red (rule 12b). No close control -- the alert goes when the lines
+          price, and hiding it would lose track of unpriced work. */}
       {strandedTotal > 0 ? (
-        <div className="k-ws-bar k-ws-bar--quiet">
-          <span>
-            <strong>
-              {fmtInt(strandedTotal)} line{strandedTotal === 1 ? '' : 's'}{' '}
-              {strandedTotal === 1 ? 'is' : 'are'} waiting on a retry
-            </strong>{' '}
-            — pricing was paused, not a problem with these items.
-            {/* Per reason, in the order they unstick. Never merged: a provider
-                outage and today's capacity clear on different clocks. */}
-            {strandedLines.length > 0 ? ` ${strandedLines.map((l) => l.text).join(' · ')}.` : ''}
-            {retryAsk.hint ? ` ${retryAsk.hint}` : ''}
-          </span>
-          <button
-            type="button"
-            className={`k-btn k-btn--sm${retryAsk.soften ? ' k-btn--ghost' : ''}`}
-            disabled={retryPreview.isPending || retryRun.isPending}
-            onClick={() => retryPreview.mutate()}
-            title="Check what would re-run, then confirm"
-          >
-            {retryPreview.isPending ? 'Checking…' : retryAsk.label}
-          </button>
-        </div>
-      ) : null}
-
-      {/* Its own line, never folded into the count above: Retry will not
-          price these now or after any recovery. Someone has to type. */}
-      {toDescribe ? (
-        <div className="k-ws-bar k-ws-bar--quiet">
-          <span>{toDescribe}</span>
-          {status !== 'needs_manual' ? (
+        <Alert
+          tone="neutral"
+          title={`${fmtInt(strandedTotal)} line${strandedTotal === 1 ? ' is' : 's are'} waiting on a retry`}
+          action={
             <button
               type="button"
-              className="k-btn k-btn--sm k-btn--ghost"
-              onClick={() => setStatus('needs_manual')}
-              title="Filter to unpriced rows; the ones missing a description have a blank Description cell"
+              className={`k-btn k-btn--sm${retryAsk.soften ? ' k-btn--ghost' : ''}`}
+              disabled={retryPreview.isPending || retryRun.isPending}
+              onClick={() => retryPreview.mutate()}
+              title="Check what would re-run, then confirm"
             >
-              Show unpriced
+              {retryPreview.isPending ? 'Checking…' : retryAsk.label}
             </button>
-          ) : null}
-        </div>
+          }
+        >
+          Pricing was paused, not a problem with these items.
+          {/* Per reason, in the order they unstick. Never merged: a provider
+              outage and today's capacity clear on different clocks. */}
+          {strandedLines.length > 0 ? ` ${strandedLines.map((l) => l.text).join(' · ')}.` : ''}
+          {retryAsk.hint ? ` ${retryAsk.hint}` : ''}
+        </Alert>
+      ) : null}
+
+      {/* Its own alert, never folded into the count above: Retry will not
+          price these now or after any recovery. Someone has to type. */}
+      {toDescribe ? (
+        <Alert
+          tone="info"
+          title={toDescribe}
+          action={
+            status !== 'needs_manual' ? (
+              <button
+                type="button"
+                className="k-btn k-btn--sm k-btn--ghost"
+                onClick={() => setStatus('needs_manual')}
+                title="Filter to unpriced rows; the ones missing a description have a blank Description cell"
+              >
+                Show unpriced
+              </button>
+            ) : undefined
+          }
+        >
+          Retry can’t run a line with no description — each one needs what the item is typed in first.
+        </Alert>
       ) : null}
 
       {selected.size > 0 ? (

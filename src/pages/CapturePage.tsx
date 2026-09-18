@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import Alert from '../components/Alert'
 import { Link } from 'react-router-dom'
 import { I, Icon } from '../components/Icon'
 import { ApiError } from '../lib/api'
@@ -605,29 +606,29 @@ export default function CapturePage() {
       </header>
 
       {banner ? (
-        <div className="k-cap-alert">
-          <Icon d={online ? I.clock : I.info} size={14} />
-          <span>{banner}</span>
-        </div>
+        <Alert tone={online ? 'neutral' : 'info'} className="k-alert--cap">
+          {banner}
+        </Alert>
       ) : null}
 
       {failure ? (
-        <div className="k-cap-alert">
-          <Icon d={I.info} size={14} />
-          <span>{failure}</span>
-        </div>
+        <Alert tone="error" className="k-alert--cap">
+          {failure}
+        </Alert>
       ) : null}
 
       {rejected.length ? (
-        <div className="k-cap-alert">
-          <Icon d={I.info} size={14} />
-          <span>
-            {rejected.length === 1
+        <Alert
+          tone="error"
+          className="k-alert--cap"
+          title={
+            rejected.length === 1
               ? '1 photo was not accepted'
-              : `${rejected.length} photos were not accepted`}
-            : {rejected.map((r) => r.text).join(' · ')}
-          </span>
-        </div>
+              : `${rejected.length} photos were not accepted`
+          }
+        >
+          {rejected.map((r) => r.text).join(' · ')}
+        </Alert>
       ) : null}
 
       <div className="k-cap-grid">

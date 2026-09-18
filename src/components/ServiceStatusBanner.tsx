@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useLocation } from 'react-router-dom'
 import { API_BASE_URL } from '../lib/env'
+import Alert from './Alert'
 import { bannerFor } from '../lib/service-status-rules'
 import { SAMPLE_CLAIM_ID } from '../lib/worksheet-preview'
 
@@ -29,8 +31,24 @@ async function fetchStatus(): Promise<unknown> {
 const localTime = (iso: string) =>
   new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
 
+/**
+ * Dismissed for the tab's session, keyed on the HEADLINE: closing "degraded"
+ * does not also silence a pause that follows it, because that is a different
+ * message and it shows again. Guarded -- storage can throw, and then the
+ * close still works for this page view.
+ */
+const DISMISS_KEY = 'kevin.status.dismissed'
+function readDismissed(): string | null {
+  try {
+    return sessionStorage.getItem(DISMISS_KEY)
+  } catch {
+    return null
+  }
+}
+
 export default function ServiceStatusBanner() {
   const { pathname } = useLocation()
+  const [dismissed, setDismissed] = useState<string | null>(readDismissed)
   const { data } = useQuery({
     queryKey: ['service-status'],
     queryFn: fetchStatus,
@@ -45,21 +63,26 @@ export default function ServiceStatusBanner() {
   if (pathname === sample || pathname.startsWith(`${sample}/`)) return null
 
   const banner = bannerFor(data, localTime)
-  if (!banner) return null
+  if (!banner || banner.message === dismissed) return null
+
+  const dismiss = () => {
+    setDismissed(banner.message)
+    try {
+      sessionStorage.setItem(DISMISS_KEY, banner.message)
+    } catch {
+      // No storage: dismissed for this page view only.
+    }
+  }
 
   return (
-    <div
-      className={`k-ws-bar k-ws-bar--quiet k-status-bar${banner.tone === 'degraded' ? ' k-status-bar--soft' : ''}`}
-      role="status"
-      aria-live="polite"
+    <Alert
+      tone="service"
+      className="k-alert--banner"
+      title={banner.message}
+      onDismiss={dismiss}
+      live
     >
-      <span className="k-paused-dot" aria-hidden="true" />
-      {/* Headline and detail on their own lines: run together as one
-          paragraph they read as a wall of white on orange. */}
-      <div className="k-status-text">
-        <strong className="k-status-h">{banner.message}</strong>
-        <span className="k-status-d">{banner.detail}</span>
-      </div>
-    </div>
+      {banner.detail}
+    </Alert>
   )
 }

@@ -1,4 +1,5 @@
 import { I, Icon } from './Icon'
+import Alert from './Alert'
 import {
   groupForReview,
   needsAttention,
@@ -59,16 +60,15 @@ export default function CaptureReview({
       </header>
 
       {attention.length > 0 ? (
-        <div className="k-cap-alert">
-          <Icon d={I.info} size={14} />
-          <span>
-            {attention.length === 1
-              ? '1 photo needs a look'
-              : `${attention.length} photos need a look`}{' '}
-            — a missing room or a failed send. {attention.length === 1 ? 'It is' : 'They are'}{' '}
-            below.
-          </span>
-        </div>
+        <Alert
+          tone="info"
+          className="k-alert--cap"
+          title={
+            attention.length === 1 ? '1 photo needs a look' : `${attention.length} photos need a look`
+          }
+        >
+          A missing room or a failed send. {attention.length === 1 ? 'It is' : 'They are'} below.
+        </Alert>
       ) : null}
 
       <div className="k-cap-review">
