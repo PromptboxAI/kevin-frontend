@@ -33,10 +33,18 @@ export type DeferredClaim = {
   /**
    * What Retry deferred will actually enqueue: `total` minus the rows with
    * neither a query nor a description, which the retry skips as
-   * `no_query_or_description`. Backend is adding it; absent until then.
+   * `no_query_or_description`. Absent on a backend before it shipped.
    */
   actionable?: number
+  /** Per reason, over the ACTIONABLE rows: these foot to `actionable`. */
   counts: Record<string, number>
+  /**
+   * Rows with neither a query nor a description. No retry will ever price
+   * them -- someone has to type a description -- so they get their own line,
+   * never folded into the deferred count. `actionable + needs_description`
+   * foots to `total`.
+   */
+  needs_description?: number
 }
 
 export type DeferredReport = {
@@ -49,6 +57,8 @@ export type DeferredReport = {
   total: number
   /** Cross-claim `actionable`, same meaning as on a claim. */
   actionable?: number
+  needs_description?: number
+  /** Most-ACTIONABLE first: the claim where Retry does the most good leads. */
   claims: DeferredClaim[]
   updated_at: string
 }
@@ -114,15 +124,29 @@ export function pricingState(report: unknown): string | null {
   return pricing.state
 }
 
+/** Rows only a typed description can unstick. 0 on an older payload. */
+export function undescribed(x: { needs_description?: number }): number {
+  return typeof x.needs_description === 'number' && x.needs_description > 0
+    ? x.needs_description
+    : 0
+}
+
+/** "3 lines need a description before they can be priced." */
+export function describeLine(n: number): string | null {
+  if (n <= 0) return null
+  return `${n} line${n === 1 ? ' needs' : 's need'} a description before ${n === 1 ? 'it' : 'they'} can be priced.`
+}
+
 /** This claim's entry, or null -- `total: 0, claims: []` is the clean answer. */
 export function deferredFor(report: unknown, claimId: string): DeferredClaim | null {
   if (!isReport(report) || !claimId) return null
   for (const claim of report.claims) {
     if (!claim || typeof claim !== 'object') continue
     if (claim.claim_id !== claimId) continue
-    // Nothing the button can re-run is nothing to offer: rows it would skip
-    // need a description, which the worksheet's blank cells already ask for.
-    if (typeof claim.total !== 'number' || retryable(claim) <= 0) return null
+    // Kept while EITHER line has something to say: a claim of only
+    // undescribed rows has no retry to offer but still has work waiting.
+    if (typeof claim.total !== 'number') return null
+    if (retryable(claim) <= 0 && undescribed(claim) <= 0) return null
     return claim
   }
   return null
@@ -185,9 +209,9 @@ export function retryCall(state: string | null, total: number): RetryCall {
 export type RosterSummary = {
   /** The SERVER's cross-claim retryable count. */
   total: number
-  /** How many claims carry stranded lines. */
+  /** How many claims have something Retry can re-run. */
   claims: number
-  /** First in the server's most-stuck-first order. */
+  /** The claim to open: first in the server's most-actionable-first order. */
   lead: DeferredClaim
   text: string
 }
@@ -196,21 +220,43 @@ export type RosterSummary = {
  * The roster cue: the claims list is where an adjuster decides what to open,
  * and a claim whose lines are stranded looks finished from there.
  *
- * `claims` arrives most-stuck-first, so the lead is simply the first one.
+ * `claims` arrives most-actionable-first, so the lead is simply the first
+ * claim with something to retry. When nothing is retryable but rows need a
+ * description, the lead is the first claim carrying those instead.
  */
 export function rosterSummary(report: unknown): RosterSummary | null {
   if (!isReport(report)) return null
-  const claims = report.claims.filter(
-    (c) => c && typeof c === 'object' && typeof c.total === 'number' && retryable(c) > 0,
+  const valid = report.claims.filter(
+    (c) => c && typeof c === 'object' && typeof c.total === 'number',
   )
+  const retry = valid.filter((c) => retryable(c) > 0)
   const total = retryable(report)
-  if (total <= 0 || claims.length === 0) return null
-  const lead = claims[0]
-  const name = lead.name?.trim() || lead.claim_id
-  const lines = `${total} line${total === 1 ? '' : 's'}`
-  const text =
-    claims.length === 1
-      ? `${lines} on ${name} are waiting on a retry — pricing was paused, not a problem with the items.`
-      : `${lines} across ${claims.length} claims are waiting on a retry — ${name} has the most (${retryable(lead)}).`
-  return { total, claims: claims.length, lead, text }
+  const typing = undescribed(report)
+  const more =
+    typing > 0
+      ? ` ${typing} more ${typing === 1 ? 'needs' : 'need'} a description before ${typing === 1 ? 'it' : 'they'} can be priced.`
+      : ''
+
+  if (total > 0 && retry.length > 0) {
+    const lead = retry[0]
+    const name = lead.name?.trim() || lead.claim_id
+    const lines = `${total} line${total === 1 ? '' : 's'}`
+    const text =
+      retry.length === 1
+        ? `${lines} on ${name} ${total === 1 ? 'is' : 'are'} waiting on a retry — pricing was paused, not a problem with the items.${more}`
+        : `${lines} across ${retry.length} claims are waiting on a retry — ${name} has the most (${retryable(lead)}).${more}`
+    return { total, claims: retry.length, lead, text }
+  }
+
+  const lead = valid.find((c) => undescribed(c) > 0)
+  if (typing > 0 && lead) {
+    const name = lead.name?.trim() || lead.claim_id
+    const own = undescribed(lead)
+    const text =
+      own === typing
+        ? `${typing} line${typing === 1 ? '' : 's'} on ${name} ${typing === 1 ? 'needs' : 'need'} a description before ${typing === 1 ? 'it' : 'they'} can be priced.`
+        : `${describeLine(typing)!.replace(/\.$/, '')}, across your claims — ${name} has ${own}.`
+    return { total: 0, claims: 0, lead, text }
+  }
+  return null
 }

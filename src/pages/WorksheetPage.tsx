@@ -50,7 +50,15 @@ import { assignRoom, listRooms, setRoomArea } from '../lib/rooms'
 import { assignPlan, assignSummary, planTextChunks } from '../lib/room-rules'
 import type { NumberedItem } from '../lib/rows'
 import { useDeferred } from '../lib/deferred'
-import { deferredFor, pricingState, reasonLines, retryable, retryCall } from '../lib/deferred-rules'
+import {
+  deferredFor,
+  describeLine,
+  pricingState,
+  reasonLines,
+  retryable,
+  retryCall,
+  undescribed,
+} from '../lib/deferred-rules'
 import { CAPACITY_REASONS } from '../lib/types'
 import type { ClaimItem, ClaimItemListResponse, ClaimSummary } from '../lib/types'
 
@@ -623,6 +631,8 @@ export default function WorksheetPage() {
   const strandedLines = reasonLines(stranded?.counts)
   const strandedTotal = stranded ? retryable(stranded) : deferred.length
   const retryAsk = retryCall(pricingState(deferredReport.data), strandedTotal)
+  /** Rows no retry can price: they need a description typed first. */
+  const toDescribe = describeLine(stranded ? undescribed(stranded) : 0)
 
   const saving =
     override.isPending || editLine.isPending || addItem.isPending || removeRows.isPending
@@ -977,6 +987,24 @@ export default function WorksheetPage() {
           >
             {retryPreview.isPending ? 'Checking…' : retryAsk.label}
           </button>
+        </div>
+      ) : null}
+
+      {/* Its own line, never folded into the count above: Retry will not
+          price these now or after any recovery. Someone has to type. */}
+      {toDescribe ? (
+        <div className="k-ws-bar k-ws-bar--quiet">
+          <span>{toDescribe}</span>
+          {status !== 'needs_manual' ? (
+            <button
+              type="button"
+              className="k-btn k-btn--sm k-btn--ghost"
+              onClick={() => setStatus('needs_manual')}
+              title="Filter to unpriced rows; the ones missing a description have a blank Description cell"
+            >
+              Show unpriced
+            </button>
+          ) : null}
         </div>
       ) : null}
 
