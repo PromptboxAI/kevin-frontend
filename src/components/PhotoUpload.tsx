@@ -6,7 +6,6 @@ import { fmtInt } from '../lib/format'
 import { startStagingSession, uploadStagingPhotos } from '../lib/mutations'
 import {
   ACCEPT_TYPES,
-  CHUNK_FILES,
   MAX_CHUNK_ATTEMPTS,
   REJECT_COPY,
   chunkRetryDelayMs,
@@ -97,7 +96,6 @@ export default function PhotoUpload({
   const sentBytes = rows
     .filter((r) => r.status === 'done' || r.status === 'dup')
     .reduce((a, r) => a + r.file.size, 0)
-  const chunksTotal = useMemo(() => planUploadChunks(sendable.map((r) => r.file)).length, [sendable])
   const pct = sendable.length ? Math.round((sentCount / sendable.length) * 100) : 0
 
   const take = (files: File[], droppedJunk = 0) => {
@@ -334,7 +332,7 @@ export default function PhotoUpload({
             Accepts JPG, PNG, HEIC. Max {MAX_PHOTO_MB}&nbsp;MB per photo.
           </div>
           <div style={{ fontSize: 12, color: 'var(--k-fg-4)', marginTop: 5 }}>
-            Select them all at once — Kevin uploads in batches and removes duplicates as they
+            Select them all at once — Kevin removes duplicates as they
             arrive.
           </div>
 
@@ -453,21 +451,17 @@ export default function PhotoUpload({
               <span style={{ fontSize: 12, color: 'var(--k-fg-4)' }}>
                 {done || sending
                   ? `${fmtInt(sentCount)} of ${fmtInt(sendable.length)} uploaded${done ? ' · complete' : ''}`
-                  : `${fmtInt(rows.length)} selected · ${fmtInt(chunksTotal)} ${chunksTotal === 1 ? 'batch' : 'batches'} of up to ${CHUNK_FILES}${oversize.length ? ` · ${oversize.length} over the size limit` : ''}`}
+                  : `${fmtInt(rows.length)} ${rows.length === 1 ? 'photo' : 'photos'} selected${oversize.length ? ` · ${oversize.length} over the size limit` : ''}`}
               </span>
               {paused ? (
-                <span className="k-paused" title="The batch in flight finishes; nothing new is sent">
+                <span className="k-paused" title="Photos already sending finish; nothing new is sent">
                   <span className="k-paused-dot" /> Paused
                 </span>
               ) : null}
-              <span
-                className="k-chunk-pill"
-                title={`Sent in batches of ${CHUNK_FILES} so a large drop cannot time out`}
-              >
-                {chunk
-                  ? `batch ${chunk.index} of ${chunk.total}`
-                  : `${fmtInt(chunksTotal)} ${chunksTotal === 1 ? 'batch' : 'batches'}`}
-              </span>
+              {/* No batch count or batch size on screen: chunking is how the
+                  upload survives a gateway timeout, not something the adjuster
+                  chose, and "1 of 1 · 20 photos" on a one-photo upload read as
+                  a miscount. Progress is told in photos. */}
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -490,8 +484,8 @@ export default function PhotoUpload({
                   className={'k-btn k-btn--ghost' + (paused ? ' k-btn--active' : '')}
                   title={
                     paused
-                      ? 'Resume sending the remaining batches'
-                      : 'Finish the batch in flight, then stop before the next one'
+                      ? 'Resume sending the remaining photos'
+                      : 'Finish the photos already sending, then stop'
                   }
                   onClick={() => {
                     pausedRef.current = !pausedRef.current
@@ -601,7 +595,7 @@ export default function PhotoUpload({
               <div className="k-reject-hd">
                 <Icon d={I.warn} size={14} />
                 <span className="k-reject-t">
-                  {shortAcks} {shortAcks === 1 ? 'batch' : 'batches'} came back short
+                  Some photos weren’t confirmed
                 </span>
               </div>
               <div className="k-reject-ft">
@@ -701,9 +695,9 @@ export default function PhotoUpload({
                   : chunk && retrying
                     ? // A transient failure is being retried, not ignored: say so,
                       // or a backoff wait of a few seconds reads as a frozen upload.
-                      `Batch ${chunk.index} of ${chunk.total} didn’t go through — retrying (try ${retrying.attempt} of ${retrying.of})`
+                      `Connection hiccup — retrying (try ${retrying.attempt} of ${retrying.of})`
                     : chunk
-                      ? `Uploading batch ${chunk.index} of ${chunk.total} · ${fmtInt(CHUNK_FILES)} photos`
+                      ? `Uploading ${fmtInt(sendable.length)} ${sendable.length === 1 ? 'photo' : 'photos'}`
                       : sendable.length === 0
                         ? 'Nothing can be sent'
                         : sentCount > 0 && pendingCount > 0
@@ -729,11 +723,11 @@ export default function PhotoUpload({
 
             <input
               className="k-input"
-              placeholder="Room for this batch (optional)"
+              placeholder="Room for these photos (optional)"
               value={room}
               onChange={(e) => setRoom(e.target.value)}
               disabled={sending}
-              title="Rides to the worksheet's Room/Area column. One room per batch."
+              title="Fills the worksheet's Room/Area column for every photo in this upload"
               style={{ width: 220 }}
             />
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import Alert from '../components/Alert'
 import AppHeader from '../components/AppHeader'
 import Badge from '../components/Badge'
 import { I, Icon } from '../components/Icon'
@@ -362,20 +363,24 @@ export default function StagingPage() {
             <div style={EYEBROW}>After upload · before processing</div>
             <h1 style={H1}>Group &amp; stage photos</h1>
 
-            {data?.status === 'uploading' ? (
-              <div className="k-stage-bgupload">
-                <span className="k-paused-dot" />
-                <span>Photos are still landing — new sets appear as they arrive.</span>
-              </div>
-            ) : null}
+            {/* Spaced off the title above and the paragraph below: packed
+                together the three read as one block. */}
+            <div className="k-stage-alerts">
+              {data?.status === 'uploading' ? (
+                <Alert tone="neutral" title="Photos are still landing">
+                  New sets appear as they arrive.
+                </Alert>
+              ) : null}
 
-            {/* A second drop APPENDS: staging is scoped to THIS session only. */}
-            <div className="k-stage-scope">
-              <Icon d={I.info} size={13} />
-              <span>
-                Staging <strong>this batch only</strong> — {fmtInt(data?.photo_count ?? 0)} photos.
+              {/* A second drop APPENDS: staging is scoped to THIS session only. */}
+              <Alert
+                tone="info"
+                title={`Staging this upload only — ${fmtInt(data?.photo_count ?? 0)} ${
+                  (data?.photo_count ?? 0) === 1 ? 'photo' : 'photos'
+                }`}
+              >
                 Anything already processed on this claim stays as it is.
-              </span>
+              </Alert>
             </div>
 
             {/* The invitation to arrange sets is false once they are promoted --
