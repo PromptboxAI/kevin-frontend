@@ -126,7 +126,7 @@ export default function ProcessingPage() {
             <span className="k-mono" style={{ color: 'var(--k-fg)' }}>
               {fmtInt(total)}
             </span>
-            <span style={{ color: 'var(--k-fg-3)' }}> items priced</span>
+            <span style={{ color: 'var(--k-fg-3)' }}> {total === 1 ? 'item' : 'items'} priced</span>
           </h1>
 
           <p className="k-proc-sub">

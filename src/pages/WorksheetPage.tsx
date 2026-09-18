@@ -823,7 +823,7 @@ export default function WorksheetPage() {
           <div className="k-search">
             <Icon d={I.search} size={12} />
             <input
-              placeholder={`Search ${fmtInt(total)} items…`}
+              placeholder={`Search ${fmtInt(total)} ${total === 1 ? 'item' : 'items'}…`}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -1274,7 +1274,7 @@ export default function WorksheetPage() {
           <footer className="k-footer">
             <span>
               Showing <strong style={{ color: 'var(--k-fg-2)' }}>{fmtInt(visible.length)}</strong> of{' '}
-              {fmtInt(items.length)} items
+              {fmtInt(items.length)} {items.length === 1 ? 'item' : 'items'}
               {rows.isFetchingNextPage ? ' · loading more…' : ''}
               {' · '}
               {saving ? 'Saving…' : 'All changes saved'}
