@@ -3,6 +3,7 @@ import Seo from '../components/Seo'
 import { Link, useNavigate } from 'react-router-dom'
 import AuthShell from '../components/AuthShell'
 import { getSupabase } from '../lib/supabase'
+import Alert from '../components/Alert'
 
 /**
  * Screen 45 — Forgot password. Ported from `ForgotPassword` in
@@ -94,9 +95,7 @@ export default function ForgotPasswordPage() {
           />
         </div>
 
-        {error ? (
-          <div style={{ fontSize: 12.5, color: 'var(--k-danger)', lineHeight: 1.5 }}>{error}</div>
-        ) : null}
+        {error ? <Alert tone="error" className="k-alert--form">{error}</Alert> : null}
 
         <button
           type="submit"

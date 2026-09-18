@@ -11,6 +11,7 @@ import {
   strengthOf,
   toneFor,
 } from '../lib/password-rules'
+import Alert from '../components/Alert'
 
 /**
  * Screen 47 — Set a new password, reached from the emailed link. Ported from
@@ -206,11 +207,7 @@ export default function ResetPasswordPage() {
               </span>
             </label>
 
-            {error ? (
-              <div style={{ fontSize: 12.5, color: 'var(--k-danger)', lineHeight: 1.5 }}>
-                {error}
-              </div>
-            ) : null}
+            {error ? <Alert tone="error" className="k-alert--form">{error}</Alert> : null}
 
             <button
               type="submit"

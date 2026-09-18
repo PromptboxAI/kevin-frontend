@@ -7,6 +7,7 @@ import { Icon, I } from '../components/Icon'
 import { useAuth } from '../lib/auth'
 import { getSupabase } from '../lib/supabase'
 import { isAuthConfigured } from '../lib/env'
+import Alert from '../components/Alert'
 
 /**
  * Screen 00 — Sign in. Ported from `SignIn` in
@@ -178,11 +179,7 @@ export default function SignInPage() {
                   </span>
                 </label>
 
-                {error ? (
-                  <div style={{ fontSize: 12.5, color: 'var(--k-danger)', lineHeight: 1.5 }}>
-                    {error}
-                  </div>
-                ) : null}
+                {error ? <Alert tone="error" className="k-alert--form">{error}</Alert> : null}
 
                 <button
                   type="submit"

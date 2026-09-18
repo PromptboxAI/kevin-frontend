@@ -5,6 +5,7 @@ import { I, Icon } from '../components/Icon'
 import KevinWordmark from '../components/KevinWordmark'
 import { useAuth } from '../lib/auth'
 import { isAuthConfigured } from '../lib/env'
+import Alert from '../components/Alert'
 
 /**
  * Screen 58 — Create account (/sign-up). Ported from `AccountCreate` in
@@ -303,7 +304,7 @@ export default function SignUpPage() {
                     ))}
                   </div>
                 </AccField>
-                {error && <div className="k-signup-error">{error}</div>}
+                {error && <Alert tone="error" className="k-alert--form">{error}</Alert>}
                 <button
                   className="k-btn k-btn--lg"
                   style={{ width: '100%', justifyContent: 'center' }}
@@ -343,8 +344,8 @@ export default function SignUpPage() {
                     }}
                   />
                 </AccField>
-                {error && <div className="k-signup-error">{error}</div>}
-                {notice && <div className="k-signup-notice">{notice}</div>}
+                {error && <Alert tone="error" className="k-alert--form">{error}</Alert>}
+                {notice && <Alert tone="success" className="k-alert--form">{notice}</Alert>}
                 <button
                   className="k-btn k-btn--lg"
                   style={{ width: '100%', justifyContent: 'center' }}

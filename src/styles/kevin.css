@@ -5093,21 +5093,6 @@
        error state — a prototype form never fails — but a real signUp returns
        "User already registered", a weak-password rejection, or a bad code, and
        those have to land next to the field that caused them. */
-    .k-signup-error, .k-signup-notice {
-      font-size: 12.5px; line-height: 1.5; padding: 10px 12px; border-radius: 8px;
-    }
-    .k-signup-error {
-      color: var(--k-danger);
-      /* No --k-danger-soft token exists; this is the same 6% wash
-         .k-btn--danger:hover already uses, so the palette holds. */
-      background: oklch(0.58 0.19 25 / 0.06);
-      border: 1px solid oklch(0.62 0.19 25 / 0.28);
-    }
-    .k-signup-notice {
-      color: var(--k-fg-2); background: var(--k-bg-2);
-      border: 1px solid var(--k-line);
-    }
-
     /* ══ Mobile overhaul ═══════════════════════════════════════════════
        The landing page ran 10,500px on a 375x812 phone — 12.9 screens
        before the final CTA. Three changes below: the hero owns screen one
@@ -5446,6 +5431,12 @@
        sentence will not fit — the glyph carries it there and the alt text
        carries it for a screen reader. */
     .k-demo-result-img.k-demo-shot--none .k-demo-shot-note { display: none; }
+
+    /* An Alert inside an auth form lines up with the fields and the button
+       around it. The base .k-alert carries a 16px side margin for page-width
+       app banners (src/index.css, core-product's); two classes beat it
+       whatever order the stylesheets load in. */
+    .k-alert.k-alert--form { margin: 0; }
 
     /* — 2 · Condensed vertical rhythm —
        Desktop padding (72-88px blocks) reads as luxury on a 1440px canvas
