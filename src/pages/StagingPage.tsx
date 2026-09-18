@@ -500,7 +500,7 @@ export default function StagingPage() {
             </>
           ) : (
             <>
-              Showing <strong>{fmtInt(groups.length)}</strong> sets · {fmtInt(groups.length)}{' '}
+              Showing <strong>{fmtInt(groups.length)}</strong> {groups.length === 1 ? 'set' : 'sets'} · {fmtInt(groups.length)}{' '}
               proposed by Kevin
               <span style={{ color: 'var(--k-fg-4)' }}>
                 {' '}
@@ -667,7 +667,7 @@ export default function StagingPage() {
               disabled={!canProcess}
               onClick={() => setConfirmProcess(true)}
             >
-              Begin processing · {fmtInt(itemSets.length)} sets →
+              Begin processing · {fmtInt(itemSets.length)} {itemSets.length === 1 ? 'set' : 'sets'} →
             </button>
           )}
         </div>
@@ -876,7 +876,7 @@ export default function StagingPage() {
               <div>
                 <div className="k-notemodal-t">Begin processing?</div>
                 <div className="k-notemodal-s">
-                  {fmtInt(itemSets.length)} sets · one line item each
+                  {fmtInt(itemSets.length)} {itemSets.length === 1 ? 'set' : 'sets'} · one line item each
                 </div>
               </div>
               <button
@@ -893,7 +893,7 @@ export default function StagingPage() {
               {/* Process is never blocked: the label states the cost, and one
                   confirm makes it deliberate. */}
               <p className="k-notemodal-lede">
-                Each of the {fmtInt(itemSets.length)} sets is identified and priced once. Excluded
+                {itemSets.length === 1 ? 'The set is' : `Each of the ${fmtInt(itemSets.length)} sets is`} identified and priced once. Excluded
                 and duplicate sets promote nothing — their photos stay on the claim.
               </p>
               {stillExtracting.length ? (
@@ -929,7 +929,7 @@ export default function StagingPage() {
                 disabled={process.isPending}
                 onClick={() => process.mutate()}
               >
-                {process.isPending ? 'Processing…' : `Process ${fmtInt(itemSets.length)} sets`}
+                {process.isPending ? 'Processing…' : `Process ${fmtInt(itemSets.length)} ${itemSets.length === 1 ? 'set' : 'sets'}`}
               </button>
             </div>
           </div>
