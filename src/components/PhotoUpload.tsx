@@ -45,10 +45,19 @@ const fmtMB = (bytes: number) =>
 export default function PhotoUpload({
   claimId,
   lockedReason,
+  ensureClaim,
   onStaged,
 }: {
   claimId: string | null
   lockedReason?: string
+  /**
+   * Creates the claim on the first Upload when it does not exist yet, and
+   * returns its id -- or throws with the words to show. With this set the
+   * drop zone is live from the start: an adjuster who clicked New claim has
+   * already started one, and a locked zone told them to "create the claim
+   * first" with no way to see how.
+   */
+  ensureClaim?: () => Promise<string>
   onStaged?: () => void
 }) {
   const fileRef = useRef<HTMLInputElement>(null)
@@ -73,7 +82,7 @@ export default function PhotoUpload({
   const pausedRef = useRef(false)
   const [paused, setPaused] = useState(false)
 
-  const locked = claimId === null
+  const locked = claimId === null && !ensureClaim
 
   const sendable = useMemo(
     () => rows.filter((r) => r.status !== 'fail' && r.status !== 'skip'),
@@ -130,15 +139,26 @@ export default function PhotoUpload({
     )
 
   const startUpload = async () => {
-    if (!claimId) return
+    if (!claimId && !ensureClaim) return
     setSending(true)
     setError(null)
     pausedRef.current = false
     setPaused(false)
 
+    let id = claimId
+    if (!id) {
+      try {
+        id = await ensureClaim!()
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Could not create the claim.')
+        setSending(false)
+        return
+      }
+    }
+
     try {
       // Idempotent -- a re-click or a flaky-wifi retry never spawns duplicates.
-      await startStagingSession(claimId)
+      await startStagingSession(id)
 
       /**
        * Only rows still PENDING. `sendable` also holds rows already done or
@@ -153,7 +173,7 @@ export default function PhotoUpload({
       const sendWithRetry = async (batch: File[]) => {
         for (let attempt = 1; ; attempt += 1) {
           try {
-            return await uploadStagingPhotos(claimId, batch, room || undefined)
+            return await uploadStagingPhotos(id, batch, room || undefined)
           } catch (err) {
             // fetch rejects with a TypeError on a network drop: no status.
             const status = err instanceof ApiError ? err.status : undefined

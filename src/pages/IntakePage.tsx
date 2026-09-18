@@ -65,6 +65,22 @@ class ProjectNameTaken extends Error {
  * such claim's header reads "DOL —". A field left blank here prints blank on
  * the carrier-facing export.
  */
+/**
+ * Common policy forms, offered as a list on a free-text field -- the design's
+ * control is a text input, and a carrier's own form name must still fit.
+ */
+const POLICY_FORMS = [
+  'HO-2 · Broad form',
+  'HO-3 · Special form',
+  'HO-4 · Renters',
+  'HO-5 · Comprehensive',
+  'HO-6 · Condo',
+  'HO-8 · Modified coverage',
+  'DP-1 · Basic dwelling',
+  'DP-2 · Broad dwelling',
+  'DP-3 · Special dwelling',
+]
+
 export default function IntakePage() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
@@ -88,7 +104,7 @@ export default function IntakePage() {
    */
   const [street, setStreet] = useState('')
   const [city, setCity] = useState('')
-  const [state, setState] = useState('NY')
+  const [state, setState] = useState('')
   const [zip, setZip] = useState('')
   const [policyForm, setPolicyForm] = useState('')
   /**
@@ -238,6 +254,27 @@ export default function IntakePage() {
       ),
   })
 
+  /** The Upload button's way in when the claim does not exist yet. */
+  const ensureClaim = async (): Promise<string> => {
+    if (created) return created
+    if (claimId === '') {
+      // The project name is the form's first input.
+      document.querySelector<HTMLInputElement>('.k-intake-form input')?.focus()
+      throw new Error('Add a project name under Claim details first — it’s how you’ll find this claim in My claims.')
+    }
+    if (!canSubmit) {
+      throw new Error('Fix the highlighted fields under Claim details, then upload again.')
+    }
+    setError(null)
+    try {
+      return (await create.mutateAsync()).claim_id
+    } catch {
+      // onError has written the reason next to the form; repeat it here, where
+      // the adjuster is looking.
+      throw new Error('Could not create the claim — see Claim details above.')
+    }
+  }
+
   return (
     <div className="k-intake">
       <AppHeader />
@@ -314,14 +351,12 @@ export default function IntakePage() {
               label="Insured — first name"
               value={insuredFirst}
               width={200}
-              placeholder="Kevin"
               onChange={setInsuredFirst}
             />
             <IntakeField
               label="Insured — last name"
               value={insuredLast}
               width={200}
-              placeholder="Godfrey"
               onChange={setInsuredLast}
               hint={insuredName ? `Stored as “${insuredName}”` : undefined}
             />
@@ -331,14 +366,12 @@ export default function IntakePage() {
               label="Loss address"
               value={street}
               width={260}
-              placeholder="123 Main St."
               onChange={setStreet}
             />
             <IntakeField
               label="City"
               value={city}
               width={160}
-              placeholder="Smithtown"
               onChange={setCity}
             />
             <IntakeSelect
@@ -347,13 +380,21 @@ export default function IntakePage() {
               options={US_STATES}
               width={92}
               onChange={setState}
-            />
+            >
+              {/* Blank until chosen: a preset state is sample data that
+                  quietly lands on the export if nobody changes it. */}
+              <option value="">—</option>
+              {US_STATES.map((st) => (
+                <option key={st} value={st}>
+                  {st}
+                </option>
+              ))}
+            </IntakeSelect>
             <IntakeField
               label="Loss ZIP"
               value={zip}
               mono
               width={120}
-              placeholder="11787"
               onChange={(v) => setZip(v.replace(/[^0-9]/g, '').slice(0, 5))}
               hint={
                 zipTax
@@ -370,7 +411,6 @@ export default function IntakePage() {
               value={claimNumber}
               mono
               width={220}
-              placeholder="CLM-2026-04412"
               onChange={setClaimNumber}
             />
             <IntakeField
@@ -378,7 +418,6 @@ export default function IntakePage() {
               value={policyNumber}
               mono
               width={200}
-              placeholder="942178036"
               onChange={setPolicyNumber}
             />
             <IntakeField
@@ -394,7 +433,6 @@ export default function IntakePage() {
               label="Cause of loss"
               value={lossType}
               width={200}
-              placeholder="Kitchen fire"
               onChange={setLossType}
             />
 
@@ -422,7 +460,7 @@ export default function IntakePage() {
               value={ppLimit}
               mono
               width={180}
-              placeholder="$175,000"
+              placeholder="$0"
               invalid={ppLimitInvalid}
               onChange={setPpLimit}
               hint={ppLimitInvalid ? 'Enter an amount, e.g. 175000' : 'Warns when the inventory nears it'}
@@ -443,8 +481,9 @@ export default function IntakePage() {
               label="Policy form"
               value={policyForm}
               width={200}
-              placeholder="HO-3 · Open perils"
+              suggestions={POLICY_FORMS}
               onChange={setPolicyForm}
+              hint="Pick a common form or type your own"
             />
             {/* 5 — who prepared it. Last because it is the one block that
                 repeats across a book of claims, and the suggestions make it
@@ -453,7 +492,6 @@ export default function IntakePage() {
               label="Prepared by"
               value={estimatorName}
               width={220}
-              placeholder="Mariana Reyes"
               suggestions={recentEstimator}
               onChange={setEstimatorName}
               hint={
@@ -466,7 +504,6 @@ export default function IntakePage() {
               label="Firm / business"
               value={businessName}
               width={240}
-              placeholder="Reyes Adjusting"
               suggestions={recentBusiness}
               onChange={setBusinessName}
               hint={
@@ -479,7 +516,6 @@ export default function IntakePage() {
               label="Carrier / agency"
               value={carrier}
               width={240}
-              placeholder="Allstate"
               onChange={setCarrier}
             />
           </div>
@@ -501,9 +537,12 @@ export default function IntakePage() {
 
           {/* The drop zone always renders; before the claim exists it is inert
               with the reason as an overlay, not replaced by a line of text. */}
+          {/* Live from the start. Photos stage against a claim, so the first
+              Upload creates it from the details above -- the adjuster started
+              the claim by clicking New claim and never has a separate step. */}
           <PhotoUpload
             claimId={created}
-            lockedReason="Create the claim first — photos are staged against it"
+            ensureClaim={ensureClaim}
             onStaged={() => navigate(`/claims/${created}/staging`)}
           />
         </section>
