@@ -10,7 +10,7 @@ import { ApiError, api } from '../lib/api'
 import { isValidClaimId, parseMoney, slugify, toIsoDate } from '../lib/claim-id'
 import { COVERAGE_LABELS, US_STATES } from '../lib/us-states'
 import { useTaxRate } from '../lib/tax-rate'
-import { pct, taxPlanFor } from '../lib/tax-rate-rules'
+import { taxPlanFor } from '../lib/tax-rate-rules'
 import {
   RECENT_BUSINESS,
   RECENT_ESTIMATOR,
@@ -350,7 +350,6 @@ export default function IntakePage() {
               label="Project name"
               value={projectName}
               width={320}
-              placeholder="GODFREY-KITCHEN_FIRE"
               onChange={setProjectName}
               invalid={name !== '' && (claimId === '' || !idValid)}
               hint={
@@ -413,9 +412,7 @@ export default function IntakePage() {
               width={120}
               onChange={(v) => setZip(v.replace(/[^0-9]/g, '').slice(0, 5))}
               hint={
-                taxAnswer?.zip === zip && typeof taxAnswer?.suggested_rate === 'number'
-                  ? `Suggests ${pct(taxAnswer.suggested_rate)}% — confirm below`
-                  : 'Suggests the sales tax rate'
+                'Sets the sales tax rate'
               }
             />
 
@@ -459,7 +456,9 @@ export default function IntakePage() {
               onAdd={() => setJurOpen(true)}
               width={300}
               onChange={setTaxChoice}
-              hint={taxUnconfirmed ? `Required · ${taxPlan.hint}` : taxPlan.hint}
+              // Only an ambiguous ZIP has something to say here: which side
+              // of the line. A resolved rate is what it is (owner, 2026-09-18).
+              hint={taxUnconfirmed ? taxPlan.hint : undefined}
             />
             <IntakeSelect
               label="Contents coverage label"

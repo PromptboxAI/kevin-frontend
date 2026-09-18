@@ -5,10 +5,10 @@
  * lib/tax-rate.ts; this decides only the options and the words.
  *
  * The contract's three rules (FRONTEND.md, "GET /v1/tax-rate"):
- *  1. `confirm_required` is always true: a ZIP is a delivery route, not a tax
- *     boundary, so the suggestion is never prefilled-and-forgotten. The select
- *     opens on a "Choose to confirm" row that sends nothing; the adjuster
- *     picks the rate, with the jurisdictions shown as its justification.
+ *  1. `confirm_required` is always true on the payload. OWNER'S DECISION,
+ *     2026-09-18: the table is the USPS-sourced rate list, so a resolved rate
+ *     is selected as-is -- no "choose to confirm" step. The select still lets
+ *     the adjuster change it.
  *  2. `suggested_rate: null` is a normal answer (the endpoint is always 200).
  *  3. An ambiguous ZIP gets its `rate_range` ends, never a midpoint -- a
  *     midpoint is a rate nobody charges.
@@ -106,12 +106,11 @@ export function taxPlanFor(
       : zip
     return {
       options: [
-        { label: `Choose to confirm — suggested ${rate}%`, rate: null },
         { label: `${where}${answer.state ? `, ${answer.state}` : ''} (${zip}) · ${rate}%`, rate },
         NO_TAX,
       ],
-      hint: `Suggested from the ZIP — confirm it matches the loss address${asOf}${stale}`,
-      needsChoice: true,
+      hint: `${asOf}${stale}`.replace(/^ · /, ''),
+      needsChoice: false,
     }
   }
 
