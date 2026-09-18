@@ -346,6 +346,15 @@ export default function StagingPage() {
     )
   }
 
+  /**
+   * Begin processing PROCESSES. Owner, 2026-09-18: a confirm that only
+   * restated the set count the page already shows was a second click for
+   * nothing. The dialog now appears only when photos would be left out --
+   * still being read, or in no set -- which the page does not make obvious.
+   */
+  const leftOut = stillExtracting.length + loose.length
+  const beginProcessing = () => (leftOut ? setConfirmProcess(true) : process.mutate())
+
   const noteTarget = noteFor ? byKey(noteFor) : null
   const lightboxSet = lightbox ? byKey(lightbox.key) : null
 
@@ -445,10 +454,10 @@ export default function StagingPage() {
             <button
               type="button"
               className="k-btn"
-              disabled={!canProcess}
-              onClick={() => setConfirmProcess(true)}
+              disabled={!canProcess || process.isPending}
+              onClick={beginProcessing}
             >
-              Begin processing →
+              {process.isPending ? 'Processing…' : 'Begin processing →'}
             </button>
               </>
             )}
@@ -664,10 +673,12 @@ export default function StagingPage() {
             <button
               type="button"
               className="k-btn k-btn--lg"
-              disabled={!canProcess}
-              onClick={() => setConfirmProcess(true)}
+              disabled={!canProcess || process.isPending}
+              onClick={beginProcessing}
             >
-              Begin processing · {fmtInt(itemSets.length)} {itemSets.length === 1 ? 'set' : 'sets'} →
+              {process.isPending
+                ? 'Processing…'
+                : `Begin processing · ${fmtInt(itemSets.length)} ${itemSets.length === 1 ? 'set' : 'sets'} →`}
             </button>
           )}
         </div>
@@ -869,14 +880,18 @@ export default function StagingPage() {
         })()
       ) : null}
 
+      {/* Only when photos would be left out (see beginProcessing). */}
       {confirmProcess ? (
         <div className="k-stage-noteover" onClick={() => setConfirmProcess(false)}>
-          <div className="k-notemodal" onClick={(e) => e.stopPropagation()}>
+          <div className="k-notemodal k-procmodal" onClick={(e) => e.stopPropagation()}>
             <div className="k-notemodal-hd">
               <div>
-                <div className="k-notemodal-t">Begin processing?</div>
-                <div className="k-notemodal-s">
-                  {fmtInt(itemSets.length)} {itemSets.length === 1 ? 'set' : 'sets'} · one line item each
+                <div className="k-notemodal-t">
+                  {leftOut === 1 ? '1 photo won’t be processed' : `${fmtInt(leftOut)} photos won’t be processed`}
+                </div>
+                <div className="k-procmodal-s">
+                  The other {fmtInt(itemSets.length)} {itemSets.length === 1 ? 'set is' : 'sets are'}{' '}
+                  ready to become line items.
                 </div>
               </div>
               <button
@@ -889,39 +904,42 @@ export default function StagingPage() {
               </button>
             </div>
 
-            <div className="k-notemodal-body">
-              {/* Process is never blocked: the label states the cost, and one
-                  confirm makes it deliberate. */}
-              <p className="k-notemodal-lede">
-                {itemSets.length === 1 ? 'The set is' : `Each of the ${fmtInt(itemSets.length)} sets is`} identified and priced once. Excluded
-                and duplicate sets promote nothing — their photos stay on the claim.
-              </p>
+            <div className="k-procmodal-body">
               {stillExtracting.length ? (
-                <p className="k-notemodal-lede">
-                  Kevin has not finished reading <strong>{fmtInt(stillExtracting.length)}</strong>{' '}
-                  {stillExtracting.length === 1 ? 'photo' : 'photos'}. Processing now leaves{' '}
-                  {stillExtracting.length === 1 ? 'it' : 'them'} off the worksheet —{' '}
-                  {stillExtracting.length === 1 ? 'it stays' : 'they stay'} on the claim. Waiting a
-                  moment lets {stillExtracting.length === 1 ? 'it' : 'them'} be grouped.
-                </p>
+                <Alert
+                  tone="wait"
+                  title={
+                    stillExtracting.length === 1
+                      ? 'Kevin is still reading 1 photo'
+                      : `Kevin is still reading ${fmtInt(stillExtracting.length)} photos`
+                  }
+                >
+                  Processing now leaves {stillExtracting.length === 1 ? 'it' : 'them'} off the
+                  worksheet. Wait a moment and {stillExtracting.length === 1 ? 'it' : 'they'} can
+                  be grouped.
+                </Alert>
               ) : null}
               {loose.length ? (
-                <p className="k-notemodal-lede">
-                  <strong>{fmtInt(loose.length)}</strong>{' '}
-                  {loose.length === 1 ? 'photo is' : 'photos are'} in no set and will reach no line
-                  item. Group {loose.length === 1 ? 'it' : 'them'} first to include{' '}
-                  {loose.length === 1 ? 'it' : 'them'}.
-                </p>
+                <Alert
+                  tone="info"
+                  title={
+                    loose.length === 1 ? '1 photo isn’t in a set' : `${fmtInt(loose.length)} photos aren’t in a set`
+                  }
+                >
+                  {loose.length === 1 ? 'It' : 'They'} won’t become a line item. Group{' '}
+                  {loose.length === 1 ? 'it' : 'them'} first to include {loose.length === 1 ? 'it' : 'them'}.
+                </Alert>
               ) : null}
+              <p className="k-procmodal-note">Nothing is deleted — every photo stays on the claim.</p>
             </div>
 
-            <div className="k-notemodal-ft" style={{ justifyContent: 'flex-end', marginTop: 0 }}>
+            <div className="k-procmodal-ft">
               <button
                 type="button"
                 className="k-btn k-btn--ghost"
                 onClick={() => setConfirmProcess(false)}
               >
-                {stillExtracting.length ? 'Wait for them' : 'Go back'}
+                {stillExtracting.length ? 'Wait for them' : 'Go back and group'}
               </button>
               <button
                 type="button"
@@ -929,7 +947,7 @@ export default function StagingPage() {
                 disabled={process.isPending}
                 onClick={() => process.mutate()}
               >
-                {process.isPending ? 'Processing…' : `Process ${fmtInt(itemSets.length)} ${itemSets.length === 1 ? 'set' : 'sets'}`}
+                {process.isPending ? 'Processing…' : 'Process anyway'}
               </button>
             </div>
           </div>
