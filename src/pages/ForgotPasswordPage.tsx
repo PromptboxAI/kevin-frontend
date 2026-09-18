@@ -95,7 +95,7 @@ export default function ForgotPasswordPage() {
           />
         </div>
 
-        {error ? <Alert tone="error" className="k-alert--form">{error}</Alert> : null}
+        {error ? <Alert tone="error">{error}</Alert> : null}
 
         <button
           type="submit"

@@ -5432,12 +5432,6 @@
        carries it for a screen reader. */
     .k-demo-result-img.k-demo-shot--none .k-demo-shot-note { display: none; }
 
-    /* An Alert inside an auth form lines up with the fields and the button
-       around it. The base .k-alert carries a 16px side margin for page-width
-       app banners (src/index.css, core-product's); two classes beat it
-       whatever order the stylesheets load in. */
-    .k-alert.k-alert--form { margin: 0; }
-
     /* — 2 · Condensed vertical rhythm —
        Desktop padding (72-88px blocks) reads as luxury on a 1440px canvas
        and as dead air on a 375px one. Roughly halved below 768px. */

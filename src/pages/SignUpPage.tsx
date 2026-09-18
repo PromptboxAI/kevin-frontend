@@ -304,7 +304,7 @@ export default function SignUpPage() {
                     ))}
                   </div>
                 </AccField>
-                {error && <Alert tone="error" className="k-alert--form">{error}</Alert>}
+                {error && <Alert tone="error">{error}</Alert>}
                 <button
                   className="k-btn k-btn--lg"
                   style={{ width: '100%', justifyContent: 'center' }}
@@ -344,8 +344,8 @@ export default function SignUpPage() {
                     }}
                   />
                 </AccField>
-                {error && <Alert tone="error" className="k-alert--form">{error}</Alert>}
-                {notice && <Alert tone="success" className="k-alert--form">{notice}</Alert>}
+                {error && <Alert tone="error">{error}</Alert>}
+                {notice && <Alert tone="success">{notice}</Alert>}
                 <button
                   className="k-btn k-btn--lg"
                   style={{ width: '100%', justifyContent: 'center' }}
