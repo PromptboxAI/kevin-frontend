@@ -966,54 +966,58 @@ export default function WorksheetPage() {
         </div>
       ) : null}
 
-      {/* Capacity waits are a state, not a failure: neutral, never amber or
-          red (rule 12b). No close control -- the alert goes when the lines
-          price, and hiding it would lose track of unpriced work. */}
-      {strandedTotal > 0 ? (
-        <Alert
-          tone="neutral"
-          title={`${fmtInt(strandedTotal)} line${strandedTotal === 1 ? ' is' : 's are'} waiting on a retry`}
-          action={
-            <button
-              type="button"
-              className={`k-btn k-btn--sm${retryAsk.soften ? ' k-btn--ghost' : ''}`}
-              disabled={retryPreview.isPending || retryRun.isPending}
-              onClick={() => retryPreview.mutate()}
-              title="Check what would re-run, then confirm"
+      {strandedTotal > 0 || toDescribe ? (
+        <div className="k-alert-stack">
+          {/* Capacity waits are a state, not a failure: neutral, never amber or
+              red (rule 12b). No close control -- the alert goes when the lines
+              price, and hiding it would lose track of unpriced work. */}
+          {strandedTotal > 0 ? (
+            <Alert
+              tone="neutral"
+              title={`${fmtInt(strandedTotal)} line${strandedTotal === 1 ? ' is' : 's are'} waiting on a retry`}
+              action={
+                <button
+                  type="button"
+                  className={`k-btn k-btn--sm${retryAsk.soften ? ' k-btn--ghost' : ''}`}
+                  disabled={retryPreview.isPending || retryRun.isPending}
+                  onClick={() => retryPreview.mutate()}
+                  title="Check what would re-run, then confirm"
+                >
+                  {retryPreview.isPending ? 'Checking…' : retryAsk.label}
+                </button>
+              }
             >
-              {retryPreview.isPending ? 'Checking…' : retryAsk.label}
-            </button>
-          }
-        >
-          Pricing was paused, not a problem with these items.
-          {/* Per reason, in the order they unstick. Never merged: a provider
-              outage and today's capacity clear on different clocks. */}
-          {strandedLines.length > 0 ? ` ${strandedLines.map((l) => l.text).join(' · ')}.` : ''}
-          {retryAsk.hint ? ` ${retryAsk.hint}` : ''}
-        </Alert>
-      ) : null}
+              Pricing was paused, not a problem with these items.
+              {/* Per reason, in the order they unstick. Never merged: a provider
+                  outage and today's capacity clear on different clocks. */}
+              {strandedLines.length > 0 ? ` ${strandedLines.map((l) => l.text).join(' · ')}.` : ''}
+              {retryAsk.hint ? ` ${retryAsk.hint}` : ''}
+            </Alert>
+          ) : null}
 
-      {/* Its own alert, never folded into the count above: Retry will not
-          price these now or after any recovery. Someone has to type. */}
-      {toDescribe ? (
-        <Alert
-          tone="info"
-          title={toDescribe}
-          action={
-            status !== 'needs_manual' ? (
-              <button
-                type="button"
-                className="k-btn k-btn--sm k-btn--ghost"
-                onClick={() => setStatus('needs_manual')}
-                title="Filter to unpriced rows; the ones missing a description have a blank Description cell"
-              >
-                Show unpriced
-              </button>
-            ) : undefined
-          }
-        >
-          Retry can’t run a line with no description — each one needs what the item is typed in first.
-        </Alert>
+          {/* Its own alert, never folded into the count above: Retry will not
+              price these now or after any recovery. Someone has to type. */}
+          {toDescribe ? (
+            <Alert
+              tone="info"
+              title={toDescribe}
+              action={
+                status !== 'needs_manual' ? (
+                  <button
+                    type="button"
+                    className="k-btn k-btn--sm k-btn--ghost"
+                    onClick={() => setStatus('needs_manual')}
+                    title="Filter to unpriced rows; the ones missing a description have a blank Description cell"
+                  >
+                    Show unpriced
+                  </button>
+                ) : undefined
+              }
+            >
+              Retry can’t run a line with no description — each one needs what the item is typed in first.
+            </Alert>
+          ) : null}
+        </div>
       ) : null}
 
       {selected.size > 0 ? (

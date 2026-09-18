@@ -308,6 +308,7 @@ export default function ClaimsPage() {
 
         {stranded ? (
           <Alert
+            className="k-alert--inset"
             tone={stranded.total > 0 ? 'neutral' : 'info'}
             title={stranded.total > 0 ? 'Lines waiting on a retry' : 'Lines waiting on a description'}
             action={
@@ -326,6 +327,7 @@ export default function ClaimsPage() {
 
         {notice ? (
           <Alert
+            className="k-alert--inset"
             tone={notice.error ? 'error' : 'success'}
             title={notice.error ? 'That didn’t go through' : undefined}
             onDismiss={() => setNoticeState(null)}
@@ -337,7 +339,7 @@ export default function ClaimsPage() {
         {isPending ? <p className="k-note">Loading claims…</p> : null}
 
         {error ? (
-          <Alert tone="error" title="Couldn’t load claims">
+          <Alert tone="error" className="k-alert--inset" title="Couldn’t load claims">
             The list didn’t come back
             {error instanceof ApiError ? ` (HTTP ${error.status})` : ''}. Reload the page to try again.
           </Alert>

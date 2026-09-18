@@ -1745,7 +1745,9 @@ button.k-avatar-menu-item {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  margin: 0 16px;
+  /* No margin of its own: inside a form or a narrow column it lines up
+     with the fields. Page-width contexts opt into their inset below. */
+  margin: 0;
   padding: 11px 12px 12px 14px;
   border: 1px solid var(--k-line-2);
   border-radius: 8px;
@@ -1815,6 +1817,32 @@ button.k-avatar-menu-item {
 .k-alert--success .k-alert-ic { color: var(--k-alert-success-ic); }
 .k-alert--info { background: var(--k-alert-info-bg); border-color: var(--k-alert-info-line); }
 .k-alert--info .k-alert-ic { color: var(--k-accent); }
+
+/* Page-width alerts: the app's 16px gutter. */
+.k-alert.k-alert--inset { margin: 0 16px; }
+
+/* Several alerts above the grid: spaced from each other, from the toolbar
+   above and from the grid below, instead of touching. */
+.k-alert-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 16px;
+}
+
+/* A ghost button on a tinted panel all but disappears -- the 1px line-grey
+   edge is close to the tint itself. White fill and a darker edge keep it
+   readable as a button. */
+.k-alert .k-btn--ghost {
+  background: var(--k-bg);
+  border-color: var(--k-fg-4);
+  color: var(--k-fg);
+}
+
+.k-alert .k-btn--ghost:hover {
+  background: var(--k-bg-2);
+  border-color: var(--k-fg-3);
+}
 
 /* The service banner sits under the top bar with a little air. */
 .k-alert.k-alert--banner { margin: 8px 16px 0; }
