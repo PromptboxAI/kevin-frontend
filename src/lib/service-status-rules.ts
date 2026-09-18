@@ -45,7 +45,7 @@ export type StatusBanner = {
 
 /** Everything else keeps working during either pause (FRONTEND.md). */
 const STILL_WORKS = 'Uploads, edits and exports still work.'
-const RETRY = 'Lines added meanwhile are held, not lost; once pricing resumes, use Retry deferred on the claim to price them.'
+const RETRY = 'Lines added meanwhile are held, not lost — once pricing resumes, use Retry deferred on the claim.'
 
 function isServiceStatus(value: unknown): value is ServiceStatus {
   if (!value || typeof value !== 'object') return false
@@ -72,7 +72,7 @@ export function bannerFor(status: unknown, formatTime: (iso: string) => string):
       // Telling an adjuster to sit tight while that happens is what earns the
       // support ticket; saying it will be slow lets them plan the day.
       detail:
-        'Pricing is still running, but searches are slower than usual — a large claim will take noticeably longer to finish. Lines price as they land; nothing is lost.',
+        'Pricing is still running, just slower than usual — a large claim will take noticeably longer to finish. Nothing is lost.',
       tone: 'degraded',
     }
   }

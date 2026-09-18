@@ -1143,6 +1143,40 @@
   color: var(--k-bg);
 }
 
+/* Two lines, not one paragraph: the headline is what an adjuster needs at a
+   glance, the detail is for whoever reads on. */
+.k-ws-bar.k-status-bar {
+  align-items: flex-start;
+  padding: 11px 16px 12px 14px;
+}
+
+.k-status-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.k-status-h {
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.k-status-d {
+  font-size: 13px;
+  line-height: 1.45;
+  max-width: 92ch;
+  opacity: 0.94;
+}
+
+/* Centred on the headline's first line, not the block. */
+.k-ws-bar.k-status-bar .k-paused-dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 5px;
+}
+
 .k-ws-bar.k-status-bar .k-paused-dot {
   background: var(--k-bg);
 }

@@ -54,9 +54,12 @@ export default function ServiceStatusBanner() {
       aria-live="polite"
     >
       <span className="k-paused-dot" aria-hidden="true" />
-      <span>
-        <strong>{banner.message}</strong> {banner.detail}
-      </span>
+      {/* Headline and detail on their own lines: run together as one
+          paragraph they read as a wall of white on orange. */}
+      <div className="k-status-text">
+        <strong className="k-status-h">{banner.message}</strong>
+        <span className="k-status-d">{banner.detail}</span>
+      </div>
     </div>
   )
 }
