@@ -968,12 +968,12 @@ export default function WorksheetPage() {
 
       {strandedTotal > 0 || toDescribe ? (
         <div className="k-alert-stack">
-          {/* Capacity waits are a state, not a failure: neutral, never amber or
-              red (rule 12b). No close control -- the alert goes when the lines
+          {/* Capacity waits are a state, not a failure: the lemon wait tone, not
+              the special-limits amber or red (rule 12b). No close control -- the alert goes when the lines
               price, and hiding it would lose track of unpriced work. */}
           {strandedTotal > 0 ? (
             <Alert
-              tone="neutral"
+              tone="wait"
               title={`${fmtInt(strandedTotal)} line${strandedTotal === 1 ? ' is' : 's are'} waiting on a retry`}
               action={
                 <button

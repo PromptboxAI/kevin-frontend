@@ -308,7 +308,7 @@ export default function ClaimsPage() {
 
         {stranded ? (
           <Alert
-            tone={stranded.total > 0 ? 'neutral' : 'info'}
+            tone={stranded.total > 0 ? 'wait' : 'info'}
             title={stranded.total > 0 ? 'Lines waiting on a retry' : 'Lines waiting on a description'}
             action={
               <Link

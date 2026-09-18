@@ -13,13 +13,14 @@ import { I, Icon } from './Icon'
  *  - `error`    something failed and did not happen.
  *  - `success`  something the adjuster did landed.
  *  - `info`     something the adjuster can act on.
- *  - `neutral`  a state to know about, not a problem -- capacity waits live
- *               here (rule 12b: never an error, never amber).
+ *  - `neutral`  a state to know about, not a problem.
+ *  - `wait`     lines waiting on a retry. Lemon (hue 95), never the special-
+ *               limits amber (rule 6) and never an error (rule 12b).
  *
  * Toasts are not this: they overlay and auto-dismiss. Inline field errors are
  * not this either.
  */
-export type AlertTone = 'service' | 'error' | 'success' | 'info' | 'neutral'
+export type AlertTone = 'service' | 'error' | 'success' | 'info' | 'neutral' | 'wait'
 
 const TONE_ICON: Record<AlertTone, ReactNode> = {
   service: I.warn,
@@ -27,6 +28,7 @@ const TONE_ICON: Record<AlertTone, ReactNode> = {
   success: I.check,
   info: I.info,
   neutral: I.info,
+  wait: I.clock,
 }
 
 export default function Alert({

@@ -1816,6 +1816,8 @@ button.k-avatar-menu-item {
 .k-alert--success { background: var(--k-alert-success-bg); border-color: var(--k-alert-success-line); }
 .k-alert--success .k-alert-ic { color: var(--k-alert-success-ic); }
 .k-alert--info { background: var(--k-alert-info-bg); border-color: var(--k-alert-info-line); }
+.k-alert--wait { background: var(--k-alert-wait-bg); border-color: var(--k-alert-wait-line); }
+.k-alert--wait .k-alert-ic { color: var(--k-alert-wait-ic); }
 .k-alert--info .k-alert-ic { color: var(--k-accent); }
 
 /* Page-width alerts: the app's 16px gutter. */

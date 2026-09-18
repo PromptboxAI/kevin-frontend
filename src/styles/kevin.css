@@ -44,6 +44,11 @@
       --k-alert-info-bg:      oklch(0.955 0.028 245);
       --k-alert-info-line:    oklch(0.85 0.055 245);
       --k-alert-neutral-bg:   oklch(0.955 0.004 250);
+      /* Waiting: lemon, hue 95 -- clear of amber's 75, which stays special
+         limits (rule 6). Owner's call, 2026-09-18, for lines awaiting a retry. */
+      --k-alert-wait-bg:      oklch(0.97 0.06 98);
+      --k-alert-wait-line:    oklch(0.86 0.11 98);
+      --k-alert-wait-ic:      oklch(0.50 0.10 92);
     }
 
     * { box-sizing: border-box; }
