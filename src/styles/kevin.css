@@ -1446,7 +1446,12 @@
     /* ── Auth / sign-in ──────────────────────────────────────────── */
     .k-auth { width: 100%; height: 100%; display: grid; grid-template-columns: 1.05fr minmax(0, 1fr); background: var(--k-bg); }
     .k-auth-l { display: flex; flex-direction: column; }
-    .k-auth-l-body { padding: 40px 60px; flex: 1; max-width: 480px; }
+    /* Centred in the white column, both ways -- it sat pinned to the top-left
+       corner of a half-screen pane on desktop. */
+    .k-auth-l-body {
+      padding: 40px 60px; flex: 1; max-width: 480px; width: 100%; margin: 0 auto;
+      display: flex; flex-direction: column; justify-content: center;
+    }
     .k-auth-form { display: flex; flex-direction: column; gap: 14px; margin-top: 6px; }
     .k-auth-or { display: flex; align-items: center; gap: 12px; margin: 24px 0; color: var(--k-fg-4); font-size: 11px; }
     .k-auth-or::before, .k-auth-or::after { content: ''; flex: 1; height: 1px; background: var(--k-line); }
@@ -3712,7 +3717,7 @@
       /* Auth split → stack, drop the decorative brand panel */
       .k-auth { grid-template-columns: minmax(0, 1fr); height: auto; min-height: 100%; }
       .k-auth-r { display: none; }
-      .k-auth-l-body { padding: 32px 24px; max-width: none; }
+      .k-auth-l-body { padding: 32px 24px; max-width: none; justify-content: flex-start; }
       .k-auth-l-foot { padding: 20px 24px; flex-wrap: wrap; }
       /* Final CTA band */
       .k-cta { padding: 56px 20px; }
