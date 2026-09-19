@@ -300,7 +300,7 @@ export async function downloadExport(
  * says what it is waiting for, then navigates to the PDF's blob URL.
  * The API needs a bearer token, so the tab cannot simply load the API URL.
  */
-export async function printExport(claimId: string): Promise<void> {
+export async function printExport(claimId: string, options: ExportOptions = {}): Promise<void> {
   const tab = window.open('', '_blank')
   if (tab) {
     tab.opener = null
@@ -310,7 +310,13 @@ export async function printExport(claimId: string): Promise<void> {
   }
   let blob: Blob
   try {
-    ;({ blob } = await fetchBinary(`/v1/claims/${encodeURIComponent(claimId)}/export?format=pdf`))
+    const qs = new URLSearchParams({ format: 'pdf' })
+    // Same options as the download, so the preview is the document that saves.
+    if (options.contents && options.contents !== 'worksheet') {
+      qs.set('contents', options.contents)
+      qs.set('photos_per_page', String(options.photosPerPage ?? 2))
+    }
+    ;({ blob } = await fetchBinary(`/v1/claims/${encodeURIComponent(claimId)}/export?${qs.toString()}`))
   } catch (error) {
     tab?.close()
     throw error

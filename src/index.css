@@ -2032,3 +2032,13 @@ button.k-avatar-menu-item {
   color: var(--k-fg-2);
 }
 .k-intake-letterhead img { max-width: 110px; max-height: 56px; object-fit: contain; }
+
+/* Export page: the checks sit under the export controls, as notes. */
+.k-export-checks {
+  margin: 18px 0 8px;
+  padding: 16px 18px 18px;
+  border: 1px solid var(--k-line);
+  border-radius: 12px;
+  background: var(--k-bg);
+}
+.k-export-checklist { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }

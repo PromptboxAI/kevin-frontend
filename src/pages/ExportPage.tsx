@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
+import Alert from '../components/Alert'
 import Badge from '../components/Badge'
 import ClaimMissing from '../components/ClaimMissing'
 import ClaimTabs from '../components/ClaimTabs'
@@ -10,6 +11,7 @@ import {
   ApiError,
   api,
   downloadExport,
+  printExport,
   retryUnlessMissing,
   type PdfContents,
   type PhotosPerPage,
@@ -109,6 +111,29 @@ export default function ExportPage() {
     withInventory && withPhotos ? 'packet' : withPhotos ? 'photos' : 'worksheet'
 
   const wantsPhotos = format === 'pdf' && pdfContents !== 'worksheet'
+
+  /**
+   * The same document, opened in the browser's PDF viewer instead of saved --
+   * a look before it goes to a carrier or a client. It is the SERVER's PDF,
+   * not a rendering of our own, so what is reviewed is what downloads.
+   *
+   * Caveat: it is the same endpoint, so it stamps `exported_at` like any
+   * export (there is no non-stamping route yet; asked of the backend).
+   * Exports are repeatable, so a later one is simply a new version.
+   */
+  const preview = async () => {
+    setBusy(true)
+    setError(null)
+    setInfo(null)
+    try {
+      await printExport(claimId, wantsPhotos ? { contents: pdfContents, photosPerPage: perPage } : {})
+      void queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not open the preview.')
+    } finally {
+      setBusy(false)
+    }
+  }
 
   const run = async () => {
     setBusy(true)
@@ -227,67 +252,6 @@ export default function ExportPage() {
               </div>
             </section>
 
-            <section className="k-export-sec">
-              <div className="k-export-sec-h">
-                <span>Validation</span>
-                {items.length ? (
-                  <Badge tone={check.attention ? 'warn' : 'ok'} dot>
-                    {check.attention
-                      ? `${fmtInt(check.attention)} item${check.attention === 1 ? '' : 's'} need attention`
-                      : 'No issues'}
-                  </Badge>
-                ) : null}
-              </div>
-
-              {itemsPage.isPending ? <p className="k-note">Checking items…</p> : null}
-
-              {items.length ? (
-                <div className="k-validations">
-                  {check.unpriced.length > 0 ? (
-                    <Flag
-                      tone="warn"
-                      title={`${fmtInt(check.unpriced.length)} item${check.unpriced.length === 1 ? ' is' : 's are'} unpriced`}
-                      detail={`${names(check.unpriced)} — they count $0 toward the totals until you enter a value.`}
-                      to={`/claims/${claimId}`}
-                      action="Price them →"
-                    />
-                  ) : null}
-                  {check.noModel.length > 0 ? (
-                    <Flag
-                      tone="warn"
-                      title={`${fmtInt(check.noModel.length)} item${check.noModel.length === 1 ? '' : 's'} missing a model number`}
-                      detail={`${names(check.noModel)} — matched on the photo alone. A model number lets Kevin re-price against an exact match.`}
-                      to={`/claims/${claimId}`}
-                      action="Review →"
-                    />
-                  ) : null}
-                  {check.noClass.length > 0 ? (
-                    <Flag
-                      tone="warn"
-                      title={`${fmtInt(check.noClass.length)} item${check.noClass.length === 1 ? '' : 's'} without a content class`}
-                      detail={names(check.noClass)}
-                      to={`/claims/${claimId}`}
-                      action="Review →"
-                    />
-                  ) : (
-                    <Flag
-                      tone="ok"
-                      title={`All ${fmtInt(items.length)} items have a content class`}
-                    />
-                  )}
-                  <Flag
-                    tone={check.sourced === check.priced ? 'ok' : 'warn'}
-                    title={`Priced items with a source link: ${fmtInt(check.sourced)} of ${fmtInt(check.priced)}`}
-                  />
-                  {partial ? (
-                    <p className="k-note">
-                      Checked the first {fmtInt(items.length)} of {fmtInt(itemsPage.data?.count)}{' '}
-                      items.
-                    </p>
-                  ) : null}
-                </div>
-              ) : null}
-            </section>
           </div>
 
           {/* — Right: format + options — */}
@@ -407,6 +371,19 @@ export default function ExportPage() {
             <Link className="k-btn k-btn--ghost" to={`/claims/${claimId}`}>
               Back to worksheet
             </Link>
+            {/* PDF only: a browser cannot render a spreadsheet, and offering
+                a preview that downloads the file anyway would be a lie. */}
+            {format === 'pdf' ? (
+              <button
+                type="button"
+                className="k-btn k-btn--ghost"
+                disabled={busy || !c || c.status === 'processing'}
+                title="Opens the PDF in a new tab — the same document the download saves"
+                onClick={() => void preview()}
+              >
+                <Icon d={I.eye} size={12} /> Preview
+              </button>
+            ) : null}
             <button
               type="button"
               className="k-btn"
@@ -418,39 +395,83 @@ export default function ExportPage() {
             </button>
           </div>
         </div>
+
+        {/* Checks live BELOW the export, not above it (owner, 2026-09-19):
+            they are notes to read or ignore, never a gate (rule 16), and a
+            wall of grey text above the controls read as a blocked export. */}
+        {items.length ? (
+          <section className="k-export-checks">
+            <div className="k-export-sec-h">
+              <span>Before you send it</span>
+              <Badge tone={check.attention ? 'warn' : 'ok'} dot>
+                {check.attention
+                  ? `${fmtInt(check.attention)} to look at`
+                  : 'Nothing to flag'}
+              </Badge>
+            </div>
+
+            <div className="k-export-checklist">
+              {check.unpriced.length > 0 ? (
+                <Alert
+                  tone="wait"
+                  title={`${fmtInt(check.unpriced.length)} unpriced item${check.unpriced.length === 1 ? '' : 's'}`}
+                  action={
+                    <Link className="k-btn k-btn--sm k-btn--ghost" to={`/claims/${claimId}`}>
+                      Price them →
+                    </Link>
+                  }
+                >
+                  They count $0 toward the totals until you enter a value.
+                </Alert>
+              ) : null}
+
+              {check.noModel.length > 0 ? (
+                <Alert
+                  tone="info"
+                  title={`${fmtInt(check.noModel.length)} without a model number`}
+                  action={
+                    <Link className="k-btn k-btn--sm k-btn--ghost" to={`/claims/${claimId}`}>
+                      Review →
+                    </Link>
+                  }
+                >
+                  Matched on the photo alone. A model number prices against an exact match.
+                </Alert>
+              ) : null}
+
+              {check.noClass.length > 0 ? (
+                <Alert
+                  tone="info"
+                  title={`${fmtInt(check.noClass.length)} without a content class`}
+                  action={
+                    <Link className="k-btn k-btn--sm k-btn--ghost" to={`/claims/${claimId}`}>
+                      Review →
+                    </Link>
+                  }
+                >
+                  A class sets the depreciation schedule for the line.
+                </Alert>
+              ) : null}
+
+              {check.attention === 0 ? (
+                <Alert tone="success" title="Every line is priced and classed">
+                  Nothing needs your attention before this goes out.
+                </Alert>
+              ) : null}
+
+              {partial ? (
+                <p className="k-note" style={{ margin: 0 }}>
+                  Checked the first {fmtInt(items.length)} of {fmtInt(itemsPage.data?.count)} items.
+                </p>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
       </div>
     </div>
   )
 }
 
-function Flag({
-  tone,
-  title,
-  detail,
-  to,
-  action,
-}: {
-  tone: 'warn' | 'ok'
-  title: string
-  detail?: string
-  to?: string
-  action?: string
-}) {
-  return (
-    <div className={`k-val k-val--${tone}`}>
-      <Icon d={tone === 'ok' ? I.check : I.warn} size={14} />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div className="k-val-t">{title}</div>
-        {detail ? <div className="k-val-s">{detail}</div> : null}
-      </div>
-      {to && action ? (
-        <Link className="k-link" to={to}>
-          {action}
-        </Link>
-      ) : null}
-    </div>
-  )
-}
 
 /** The design's `.k-toggle` checkbox row (export.jsx "Include" list). */
 function Toggle({
@@ -512,7 +533,3 @@ function validate(items: ClaimItem[]) {
   }
 }
 
-function names(rows: ClaimItem[], n = 3): string {
-  const shown = rows.slice(0, n).map((r) => r.description?.trim() || 'Not identified')
-  return shown.join(' · ') + (rows.length > n ? ` · +${rows.length - n} more` : '')
-}
