@@ -16,7 +16,7 @@ import ProposalsPanel from '../components/ProposalsPanel'
 import RoomsPopover from '../components/RoomsPopover'
 import ClaimStateMenu from '../components/ClaimStateMenu'
 import { I, Icon } from '../components/Icon'
-import { ApiError, api, downloadExport, retryUnlessMissing, setAnonymousMode } from '../lib/api'
+import { ApiError, api, retryUnlessMissing, setAnonymousMode } from '../lib/api'
 import { SAMPLE_CLAIM_ID } from '../lib/worksheet-preview'
 import {
   DEPR_ERROR_COPY,
@@ -414,22 +414,8 @@ export default function WorksheetPage() {
       setNotice(error instanceof Error ? error.message : 'That edit was rejected.'),
   })
 
-  const [exporting, setExporting] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
   const [proposalsOpen, setProposalsOpen] = useState(false)
-
-  const runExport = async () => {
-    setExporting(true)
-    try {
-      await downloadExport(claimId, 'xlsx')
-      // Exporting stamps exported_at, so the derived status moves.
-      refresh()
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : 'Export failed.')
-    } finally {
-      setExporting(false)
-    }
-  }
 
   const addItem = useMutation({
     /**
@@ -738,24 +724,13 @@ export default function WorksheetPage() {
             >
               <Icon d={I.link} size={12} /> Share
             </button>
-            <button
-              type="button"
-              className="k-btn"
-              /* Exports are repeatable: a later one is simply a new version.
-                 Only a claim still processing has nothing settled to export. */
-              disabled={!claim.data || claim.data.status === 'processing' || exporting}
-              /* Straight to the download. A confirm used to stand in front of
-                 the FIRST export, warning that it dates the Proof of Loss
-                 (exported_at, still stamped server-side); removed by request. */
-              onClick={() => void runExport()}
-              title={
-                claim.data?.status === 'processing'
-                  ? 'Still processing — some lines have no price yet'
-                  : 'Download the XactContents .xlsx'
-              }
-            >
-              <Icon d={I.download} size={12} /> {exporting ? 'Preparing…' : 'Export'}
-            </button>
+            {/* One export path. This button used to download the .xlsx on the
+                spot while the Export TAB offered formats, photo packets and
+                per-claim options -- two different answers to the same word
+                (owner, 2026-09-19). */}
+            <Link className="k-btn" to={`/claims/${encodeURIComponent(claimId)}/export`}>
+              <Icon d={I.download} size={12} /> Export
+            </Link>
             {/* Finishing a claim happens while looking at it, not on the walk
                 back to the dashboard. */}
             {claim.data ? <ClaimStateMenu claim={claim.data} onNotice={setNotice} /> : null}

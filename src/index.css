@@ -707,6 +707,8 @@
 .k-claim-tab--todo:hover {
   cursor: default;
   color: var(--k-fg-4);
+  font-weight: 500;
+  border-bottom-color: transparent;
 }
 
 .k-claim-tab-soon {

@@ -2018,14 +2018,19 @@
       border-bottom: 1px solid var(--k-line);
       background: var(--k-bg);
     }
+    /* Contrast pass (owner, 2026-09-19): the other tabs read as greyed-out at
+       fg-3/12.5px -- next to the "Soon" tab they looked equally unavailable.
+       Live tabs are now ink-2 at 13.5px semibold; the current one is ink with
+       the accent rule under it, and only the unbuilt tab stays faint. */
     .k-claim-tab {
       padding: 12px 6px; margin-right: 16px; background: transparent; border: 0;
-      border-bottom: 2px solid transparent; cursor: pointer; font-size: 12.5px;
-      color: var(--k-fg-3); font-weight: 500; transform: translateY(1px);
+      border-bottom: 2px solid transparent; cursor: pointer; font-size: 13.5px;
+      color: var(--k-fg-2); font-weight: 600; transform: translateY(1px);
       display: inline-flex; align-items: center; gap: 6px;
     }
-    .k-claim-tab:hover { color: var(--k-fg); }
-    .k-claim-tab--on { color: var(--k-fg); border-bottom-color: var(--k-accent); font-weight: 600; }
+    .k-claim-tab:hover { color: var(--k-accent); border-bottom-color: var(--k-line-2); }
+    .k-claim-tab--on { color: var(--k-fg); border-bottom-color: var(--k-accent); font-weight: 700; }
+    .k-claim-tab--on:hover { border-bottom-color: var(--k-accent); }
     .k-claim-tab-n {
       font-family: var(--k-font-mono); font-size: 10.5px;
       padding: 1px 6px; border-radius: 99px;
