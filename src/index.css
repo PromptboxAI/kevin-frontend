@@ -1928,3 +1928,35 @@ button.k-avatar-menu-item {
   font-size: 13.5px;
   color: var(--k-fg-3);
 }
+
+/* Delete claim (ClaimRowMenu → DeleteClaimModal). */
+.k-delmodal { max-width: 460px; width: calc(100vw - 32px); }
+.k-delmodal-hd { display: flex; align-items: flex-start; gap: 14px; padding: 22px 22px 6px; }
+.k-delmodal-ic {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--k-alert-error-bg);
+  color: var(--k-danger);
+}
+.k-delmodal-t { font-family: var(--k-font-display); font-size: 22px; letter-spacing: -0.02em; line-height: 1.2; }
+.k-delmodal-name { margin-top: 3px; font-size: 13px; color: var(--k-fg-3); overflow-wrap: anywhere; }
+.k-delmodal-x { margin-left: auto; }
+.k-delmodal-body { display: flex; flex-direction: column; gap: 14px; padding: 14px 22px 20px 76px; }
+.k-delmodal-list-h { font-size: 12px; font-weight: 700; color: var(--k-fg-2); }
+.k-delmodal-list { margin: -6px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--k-fg-2); line-height: 1.45; }
+.k-delmodal-aside { font-size: 12px; color: var(--k-fg-4); }
+.k-delmodal-warn { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--k-danger); }
+.k-delmodal-field { display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: var(--k-fg-3); }
+.k-delmodal-field strong { color: var(--k-fg); }
+.k-delmodal-ft { display: flex; align-items: center; gap: 8px; padding: 14px 22px; border-top: 1px solid var(--k-line); background: var(--k-bg-2); }
+
+/* Solid destructive button. Disabled stays red, only fainter, so it is
+   visible as the action it will become once DELETE is typed. */
+.k-btn.k-btn--delete { background: var(--k-danger); border-color: var(--k-danger); color: var(--k-bg); }
+.k-btn.k-btn--delete:hover:not(:disabled) { background: oklch(0.50 0.19 25); border-color: oklch(0.50 0.19 25); }
+.k-btn.k-btn--delete:disabled,
+.k-btn.k-btn--delete:disabled:hover { background: var(--k-danger); border-color: var(--k-danger); color: var(--k-bg); opacity: 0.45; cursor: not-allowed; }

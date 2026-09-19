@@ -257,17 +257,32 @@ export default function ClaimRowMenu({
         <ExportModal claim={claim} onClose={() => setModal(null)} onNotice={onNotice} />
       ) : null}
       {modal === 'archive' || modal === 'delete' ? (
-        <ConfirmModal
-          claim={claim}
-          danger={modal === 'delete'}
-          busy={busy}
-          onClose={() => setModal(null)}
-          onConfirm={() => {
-            setModal(null)
-            if (modal === 'delete') remove.mutate()
-            else state.mutate('archive')
-          }}
-        />
+        modal === 'delete' ? (
+          <DeleteClaimModal
+            claim={claim}
+            busy={busy}
+            onClose={() => setModal(null)}
+            onArchive={() => {
+              setModal(null)
+              state.mutate('archive')
+            }}
+            onConfirm={() => {
+              setModal(null)
+              remove.mutate()
+            }}
+          />
+        ) : (
+          <ConfirmModal
+            claim={claim}
+            danger={false}
+            busy={busy}
+            onClose={() => setModal(null)}
+            onConfirm={() => {
+              setModal(null)
+              state.mutate('archive')
+            }}
+          />
+        )
       ) : null}
     </div>
   )
@@ -468,6 +483,114 @@ function ExportModal({
         </select>
       </label>
     </Shell>
+  )
+}
+
+/**
+ * Delete is permanent (rule 15), so the dialog says exactly what goes, offers
+ * the reversible option as a real button rather than a clause in a paragraph,
+ * and keeps DELETE-to-confirm. Owner, 2026-09-19: the old one was one dense
+ * red-bordered paragraph and a Delete button too pale to find.
+ */
+function DeleteClaimModal({
+  claim,
+  busy,
+  onClose,
+  onArchive,
+  onConfirm,
+}: {
+  claim: ClaimSummary
+  busy: boolean
+  onClose: () => void
+  onArchive: () => void
+  onConfirm: () => void
+}) {
+  const [typed, setTyped] = useState('')
+  const ok = typed.trim().toUpperCase() === 'DELETE'
+  const items = claim.item_count ?? 0
+  const photos = claim.photo_count ?? 0
+  const archived = claim.status === 'archived'
+
+  return (
+    <div className="k-export-stage k-modal-stage">
+      <div className="k-export-scrim" onClick={onClose} />
+      <div className="k-export-modal k-delmodal" role="dialog" aria-modal="true" aria-labelledby="k-delmodal-t">
+        <div className="k-delmodal-hd">
+          <span className="k-delmodal-ic" aria-hidden="true">
+            <Icon d={I.trash} size={18} />
+          </span>
+          <div style={{ minWidth: 0 }}>
+            <div className="k-delmodal-t" id="k-delmodal-t">
+              Delete this claim?
+            </div>
+            <div className="k-delmodal-name">{claim.name || claim.claim_id}</div>
+          </div>
+          <button type="button" className="k-icon-btn k-delmodal-x" aria-label="Close" onClick={onClose}>
+            <Icon d={I.close} size={15} />
+          </button>
+        </div>
+
+        <div className="k-delmodal-body">
+          <div className="k-delmodal-list-h">This permanently deletes</div>
+          <ul className="k-delmodal-list">
+            <li>
+              <strong>{fmtInt(items)}</strong> line {items === 1 ? 'item' : 'items'}, with their
+              prices and edits
+            </li>
+            <li>
+              <strong>{fmtInt(photos)}</strong> {photos === 1 ? 'photo' : 'photos'}
+              <span className="k-delmodal-aside"> · any shared with a copy of this claim are kept</span>
+            </li>
+            <li>Its rooms, share links and history</li>
+          </ul>
+
+          <div className="k-delmodal-warn">
+            <Icon d={I.warn} size={14} />
+            <span>This can’t be undone.</span>
+          </div>
+
+          {busy ? (
+            <div className="k-delmodal-aside">Lines are still pricing; deleting now stops those jobs.</div>
+          ) : null}
+
+          <label className="k-delmodal-field">
+            <span>
+              Type <strong className="k-mono">DELETE</strong> to confirm
+            </span>
+            <input
+              className="k-insp-input k-mono"
+              value={typed}
+              autoFocus
+              onChange={(e) => setTyped(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && ok) onConfirm()
+              }}
+              aria-label="Type DELETE to confirm"
+            />
+          </label>
+        </div>
+
+        <div className="k-delmodal-ft">
+          {archived ? null : (
+            <button
+              type="button"
+              className="k-btn k-btn--ghost"
+              onClick={onArchive}
+              title="Hides it from the dashboard; everything stays and it can be restored from Archived"
+            >
+              Archive instead
+            </button>
+          )}
+          <div style={{ flex: 1 }} />
+          <button type="button" className="k-btn k-btn--ghost" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="button" className="k-btn k-btn--delete" disabled={!ok} onClick={onConfirm}>
+            Delete permanently
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
 
