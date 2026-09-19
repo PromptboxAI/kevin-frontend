@@ -155,7 +155,14 @@ export default function ClaimRowMenu({
       <button
         type="button"
         className="k-btn k-btn--ghost"
-        onClick={() => navigate(`/claims/${claim.claim_id}`)}
+        onClick={() =>
+          navigate(
+            // Photos but no lines yet: the work is in Group & stage.
+            claim.item_count === 0 && (claim.photo_count ?? 0) > 0
+              ? `/claims/${encodeURIComponent(claim.claim_id)}/staging`
+              : `/claims/${encodeURIComponent(claim.claim_id)}`,
+          )
+        }
       >
         Open →
       </button>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import PendingStagingAlert from '../components/PendingStagingAlert'
 import AppHeader from '../components/AppHeader'
 import Badge from '../components/Badge'
 import ClaimMissing from '../components/ClaimMissing'
@@ -194,6 +195,9 @@ export default function PhotosPage() {
         itemCount={claim?.item_count}
         photoCount={claim?.photo_count}
       />
+
+      {/* Photos waiting in Group & stage: the way back, said plainly. */}
+      <PendingStagingAlert claimId={claimId} className="k-alert--banner" />
 
       <div className="k-photos-body">
         <aside className="k-photos-side">

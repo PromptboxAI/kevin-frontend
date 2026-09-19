@@ -525,6 +525,16 @@ export default function ClaimsPage() {
   )
 }
 
+/**
+ * Photos uploaded and nothing processed: the claim's work is in Group &
+ * stage, so that is where opening it goes. (The worksheet also redirects, for
+ * links that arrive another way.)
+ */
+function claimHref(claim: ClaimSummary): string {
+  const id = encodeURIComponent(claim.claim_id)
+  return claim.item_count === 0 && (claim.photo_count ?? 0) > 0 ? `/claims/${id}/staging` : `/claims/${id}`
+}
+
 function Row({
   claim,
   onNotice,
@@ -553,7 +563,7 @@ function Row({
           sight -- it is identity for URLs, not something anyone reads. */}
       <Link
         className="k-claim-name k-claim-cell k-link"
-        to={`/claims/${claim.claim_id}`}
+        to={claimHref(claim)}
         title={claim.name}
       >
         {claim.name || claim.claim_id}

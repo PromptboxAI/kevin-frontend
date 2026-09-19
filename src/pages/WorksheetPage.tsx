@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { InfiniteData } from '@tanstack/react-query'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import Alert from '../components/Alert'
 import AppHeader from '../components/AppHeader'
+import PendingStagingAlert, { usePendingStaging } from '../components/PendingStagingAlert'
 import ClaimMissing from '../components/ClaimMissing'
 import ClaimStatusChip from '../components/ClaimStatusChip'
 import ClaimTabs from '../components/ClaimTabs'
@@ -584,6 +585,21 @@ export default function WorksheetPage() {
   }, [groupBy, visible])
 
   const total = rows.data?.pages[0]?.count ?? 0
+
+  /**
+   * Photos uploaded but never processed. With nothing on the worksheet yet,
+   * the claim opens straight into Group & stage -- a blank worksheet is not
+   * where that work continues (owner, 2026-09-19). With lines already here,
+   * an alert says photos are waiting and links back.
+   */
+  const navigate = useNavigate()
+  const staged = usePendingStaging(claimId, !isSample)
+  const nothingProcessed = claim.data?.item_count === 0
+  useEffect(() => {
+    if (staged.waiting > 0 && nothingProcessed) {
+      navigate(`/claims/${encodeURIComponent(claimId)}/staging`, { replace: true })
+    }
+  }, [staged.waiting, nothingProcessed, claimId, navigate])
   const filterCount = status ? 1 : 0
 
   const toggle = (id: number) =>
@@ -965,8 +981,9 @@ export default function WorksheetPage() {
         </div>
       ) : null}
 
-      {strandedTotal > 0 || toDescribe ? (
+      {strandedTotal > 0 || toDescribe || staged.waiting > 0 ? (
         <div className="k-alert-stack">
+          {staged.waiting > 0 ? <PendingStagingAlert claimId={claimId} /> : null}
           {/* Capacity waits are a state, not a failure: the lemon wait tone, not
               the special-limits amber or red (rule 12b). No close control -- the alert goes when the lines
               price, and hiding it would lose track of unpriced work. */}
