@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import ClaimMissing from '../components/ClaimMissing'
 import { I, Icon } from '../components/Icon'
 import { ApiError, api } from '../lib/api'
 import { fmtInt, fmtUSD } from '../lib/format'
-import type { ClaimSummary } from '../lib/types'
+import type { ClaimSummary, StatusCounts } from '../lib/types'
 
 /**
  * Kevin working, while it works.
@@ -22,6 +22,19 @@ import type { ClaimSummary } from '../lib/types'
  * no progress bar. There is no per-claim jobs endpoint; `/v1/jobs/*` is
  * admin-only worker health.
  */
+
+/**
+ * The run this screen is watching, handed over by staging's Process.
+ *
+ * `before` is the claim's tallies read just before the run started, so every
+ * figure below can be THIS run's -- the lines already on the claim are not
+ * part of it. A direct visit (no state) falls back to the claim-wide tally.
+ */
+export type ProcessingRun = {
+  created: number
+  skipped: number
+  before: StatusCounts | null
+}
 
 /** Polling is cheap, but not free -- back off once the burst is over. */
 function pollDelay(elapsedMs: number): number {
@@ -49,18 +62,32 @@ export default function ProcessingPage() {
     retry: (count, err) => !(err instanceof ApiError && err.isMissing) && count < 2,
   })
 
-  const counts = claim.data?.status_counts
+  const run = (useLocation().state as { run?: ProcessingRun } | null)?.run ?? null
+  const all = claim.data?.status_counts
+  /** This run's share of a bucket: now, minus what was there before it. */
+  const mine = (k: keyof StatusCounts) =>
+    run?.before ? Math.max(0, (all?.[k] ?? 0) - run.before[k]) : (all?.[k] ?? 0)
+  const counts: StatusCounts | undefined = all && {
+    processing: all.processing,
+    completed: mine('completed'),
+    needs_manual: mine('needs_manual'),
+    failed: mine('failed'),
+    overridden: mine('overridden'),
+  }
   const inFlight = counts?.processing ?? 0
   // Everything that has reached a terminal state. needs_manual is DONE, not
   // failed: it is a line waiting on a human, which is a normal outcome.
-  const settled =
+  const finished =
     (counts?.completed ?? 0) +
     (counts?.needs_manual ?? 0) +
     (counts?.failed ?? 0) +
     (counts?.overridden ?? 0)
-  const total = settled + inFlight
+  const total = run?.before ? run.created : finished + inFlight
+  const settled = Math.min(finished, total)
   const pct = total > 0 ? Math.round((settled / total) * 100) : 0
-  const done = total > 0 && inFlight === 0
+  const done = total > 0 && (settled >= total || inFlight === 0)
+  /** A run that made no line items -- said plainly, never "0 of 0 priced". */
+  const nothingNew = run !== null && run.created === 0
 
   useEffect(() => {
     setDelay(pollDelay(Date.now() - startedAt.current))
@@ -100,6 +127,31 @@ export default function ProcessingPage() {
     ['Failed', counts?.failed ?? 0, 'danger'],
   ]
 
+  if (nothingNew) {
+    return (
+      <div className="k-intake">
+        <AppHeader />
+        <div className="k-intake-body">
+          <section className="k-proc-hero">
+            <h1 className="k-proc-h1">No new line items</h1>
+            <p className="k-proc-sub" style={{ maxWidth: 560 }}>
+              This upload didn’t add anything to the worksheet
+              {run.skipped
+                ? ` — ${fmtInt(run.skipped)} ${run.skipped === 1 ? 'photo was' : 'photos were'} in no set`
+                : ''}
+              . Nothing already on the claim changed, and every photo stays on it.
+            </p>
+            <div className="k-proc-cta" style={{ marginTop: 22 }}>
+              <Link to={`/claims/${claimId}`} className="k-btn k-btn--lg">
+                Open worksheet →
+              </Link>
+            </div>
+          </section>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="k-intake">
       <AppHeader />
@@ -126,7 +178,11 @@ export default function ProcessingPage() {
             <span className="k-mono" style={{ color: 'var(--k-fg)' }}>
               {fmtInt(total)}
             </span>
-            <span style={{ color: 'var(--k-fg-3)' }}> {total === 1 ? 'item' : 'items'} priced</span>
+            <span style={{ color: 'var(--k-fg-3)' }}>
+              {' '}
+              {run?.before ? 'new ' : ''}
+              {total === 1 ? 'item' : 'items'} priced
+            </span>
           </h1>
 
           <p className="k-proc-sub">

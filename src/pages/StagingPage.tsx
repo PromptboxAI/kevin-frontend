@@ -5,7 +5,7 @@ import Alert from '../components/Alert'
 import AppHeader from '../components/AppHeader'
 import Badge from '../components/Badge'
 import { I, Icon } from '../components/Icon'
-import { ApiError } from '../lib/api'
+import { ApiError, api } from '../lib/api'
 import { fmtInt } from '../lib/format'
 import { SET_LABEL, conflictCopy, deleteConflictCopy } from '../lib/staging-copy'
 import {
@@ -29,6 +29,8 @@ import {
 } from '../lib/staging'
 import type { GroupKind, StagingGroup, StagingPhoto, StagingSessionFull } from '../lib/staging'
 import { useThumb } from '../lib/thumbnails'
+import type { ClaimSummary } from '../lib/types'
+import type { ProcessingRun } from './ProcessingPage'
 
 const log = (event: string, detail?: unknown) => console.info(`[staging] ${event}`, detail ?? '')
 
@@ -262,15 +264,32 @@ export default function StagingPage() {
   })
 
   const process = useMutation({
-    mutationFn: () => processStaging(claimId),
-    onSuccess: (r) => {
+    /**
+     * The claim's tallies are read FIRST, so the processing screen can count
+     * this run alone: a second upload used to show "2 of 2 items priced" when
+     * it had created nothing, because it counted every line on the claim.
+     */
+    mutationFn: async () => {
+      const before = await api
+        .get<ClaimSummary>(`/v1/claims/${encodeURIComponent(claimId)}`)
+        .then((c) => c.status_counts)
+        .catch(() => null)
+      const r = await processStaging(claimId)
+      return { r, before }
+    },
+    onSuccess: ({ r, before }) => {
       log('processed — the POST carried NO body', r)
       setConfirmProcess(false)
       void queryClient.invalidateQueries({ queryKey: ['claim-items', claimId] })
       void queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
       // Not straight to the worksheet: the run has only just started, and an
       // inventory that is half-built reads as an inventory that is wrong.
-      navigate(`/claims/${claimId}/processing`)
+      const run: ProcessingRun = {
+        created: r.items_created,
+        skipped: r.skipped_photos?.length ?? 0,
+        before,
+      }
+      navigate(`/claims/${claimId}/processing`, { state: { run } })
     },
     onError: fail('other', 'Processing'),
   })
