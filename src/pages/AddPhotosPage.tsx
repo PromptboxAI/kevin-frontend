@@ -7,28 +7,13 @@ import PhotoUpload from '../components/PhotoUpload'
 import { ApiError, api, retryUnlessMissing } from '../lib/api'
 import type { ClaimSummary } from '../lib/types'
 
-const EYEBROW: React.CSSProperties = {
-  fontSize: 11,
-  color: 'var(--k-fg-4)',
-  fontFamily: 'var(--k-font-mono)',
-  letterSpacing: '0.05em',
-  textTransform: 'uppercase',
-  fontWeight: 600,
-}
 const H1: React.CSSProperties = {
   fontFamily: 'var(--k-font-display)',
   fontWeight: 400,
   fontSize: 38,
   letterSpacing: '-0.025em',
-  margin: '6px 0 4px',
+  margin: 0,
   lineHeight: 1.1,
-}
-const LEDE: React.CSSProperties = {
-  fontSize: 14,
-  color: 'var(--k-fg-3)',
-  margin: '6px 0 0',
-  maxWidth: 620,
-  lineHeight: 1.5,
 }
 
 /**
@@ -57,7 +42,6 @@ export default function AddPhotosPage() {
   }
 
   const name = claim.data?.name || claimId
-  const items = claim.data?.item_count ?? 0
 
   return (
     <div className="k-intake">
@@ -68,13 +52,7 @@ export default function AddPhotosPage() {
           <Link to={`/claims/${encodeURIComponent(claimId)}`} className="k-crumb" title="Back to the worksheet">
             <Icon d={I.chevleft} size={13} /> Back to {name}
           </Link>
-          <div style={EYEBROW}>Add to this claim</div>
           <h1 style={H1}>Add photos</h1>
-          <p style={LEDE}>
-            New photos become new line items on <strong>{name}</strong>
-            {items ? `, after the ${items === 1 ? 'item' : `${items} items`} already there` : ''}.
-            Nothing already on the claim changes, and numbering carries on from where it stopped.
-          </p>
         </div>
 
         <section className="k-intake-section" style={{ marginTop: 24 }}>
