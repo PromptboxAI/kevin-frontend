@@ -578,23 +578,16 @@ export default function StagingPage() {
         ) : null}
 
         <div className="k-stage-grid2">
-          {/* Skeletons, not an empty state: the sets are already on their way. */}
-          {clustering && groups.length === 0
-            ? Array.from({ length: 8 }, (_, i) => (
-                <div key={`skel-${i}`} className="k-stageset">
-                  <div className="k-stageset-media">
-                    <span className="k-stageset-skel" />
-                  </div>
-                  <div className="k-stageset-body">
-                    <div className="k-stage-rowhd">
-                      <span className="k-stage-rowt" style={{ color: 'var(--k-fg-4)' }}>
-                        Grouping…
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))
-            : null}
+          {/* One honest status, not a row of placeholder cards: eight skeletons
+              over a one-photo upload read as eight things arriving. The set
+              count is not known until grouping finishes, so none is drawn. */}
+          {clustering && groups.length === 0 ? (
+            <div className="k-stage-grouping">
+              <span className="k-paused-dot" aria-hidden="true" />
+              Grouping {fmtInt(data?.photo_count ?? 0)}{' '}
+              {(data?.photo_count ?? 0) === 1 ? 'photo' : 'photos'} by capture time…
+            </div>
+          ) : null}
 
           {groups.map((group, si) => (
             <SetCard

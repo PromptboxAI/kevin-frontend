@@ -1914,3 +1914,17 @@ button.k-avatar-menu-item {
 }
 .k-dropzone-alt .k-link:hover,
 .k-dropzone-import .k-link:hover { color: var(--k-accent-2); }
+
+/* Staging while grouping runs: one status line across the grid. */
+.k-stage-grouping {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 28px 20px;
+  border: 1px dashed var(--k-line-2);
+  border-radius: 10px;
+  background: var(--k-bg-2);
+  font-size: 13.5px;
+  color: var(--k-fg-3);
+}
