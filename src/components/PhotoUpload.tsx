@@ -64,6 +64,8 @@ export default function PhotoUpload({
   const zipRef = useRef<HTMLInputElement>(null)
 
   const [room, setRoom] = useState('')
+  /** A drag is over the zone: the copy changes to say what letting go does. */
+  const [over, setOver] = useState(false)
   const [rows, setRows] = useState<Row[]>([])
   /** Locally-dropped OS junk -- reported, never as a failure. */
   const [junk, setJunk] = useState(0)
@@ -267,16 +269,37 @@ export default function PhotoUpload({
   return (
     <div style={{ position: 'relative' }}>
       <div
-        className="k-dropzone"
+        className={`k-dropzone${over ? ' k-dropzone--over' : ''}`}
+        // The whole zone is the target: a click anywhere opens the picker, the
+        // same as the button, so nobody has to find the button first.
+        role="button"
+        tabIndex={locked ? -1 : 0}
+        aria-label="Add photos: drop them here, or press Enter to choose files"
+        onClick={(e) => {
+          // The hidden inputs' own clicks bubble up here too; opening the
+          // photo picker on a folder or .zip click would stack two dialogs.
+          if (locked || e.target instanceof HTMLInputElement) return
+          fileRef.current?.click()
+        }}
+        onKeyDown={(e) => {
+          if (locked || e.target !== e.currentTarget) return
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            fileRef.current?.click()
+          }
+        }}
         onDragOver={(e) => {
           if (locked) return
           e.preventDefault()
-          e.currentTarget.classList.add('k-dropzone--over')
+          if (!over) setOver(true)
         }}
-        onDragLeave={(e) => e.currentTarget.classList.remove('k-dropzone--over')}
+        onDragLeave={(e) => {
+          // Leaving for a child element is not leaving the zone.
+          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOver(false)
+        }}
         onDrop={(e) => {
           e.preventDefault()
-          e.currentTarget.classList.remove('k-dropzone--over')
+          setOver(false)
           if (locked) return
           /**
            * A dropped FOLDER arrives in `files` as one entry -- the folder, not
@@ -315,101 +338,90 @@ export default function PhotoUpload({
         style={locked ? { opacity: 0.5, pointerEvents: 'none' } : undefined}
       >
         <div className="k-dropzone-inner">
-          <div className="k-dropzone-icon">
-            <Icon d={I.download} size={26} />
-          </div>
-          <div
-            style={{
-              fontFamily: 'var(--k-font-display)',
-              fontSize: 26,
-              letterSpacing: '-0.02em',
-              fontWeight: 400,
+          <input
+            ref={fileRef}
+            type="file"
+            multiple
+            accept={ACCEPT_TYPES}
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              take([...(e.target.files ?? [])])
+              e.target.value = ''
             }}
-          >
-            Drop photos, a folder, or a .zip.
-          </div>
-          <div style={{ fontSize: 13, color: 'var(--k-fg-3)', marginTop: 6 }}>
-            Accepts JPG, PNG, HEIC. Max {MAX_PHOTO_MB}&nbsp;MB per photo.
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--k-fg-4)', marginTop: 5 }}>
-            Select them all at once — Kevin removes duplicates as they
-            arrive.
-          </div>
+          />
+          <input
+            ref={folderRef}
+            type="file"
+            multiple
+            /* @ts-expect-error -- non-standard, and the only way to pick a folder */
+            webkitdirectory=""
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const { kept, junk: dropped } = keepPhotos([...(e.target.files ?? [])])
+              take(kept, dropped)
+              e.target.value = ''
+            }}
+          />
+          <input
+            ref={zipRef}
+            type="file"
+            accept=".zip,application/zip"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const f = e.target.files?.[0]
+              if (f) void takeZip(f)
+              e.target.value = ''
+            }}
+          />
 
-          {/* The OTHER intake path. A total-loss list has no photographs, and
-              an adjuster holding one needs to find this here rather than
-              discover the app cannot take their file. */}
-          {claimId ? (
-            <div style={{ fontSize: 12.5, color: 'var(--k-fg-4)', marginTop: 10 }}>
-              No photos?{' '}
-              <a
-                href={`/claims/${claimId}/import`}
-                style={{ color: 'var(--k-accent)', fontWeight: 600, textDecoration: 'underline' }}
+          <div className="k-dropzone-icon">
+            <Icon d={I.upload} size={24} />
+          </div>
+          <div className="k-dropzone-h">{over ? 'Let go to add them' : 'Drag photos here'}</div>
+          <div className="k-dropzone-or">or</div>
+
+          {/* Stops the click reaching the zone, which would open a second
+              picker behind this one. */}
+          <div className="k-dropzone-actions" onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="k-btn k-btn--lg" onClick={() => fileRef.current?.click()}>
+              Choose photos
+            </button>
+            <div className="k-dropzone-alt">
+              <button type="button" className="k-link" onClick={() => folderRef.current?.click()}>
+                Choose a folder
+              </button>
+              <span aria-hidden="true">·</span>
+              <button
+                type="button"
+                className="k-link"
+                title="Expanded in your browser — the archive itself is never uploaded"
+                onClick={() => zipRef.current?.click()}
               >
-                Import a typed or exported list
-              </a>{' '}
-              instead — PDF, CSV or Excel.
+                Upload a .zip
+              </button>
             </div>
-          ) : null}
+          </div>
 
-          <div style={{ display: 'flex', gap: 10, marginTop: 22, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <input
-              ref={fileRef}
-              type="file"
-              multiple
-              accept={ACCEPT_TYPES}
-              style={{ display: 'none' }}
-              onChange={(e) => {
-                take([...(e.target.files ?? [])])
-                e.target.value = ''
-              }}
-            />
-            <input
-              ref={folderRef}
-              type="file"
-              multiple
-              /* @ts-expect-error -- non-standard, and the only way to pick a folder */
-              webkitdirectory=""
-              style={{ display: 'none' }}
-              onChange={(e) => {
-                const { kept, junk: dropped } = keepPhotos([...(e.target.files ?? [])])
-                take(kept, dropped)
-                e.target.value = ''
-              }}
-            />
-            <input
-              ref={zipRef}
-              type="file"
-              accept=".zip,application/zip"
-              style={{ display: 'none' }}
-              onChange={(e) => {
-                const f = e.target.files?.[0]
-                if (f) void takeZip(f)
-                e.target.value = ''
-              }}
-            />
-            <button type="button" className="k-btn" onClick={() => fileRef.current?.click()}>
-              Choose files
-            </button>
-            <button
-              type="button"
-              className="k-btn k-btn--ghost"
-              onClick={() => folderRef.current?.click()}
-            >
-              Choose folder
-            </button>
-            <button
-              type="button"
-              className="k-btn k-btn--ghost"
-              title="Expanded in your browser — the archive itself is never uploaded"
-              onClick={() => zipRef.current?.click()}
-            >
-              <Icon d={I.box} size={12} /> Upload .zip
-            </button>
+          <div className="k-dropzone-meta">
+            JPG, PNG or HEIC · up to {MAX_PHOTO_MB}&nbsp;MB each · select them all at once,
+            duplicates are skipped
           </div>
         </div>
         <div className="k-dropzone-ghosts" />
       </div>
+
+      {/* The OTHER intake path, under the zone rather than inside it: a
+          total-loss list has no photographs, and an adjuster holding one needs
+          to find this without it crowding the drop target. */}
+      {claimId ? (
+        <div className="k-dropzone-import">
+          No photos?{' '}
+          <a href={`/claims/${claimId}/import`} className="k-link">
+            Import a typed or exported list
+          </a>{' '}
+          — PDF, CSV or Excel.
+        </div>
+      ) : null}
 
       {/* Inert until the claim exists, with the reason as an overlay -- not
           the section replaced by a line of text. */}

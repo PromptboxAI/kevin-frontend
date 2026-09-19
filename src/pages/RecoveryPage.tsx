@@ -108,7 +108,7 @@ export default function RecoveryPage() {
         <section className="k-claim-hd">
           <div>
             <Link to={`/claims/${claimId}`} className="k-crumb">
-              <Icon d={I.chevleft} size={12} /> {claim.data.name}
+              <Icon d={I.chevleft} size={13} /> Back to {claim.data.name}
             </Link>
             <h1 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 26, margin: '6px 0 2px' }}>
               Holdback recovery
@@ -138,7 +138,7 @@ export default function RecoveryPage() {
       <section className="k-claim-hd">
         <div>
           <Link to={`/claims/${claimId}`} className="k-crumb" title="Back to the claim">
-            <Icon d={I.chevleft} size={12} /> {claim.data.name}
+            <Icon d={I.chevleft} size={13} /> Back to {claim.data.name}
           </Link>
           <h1 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 26, letterSpacing: '-0.02em', margin: '6px 0 2px' }}>
             Holdback recovery
