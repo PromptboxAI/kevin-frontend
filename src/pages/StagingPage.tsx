@@ -337,7 +337,7 @@ export default function StagingPage() {
           <div className="k-empty">
             <h2>Nothing staged yet</h2>
             <p>Add photos to this claim to start a staging session.</p>
-            <Link to="/claims/new" className="k-btn">
+            <Link to={`/claims/${encodeURIComponent(claimId)}/add-photos`} className="k-btn">
               Add photos
             </Link>
           </div>
@@ -366,7 +366,7 @@ export default function StagingPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
           <div>
             {/* Staging's parent is the upload, not the worksheet. */}
-            <Link to="/claims/new" className="k-crumb" title="Back to upload">
+            <Link to={`/claims/${encodeURIComponent(claimId)}/add-photos`} className="k-crumb" title="Back to upload">
               <Icon d={I.chevleft} size={12} /> Upload
             </Link>
             <div style={EYEBROW}>After upload · before processing</div>
@@ -416,7 +416,7 @@ export default function StagingPage() {
           <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
             {/* Add photos survives a processed session -- a second drop opens
                 the NEXT session and appends, which is the multi-session flow. */}
-            <Link to="/claims/new" className="k-btn k-btn--ghost">
+            <Link to={`/claims/${encodeURIComponent(claimId)}/add-photos`} className="k-btn k-btn--ghost">
               <Icon d={I.plus} size={12} /> Add photos
             </Link>
 

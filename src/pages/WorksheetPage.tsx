@@ -692,14 +692,13 @@ export default function WorksheetPage() {
       <AppHeader
         actions={
           <>
-            <button
-              type="button"
+            <Link
               className="k-btn k-btn--ghost"
-              onClick={() => setNotice('Photo staging is the next build — this will open the intake flow.')}
-              title="Photo staging — coming in this build"
+              to={`/claims/${encodeURIComponent(claimId)}/add-photos`}
+              title="More photos for this claim — they become new line items"
             >
               <Icon d={I.plus} size={12} /> Add photos
-            </button>
+            </Link>
             {/* Only when there IS something waiting: a permanent zero-badge
                 teaches people to ignore the control. */}
             {pendingProposals > 0 ? (

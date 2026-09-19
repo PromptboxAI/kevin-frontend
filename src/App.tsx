@@ -22,6 +22,7 @@ import ClaimsPage from './pages/ClaimsPage'
 import ExportsPage from './pages/ExportsPage'
 import ExportPage from './pages/ExportPage'
 import IntakePage from './pages/IntakePage'
+import AddPhotosPage from './pages/AddPhotosPage'
 import StagingPage from './pages/StagingPage'
 import ProcessingPage from './pages/ProcessingPage'
 import ImportPage from './pages/ImportPage'
@@ -166,6 +167,16 @@ export default function App() {
           element={
             <RequireAuth>
               <IntakePage />
+            </RequireAuth>
+          }
+        />
+
+        {/* More photos for an existing claim -- a second drop appends. */}
+        <Route
+          path="/claims/:claimId/add-photos"
+          element={
+            <RequireAuth>
+              <AddPhotosPage />
             </RequireAuth>
           }
         />

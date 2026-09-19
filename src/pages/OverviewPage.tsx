@@ -104,7 +104,7 @@ export default function OverviewPage() {
       <AppHeader
         actions={
           <>
-            <Link className="k-btn k-btn--ghost" to={`/claims/${claimId}/staging`}>
+            <Link className="k-btn k-btn--ghost" to={`/claims/${encodeURIComponent(claimId)}/add-photos`}>
               <Icon d={I.plus} size={12} /> Add photos
             </Link>
             <button
