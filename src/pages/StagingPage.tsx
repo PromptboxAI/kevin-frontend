@@ -139,8 +139,17 @@ export default function StagingPage() {
    * empty state with a trigger would ask the adjuster to do its job.
    */
   const autoFired = useRef(false)
+  /**
+   * Not before this time. A photo still being READ is not listed in the
+   * session at all, so "nothing extracting" can be true while the server is
+   * still working -- and grouping then answers 409 "extraction still in
+   * progress". That used to be the end of it: the auto-fire was spent and a
+   * one-photo upload sat on "uploading" forever. A 409 now re-arms it.
+   */
+  const retryClusterAt = useRef(0)
   useEffect(() => {
-    if (!data || autoFired.current || awaitingSets) return
+    if (!data || autoFired.current || awaitingSets || cluster.isPending) return
+    if (Date.now() < retryClusterAt.current) return
     const none = (data.groups?.length ?? 0) === 0
     if (none && data.photo_count > 0 && stillExtracting.length === 0 && data.status !== 'processed') {
       autoFired.current = true
@@ -179,7 +188,17 @@ export default function StagingPage() {
       setAwaitingSets(true)
       void session.refetch()
     },
-    onError: fail('cluster', 'Grouping'),
+    onError: (error) => {
+      // The photos are still being read: not a failure, just early. Try again
+      // on a later poll rather than surfacing an error or giving up.
+      if (error instanceof ApiError && error.status === 409 && /extract/i.test(JSON.stringify(error.detail ?? ''))) {
+        log('grouping early — photos still being read; retrying')
+        autoFired.current = false
+        retryClusterAt.current = Date.now() + 3000
+        return
+      }
+      fail('cluster', 'Grouping')(error)
+    },
   })
 
   const remainder = useMutation({
