@@ -33,14 +33,6 @@ import { useThumb } from '../lib/thumbnails'
 const log = (event: string, detail?: unknown) => console.info(`[staging] ${event}`, detail ?? '')
 
 /** Inline styles the design carries here — no k- class exists for these. */
-const EYEBROW: React.CSSProperties = {
-  fontSize: 11,
-  color: 'var(--k-fg-4)',
-  fontFamily: 'var(--k-font-mono)',
-  letterSpacing: '0.05em',
-  textTransform: 'uppercase',
-  fontWeight: 600,
-}
 const H1: React.CSSProperties = {
   fontFamily: 'var(--k-font-display)',
   fontWeight: 400,
@@ -369,7 +361,6 @@ export default function StagingPage() {
             <Link to={`/claims/${encodeURIComponent(claimId)}/add-photos`} className="k-crumb" title="Back to upload">
               <Icon d={I.chevleft} size={13} /> Back to upload
             </Link>
-            <div style={EYEBROW}>After upload · before processing</div>
             <h1 style={H1}>Group &amp; stage photos</h1>
 
             {/* Spaced off the title above and the paragraph below: packed
