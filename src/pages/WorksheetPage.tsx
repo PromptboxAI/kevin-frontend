@@ -1346,7 +1346,7 @@ export default function WorksheetPage() {
       ) : null}
 
       {shareOpen ? (
-        <ShareSheet claimId={claimId} items={items} onClose={() => setShareOpen(false)} />
+        <ShareSheet claimId={claimId} onClose={() => setShareOpen(false)} />
       ) : null}
 
     </div>

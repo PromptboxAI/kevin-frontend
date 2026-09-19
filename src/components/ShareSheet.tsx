@@ -8,7 +8,6 @@ import { fmtDate, fmtInt, fmtUSD } from '../lib/format'
 import {
   SHARE_STATE_LABEL,
   SHARE_STATE_TONE,
-  countUnsubstantiated,
   listShares,
   mintShare,
   redeliverShare,
@@ -35,12 +34,9 @@ import type { ShareContents, ShareSummary } from '../lib/shares'
  */
 export default function ShareSheet({
   claimId,
-  items,
   onClose,
 }: {
   claimId: string
-  /** For the substantiation warning; counted the way the document counts it. */
-  items: { rcv: number | null; source_link?: string | null }[]
   onClose: () => void
 }) {
   const queryClient = useQueryClient()
@@ -130,7 +126,6 @@ export default function ShareSheet({
   const rows = shares.data?.shares ?? []
   const live = rows.filter((s) => s.active)
   const history = rows.filter((s) => !s.active)
-  const { priced, missing } = countUnsubstantiated(items)
 
   return (
     <div className="k-export-stage k-modal-stage" onClick={onClose}>
@@ -157,22 +152,12 @@ export default function ShareSheet({
             </div>
           ) : null}
 
-          {/* Counted from source_link -- the same derivation the portal and the
-              .xlsx use -- so this quotes a number the document honours. */}
-          {missing > 0 ? (
-            <div className="k-share-snapnote" style={{ marginBottom: 12 }}>
-              <Icon d={I.warn} size={13} />
-              <span>
-                <strong style={{ color: 'var(--k-fg-2)', fontWeight: 600 }}>
-                  {fmtInt(missing)} of {fmtInt(priced)} priced lines have no source link.
-                </strong>{' '}
-                Those lines carry a price the document cannot show evidence for. A carrier reading
-                it sees a total with {fmtInt(priced - missing)}{' '}
-                {priced - missing === 1 ? 'line' : 'lines'} substantiated. Attaching proof URLs
-                before you send is what makes the schedule defensible — you can still share now.
-              </span>
-            </div>
-          ) : null}
+          {/* No source-link lecture here. Owner, 2026-09-19: Kevin is a
+              neutral party -- it does not tell an adjuster what a carrier will
+              think or what makes a schedule defensible -- and a bare count is
+              no help on a long claim, where finding those lines means
+              scrolling the whole sheet. If this returns, it returns as a
+              filter that takes you TO the lines. */}
 
           <section className="k-share-sec">
             <div className="k-share-sec-h">Create a link</div>
