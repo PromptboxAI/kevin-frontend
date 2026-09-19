@@ -158,7 +158,7 @@ export default function ImportPage() {
       <div className="k-intake-body">
         <div>
           <Link to={`/claims/${claimId}`} className="k-crumb">
-            <Icon d={I.chevleft} size={12} /> Back to claim
+            <Icon d={I.chevleft} size={13} /> Back to claim
           </Link>
           <h1 className="k-claims-h1">Import a written list</h1>
           <p className="k-claims-sub">

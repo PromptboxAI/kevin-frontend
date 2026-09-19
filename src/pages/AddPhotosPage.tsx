@@ -66,7 +66,7 @@ export default function AddPhotosPage() {
       <div className="k-intake-body">
         <div>
           <Link to={`/claims/${encodeURIComponent(claimId)}`} className="k-crumb" title="Back to the worksheet">
-            <Icon d={I.chevleft} size={12} /> {name}
+            <Icon d={I.chevleft} size={13} /> Back to {name}
           </Link>
           <div style={EYEBROW}>Add to this claim</div>
           <h1 style={H1}>Add photos</h1>

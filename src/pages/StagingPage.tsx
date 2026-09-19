@@ -367,7 +367,7 @@ export default function StagingPage() {
           <div>
             {/* Staging's parent is the upload, not the worksheet. */}
             <Link to={`/claims/${encodeURIComponent(claimId)}/add-photos`} className="k-crumb" title="Back to upload">
-              <Icon d={I.chevleft} size={12} /> Upload
+              <Icon d={I.chevleft} size={13} /> Back to upload
             </Link>
             <div style={EYEBROW}>After upload · before processing</div>
             <h1 style={H1}>Group &amp; stage photos</h1>

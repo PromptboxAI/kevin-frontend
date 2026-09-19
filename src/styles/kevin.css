@@ -184,12 +184,14 @@
     .k-tab--active { background: var(--k-bg-3); color: var(--k-fg); }
     a.k-tab { text-decoration: none; }
 
+    /* The way back. It was 11.5px grey mono caps -- the same voice as the
+       eyebrow under it, so the two read as one label and nobody saw a link
+       (owner, 2026-09-19). Navy, sentence case, room below. */
     .k-crumb {
-      display: inline-flex; align-items: center; gap: 4px; margin-bottom: 6px;
-      font-size: 11.5px; color: var(--k-fg-4); text-decoration: none;
-      font-family: var(--k-font-mono); text-transform: uppercase; letter-spacing: 0.05em;
+      display: inline-flex; align-items: center; gap: 5px; margin-bottom: 14px;
+      font-size: 13px; font-weight: 600; color: var(--k-accent); text-decoration: none;
     }
-    .k-crumb:hover { color: var(--k-accent); }
+    .k-crumb:hover { color: var(--k-accent-2); text-decoration: underline; text-underline-offset: 3px; }
 
     .k-claim-hd {
       display: flex; justify-content: space-between; align-items: flex-end;

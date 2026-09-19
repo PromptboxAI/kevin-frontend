@@ -757,7 +757,7 @@ export default function WorksheetPage() {
       <section className="k-claim-hd">
         <div>
           <Link to="/claims" className="k-crumb">
-            <Icon d={I.chevleft} size={12} /> Claims
+            <Icon d={I.chevleft} size={13} /> My claims
           </Link>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <h1 className="k-claim-h1">{claim.data?.name ?? claimId}</h1>
