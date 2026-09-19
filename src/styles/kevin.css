@@ -3926,8 +3926,10 @@
     .k-stage-lb-ft { padding: 11px 14px; font-size: 11.5px; color: var(--k-fg-4); line-height: 1.5; border-top: 1px solid var(--k-line); }
 
     /* Action bar sticks — with 148 sets you cannot scroll back to the top to merge. */
-    .k-stage-act--danger { color: var(--k-fg-4); }
-    .k-stage-act--danger:hover { border-color: var(--k-danger); color: var(--k-danger); }
+    /* Inverted so it reads as a button, not a stray glyph (owner, 2026-09-19). */
+    .k-stage-act--danger { background: var(--k-danger); border-color: var(--k-danger); color: var(--k-bg); }
+    .k-stage-act--danger:hover { background: oklch(0.50 0.19 25); border-color: oklch(0.50 0.19 25); color: var(--k-bg); }
+    .k-stage-act--danger:disabled { opacity: 0.5; }
 
     /* ── Staging set grid — images first ──────────────────────────── */
     .k-stage-grid2 { display: grid; grid-template-columns: repeat(auto-fill, minmax(268px, 1fr)); gap: 12px; margin-top: -24px; }

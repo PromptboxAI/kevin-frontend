@@ -1190,7 +1190,7 @@ function SetCard({
             title="Delete these photos from the claim"
             onClick={onDelete}
           >
-            <Icon d={I.trash} size={11} />
+            <Icon d={I.trash} size={12} />
           </button>
         </div>
         ) : null}
