@@ -176,12 +176,15 @@
       background: var(--k-bg);
     }
 
+    /* Top nav (owner, 2026-09-19): fg-3 at 12.5px/500 read as greyed-out, so
+       My claims / Exports / Settings all looked unavailable. Ink-2 semibold,
+       with the current one ink on the sticky-chrome pill. */
     .k-tab {
       padding: 5px 10px; border-radius: 5px; border: 0; background: transparent;
-      cursor: pointer; color: var(--k-fg-3); font-size: 12.5px; font-weight: 500;
+      cursor: pointer; color: var(--k-fg-2); font-size: 13px; font-weight: 600;
     }
-    .k-tab:hover { background: var(--k-bg-2); color: var(--k-fg); }
-    .k-tab--active { background: var(--k-bg-3); color: var(--k-fg); }
+    .k-tab:hover { background: var(--k-bg-2); color: var(--k-accent); }
+    .k-tab--active { background: var(--k-bg-3); color: var(--k-fg); font-weight: 700; }
     a.k-tab { text-decoration: none; }
 
     /* The way back. It was 11.5px grey mono caps -- the same voice as the

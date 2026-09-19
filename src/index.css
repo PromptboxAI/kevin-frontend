@@ -1979,3 +1979,56 @@ button.k-avatar-menu-item {
   background: var(--k-fg);
 }
 .k-claims-selbar { margin: 0; }
+
+/* Directory dialogs (DirectoryModals.tsx) — add a person or a company. */
+.k-dirmodal { width: 460px; max-width: calc(100vw - 32px); }
+.k-dirmodal-s { margin-top: 4px; font-size: 12.5px; color: var(--k-fg-3); }
+.k-dirmodal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 20px 18px;
+  max-height: min(60vh, 520px);
+  overflow: auto;
+}
+.k-dirmodal-ft {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--k-line);
+  background: var(--k-bg-2);
+}
+.k-dirmodal-logo { display: flex; align-items: center; gap: 14px; }
+.k-dirmodal-logo-box {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 64px;
+  border: 1px dashed var(--k-line-2);
+  border-radius: 8px;
+  background: var(--k-bg-2);
+  font-size: 11px;
+  color: var(--k-fg-4);
+  overflow: hidden;
+}
+.k-dirmodal-logo-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.k-dirmodal-hint { margin-top: 6px; font-size: 11.5px; color: var(--k-fg-4); }
+
+/* The chosen company, as the export will print it. */
+.k-intake-letterhead {
+  flex: 1 1 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--k-line);
+  border-radius: 8px;
+  background: var(--k-bg-2);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--k-fg-2);
+}
+.k-intake-letterhead img { max-width: 110px; max-height: 56px; object-fit: contain; }

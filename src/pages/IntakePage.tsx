@@ -4,20 +4,16 @@ import { Link, useNavigate } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import IntakeField from '../components/IntakeField'
 import IntakeSelect from '../components/IntakeSelect'
-import PhotoUpload from '../components/PhotoUpload'
+import { CompanyModal, PersonModal } from '../components/DirectoryModals'
+import { useDirectory } from '../lib/directory'
+import { companyLabel, companyLines, personLabel } from '../lib/directory-rules'
+import type { Company, Person } from '../lib/directory-rules'
 import { I, Icon } from '../components/Icon'
 import { ApiError, api } from '../lib/api'
 import { isValidClaimId, parseMoney, slugify, toIsoDate } from '../lib/claim-id'
 import { COVERAGE_LABELS, US_STATES } from '../lib/us-states'
 import { useTaxRate } from '../lib/tax-rate'
 import { taxPlanFor } from '../lib/tax-rate-rules'
-import {
-  RECENT_BUSINESS,
-  RECENT_ESTIMATOR,
-  browserStore,
-  recentValues,
-  rememberValue,
-} from '../lib/recent-values'
 import type { ClaimSummary } from '../lib/types'
 
 const EYEBROW: React.CSSProperties = {
@@ -112,13 +108,20 @@ export default function IntakePage() {
    * The retyping that implies is solved client-side -- previous values are
    * offered back from this browser, and are only ever a shortcut.
    */
-  const [estimatorName, setEstimatorName] = useState('')
-  const [businessName, setBusinessName] = useState('')
-  const store = browserStore()
-  const [recentEstimator, setRecentEstimator] = useState(() =>
-    recentValues(store, RECENT_ESTIMATOR),
-  )
-  const [recentBusiness, setRecentBusiness] = useState(() => recentValues(store, RECENT_BUSINESS))
+  /**
+   * Personnel and the company header, from the account's saved directory
+   * (Xactimate's model: individuals in one list, the firm letterhead in
+   * another). Picked once, reused on every claim after.
+   */
+  const { dir, savePerson, saveCompany } = useDirectory()
+  const [estimatorId, setEstimatorId] = useState('')
+  const [companyId, setCompanyId] = useState('')
+  const [personModal, setPersonModal] = useState(false)
+  const [companyModal, setCompanyModal] = useState(false)
+  const estimator = dir.people.find((x) => x.id === estimatorId) ?? null
+  const company = dir.companies.find((x) => x.id === companyId) ?? null
+  const estimatorName = estimator?.name ?? ''
+  const businessName = company?.name ?? ''
   const [coverageLabel, setCoverageLabel] = useState(COVERAGE_LABELS[0])
   const [ppLimit, setPpLimit] = useState('')
   const [alreadyClaimed, setAlreadyClaimed] = useState('')
@@ -248,14 +251,10 @@ export default function IntakePage() {
       void queryClient.invalidateQueries({ queryKey: ['claims'] })
       // Only after it lands on a real claim: a value that never got submitted
       // is not one worth offering back.
-      if (estimatorName.trim())
-        setRecentEstimator(rememberValue(store, RECENT_ESTIMATOR, estimatorName))
-      if (businessName.trim())
-        setRecentBusiness(rememberValue(store, RECENT_BUSINESS, businessName))
-      // Stay on the page: step 2 needs the claim to exist before photos can be
-      // staged against it. Continue is one action, not two.
+      // Photos are their own step now: the details page got long enough that
+      // the drop zone sat below the fold anyway.
       setCreated(claim.claim_id)
-      document.getElementById('k-photos')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      navigate(`/claims/${encodeURIComponent(claim.claim_id)}/add-photos`)
     },
     onError: (err) =>
       setError(
@@ -266,30 +265,6 @@ export default function IntakePage() {
             : 'Could not create the claim.',
       ),
   })
-
-  /** The Upload button's way in when the claim does not exist yet. */
-  const ensureClaim = async (): Promise<string> => {
-    if (created) return created
-    if (claimId === '') {
-      // The project name is the form's first input.
-      document.querySelector<HTMLInputElement>('.k-intake-form input')?.focus()
-      throw new Error('Add a project name under Claim details first — it’s how you’ll find this claim in My claims.')
-    }
-    if (taxUnconfirmed) {
-      throw new Error('Confirm the local tax rate under Claim details, then upload again.')
-    }
-    if (!canSubmit) {
-      throw new Error('Fix the highlighted fields under Claim details, then upload again.')
-    }
-    setError(null)
-    try {
-      return (await create.mutateAsync()).claim_id
-    } catch {
-      // onError has written the reason next to the form; repeat it here, where
-      // the adjuster is looking.
-      throw new Error('Could not create the claim — see Claim details above.')
-    }
-  }
 
   return (
     <div className="k-intake">
@@ -319,16 +294,14 @@ export default function IntakePage() {
               title={created ? 'Drop the photos below' : 'Creates the claim, then opens upload'}
               onClick={() => {
                 if (created) {
-                  document
-                    .getElementById('k-photos')
-                    ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                  navigate(`/claims/${encodeURIComponent(created)}/add-photos`)
                   return
                 }
                 setError(null)
                 create.mutate()
               }}
             >
-              {create.isPending ? 'Creating…' : 'Continue → Stage photos'}
+              {create.isPending ? 'Creating…' : 'Continue → Upload photos'}
             </button>
           </div>
         </div>
@@ -446,6 +419,12 @@ export default function IntakePage() {
               width={200}
               onChange={setLossType}
             />
+            <IntakeField
+              label="Carrier / agency"
+              value={carrier}
+              width={240}
+              onChange={setCarrier}
+            />
 
             {/* 4 — money. The rate is RESOLVED, never free-typed. */}
             <IntakeSelect
@@ -498,68 +477,107 @@ export default function IntakePage() {
               onChange={setPolicyForm}
               hint="Pick a common form or type your own"
             />
-            {/* 5 — who prepared it. Last because it is the one block that
-                repeats across a book of claims, and the suggestions make it
-                two clicks rather than two fields. */}
-            <IntakeField
-              label="Prepared by"
-              value={estimatorName}
-              width={220}
-              suggestions={recentEstimator}
-              onChange={setEstimatorName}
-              hint={
-                recentEstimator.length
-                  ? 'Pick a previous name or type a new one'
-                  : 'Prints on the export as the preparer'
-              }
-            />
-            <IntakeField
-              label="Firm / business"
-              value={businessName}
-              width={240}
-              suggestions={recentBusiness}
-              onChange={setBusinessName}
-              hint={
-                recentBusiness.length
-                  ? 'Pick a previous firm or type a new one'
-                  : 'Stays on this claim even if you move firms'
-              }
-            />
-            <IntakeField
-              label="Carrier / agency"
-              value={carrier}
-              width={240}
-              onChange={setCarrier}
-            />
           </div>
 
           {error ? <p className="k-error">{error}</p> : null}
         </section>
 
-        <section className="k-intake-section" id="k-photos">
+        {/* 02 — who prepared it. Last, because it is the one block that
+            repeats across a book of claims: picked from the directory rather
+            than retyped, and the company header is what a client-facing PDF
+            prints at the top. */}
+        <section className="k-intake-section">
           <div className="k-intake-section-hd">
             <span className="k-step-num">02</span>
             <div>
-              <div className="k-intake-section-t">Add photos</div>
+              <div className="k-intake-section-t">Personnel &amp; company</div>
               <div className="k-intake-section-s">
-                Select the whole pack-out folder and click once. Photos are chunked and sent against
-                one session, so a dropped connection never loses the batch — re-selecting is safe.
+                Saved on your account and offered on every claim after this one.
               </div>
             </div>
           </div>
 
-          {/* The drop zone always renders; before the claim exists it is inert
-              with the reason as an overlay, not replaced by a line of text. */}
-          {/* Live from the start. Photos stage against a claim, so the first
-              Upload creates it from the details above -- the adjuster started
-              the claim by clicking New claim and never has a separate step. */}
-          <PhotoUpload
-            claimId={created}
-            ensureClaim={ensureClaim}
-            onStaged={() => navigate(`/claims/${created}/staging`)}
-          />
+          <div className="k-intake-form">
+            <IntakeSelect
+              label="Estimator"
+              value={estimator ? personLabel(estimator) : ''}
+              options={dir.people.map(personLabel)}
+              addLabel="+ Add a person…"
+              onAdd={() => setPersonModal(true)}
+              width={280}
+              onChange={(label) => {
+                const match = dir.people.find((x) => personLabel(x) === label)
+                setEstimatorId(match?.id ?? '')
+              }}
+              hint="Prints on the export as the preparer"
+            >
+              <option value="">— None —</option>
+              {dir.people.map((x) => (
+                <option key={x.id} value={personLabel(x)}>
+                  {personLabel(x)}
+                </option>
+              ))}
+              <option value="__add">+ Add a person…</option>
+            </IntakeSelect>
+
+            <IntakeSelect
+              label="Company header"
+              value={company ? companyLabel(company) : ''}
+              options={dir.companies.map(companyLabel)}
+              addLabel="+ Add a company…"
+              onAdd={() => setCompanyModal(true)}
+              width={320}
+              onChange={(label) => {
+                const match = dir.companies.find((x) => companyLabel(x) === label)
+                setCompanyId(match?.id ?? '')
+              }}
+              hint="Your letterhead on the inventory PDF and share links"
+            >
+              <option value="">— None —</option>
+              {dir.companies.map((x) => (
+                <option key={x.id} value={companyLabel(x)}>
+                  {companyLabel(x)}
+                </option>
+              ))}
+              <option value="__add">+ Add a company…</option>
+            </IntakeSelect>
+
+            {company ? (
+              <div className="k-intake-letterhead">
+                {company.logo ? <img src={company.logo} alt="" /> : null}
+                <div>
+                  {companyLines(company).map((line: string) => (
+                    <div key={line}>{line}</div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
         </section>
+
       </div>
+
+      {personModal ? (
+        <PersonModal
+          onClose={() => setPersonModal(false)}
+          onSave={(person: Person) => {
+            savePerson(person)
+            setEstimatorId(person.id)
+            setPersonModal(false)
+          }}
+        />
+      ) : null}
+
+      {companyModal ? (
+        <CompanyModal
+          onClose={() => setCompanyModal(false)}
+          onSave={(next: Company) => {
+            saveCompany(next)
+            setCompanyId(next.id)
+            setCompanyModal(false)
+          }}
+        />
+      ) : null}
 
       {jurOpen ? (
         <div
