@@ -1960,3 +1960,20 @@ button.k-avatar-menu-item {
 .k-btn.k-btn--delete:hover:not(:disabled) { background: oklch(0.50 0.19 25); border-color: oklch(0.50 0.19 25); }
 .k-btn.k-btn--delete:disabled,
 .k-btn.k-btn--delete:disabled:hover { background: var(--k-danger); border-color: var(--k-danger); color: var(--k-bg); opacity: 0.45; cursor: not-allowed; }
+
+/* Claims roster selection. */
+.k-claim-row.k-claim-row--picked,
+.k-claim-row.k-claim-row--picked:hover { background: var(--k-accent-soft); }
+.k-check.k-check--some { background: var(--k-bg); border-color: var(--k-fg); position: relative; }
+.k-check.k-check--some::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  top: 50%;
+  height: 2px;
+  margin-top: -1px;
+  border-radius: 1px;
+  background: var(--k-fg);
+}
+.k-claims-selbar { margin: 0; }

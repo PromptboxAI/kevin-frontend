@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import Alert from '../components/Alert'
 import AppHeader from '../components/AppHeader'
 import NewClaimButton from '../components/NewClaimButton'
-import ClaimRowMenu from '../components/ClaimRowMenu'
+import ClaimRowMenu, { DeleteClaimModal } from '../components/ClaimRowMenu'
 import ClaimStatusChip from '../components/ClaimStatusChip'
 import { I, Icon } from '../components/Icon'
 import { ApiError, api } from '../lib/api'
+import { claimAction, deleteClaim } from '../lib/mutations'
 import { useDeferred } from '../lib/deferred'
 import { rosterSummary } from '../lib/deferred-rules'
 import { fmtInt, fmtSince, fmtUSD, greetingFor } from '../lib/format'
@@ -159,12 +160,14 @@ export default function ClaimsPage() {
     })
 
   const listStyle = {
-    ['--claim-cols' as string]: cols
-      .map((c, i) => (i === FLEX_COL ? `minmax(${c}px, 1fr)` : `${c}px`))
-      .join(' '),
-    // Tracks + 7 gaps of 14px + 36px of row padding: widening a column past
+    // A fixed 16px checkbox track leads; the resizable columns follow it.
+    ['--claim-cols' as string]: [
+      '16px',
+      ...cols.map((c, i) => (i === FLEX_COL ? `minmax(${c}px, 1fr)` : `${c}px`)),
+    ].join(' '),
+    // Tracks + 8 gaps of 14px + 36px of row padding: widening a column past
     // the list overflows it horizontally rather than squeezing Project.
-    ['--claim-roww' as string]: `${cols.reduce((a, b) => a + b, 0) + 7 * 14 + 36}px`,
+    ['--claim-roww' as string]: `${cols.reduce((a, b) => a + b, 0) + 16 + 8 * 14 + 36}px`,
   } as React.CSSProperties
 
   const status = SERVER_STATUS[chip]
@@ -190,6 +193,65 @@ export default function ClaimsPage() {
               .some((field) => String(field).toLowerCase().includes(term)),
       )
   }, [all, chip, search])
+
+  /**
+   * Multi-select, for clearing out several claims at once. Actions apply to
+   * the selected rows that are SHOWN: a selection hidden by a filter or a
+   * search is never deleted out of sight.
+   */
+  const [picked, setPicked] = useState<Set<string>>(() => new Set())
+  const chosen = useMemo(() => visible.filter((c) => picked.has(c.claim_id)), [visible, picked])
+  const allPicked = visible.length > 0 && chosen.length === visible.length
+  const somePicked = chosen.length > 0 && !allPicked
+  const togglePick = (id: string) =>
+    setPicked((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  const toggleAllPicked = () =>
+    setPicked(allPicked ? new Set() : new Set(visible.map((c) => c.claim_id)))
+  const [bulkDelete, setBulkDelete] = useState(false)
+  const queryClient = useQueryClient()
+
+  /**
+   * One request per claim (there is no bulk route), in sequence so a failure
+   * stops cleanly and says how far it got. Whatever succeeded stays done.
+   */
+  const bulk = useMutation({
+    mutationFn: async ({ action, ids }: { action: 'delete' | 'archive'; ids: string[] }) => {
+      let done = 0
+      for (const id of ids) {
+        try {
+          if (action === 'delete') await deleteClaim(id)
+          else await claimAction(id, 'archive')
+          done += 1
+        } catch (err) {
+          throw Object.assign(err instanceof Error ? err : new Error('Request failed'), { done })
+        }
+      }
+      return { action, done }
+    },
+    onSuccess: ({ action, done }) => {
+      setPicked(new Set())
+      setNotice(
+        `${action === 'delete' ? 'Deleted' : 'Archived'} ${fmtInt(done)} ${done === 1 ? 'claim' : 'claims'}.`,
+      )
+    },
+    onError: (err, { action, ids }) => {
+      const done = (err as { done?: number }).done ?? 0
+      setNotice(
+        `${action === 'delete' ? 'Deleted' : 'Archived'} ${fmtInt(done)} of ${fmtInt(ids.length)}, then one failed${
+          err instanceof ApiError ? ` (HTTP ${err.status})` : ''
+        }. Try again for the rest.`,
+        'error',
+      )
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ['claims'] })
+    },
+  })
 
   /**
    * KPIs are scoped to OPEN claims -- live exposure, not lifetime totals.
@@ -324,6 +386,61 @@ export default function ClaimsPage() {
           </Alert>
         ) : null}
 
+        {chosen.length > 0 ? (
+          <div className="k-ws-bar k-ws-bar--sel k-claims-selbar">
+            <span>
+              <strong>{fmtInt(chosen.length)}</strong> selected
+            </span>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <button type="button" className="k-link" onClick={() => setPicked(new Set())}>
+                Clear
+              </button>
+              {chosen.some((c) => c.status !== 'archived') ? (
+                <button
+                  type="button"
+                  className="k-btn k-btn--sm k-btn--ghost"
+                  disabled={bulk.isPending}
+                  onClick={() =>
+                    bulk.mutate({
+                      action: 'archive',
+                      ids: chosen.filter((c) => c.status !== 'archived').map((c) => c.claim_id),
+                    })
+                  }
+                >
+                  Archive
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className="k-btn k-btn--sm k-btn--delete"
+                disabled={bulk.isPending}
+                onClick={() => setBulkDelete(true)}
+              >
+                <Icon d={I.trash} size={12} /> {bulk.isPending ? 'Working…' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {bulkDelete ? (
+          <DeleteClaimModal
+            claims={chosen}
+            busy={chosen.some((c) => c.status === 'processing')}
+            onClose={() => setBulkDelete(false)}
+            onArchive={() => {
+              setBulkDelete(false)
+              bulk.mutate({
+                action: 'archive',
+                ids: chosen.filter((c) => c.status !== 'archived').map((c) => c.claim_id),
+              })
+            }}
+            onConfirm={() => {
+              setBulkDelete(false)
+              bulk.mutate({ action: 'delete', ids: chosen.map((c) => c.claim_id) })
+            }}
+          />
+        ) : null}
+
         {notice ? (
           <Alert
             tone={notice.error ? 'error' : 'success'}
@@ -361,6 +478,17 @@ export default function ClaimsPage() {
                 the list these adjusters already scan all day. "Total" is the
                 tax-inclusive RCV; the worksheet still calls it RCV + Tax. */}
             <div className="k-claim-row k-claim-row--head">
+              <div>
+                <button
+                  type="button"
+                  className={`k-check${allPicked ? ' k-check--on' : ''}${somePicked ? ' k-check--some' : ''}`}
+                  onClick={toggleAllPicked}
+                  aria-label={allPicked ? 'Clear selection' : 'Select all shown claims'}
+                  aria-pressed={allPicked}
+                >
+                  {allPicked ? <Icon d={I.check} size={10} stroke={2} /> : null}
+                </button>
+              </div>
               {COLUMNS.map((col, i) =>
                 col.label ? (
                   <div key={col.label} style={col.align ? { textAlign: col.align } : undefined}>
@@ -382,7 +510,13 @@ export default function ClaimsPage() {
             </div>
 
             {visible.map((claim) => (
-              <Row key={claim.claim_id} claim={claim} onNotice={setNotice} />
+              <Row
+                key={claim.claim_id}
+                claim={claim}
+                onNotice={setNotice}
+                picked={picked.has(claim.claim_id)}
+                onPick={() => togglePick(claim.claim_id)}
+              />
             ))}
           </section>
         ) : null}
@@ -394,12 +528,27 @@ export default function ClaimsPage() {
 function Row({
   claim,
   onNotice,
+  picked,
+  onPick,
 }: {
   claim: ClaimSummary
   onNotice: (m: string, tone?: 'error') => void
+  picked: boolean
+  onPick: () => void
 }) {
   return (
-    <div className="k-claim-row">
+    <div className={`k-claim-row${picked ? ' k-claim-row--picked' : ''}`}>
+      <div>
+        <button
+          type="button"
+          className={`k-check${picked ? ' k-check--on' : ''}`}
+          onClick={onPick}
+          aria-label={`Select ${claim.name || claim.claim_id}`}
+          aria-pressed={picked}
+        >
+          {picked ? <Icon d={I.check} size={10} stroke={2} /> : null}
+        </button>
+      </div>
       {/* The saved name the adjuster typed at intake. The slug stays out of
           sight -- it is identity for URLs, not something anyone reads. */}
       <Link

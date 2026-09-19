@@ -259,7 +259,7 @@ export default function ClaimRowMenu({
       {modal === 'archive' || modal === 'delete' ? (
         modal === 'delete' ? (
           <DeleteClaimModal
-            claim={claim}
+            claims={[claim]}
             busy={busy}
             onClose={() => setModal(null)}
             onArchive={() => {
@@ -492,14 +492,15 @@ function ExportModal({
  * and keeps DELETE-to-confirm. Owner, 2026-09-19: the old one was one dense
  * red-bordered paragraph and a Delete button too pale to find.
  */
-function DeleteClaimModal({
-  claim,
+export function DeleteClaimModal({
+  claims,
   busy,
   onClose,
   onArchive,
   onConfirm,
 }: {
-  claim: ClaimSummary
+  /** One claim from its row menu, or several from the roster's selection. */
+  claims: ClaimSummary[]
   busy: boolean
   onClose: () => void
   onArchive: () => void
@@ -507,9 +508,12 @@ function DeleteClaimModal({
 }) {
   const [typed, setTyped] = useState('')
   const ok = typed.trim().toUpperCase() === 'DELETE'
-  const items = claim.item_count ?? 0
-  const photos = claim.photo_count ?? 0
-  const archived = claim.status === 'archived'
+  const one = claims.length === 1
+  const items = claims.reduce((a, c) => a + (c.item_count ?? 0), 0)
+  const photos = claims.reduce((a, c) => a + (c.photo_count ?? 0), 0)
+  // Offer Archive only when it would change something.
+  const archived = claims.every((c) => c.status === 'archived')
+  const names = claims.map((c) => c.name || c.claim_id)
 
   return (
     <div className="k-export-stage k-modal-stage">
@@ -521,9 +525,13 @@ function DeleteClaimModal({
           </span>
           <div style={{ minWidth: 0 }}>
             <div className="k-delmodal-t" id="k-delmodal-t">
-              Delete this claim?
+              {one ? 'Delete this claim?' : `Delete ${fmtInt(claims.length)} claims?`}
             </div>
-            <div className="k-delmodal-name">{claim.name || claim.claim_id}</div>
+            <div className="k-delmodal-name">
+              {one
+                ? names[0]
+                : `${names.slice(0, 3).join(', ')}${names.length > 3 ? ` and ${fmtInt(names.length - 3)} more` : ''}`}
+            </div>
           </div>
           <button type="button" className="k-icon-btn k-delmodal-x" aria-label="Close" onClick={onClose}>
             <Icon d={I.close} size={15} />
@@ -539,9 +547,9 @@ function DeleteClaimModal({
             </li>
             <li>
               <strong>{fmtInt(photos)}</strong> {photos === 1 ? 'photo' : 'photos'}
-              <span className="k-delmodal-aside"> · any shared with a copy of this claim are kept</span>
+              <span className="k-delmodal-aside"> · any shared with a copy of a claim are kept</span>
             </li>
-            <li>Its rooms, share links and history</li>
+            <li>{one ? 'Its' : 'Their'} rooms, share links and history</li>
           </ul>
 
           <div className="k-delmodal-warn">
@@ -576,7 +584,7 @@ function DeleteClaimModal({
               type="button"
               className="k-btn k-btn--ghost"
               onClick={onArchive}
-              title="Hides it from the dashboard; everything stays and it can be restored from Archived"
+              title="Hides them from the dashboard; everything stays and can be restored from Archived"
             >
               Archive instead
             </button>
