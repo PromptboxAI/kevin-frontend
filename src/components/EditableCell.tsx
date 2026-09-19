@@ -71,6 +71,14 @@ export default function EditableCell({
    * committed text until the server's value actually arrives.
    */
   const held = useRef<{ sent: string; was: string } | null>(null)
+  /**
+   * One commit per edit. Enter and Tab commit AND move focus, and moving
+   * focus blurs this input, which committed again: every edit reached the
+   * server twice, and the audit log recorded each one twice. Escape blurred
+   * too, so a cancelled edit was saved anyway. Armed on focus, spent by the
+   * first commit or by Escape.
+   */
+  const armed = useRef(false)
 
   useEffect(() => {
     if (editing) return
@@ -83,6 +91,8 @@ export default function EditableCell({
   }, [value, editing])
 
   const commit = () => {
+    if (!armed.current) return
+    armed.current = false
     setEditing(false)
     // Cleared on focus and never typed into: put the old value back, do not
     // report an edit the adjuster did not make.
@@ -143,6 +153,7 @@ export default function EditableCell({
         setDraft(e.target.value)
       }}
       onFocus={() => {
+        armed.current = true
         setEditing(true)
         if (numeric) {
           untouched.current = true
@@ -159,6 +170,8 @@ export default function EditableCell({
           if (!moved && !e.shiftKey) onEnterPastEnd?.()
         } else if (e.key === 'Escape') {
           e.preventDefault()
+          armed.current = false
+          untouched.current = false
           setDraft(value)
           setEditing(false)
           ref.current?.blur()
