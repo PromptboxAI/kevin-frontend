@@ -102,7 +102,9 @@ export default function StagingPage() {
       const d = q.state.data as StagingSessionFull | undefined
       if (!d) return false
       const settling = d.status === 'uploading' || d.status === 'clustering'
-      const extracting = pendingPhotos(d).length > 0
+      const shown =
+        (d.groups ?? []).reduce((a, g) => a + g.photos.length, 0) + (d.ungrouped_photos?.length ?? 0)
+      const extracting = pendingPhotos(d).length > 0 || d.photo_count > shown
       // Poll until the SETS arrive, not merely until the status settles --
       // status flips to `review` a beat before the groups are readable.
       const setsPending = awaitingSets && (d.groups?.length ?? 0) === 0
@@ -123,6 +125,16 @@ export default function StagingPage() {
   )
   const unassigned = data?.ungrouped_photos ?? []
   const stillExtracting = pendingPhotos(data)
+  /**
+   * Photos the server is still READING are not listed in the session at all
+   * -- neither in a set nor loose -- so `stillExtracting` cannot see them.
+   * `photo_count` does include them, so the difference is how many are in
+   * flight. Every "wait for the photos" decision below uses this total.
+   */
+  const listed =
+    (data?.groups ?? []).reduce((a, g) => a + g.photos.length, 0) + (data?.ungrouped_photos?.length ?? 0)
+  const unlisted = Math.max(0, (data?.photo_count ?? 0) - listed)
+  const reading = stillExtracting.length + unlisted
   /** A loose photo is only actionable once its extraction finishes. */
   const loose = unassigned.filter(isActionable)
 
@@ -151,7 +163,7 @@ export default function StagingPage() {
     if (!data || autoFired.current || awaitingSets || cluster.isPending) return
     if (Date.now() < retryClusterAt.current) return
     const none = (data.groups?.length ?? 0) === 0
-    if (none && data.photo_count > 0 && stillExtracting.length === 0 && data.status !== 'processed') {
+    if (none && data.photo_count > 0 && reading === 0 && data.status !== 'processed') {
       autoFired.current = true
       log('auto-clustering — upload landed, every photo read, no sets yet')
       cluster.mutate()
@@ -207,7 +219,14 @@ export default function StagingPage() {
       setAwaitingSets(true)
       void session.refetch()
     },
-    onError: fail('remainder', 'Grouping the late photos'),
+    onError: (error) => {
+      // Clicked while a photo is still being read: wait and try again.
+      if (error instanceof ApiError && error.status === 409 && /extract/i.test(JSON.stringify(error.detail ?? ''))) {
+        window.setTimeout(() => remainder.mutate(), 3000)
+        return
+      }
+      fail('remainder', 'Grouping the late photos')(error)
+    },
   })
 
   const merge = useMutation({
@@ -382,7 +401,7 @@ export default function StagingPage() {
    * nothing. The dialog now appears only when photos would be left out --
    * still being read, or in no set -- which the page does not make obvious.
    */
-  const leftOut = stillExtracting.length + loose.length
+  const leftOut = reading + loose.length
   const beginProcessing = () => (leftOut ? setConfirmProcess(true) : process.mutate())
 
   const noteTarget = noteFor ? byKey(noteFor) : null
@@ -579,16 +598,16 @@ export default function StagingPage() {
           </div>
         ) : null}
 
-        {loose.length > 0 || stillExtracting.length > 0 ? (
+        {loose.length > 0 || reading > 0 ? (
           <div className={'k-tray' + (loose.length === 0 ? ' k-tray--pending' : '')}>
             <div className="k-tray-hd">
               <Icon d={loose.length ? I.warn : I.clock} size={14} />
               <span className="k-tray-t">
                 {loose.length
                   ? `${loose.length} ${loose.length === 1 ? 'photo' : 'photos'} arrived after grouping ran, so ${loose.length === 1 ? 'it is' : 'they are'} on ${loose.length === 1 ? 'its' : 'their'} own below — merge, note or exclude ${loose.length === 1 ? 'it' : 'them'} like any other set.`
-                  : `${stillExtracting.length} ${stillExtracting.length === 1 ? 'photo is' : 'photos are'} still processing. Nothing to do yet.`}
-                {loose.length > 0 && stillExtracting.length > 0
-                  ? ` ${stillExtracting.length} more ${stillExtracting.length === 1 ? 'is' : 'are'} still processing.`
+                  : `${reading} ${reading === 1 ? 'photo is' : 'photos are'} still processing. Nothing to do yet.`}
+                {loose.length > 0 && reading > 0
+                  ? ` ${reading} more ${reading === 1 ? 'is' : 'are'} still processing.`
                   : ''}
               </span>
               <div style={{ flex: 1 }} />
@@ -927,17 +946,17 @@ export default function StagingPage() {
             </div>
 
             <div className="k-procmodal-body">
-              {stillExtracting.length ? (
+              {reading ? (
                 <Alert
                   tone="wait"
                   title={
-                    stillExtracting.length === 1
+                    reading === 1
                       ? 'Kevin is still reading 1 photo'
-                      : `Kevin is still reading ${fmtInt(stillExtracting.length)} photos`
+                      : `Kevin is still reading ${fmtInt(reading)} photos`
                   }
                 >
-                  Processing now leaves {stillExtracting.length === 1 ? 'it' : 'them'} off the
-                  worksheet. Wait a moment and {stillExtracting.length === 1 ? 'it' : 'they'} can
+                  Processing now leaves {reading === 1 ? 'it' : 'them'} off the
+                  worksheet. Wait a moment and {reading === 1 ? 'it' : 'they'} can
                   be grouped.
                 </Alert>
               ) : null}
@@ -961,7 +980,7 @@ export default function StagingPage() {
                 className="k-btn k-btn--ghost"
                 onClick={() => setConfirmProcess(false)}
               >
-                {stillExtracting.length ? 'Wait for them' : 'Go back and group'}
+                {reading ? 'Wait for them' : 'Go back and group'}
               </button>
               <button
                 type="button"
