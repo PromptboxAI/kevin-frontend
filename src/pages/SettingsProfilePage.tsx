@@ -474,38 +474,10 @@ export default function SettingsProfilePage() {
         </div>
       </section>
 
-      <section className="k-set-card k-set-card--danger">
-        <div className="k-set-card-hd">Danger zone</div>
-        <div className="k-set-card-body" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div className="k-set-row">
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>Export my data</div>
-              <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', marginTop: 2 }}>
-                One archive of every claim, export and audit-log entry on the account. Not built
-                yet — export claims one at a time from the Export tab meanwhile.
-              </div>
-            </div>
-            {/* No account-export route exists (BACKEND-ASKS). A button that
-                does nothing is worse than saying so. */}
-            <span className="k-claim-tab-soon">Soon</span>
-          </div>
-          <div className="k-set-row">
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--k-danger)' }}>
-                Delete my account
-              </div>
-              <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', marginTop: 2 }}>
-                Not built yet. You can delete individual claims from My claims today; email us to
-                close an account.
-              </div>
-            </div>
-            {/* Same: deleting an account needs a server-side cascade and a
-                Supabase admin call. Claims can be deleted today, one by one,
-                from My claims. */}
-            <span className="k-claim-tab-soon">Soon</span>
-          </div>
-        </div>
-      </section>
+      {/* No Danger zone. Account export and account deletion both need
+          server work that does not exist (an export job, and a cascade plus a
+          Supabase admin call), and neither is worth a row that cannot act.
+          Claims are deleted from My claims today. */}
     </SettingsShell>
   )
 }
