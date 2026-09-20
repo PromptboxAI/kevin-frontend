@@ -21,16 +21,28 @@ import SettingsShell from '../components/SettingsShell'
  * state the API actually reports.
  */
 
-/** Coverage the aggregator returns — informational, NOT toggleable sources. */
+/**
+ * What a search returns — informational, NOT toggleable sources (rule 10).
+ * Examples, not a roster: the engine surfaces whatever merchants carry the
+ * item, and no store is integrated one by one.
+ */
 const COVERAGE: [string, string][] = [
-  ['Major retailers', 'Amazon · Walmart · Target · Best Buy · Home Depot · Lowe’s'],
-  ['Furniture & home', 'Wayfair · West Elm · CB2 · Pottery Barn · Article'],
-  ['Specialty', 'Category retailers surfaced automatically by query match'],
+  ['Major retailers', 'Amazon, Walmart, Target, Best Buy, Costco, Home Depot, Lowe’s'],
+  ['Furniture & home', 'Wayfair, IKEA, Pottery Barn, West Elm, Crate & Barrel, Article'],
+  ['Clothing & footwear', 'Department stores and brand shops, by query match'],
+  [
+    'Specialty & hobby',
+    'Music, sporting goods, tools, toys and collectible shops, by query match',
+  ],
+  ['Brand direct', 'The maker’s own storefront — settles the price when merchants disagree'],
   [
     'Marketplaces',
-    'Returned when a retail listing exists — marketplace offers are included in the comp set',
+    'Included alongside retail listings, so a discontinued item still prices',
   ],
-  ['Brand direct', 'Manufacturer storefronts, used as tiebreaker when merchants disagree'],
+  [
+    'Resale market',
+    'Used when retail is too thin to price from — labelled on the row, never mixed in silently',
+  ],
 ]
 
 const BASES: [string, 'ok' | 'info' | 'wait', string][] = [
@@ -91,18 +103,20 @@ export default function SettingsPricingPage() {
           <Badge tone="ok">Operational</Badge>
         </div>
         <div style={{ padding: '10px 14px 16px' }}>
+          {/* WHITE-LABELLED (owner, 2026-09-20): the screen names Kevin's
+              engine, never the vendor behind it. Which third-party service
+              supplies the offers is ours to change and no competitor's to
+              learn from our settings page. */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0 14px' }}>
-            <div className="k-source-logo">G</div>
+            <div className="k-source-logo">K</div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 13.5, fontWeight: 600 }}>
-                  Google Shopping · Immersive Product API
-                </span>
+                <span style={{ fontSize: 13.5, fontWeight: 600 }}>Kevin Content Pricing Engine</span>
                 <Badge tone="accent">unified</Badge>
               </div>
-              <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', marginTop: 3 }}>
-                Served via SerpApi · one query per item returns live merchant
-                offers with prices, links and availability
+              <div style={{ fontSize: 12, color: 'var(--k-fg-3)', marginTop: 3 }}>
+                One search per item returns live merchant offers — price, link and availability —
+                across every source below.
               </div>
             </div>
           </div>
