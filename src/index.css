@@ -2210,3 +2210,42 @@ button.k-avatar-menu-item {
 .k-adm-causebody { padding: 4px 16px 14px; background: var(--k-bg-2); border-bottom: 1px solid var(--k-line); }
 .k-adm-causeact { padding: 10px 0 2px; font-size: 12.5px; color: var(--k-fg-2); }
 .k-adm-causeids { margin-top: 8px; font-size: 11px; color: var(--k-fg-4); word-spacing: 2px; }
+
+/* Platform: the schedule and the routing, as tables. */
+.k-adm-sched-hd,
+.k-adm-sched-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 70px 120px 80px 60px;
+  gap: 12px;
+  align-items: center;
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--k-line);
+  font-size: 12.5px;
+}
+.k-adm-sched-hd {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: var(--k-fg-4);
+  background: var(--k-bg-2);
+  position: sticky;
+  top: 0;
+}
+.k-adm-sched { max-height: 460px; overflow-y: auto; }
+.k-adm-sched-row:last-child { border-bottom: 0; }
+.k-adm-sched-row:hover { background: var(--k-bg-2); }
+.k-adm-sched-name { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--k-fg); }
+
+.k-adm-route {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 14px;
+  align-items: baseline;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--k-line);
+}
+.k-adm-route:last-child { border-bottom: 0; }
+.k-adm-route-cat { font-size: 12.5px; font-weight: 700; color: var(--k-fg); }
+.k-adm-route-list { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12.5px; color: var(--k-fg-2); }
+.k-adm-route-src { display: inline-flex; align-items: center; gap: 6px; }

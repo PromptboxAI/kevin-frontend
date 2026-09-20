@@ -20,6 +20,7 @@ import ForEstateLiquidatorsPage from './pages/ForEstateLiquidatorsPage'
 import ProductPage from './pages/ProductPage'
 import ClaimsPage from './pages/ClaimsPage'
 import AdminSystemPage from './pages/AdminSystemPage'
+import AdminPlatformPage from './pages/AdminPlatformPage'
 import RequireAdmin from './components/RequireAdmin'
 import ExportsPage from './pages/ExportsPage'
 import ExportPage from './pages/ExportPage'
@@ -347,6 +348,14 @@ export default function App() {
           element={
             <RequireAdmin>
               <AdminSystemPage />
+            </RequireAdmin>
+          }
+        />
+        <Route
+          path="/admin/platform"
+          element={
+            <RequireAdmin>
+              <AdminPlatformPage />
             </RequireAdmin>
           }
         />
