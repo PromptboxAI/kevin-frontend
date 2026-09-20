@@ -8,6 +8,97 @@ nothing gets asked twice and nothing quietly falls off.
 
 ---
 
+## 4. The admin panel needs to ACT on an account — NOT SENT
+
+**Status:** new, 2026-09-20. This supersedes prompt 2 — read this one first.
+
+Three admin screens are live and read real data: System (`/admin/system`),
+Platform (`/admin/platform`) and, until it was deleted today, a "support tools"
+screen that let an admin compute a depreciation figure. The owner's verdict on
+that one, and he is right: *"they don't call Xactimate and ask how much drywall
+would depreciate for, they just enter drywall and see what it comes out to. This
+admin panel needs to be actually useful."*
+
+So the question is not "what data can we display" but **"what does the owner do
+when a customer writes in?"** Today: nothing, because every path stops at
+owner-scoped data. Here is the whole list, in the order it matters.
+
+### 4.1 Find the account, see its state
+
+- **`GET /v1/admin/accounts?q=&limit=&offset=`** — search by email or user id.
+  Per row: `user_id`, `email`, `plan`, `billing_state`, `included_items`,
+  `items_used`, `credit_balance`, `claims_count`, `photos_count`,
+  `storage_bytes`, `created_at`, `last_active_at`.
+- **`GET /v1/admin/accounts/{user_id}`** — the same, plus that account's claims
+  (id, name, status, item/photo counts, totals, created/updated) and its recent
+  activity.
+
+Everything below hangs off being able to reach one account.
+
+### 4.2 See what went wrong for THEM
+
+- **`GET /v1/admin/accounts/{user_id}/jobs/failed`** — their dead-letter rows,
+  or let the existing `/v1/jobs/failed` take `?actor_id=`. Right now a failure
+  carries a bare uuid and no way to reach the customer it belonged to.
+- **`GET /v1/admin/claims/{claim_id}`** and **`…/claim_items?claim_id=`** — read
+  another account's claim, so "my worksheet looks wrong" can be looked at
+  instead of guessed at. Read-only is fine.
+- **`GET /v1/admin/claims/{claim_id}/events`** — the audit trail for a claim we
+  do not own. This is what answers "who changed that price?".
+
+### 4.3 Fix it
+
+- **`POST /v1/jobs/{job_id}/retry`** and **`POST /v1/jobs/failed/clear`** — from
+  prompt 1, still needed: re-run a customer's failed work, and clear rows that
+  can never succeed.
+- **`POST /v1/admin/claims/{claim_id}/reprice`** — re-run pricing on someone
+  else's claim (or their stuck lines), the admin equivalent of Retry deferred.
+- **`POST /v1/admin/claims/{claim_id}/unstick`** — for a claim wedged in
+  `processing` because a worker died: mark its in-flight rows failed so the
+  adjuster can retry. Today only the global reaper can do this, on a schedule.
+
+### 4.4 Change what they are entitled to
+
+- **`POST /v1/admin/accounts/{user_id}/credits`** — grant items after our own
+  failure burned their quota. `{ items: 250, reason: "…" }`, audited.
+- **`PATCH /v1/admin/accounts/{user_id}/plan`** — set `plan` / `billing_state`,
+  including a **comped** state ($0, full features) and an **internal** one for
+  staff accounts. Both must be excluded from revenue rollups by construction.
+  Note `plan` is currently constrained to `('trial','pro')`, so this needs a
+  migration.
+- **`POST /v1/admin/accounts/{user_id}/suspend`** / `…/restore` — for abuse or
+  non-payment, without deleting anything (rule 15: nothing is ever deleted to
+  reclaim space, and the customer's data stays theirs).
+
+### 4.5 Account lifecycle
+
+- **`POST /v1/admin/accounts/{user_id}/delete`** — the cascade behind "Delete my
+  account", which is currently an email to us. Server-side, audited, and with
+  the same file-reference rules as claim deletion (`kept_shared`).
+- **Password reset / resend invite** — if these live in Supabase admin, say so
+  and we will point the console at whatever you expose; we will not hold service
+  keys in the browser.
+
+### Two rules for all of the above
+
+1. **No impersonation.** The design is explicit: support diagnoses from the back
+   office, never by entering the customer's session. Read-only cross-account
+   reads plus named actions, never a "sign in as" token.
+2. **Every action is audited** — who, what, when, why — and readable back
+   through 4.2. An admin action that leaves no trace is worse than no action.
+
+### What we would build first
+
+Given 4.1 and 4.2 alone, the console gets: an account search, an account page
+showing plan, usage, storage, claims and failures, and a route from a failed job
+to the customer it hurt. That is the minimum for the owner to answer a support
+email. 4.3 turns it from diagnosis into repair.
+
+If any of this already exists under a different path, tell us the shape and we
+will build against it.
+
+---
+
 ## 3. Make the depreciation schedule and comp routing editable — NOT SENT
 
 **Status:** new, 2026-09-20.
@@ -43,41 +134,24 @@ the routes exist.
 
 ---
 
-## 2. Admin console: account and revenue data — NOT SENT
+## 2. Admin console: account and revenue data — SUPERSEDED by prompt 4
 
-**Status:** new, 2026-09-20.
-
-The admin console's System (`/admin/system`) and Platform (`/admin/platform`)
-screens are live and read real data. The remaining screens — Overview, Accounts,
-Account detail, Revenue — have no data source at all: there is no cross-account
-query. We will not ship them on invented numbers, so they are unbuilt.
-
-What would unblock four screens at once:
-
-1. **`GET /v1/admin/accounts`** — one row per account, paged, searchable by
-   email: `user_id`, `email`, `plan`, `billing_state`, `included_items`,
-   `items_used`, `credit_balance`, `claims_count`, `photos_count`,
-   `storage_bytes`, `created_at`, `last_active_at`. Accounts (65) is this table;
-   Overview (64) is counts derived from it.
-2. **`GET /v1/admin/accounts/{user_id}`** — the same for one account, plus its
-   claims and recent activity, for Account detail (66).
+Kept for the revenue question, which prompt 4 does not cover:
 
 For **Revenue (67)**, tell us what is knowable rather than us guessing: if Stripe
 is the source of truth for MRR, does anything in our database mirror
 subscriptions, or should that screen stay empty until it does? A real zero is
-fine; a plausible chart is not.
-
-Two notes carried from the design:
-
-- **Comped and internal accounts carry `mrr: 0`** and must be excluded from every
-  revenue rollup by construction, not by a filter someone remembers to apply.
-- **No per-seat language anywhere** — pricing is flat monthly (rule 9).
+fine; a plausible chart is not. Comped and internal accounts carry `mrr: 0` and
+must be excluded from every rollup by construction, not by a filter someone
+remembers to apply. No per-seat language anywhere — pricing is flat monthly
+(rule 9).
 
 ---
 
 ## 1. Failed jobs: an admin can see them and do nothing — NOT SENT
 
-**Status:** new, 2026-09-20.
+**Status:** new, 2026-09-20. Folded into prompt 4 (§4.3), but the diagnosis is
+here.
 
 `/admin/system` now surfaces `GET /v1/jobs/failed`, grouped by cause. Today's
 queue is 50 rows in 2 causes:
@@ -91,13 +165,3 @@ queue is 50 rows in 2 causes:
 Both look like bugs since fixed, leaving dead-letter rows behind. Please confirm,
 and clear them if so — the count on that screen should mean "needs attention",
 not "history".
-
-To make the screen actionable rather than informational:
-
-1. **`POST /v1/jobs/{job_id}/retry`** — re-enqueue one dead-letter job, and ideally
-   a whole cause at once. Return what was enqueued.
-2. **`POST /v1/jobs/failed/clear`** — acknowledge or discard rows that can never
-   succeed (all of today's are that kind).
-3. **An account lookup by id** — `actor_id` on a failure is a bare uuid. Support
-   cannot reach a customer from that. Even `GET /v1/admin/accounts/{user_id}`
-   from prompt 2 would do it.
