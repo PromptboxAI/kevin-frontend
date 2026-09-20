@@ -1,10 +1,10 @@
-import { useState } from 'react'
+
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import Alert from '../components/Alert'
 import SettingsShell from '../components/SettingsShell'
 import { Icon, I } from '../components/Icon'
 import { api } from '../lib/api'
-import { copyText } from '../lib/clipboard'
 import { fmtInt } from '../lib/format'
 import type { MeResponse } from '../lib/types'
 
@@ -51,11 +51,6 @@ const API_EVENTS: [string, string][] = [
   ['export.link.viewed', 'Someone opened a share link'],
 ]
 
-const CURL = `# List claims opened in the last 30 days
-curl https://api.kevin.co/v1/claims \\
-  -H "Authorization: Bearer sk_live_4G3y..." \\
-  -G --data-urlencode "since=2026-07-03" \\
-  --data-urlencode "limit=50"`
 
 export default function SettingsApiPage({ plan: forced }: { plan?: string } = {}) {
   const me = useQuery({
@@ -68,28 +63,8 @@ export default function SettingsApiPage({ plan: forced }: { plan?: string } = {}
   const enterprise = plan === 'enterprise'
   const planLabel =
     plan === 'free' ? 'the free tier' : plan === 'comped' ? 'a complimentary plan' : 'Pro'
-  const [copied, setCopied] = useState<'yes' | 'failed' | null>(null)
 
-  /**
-   * `navigator.clipboard` is not always available -- it needs a secure context
-   * and can be refused outright by permissions policy, which is exactly what
-   * happened the first time this was tested. The original wrote the text in a
-   * bare `.then()` with no rejection handler, so a denied clipboard produced an
-   * unhandled rejection and a button that did nothing at all.
-   *
-   * Falls back to the old selection-based copy, and if BOTH fail it says so
-   * rather than pretending. Silence is the one outcome a copy button must not
-   * have.
-   */
-  const copyCurl = async () => {
-    if (await copyText(CURL)) {
-      setCopied('yes')
-      window.setTimeout(() => setCopied(null), 1600)
-    } else {
-      setCopied('failed')
-      window.setTimeout(() => setCopied(null), 2600)
-    }
-  }
+  
   return (
     <SettingsShell
       activeId="api"
@@ -97,7 +72,7 @@ export default function SettingsApiPage({ plan: forced }: { plan?: string } = {}
       eyebrow={enterprise ? 'Enterprise · keys · webhooks' : 'Enterprise feature'}
       save={false}
     >
-      <div style={{ marginBottom: 22 }}>
+      <div style={{ marginBottom: 16 }}>
         <h1
           style={{
             fontFamily: 'var(--k-font-display)',
@@ -115,6 +90,15 @@ export default function SettingsApiPage({ plan: forced }: { plan?: string } = {}
           don&apos;t need any of this.
         </p>
       </div>
+
+      {/* NOT BUILT (owner, 2026-09-20). There is no key route, no webhook
+          route, and api.kevin.co does not resolve; the events below are a
+          plan. The page stays as the Enterprise conversation, but it says so
+          up front rather than reading as a console someone can use. */}
+      <Alert tone="info" title="Not built yet">
+        Keys and webhooks are on the roadmap, not in the product. Nothing here can be provisioned
+        today — talk to us if an integration is what you need, and we&apos;ll scope it with you.
+      </Alert>
 
       {!enterprise ? (
         <section className="k-set-card k-set-card--accent">
@@ -205,7 +189,7 @@ export default function SettingsApiPage({ plan: forced }: { plan?: string } = {}
       ) : null}
 
       <section className="k-set-card">
-        <div className="k-set-card-hd">What you can do with it</div>
+        <div className="k-set-card-hd">Planned events</div>
         <div className="k-set-card-body" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <p
             style={{
@@ -242,44 +226,18 @@ export default function SettingsApiPage({ plan: forced }: { plan?: string } = {}
       </section>
 
       <section className="k-set-card">
-        <div className="k-set-card-hd">Try a request</div>
-        <div className="k-set-card-body" style={{ padding: 0 }}>
-          <pre
-            style={{
-              margin: 0,
-              padding: 20,
-              fontFamily: 'var(--k-font-mono)',
-              fontSize: 12,
-              lineHeight: 1.7,
-              background: 'var(--k-bg-2)',
-              color: 'var(--k-fg)',
-              overflowX: 'auto',
-            }}
-          >
-            {CURL}
-          </pre>
-        </div>
-        <div
-          style={{
-            padding: '12px 18px',
-            borderTop: '1px solid var(--k-line)',
-            background: 'var(--k-bg-2)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}
-        >
-          <button type="button" className="k-btn k-btn--ghost" onClick={() => void copyCurl()}>
-            {copied === 'yes' ? 'Copied' : copied === 'failed' ? 'Press Ctrl+C' : 'Copy'}
-          </button>
-          {copied === 'failed' ? (
-            <span style={{ fontSize: 11.5, color: 'var(--k-fg-4)' }}>
-              Your browser blocked the clipboard — the command is selected.
-            </span>
-          ) : null}
-          <Link className="k-btn k-btn--ghost" to="/docs">
-            Open API docs →
-          </Link>
+        <div className="k-set-card-hd">When it ships</div>
+        <div className="k-set-card-body" style={{ fontSize: 12.5, color: 'var(--k-fg-2)', lineHeight: 1.6 }}>
+          Scoped keys, the events above, and a documented REST surface for claims, items and
+          exports. Until then the .xlsx and PDF exports cover the same ground by hand.
+          <div style={{ marginTop: 14, display: 'flex', gap: 8 }}>
+            <Link className="k-btn k-btn--ghost" to="/contact">
+              Talk to us about Enterprise →
+            </Link>
+            <Link className="k-btn k-btn--ghost" to="/docs">
+              Read the docs →
+            </Link>
+          </div>
         </div>
       </section>
     </SettingsShell>
