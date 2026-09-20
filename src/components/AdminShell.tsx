@@ -38,7 +38,10 @@ export default function AdminShell({
   })
 
   return (
-    <div className="k-shell">
+    /* NOT `k-shell`: that pins the page to the viewport and hides overflow so
+       the worksheet's grid can scroll itself. An ops screen is a long document
+       -- 50 failed jobs with tracebacks -- and must scroll normally. */
+    <div className="k-adm">
       <header className="k-topbar k-adm-topbar">
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>

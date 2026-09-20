@@ -2192,3 +2192,12 @@ button.k-avatar-menu-item {
 .k-adm-fail { padding: 12px 16px; border-bottom: 1px solid var(--k-line); }
 .k-adm-fail:last-child { border-bottom: 0; }
 .k-adm-fail-hd { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+
+/* The admin console scrolls like a document. */
+.k-adm {
+  min-height: 100dvh;
+  background: var(--k-bg);
+  display: flex;
+  flex-direction: column;
+}
+.k-adm .k-adm-body { flex: 1; }
