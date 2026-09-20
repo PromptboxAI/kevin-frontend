@@ -34,7 +34,6 @@ import PairPage from './pages/PairPage'
 import PortalPage from './pages/PortalPage'
 import PortalReturnPage from './pages/PortalReturnPage'
 import RecoveryPage from './pages/RecoveryPage'
-import SettingsApiPage from './pages/SettingsApiPage'
 import SettingsBusinessPage from './pages/SettingsBusinessPage'
 import SettingsXactimatePage from './pages/SettingsXactimatePage'
 import SettingsPricingPage from './pages/SettingsPricingPage'
@@ -320,14 +319,11 @@ export default function App() {
             </RequireAuth>
           }
         />
-        <Route
-          path="/settings/api"
-          element={
-            <RequireAuth>
-              <SettingsApiPage />
-            </RequireAuth>
-          }
-        />
+        {/* API & webhooks is not offered yet (owner, 2026-09-20). The page is
+            kept (SettingsApiPage); this redirects so a bookmark cannot reach a
+            surface we are not selling. Restore the element and clear `off` on
+            the nav item to bring it back. */}
+        <Route path="/settings/api" element={<Navigate to="/settings/profile" replace />} />
         {/* Carrier profiles is not offered in beta. The screen is built and
             kept (SettingsCarriersPage) -- this route redirects so a bookmark or
             an old link cannot reach a feature we are not selling yet. Restore

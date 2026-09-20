@@ -45,7 +45,10 @@ const NAV: NavItem[] = [
   { id: 'pricing', label: 'Pricing', to: '/settings/pricing' },
   { id: 'integrations', label: 'Xactimate', to: '/settings/xactimate' },
   { id: 'billing', label: 'Billing', to: '/settings/billing' },
-  { id: 'api', label: 'API & webhooks', to: '/settings/api' },
+  // Not offered yet: no key route, no webhook route (owner, 2026-09-20).
+  // Same treatment as Carrier profiles -- greyed and labelled, with the route
+  // redirecting. Flip `off` and restore the route in App.tsx to bring it back.
+  { id: 'api', label: 'API & webhooks', to: '/settings/api', off: true },
 ]
 
 export default function SettingsShell({

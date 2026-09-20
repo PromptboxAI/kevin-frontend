@@ -1,7 +1,6 @@
 
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import Alert from '../components/Alert'
 import SettingsShell from '../components/SettingsShell'
 import { Icon, I } from '../components/Icon'
 import { api } from '../lib/api'
@@ -90,15 +89,6 @@ export default function SettingsApiPage({ plan: forced }: { plan?: string } = {}
           don&apos;t need any of this.
         </p>
       </div>
-
-      {/* NOT BUILT (owner, 2026-09-20). There is no key route, no webhook
-          route, and api.kevin.co does not resolve; the events below are a
-          plan. The page stays as the Enterprise conversation, but it says so
-          up front rather than reading as a console someone can use. */}
-      <Alert tone="info" title="Not built yet">
-        Keys and webhooks are on the roadmap, not in the product. Nothing here can be provisioned
-        today — talk to us if an integration is what you need, and we&apos;ll scope it with you.
-      </Alert>
 
       {!enterprise ? (
         <section className="k-set-card k-set-card--accent">
