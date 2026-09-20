@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import Alert from '../components/Alert'
 import Badge from '../components/Badge'
+import { I, Icon } from '../components/Icon'
 import SettingsShell from '../components/SettingsShell'
 
 /**
@@ -33,17 +35,20 @@ const COVERAGE: [string, string][] = [
   ['Brand direct', 'Manufacturer storefronts, used as tiebreaker when merchants disagree'],
 ]
 
-const BASES: [string, string][] = [
+const BASES: [string, 'ok' | 'info' | 'wait', string][] = [
   [
     'Retail comp',
+    'ok',
     'Item still sold new — RCV = median of the live merchant comps returned for the query. Two alternates stay one click away in the worksheet, each with a dated proof link.',
   ],
   [
     'Like-kind substitute',
+    'info',
     'Exact model discontinued but a comparable is still sold new — Kevin prices the nearest NEW equivalent as RCV. Substitution is noted on the row.',
   ],
   [
     'Manual / appraisal',
+    'wait',
     'No confident new-replacement comp came back, or the class is manual-only (Jewelry, Fine Arts, Firearms, Furs) — the item arrives flagged needs_manual with a reason, RCV and ACV null, and the adjuster types the value and attaches a proof link. Kevin never prices an item off a used listing to avoid leaving it blank.',
   ],
 ]
@@ -108,9 +113,14 @@ export default function SettingsPricingPage() {
         </p>
       </div>
 
-      <section className="k-ov-card" style={{ background: 'var(--k-bg)' }}>
-        <div className="k-ov-card-hd">
-          <span>Comp source</span>
+      <section className="k-ov-card k-pcard">
+        <div className="k-ov-card-hd k-pcard-hd">
+          <span className="k-pcard-t">
+            <span className="k-pcard-ic k-pcard-ic--accent">
+              <Icon d={I.search} size={12} />
+            </span>
+            Comp source
+          </span>
           <Badge tone="ok">Operational</Badge>
         </div>
         <div style={{ padding: '10px 14px 16px' }}>
@@ -146,8 +156,9 @@ export default function SettingsPricingPage() {
               ),
             )}
           </div>
-          <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', marginBottom: 12 }}>
-            Live source telemetry is not reported yet.
+          <div className="k-share-snapnote" style={{ marginTop: 0, marginBottom: 14 }}>
+            <Icon d={I.info} size={13} />
+            <span>Live source telemetry isn’t reported yet, so these stay blank.</span>
           </div>
 
           <div
@@ -174,24 +185,23 @@ export default function SettingsPricingPage() {
               What the aggregator covers
             </div>
             {COVERAGE.map(([title, desc]) => (
-              <div key={title} style={{ display: 'flex', gap: 10, alignItems: 'baseline' }}>
-                <span
-                  style={{ fontSize: 12, fontWeight: 600, color: 'var(--k-fg-2)', width: 140, flexShrink: 0 }}
-                >
-                  {title}
-                </span>
-                <span style={{ flex: 1, fontSize: 12, color: 'var(--k-fg-3)', lineHeight: 1.5 }}>
-                  {desc}
-                </span>
+              <div key={title} className="k-pcov">
+                <span className="k-pcov-t">{title}</span>
+                <span className="k-pcov-d">{desc}</span>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="k-ov-card" style={{ background: 'var(--k-bg)' }}>
-        <div className="k-ov-card-hd">
-          <span>Valuation behavior</span>
+      <section className="k-ov-card k-pcard">
+        <div className="k-ov-card-hd k-pcard-hd">
+          <span className="k-pcard-t">
+            <span className="k-pcard-ic k-pcard-ic--ok">
+              <Icon d={I.spark} size={12} />
+            </span>
+            Valuation behavior
+          </span>
         </div>
         <div style={{ padding: '8px 14px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
           <Toggle
@@ -214,24 +224,26 @@ export default function SettingsPricingPage() {
           />
           {/* The design puts Save here. There is no endpoint that stores these
               three, so the toggles move locally and nothing is promised. */}
-          <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', marginTop: 4 }}>
-            These three are engine defaults. No endpoint stores them per account
-            yet, so changing one here does not persist.
-          </div>
+          <Alert tone="info" title="Engine defaults">
+            No endpoint stores these per account yet, so a change here doesn’t persist.
+          </Alert>
         </div>
       </section>
 
-      <section className="k-ov-card" style={{ background: 'var(--k-bg)' }}>
-        <div className="k-ov-card-hd">
-          <span>How Kevin sets each value</span>
+      <section className="k-ov-card k-pcard">
+        <div className="k-ov-card-hd k-pcard-hd">
+          <span className="k-pcard-t">
+            <span className="k-pcard-ic k-pcard-ic--wait">
+              <Icon d={I.file} size={12} />
+            </span>
+            How Kevin sets each value
+          </span>
         </div>
         <div style={{ padding: '18px 14px 18px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {BASES.map(([title, desc]) => (
-            <div key={title}>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>{title}</div>
-              <div style={{ fontSize: 12, color: 'var(--k-fg-3)', lineHeight: 1.55, marginTop: 2 }}>
-                {desc}
-              </div>
+          {BASES.map(([title, tone, desc]) => (
+            <div key={title} className={`k-pbasis k-pbasis--${tone}`}>
+              <div className="k-pbasis-t">{title}</div>
+              <div className="k-pbasis-d">{desc}</div>
             </div>
           ))}
         </div>
