@@ -19,7 +19,7 @@ const SECTIONS: { label: string; to?: string }[] = [
   { label: 'Revenue' },
   { label: 'Content' },
   { label: 'Platform', to: '/admin/platform' },
-  { label: 'Support' },
+  { label: 'Support', to: '/admin/support' },
   { label: 'Staff' },
   { label: 'System', to: '/admin/system' },
 ]
