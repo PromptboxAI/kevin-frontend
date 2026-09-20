@@ -3408,12 +3408,16 @@
       display: flex; align-items: center; gap: 10px;
       padding: 10px 14px; background: var(--k-bg-2); border: 1px solid var(--k-line); border-radius: 8px;
     }
+    /* Same light blue as an info Alert (owner, 2026-09-19): the 10% accent
+       tint read as grey, and grey is not a notification colour. */
     .k-share-snapnote {
       display: flex; align-items: flex-start; gap: 9px; margin-top: 10px;
-      padding: 11px 13px; background: var(--k-accent-soft); border-radius: 8px;
-      font-size: 11.5px; color: var(--k-fg-3); line-height: 1.55;
+      padding: 11px 13px; border-radius: 8px;
+      background: var(--k-alert-info-bg); border: 1px solid var(--k-alert-info-line);
+      font-size: 12.5px; color: var(--k-fg-2); line-height: 1.5;
     }
-    .k-share-snapnote > svg { flex: 0 0 auto; color: var(--k-accent); }
+    .k-share-snapnote strong { color: var(--k-fg); }
+    .k-share-snapnote > svg { flex: 0 0 auto; margin-top: 1px; color: var(--k-accent); }
     .k-share-preview {
       margin-top: 10px; padding: 4px 13px 8px;
       border: 1px solid var(--k-line); border-radius: 8px; background: var(--k-bg);
