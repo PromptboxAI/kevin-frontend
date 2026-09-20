@@ -21,7 +21,6 @@ import ProductPage from './pages/ProductPage'
 import ClaimsPage from './pages/ClaimsPage'
 import AdminSystemPage from './pages/AdminSystemPage'
 import AdminPlatformPage from './pages/AdminPlatformPage'
-import AdminSupportPage from './pages/AdminSupportPage'
 import RequireAdmin from './components/RequireAdmin'
 import ExportsPage from './pages/ExportsPage'
 import ExportPage from './pages/ExportPage'
@@ -357,14 +356,6 @@ export default function App() {
           element={
             <RequireAdmin>
               <AdminPlatformPage />
-            </RequireAdmin>
-          }
-        />
-        <Route
-          path="/admin/support"
-          element={
-            <RequireAdmin>
-              <AdminSupportPage />
             </RequireAdmin>
           }
         />
