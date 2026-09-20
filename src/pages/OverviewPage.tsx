@@ -466,8 +466,11 @@ export default function OverviewPage() {
                 <span>Where this claim stands</span>
               </div>
               <div style={{ padding: '4px 14px 14px' }}>
+                {/* `completed` is what KEVIN priced. A line the adjuster
+                    priced is `overridden` and is no less priced, so saying
+                    "Priced 0" beside two priced lines read as a fault. */}
                 <div className="k-class-row">
-                  <span style={{ flex: 1, fontSize: 12.5 }}>Priced</span>
+                  <span style={{ flex: 1, fontSize: 12.5 }}>Priced by Kevin</span>
                   <span className="k-mono" style={{ fontSize: 12.5, fontWeight: 600 }}>
                     {claim.status_counts.completed}
                   </span>
@@ -480,7 +483,7 @@ export default function OverviewPage() {
                 </div>
                 {claim.status_counts.overridden > 0 ? (
                   <div className="k-class-row">
-                    <span style={{ flex: 1, fontSize: 12.5 }}>Edited by you</span>
+                    <span style={{ flex: 1, fontSize: 12.5 }}>Priced or edited by you</span>
                     <span className="k-mono" style={{ fontSize: 12.5, fontWeight: 600 }}>
                       {claim.status_counts.overridden}
                     </span>

@@ -123,7 +123,11 @@ export default function ExportsPage() {
                       <Badge tone="quiet">{fmtDate(c.exported_at)}</Badge>
                     </div>
                     <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', marginTop: 2 }}>
-                      {[c.insured_name, c.carrier, `${c.item_count} items`]
+                      {[
+                        c.insured_name,
+                        c.carrier,
+                        `${c.item_count} ${c.item_count === 1 ? 'item' : 'items'}`,
+                      ]
                         .filter(Boolean)
                         .join(' · ')}
                     </div>
