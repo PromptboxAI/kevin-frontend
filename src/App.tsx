@@ -36,7 +36,6 @@ import PortalReturnPage from './pages/PortalReturnPage'
 import RecoveryPage from './pages/RecoveryPage'
 import SettingsApiPage from './pages/SettingsApiPage'
 import SettingsBusinessPage from './pages/SettingsBusinessPage'
-import SettingsExportPage from './pages/SettingsExportPage'
 import SettingsXactimatePage from './pages/SettingsXactimatePage'
 import SettingsPricingPage from './pages/SettingsPricingPage'
 import SettingsProfilePage from './pages/SettingsProfilePage'
@@ -307,14 +306,12 @@ export default function App() {
           }
         />
 
-        <Route
-          path="/settings/export"
-          element={
-            <RequireAuth>
-              <SettingsExportPage />
-            </RequireAuth>
-          }
-        />
+        {/* Export defaults is GONE (owner, 2026-09-20): the adjuster picks
+            format, contents and photo layout at export time, so a screen of
+            defaults was a second place to set the same thing -- and nothing
+            stored them anyway. The route redirects so an old link or bookmark
+            still lands somewhere. */}
+        <Route path="/settings/export" element={<Navigate to="/settings/profile" replace />} />
         <Route
           path="/settings/xactimate"
           element={

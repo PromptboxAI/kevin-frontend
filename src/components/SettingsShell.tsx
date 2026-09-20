@@ -43,7 +43,6 @@ const NAV: NavItem[] = [
   // Flip `off` and restore the route in App.tsx to bring it back.
   { id: 'carriers', label: 'Carrier profiles', to: '/settings/carriers', off: true },
   { id: 'pricing', label: 'Pricing', to: '/settings/pricing' },
-  { id: 'export', label: 'Export defaults', to: '/settings/export' },
   { id: 'integrations', label: 'Xactimate', to: '/settings/xactimate' },
   { id: 'billing', label: 'Billing', to: '/settings/billing' },
   { id: 'api', label: 'API & webhooks', to: '/settings/api' },
@@ -204,7 +203,7 @@ export default function SettingsShell({
 /**
  * ⚠ ADDED TO UNBLOCK A BROKEN BUILD, not designed here.
  *
- * SettingsApiPage, SettingsExportPage, SettingsXactimatePage and
+ * SettingsApiPage, SettingsXactimatePage and
  * SettingsBusinessPage all `import { NotWired }` from this module, but nothing
  * exported it — so those four modules failed to load, and the uncaught
  * SyntaxError took the WHOLE app blank at every route, including `/` and the
