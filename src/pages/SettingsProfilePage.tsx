@@ -474,10 +474,41 @@ export default function SettingsProfilePage() {
         </div>
       </section>
 
-      {/* No Danger zone. Account export and account deletion both need
-          server work that does not exist (an export job, and a cascade plus a
-          Supabase admin call), and neither is worth a row that cannot act.
-          Claims are deleted from My claims today. */}
+      {/* Delete stays; the data-export row is gone (owner, 2026-09-20).
+          Deleting an account needs a server-side cascade and a Supabase admin
+          call, neither of which exists -- so the control does the one real
+          thing available: it opens a request to us, with the account named.
+          Claims can already be deleted individually from My claims. */}
+      <section className="k-set-card k-set-card--danger">
+        <div className="k-set-card-hd">Danger zone</div>
+        <div className="k-set-card-body">
+          <div className="k-set-row">
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--k-danger)' }}>
+                Delete my account
+              </div>
+              <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', marginTop: 2 }}>
+                Closes the account and everything on it — claims, exports and audit logs. We confirm
+                by email first, and it cannot be undone.
+              </div>
+            </div>
+            <a
+              className="k-btn k-btn--ghost k-btn--danger"
+              href={`mailto:kevin@kevin.co?subject=${encodeURIComponent(
+                'Delete my Kevin account',
+              )}&body=${encodeURIComponent(
+                `Please delete my Kevin account and everything on it.
+
+Account: ${email}
+`,
+              )}`}
+            >
+              <Icon d={I.trash} size={12} /> Request deletion
+            </a>
+          </div>
+        </div>
+      </section>
+
     </SettingsShell>
   )
 }
