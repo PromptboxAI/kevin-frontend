@@ -27,8 +27,11 @@ import Alert from '../components/Alert'
  * a real error inline if the provider is not enabled on the Supabase project.
  * Static, and recorded in INTERACTIONS.md: "Keep me signed in" (Supabase
  * persists to localStorage either way — making the box real means swapping the
- * client's storage per sign-in) and "Use a passkey" (needs WebAuthn enrolment,
- * not a button).
+ * client's storage per sign-in).
+ *
+ * The "Use a passkey" button is GONE, owner's call 2026-09-20: passkeys do not
+ * exist, so the option may not be offered. It had no handler — a dead control
+ * on the first screen anyone sees.
  *
  * Deviations, noted: design `.html` hrefs become app routes, and the footer
  * says the data stays encrypted — plain wording on this screen, and rule 7
@@ -212,13 +215,6 @@ export default function SignInPage() {
                   }}
                 >
                   <GoogleG size={16} /> Continue with Google
-                </button>
-                <button
-                  type="button"
-                  className="k-btn k-btn--ghost k-btn--lg"
-                  style={{ width: '100%', justifyContent: 'center' }}
-                >
-                  <Icon d={I.lock} size={13} /> Use a passkey
                 </button>
               </div>
 

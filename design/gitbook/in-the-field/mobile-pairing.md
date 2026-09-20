@@ -17,4 +17,4 @@ It confirms the phone is yours and selects the claim. It expires shortly after b
 
 ## Signing in on a phone
 
-Email and password, Google, or a passkey — the same three options as the desktop. Kevin does not use biometrics; if your phone asks for a fingerprint it is unlocking a passkey locally and nothing reaches Kevin.
+Email and password, or Google — the same two options as the desktop.

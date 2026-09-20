@@ -64,7 +64,7 @@ estate-sale professionals. 45 articles across 8 sections.
 
 - [Storage & fair use](#storage-fair-use)
 - [Billing & plans](#billing-plans)
-- [Security & passkeys](#security-passkeys)
+- [Security & sign-in](#security-signin)
 - [Team & roles](#team-roles)
 - [API & webhooks](#api-webhooks)
 
@@ -797,7 +797,7 @@ It confirms the phone is yours and selects the claim. It expires shortly after b
 
 ### Signing in on a phone
 
-Email and password, Google, or a passkey — the same three options as the desktop. Kevin does not use biometrics; if your phone asks for a fingerprint it is unlocking a passkey locally and nothing reaches Kevin.
+Email and password, or Google — the same two options as the desktop.
 
 ## Notes while you shoot
 
@@ -969,17 +969,11 @@ Every account starts with 250 free line items — the full product, on real clai
 
 > Enterprise adds API access, webhooks, team roles, and claim assignment. Everything else is the same product.
 
-## Security & passkeys
+## Security & sign-in
 
 _How accounts are protected and what you control._
 
-Data is encrypted with AES-256 at rest and TLS 1.3 in transit. Sign in with an email and password, with Google, or with a passkey.
-
-### Passkeys
-
-A passkey replaces the password with a key held by your device or password manager, so there is nothing phishable. Register one in Settings under Security after your first sign-in.
-
-> Kevin does not use biometrics. Your device may use a fingerprint or face to unlock the key locally, but no biometric data reaches Kevin.
+Data is encrypted with AES-256 at rest and TLS 1.3 in transit. Sign in with an email and password, or with Google.
 
 ### Active sessions
 

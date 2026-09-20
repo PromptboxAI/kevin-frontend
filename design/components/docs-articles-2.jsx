@@ -284,13 +284,10 @@ const DOC_ARTICLES_B = {
   },
 
   'security-passkeys': {
-    title: 'Security & passkeys',
+    title: 'Security & sign-in',
     summary: 'How accounts are protected and what you control.',
     blocks: [
-      ['p', 'Data is encrypted with AES-256 at rest and TLS 1.3 in transit. Sign in with an email and password, with Google, or with a passkey.'],
-      ['h2', 'Passkeys'],
-      ['p', 'A passkey replaces the password with a key held by your device or password manager, so there is nothing phishable. Register one in Settings under Security after your first sign-in.'],
-      ['note', 'Kevin does not use biometrics. Your device may use a fingerprint or face to unlock the key locally, but no biometric data reaches Kevin.'],
+      ['p', 'Data is encrypted with AES-256 at rest and TLS 1.3 in transit. Sign in with an email and password, or with Google.'],
       ['h2', 'Active sessions'],
       ['p', 'Security settings lists every signed-in session with device, browser, approximate location, and last activity. You can end any one of them, or end all sessions other than the one you are using — useful if you signed in somewhere you should not have.'],
       ['h2', 'Recovery codes'],

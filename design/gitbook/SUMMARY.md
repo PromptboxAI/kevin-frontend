@@ -57,7 +57,7 @@
 
 * [Storage & fair use](account/storage-fair-use.md)
 * [Billing & plans](account/billing-plans.md)
-* [Security & passkeys](account/security-passkeys.md)
+* [Security & sign-in](account/security-passkeys.md)
 * [Team & roles](account/team-roles.md)
 * [API & webhooks](account/api-webhooks.md)
 

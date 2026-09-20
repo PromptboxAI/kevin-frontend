@@ -42,7 +42,6 @@ const SignIn = () => (
         <div className="k-auth-or"><span>or</span></div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <a className="k-btn k-btn--ghost k-btn--lg" href="01-My-claims.html" style={{ width: '100%', justifyContent: 'center', gap: 10, background: '#fff', borderColor: 'var(--k-line-2, var(--k-line))', color: 'var(--k-fg)', fontWeight: 600 }}><window.GoogleG size={16} /> Continue with Google</a>
-          <a className="k-btn k-btn--ghost k-btn--lg" href="01-My-claims.html" style={{ width: '100%', justifyContent: 'center' }}><Icon d={I.lock} size={13} /> Use a passkey</a>
         </div>
 
         <div style={{ marginTop: 28, fontSize: 12.5, color: 'var(--k-fg-3)' }}>

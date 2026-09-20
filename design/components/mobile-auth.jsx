@@ -1,6 +1,6 @@
 // Mobile sign-in & "pair with desktop" QR flow.
 // Two screens side-by-side in one artboard:
-//   1. Sign in (phone) — short, with passkey-first CTA
+//   1. Sign in (phone) — short: email + password, or pair with the desktop
 //   2. Pair with desktop — show the QR code scanner state for fast pairing
 
 const { KevinWordmark, Icon, I, Badge } = window;

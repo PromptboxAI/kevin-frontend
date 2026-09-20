@@ -58,7 +58,7 @@ const DOC_NAV = [
   { section: 'Account', items: [
     ['storage-fair-use',      'Storage & fair use'],
     ['billing-plans',         'Billing & plans'],
-    ['security-passkeys',     'Security & passkeys'],
+    ['security-passkeys',     'Security & sign-in'],
     ['team-roles',            'Team & roles'],
     ['api-webhooks',          'API & webhooks'],
   ]},

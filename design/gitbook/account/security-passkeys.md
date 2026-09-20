@@ -1,14 +1,8 @@
-# Security & passkeys
+# Security & sign-in
 
 _How accounts are protected and what you control._
 
-Data is encrypted with AES-256 at rest and TLS 1.3 in transit. Sign in with an email and password, with Google, or with a passkey.
-
-## Passkeys
-
-A passkey replaces the password with a key held by your device or password manager, so there is nothing phishable. Register one in Settings under Security after your first sign-in.
-
-> Kevin does not use biometrics. Your device may use a fingerprint or face to unlock the key locally, but no biometric data reaches Kevin.
+Data is encrypted with AES-256 at rest and TLS 1.3 in transit. Sign in with an email and password, or with Google.
 
 ## Active sessions
 

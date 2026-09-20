@@ -42,7 +42,7 @@ const DOC_ARTICLES_C = {
       ['p', 'It confirms the phone is yours and selects the claim. It expires shortly after being shown, and showing a new one invalidates the old one.'],
       ['note', 'A paired phone stays on that claim until you switch. Check the claim name in the header before a long shoot — it is the one mistake that costs real time to unpick.'],
       ['h2', 'Signing in on a phone'],
-      ['p', 'Email and password, Google, or a passkey — the same three options as the desktop. Kevin does not use biometrics; if your phone asks for a fingerprint it is unlocking a passkey locally and nothing reaches Kevin.'],
+      ['p', 'Email and password, or Google — the same two options as the desktop.'],
     ],
   },
 

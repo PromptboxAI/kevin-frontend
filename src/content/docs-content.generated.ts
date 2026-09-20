@@ -202,7 +202,7 @@ export const DOC_NAV: DocNavSection[] = [
       ],
       [
         "security-passkeys",
-        "Security & passkeys"
+        "Security & sign-in"
       ],
       [
         "team-roles",
@@ -1633,24 +1633,12 @@ export const DOC_ARTICLES: Record<string, DocArticle> = {
     ]
   },
   "security-passkeys": {
-    "title": "Security & passkeys",
+    "title": "Security & sign-in",
     "summary": "How accounts are protected and what you control.",
     "blocks": [
       [
         "p",
-        "Data is encrypted with AES-256 at rest and TLS 1.3 in transit. Sign in with an email and password, with Google, or with a passkey."
-      ],
-      [
-        "h2",
-        "Passkeys"
-      ],
-      [
-        "p",
-        "A passkey replaces the password with a key held by your device or password manager, so there is nothing phishable. Register one in Settings under Security after your first sign-in."
-      ],
-      [
-        "note",
-        "Kevin does not use biometrics. Your device may use a fingerprint or face to unlock the key locally, but no biometric data reaches Kevin."
+        "Data is encrypted with AES-256 at rest and TLS 1.3 in transit. Sign in with an email and password, or with Google."
       ],
       [
         "h2",
@@ -1874,7 +1862,7 @@ export const DOC_ARTICLES: Record<string, DocArticle> = {
       ],
       [
         "p",
-        "Email and password, Google, or a passkey — the same three options as the desktop. Kevin does not use biometrics; if your phone asks for a fingerprint it is unlocking a passkey locally and nothing reaches Kevin."
+        "Email and password, or Google — the same two options as the desktop."
       ]
     ]
   },
