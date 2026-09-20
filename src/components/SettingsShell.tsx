@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import AppHeader from './AppHeader'
 import NewClaimButton from './NewClaimButton'
+import { I, Icon } from './Icon'
 
 /**
  * The settings frame: sidebar nav plus a titled pane.
@@ -60,6 +61,7 @@ export default function SettingsShell({
   title,
   eyebrow,
   children,
+  back,
   save = true,
   saveNote,
   saveDisabled = false,
@@ -71,6 +73,13 @@ export default function SettingsShell({
   activeId: string
   title: string
   eyebrow: string
+  /**
+   * Where this screen was opened from. A settings page reached from another
+   * settings page (Security, from My profile) left the only way back in the
+   * sidebar, which does not read as "back" -- it reads as navigation to
+   * somewhere else (owner, 2026-09-20).
+   */
+  back?: { to: string; label: string }
   children: React.ReactNode
   save?: boolean
   saveNote?: React.ReactNode
@@ -174,6 +183,11 @@ export default function SettingsShell({
         </aside>
 
         <main className="k-settings-main">
+          {back ? (
+            <Link className="k-crumb" to={back.to}>
+              <Icon d={I.chevleft} size={13} /> Back to {back.label}
+            </Link>
+          ) : null}
           <div className="k-settings-hd">
             <div>
               <div

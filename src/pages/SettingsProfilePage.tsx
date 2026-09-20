@@ -60,10 +60,13 @@ const TITLES = [
 ]
 
 /** [label, what the control does, CTA, anchor on screen 41] */
+/**
+ * Only what exists. Two-factor, passkeys and a per-device session list are not
+ * built, so they are not listed (owner, 2026-09-20); changing a password is,
+ * and signing out lives in the avatar menu.
+ */
 const SECURITY_ROWS: [string, string, string, string][] = [
   ['Password', 'Change the password you sign in with', 'Change', '#password'],
-  ['Two-factor auth', 'Adds a second step at sign-in', 'Manage', '#two-factor'],
-  ['Active sessions', 'Sign out the devices you are signed in on', 'Sign out others', '#sessions'],
 ]
 
 /** [key, label, email default, push default, description] */

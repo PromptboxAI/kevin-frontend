@@ -53,7 +53,13 @@ export default function SettingsSecurityPage() {
   }
 
   return (
-    <SettingsShell activeId="my-profile" title="Security" eyebrow="Account" save={false}>
+    <SettingsShell
+      activeId="my-profile"
+      title="Security"
+      eyebrow="Account"
+      save={false}
+      back={{ to: '/settings/profile', label: 'My profile' }}
+    >
       <div style={{ marginBottom: 20 }}>
         <h1
           style={{
@@ -150,27 +156,9 @@ export default function SettingsSecurityPage() {
         </div>
       </section>
 
-      <section className="k-set-card" id="two-factor">
-        <div className="k-set-card-hd">Not built</div>
-        <div className="k-set-card-body">
-          <div className="k-set-row" id="passkeys">
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>Two-factor authentication</div>
-              <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', marginTop: 2 }}>
-                Needs an enrolment flow, not just a screen.
-              </div>
-            </div>
-          </div>
-          <div className="k-set-row">
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>Active session list</div>
-              <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', marginTop: 2 }}>
-                No endpoint lists devices, so none can be shown or ended individually.
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* No "Not built" card: two-factor, passkeys and a per-device session
+          list are simply not offered (owner, 2026-09-20). Listing what does
+          not exist is not a feature. */}
     </SettingsShell>
   )
 }
