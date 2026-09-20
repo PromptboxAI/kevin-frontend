@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { formatPhone } from '../lib/phone-rules'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import SettingsShell from '../components/SettingsShell'
@@ -100,6 +101,27 @@ const NOTIFICATIONS: [string, string, boolean, boolean, string][] = [
 
 type Channel = 'mail' | 'push'
 
+/**
+ * Phone, formatted as it is typed: 555-123-4567 (phone-rules.ts). One shape on
+ * screen and on a document beats storing whatever shape each person types.
+ */
+function PhoneField() {
+  const [phone, setPhone] = useState('')
+  return (
+    <div className="k-insp-field">
+      <label htmlFor="profile-phone">Phone</label>
+      <input
+        id="profile-phone"
+        className="k-insp-input k-mono"
+        value={phone}
+        inputMode="tel"
+        placeholder="555-123-4567"
+        onChange={(e) => setPhone(formatPhone(e.target.value))}
+      />
+    </div>
+  )
+}
+
 export default function SettingsProfilePage() {
   const me = useQuery({
     queryKey: ['me'],
@@ -159,32 +181,30 @@ export default function SettingsProfilePage() {
       </div>
 
       <section className="k-set-card">
-        <div className="k-set-card-hd">Personal · prints as “Prepared by” on exports</div>
+        <div className="k-set-card-hd">Your details</div>
         <div className="k-set-card-body">
           <div className="k-set-avatar-row">
             <div className="k-set-avatar">{initials}</div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 13, fontWeight: 600 }}>Profile photo</div>
               <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', marginTop: 2 }}>
-                Square JPG/PNG up to 2 MB. Shows in the audit log.
+                Your initials stand in until photos can be stored.
               </div>
             </div>
-            <button type="button" className="k-btn k-btn--ghost">
-              Upload new
-            </button>
+            <span className="k-claim-tab-soon">Soon</span>
           </div>
 
           <div className="k-set-grid2" key={fieldsKey}>
             <F label="First name" value="" placeholder="Your first name" />
             <F label="Last name" value="" placeholder="Your last name" />
             <F label="Work email" value={email} readOnly hint="From your sign-in" />
-            <F label="Phone" value="" mono placeholder="(000) 000-0000" />
+            <PhoneField />
             <FSelectOther
               label="Title"
-              value="General Adjuster"
-              placeholder="Your title as it should print"
+              value=""
+              placeholder="Choose your title"
               options={TITLES}
-              hint="Prints under Prepared by on exported PDFs"
+              hint="Optional — how you'd be described on a document"
             />
             <div className="k-insp-field">
               <label htmlFor="timezone">Time zone</label>

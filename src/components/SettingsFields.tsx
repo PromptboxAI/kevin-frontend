@@ -143,6 +143,10 @@ export function FSelectOther({
       <label>{label}</label>
       <div className="k-fselect">
         <select value={v} onChange={(e) => setV(e.target.value)}>
+          {/* An empty first option, so nothing is chosen until someone
+              chooses. Without it the browser shows option one and a guess
+              gets stored as an answer (owner, 2026-09-20). */}
+          <option value="">— Select —</option>
           {options.map((o) => (
             <option key={o} value={o}>
               {o}
