@@ -56,6 +56,8 @@ export default function SettingsShell({
   save = true,
   saveNote,
   saveDisabled = false,
+  onSave,
+  saveLabel = 'Save changes',
   onDiscard,
   carrierCount,
 }: {
@@ -79,6 +81,14 @@ export default function SettingsShell({
    * anywhere to save to. Disabling it with Save was over-broad -- it left the
    * user with edits they could neither keep nor clear.
    */
+  /**
+   * What Save does. A screen with a real write route passes it; one without
+   * leaves it undefined and the button stays disabled, which is the rule
+   * above ("an enabled Save over a missing endpoint is a false-positive save
+   * state") expressed as a prop rather than a comment.
+   */
+  onSave?: () => void
+  saveLabel?: string
   onDiscard?: () => void
   /** Count badge on the Carrier profiles row. */
   carrierCount?: number
@@ -188,8 +198,13 @@ export default function SettingsShell({
                 >
                   Discard
                 </button>
-                <button type="button" className="k-btn" disabled={saveDisabled}>
-                  Save changes
+                <button
+                  type="button"
+                  className="k-btn"
+                  disabled={saveDisabled || !onSave}
+                  onClick={onSave}
+                >
+                  {saveLabel}
                 </button>
               </div>
             </div>

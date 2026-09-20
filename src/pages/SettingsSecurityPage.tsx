@@ -155,7 +155,7 @@ export default function SettingsSecurityPage() {
         <div className="k-set-card-body">
           <div className="k-set-row" id="passkeys">
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>Two-factor and passkeys</div>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>Two-factor authentication</div>
               <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', marginTop: 2 }}>
                 Needs an enrolment flow, not just a screen.
               </div>

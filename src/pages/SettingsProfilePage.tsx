@@ -1,9 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { formatPhone } from '../lib/phone-rules'
+import { useAuth } from '../lib/auth'
+import { AvatarStorageMissing, EMPTY_PROFILE, profileFrom, removeAvatar, saveProfile, uploadAvatar } from '../lib/profile'
+import { LOGO_ERROR, logoProblem } from '../lib/directory-rules'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import SettingsShell from '../components/SettingsShell'
-import { F, FSelectOther } from '../components/SettingsFields'
+import { F } from '../components/SettingsFields'
 import { Icon, I } from '../components/Icon'
 import { api } from '../lib/api'
 import type { MeResponse } from '../lib/types'
@@ -60,7 +63,6 @@ const TITLES = [
 const SECURITY_ROWS: [string, string, string, string][] = [
   ['Password', 'Change the password you sign in with', 'Change', '#password'],
   ['Two-factor auth', 'Adds a second step at sign-in', 'Manage', '#two-factor'],
-  ['Passkeys', 'Sign in with Touch ID, Windows Hello or a security key', 'Manage', '#passkeys'],
   ['Active sessions', 'Sign out the devices you are signed in on', 'Sign out others', '#sessions'],
 ]
 
@@ -101,22 +103,28 @@ const NOTIFICATIONS: [string, string, boolean, boolean, string][] = [
 
 type Channel = 'mail' | 'push'
 
-/**
- * Phone, formatted as it is typed: 555-123-4567 (phone-rules.ts). One shape on
- * screen and on a document beats storing whatever shape each person types.
- */
-function PhoneField() {
-  const [phone, setPhone] = useState('')
+/** A controlled version of `F`: this page tracks its values to save them. */
+function TextField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  mono,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  placeholder?: string
+  mono?: boolean
+}) {
   return (
     <div className="k-insp-field">
-      <label htmlFor="profile-phone">Phone</label>
+      <label>{label}</label>
       <input
-        id="profile-phone"
-        className="k-insp-input k-mono"
-        value={phone}
-        inputMode="tel"
-        placeholder="555-123-4567"
-        onChange={(e) => setPhone(formatPhone(e.target.value))}
+        className={`k-insp-input${mono ? ' k-mono' : ''}`}
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
       />
     </div>
   )
@@ -141,6 +149,7 @@ export default function SettingsProfilePage() {
   // reset directly.
   const [fieldsKey, setFieldsKey] = useState(0)
   const discard = () => {
+    setForm(profileFrom(session?.user?.user_metadata))
     setFieldsKey((n) => n + 1)
     setPrefs(Object.fromEntries(NOTIFICATIONS.map(([k, , mail, push]) => [k, { mail, push }])))
   }
@@ -148,19 +157,85 @@ export default function SettingsProfilePage() {
   const email = me.data?.email ?? ''
   const initials = (email.split('@')[0]?.slice(0, 2) || 'K').toUpperCase()
 
+  /**
+   * The profile is stored on the AUTH USER (lib/profile.ts), so Save is real
+   * even without our own profile route: the values come back on the next sign
+   * in, on another machine, in any tab. Seeded from the session once it lands.
+   */
+  const { session } = useAuth()
+  const [form, setForm] = useState(EMPTY_PROFILE)
+  const [seeded, setSeeded] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [photoError, setPhotoError] = useState<string | null>(null)
+  const [photoBusy, setPhotoBusy] = useState(false)
+  const photoRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (seeded || !session?.user) return
+    setForm(profileFrom(session.user.user_metadata))
+    setSeeded(true)
+  }, [seeded, session])
+
+  const set = (k: keyof typeof form) => (v: string) => {
+    setForm((prev) => ({ ...prev, [k]: v }))
+    setSaved(false)
+  }
+
+  const save = async () => {
+    setSaving(true)
+    setSaveError(null)
+    try {
+      await saveProfile(form)
+      setSaved(true)
+      window.setTimeout(() => setSaved(false), 2600)
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Could not save.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const takePhoto = async (file: File) => {
+    const problem = logoProblem(file)
+    if (problem) {
+      setPhotoError(LOGO_ERROR[problem])
+      return
+    }
+    setPhotoBusy(true)
+    setPhotoError(null)
+    try {
+      const url = await uploadAvatar(file, session!.user.id)
+      setForm((prev) => ({ ...prev, avatar_url: url }))
+    } catch (err) {
+      setPhotoError(
+        err instanceof AvatarStorageMissing
+          ? 'Photo storage isn’t set up on this project yet — nothing to upload to.'
+          : err instanceof Error
+            ? err.message
+            : 'Upload failed.',
+      )
+    } finally {
+      setPhotoBusy(false)
+    }
+  }
+
   return (
     <SettingsShell
       activeId="my-profile"
       title="My profile"
       eyebrow="Personal · session"
-      saveDisabled
+      onSave={() => void save()}
+      saveLabel={saving ? 'Saving…' : saved ? 'Saved' : 'Save changes'}
       onDiscard={discard}
       saveNote={
-        <>
-          Nothing on this page saves yet — there is no profile write route
-          (BACKEND-ASKS ask 35). Your email comes from your sign-in, and
-          “Prepared by” is set per claim.
-        </>
+        saveError ? (
+          <span style={{ color: 'var(--k-danger)' }}>{saveError}</span>
+        ) : (
+          <>Saved to your account. Your email comes from your sign-in, and “Prepared by” on a
+          document is the estimator picked on that claim.</>
+        )
       }
     >
       <div style={{ marginBottom: 22 }}>
@@ -184,32 +259,103 @@ export default function SettingsProfilePage() {
         <div className="k-set-card-hd">Your details</div>
         <div className="k-set-card-body">
           <div className="k-set-avatar-row">
-            <div className="k-set-avatar">{initials}</div>
+            {form.avatar_url ? (
+              <img className="k-set-avatar k-set-avatar--img" src={form.avatar_url} alt="" />
+            ) : (
+              <div className="k-set-avatar">{initials}</div>
+            )}
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 13, fontWeight: 600 }}>Profile photo</div>
-              <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', marginTop: 2 }}>
-                Your initials stand in until photos can be stored.
+              <div style={{ fontSize: 11.5, color: photoError ? 'var(--k-danger)' : 'var(--k-fg-4)', marginTop: 2 }}>
+                {photoError ?? 'Square JPG, PNG or WebP, up to 512 KB.'}
               </div>
             </div>
-            <span className="k-claim-tab-soon">Soon</span>
+            <input
+              ref={photoRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (f) void takePhoto(f)
+                e.target.value = ''
+              }}
+            />
+            {form.avatar_url ? (
+              <button
+                type="button"
+                className="k-link"
+                style={{ marginRight: 10 }}
+                onClick={() => {
+                  void removeAvatar(form.avatar_url)
+                  setForm((prev) => ({ ...prev, avatar_url: '' }))
+                }}
+              >
+                Remove
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className="k-btn k-btn--ghost"
+              disabled={photoBusy}
+              onClick={() => photoRef.current?.click()}
+            >
+              {photoBusy ? 'Uploading…' : form.avatar_url ? 'Replace' : 'Upload new'}
+            </button>
           </div>
 
           <div className="k-set-grid2" key={fieldsKey}>
-            <F label="First name" value="" placeholder="Your first name" />
-            <F label="Last name" value="" placeholder="Your last name" />
-            <F label="Work email" value={email} readOnly hint="From your sign-in" />
-            <PhoneField />
-            <FSelectOther
-              label="Title"
-              value=""
-              placeholder="Choose your title"
-              options={TITLES}
-              hint="Optional — how you'd be described on a document"
+            <TextField
+              label="First name"
+              value={form.first_name}
+              placeholder="Your first name"
+              onChange={set('first_name')}
             />
+            <TextField
+              label="Last name"
+              value={form.last_name}
+              placeholder="Your last name"
+              onChange={set('last_name')}
+            />
+            <F label="Work email" value={email} readOnly hint="From your sign-in" />
+            <TextField
+              label="Phone"
+              value={form.phone}
+              mono
+              placeholder="555-123-4567"
+              onChange={(v) => set('phone')(formatPhone(v))}
+            />
+            <div className="k-insp-field">
+              <label htmlFor="profile-title">Title</label>
+              <div className="k-fselect">
+                <select
+                  id="profile-title"
+                  value={form.title}
+                  onChange={(e) => set('title')(e.target.value)}
+                >
+                  <option value="">— Select —</option>
+                  {TITLES.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+                <span className="k-fselect-ic">
+                  <Icon d={I.chevdown} size={11} />
+                </span>
+              </div>
+              <span style={{ fontSize: 11, color: 'var(--k-fg-4)' }}>
+                Optional — how you’d be described on a document
+              </span>
+            </div>
             <div className="k-insp-field">
               <label htmlFor="timezone">Time zone</label>
               <div className="k-fselect">
-                <select id="timezone" defaultValue="America/New_York">
+                <select
+                  id="timezone"
+                  value={form.timezone || 'America/New_York'}
+                  onChange={(e) => set('timezone')(e.target.value)}
+                >
                   <optgroup label="United States">
                     <option value="America/New_York">Eastern Time (ET, GMT−5)</option>
                     <option value="America/Chicago">Central Time (CT, GMT−6)</option>
@@ -335,13 +481,13 @@ export default function SettingsProfilePage() {
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 13, fontWeight: 600 }}>Export my data</div>
               <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', marginTop: 2 }}>
-                Download every claim, export, and audit-log entry you&apos;ve ever created. ZIP
-                delivered to your email within 24 hours.
+                One archive of every claim, export and audit-log entry on the account. Not built
+                yet — export claims one at a time from the Export tab meanwhile.
               </div>
             </div>
-            <button type="button" className="k-btn k-btn--ghost">
-              <Icon d={I.download} size={12} /> Request export
-            </button>
+            {/* No account-export route exists (BACKEND-ASKS). A button that
+                does nothing is worse than saying so. */}
+            <span className="k-claim-tab-soon">Soon</span>
           </div>
           <div className="k-set-row">
             <div style={{ flex: 1 }}>
@@ -349,13 +495,14 @@ export default function SettingsProfilePage() {
                 Delete my account
               </div>
               <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', marginTop: 2 }}>
-                Permanently deletes your account and all its claims, exports, and audit logs. Cannot
-                be undone.
+                Not built yet. You can delete individual claims from My claims today; email us to
+                close an account.
               </div>
             </div>
-            <button type="button" className="k-btn k-btn--ghost k-btn--danger">
-              <Icon d={I.trash} size={12} /> Delete account
-            </button>
+            {/* Same: deleting an account needs a server-side cascade and a
+                Supabase admin call. Claims can be deleted today, one by one,
+                from My claims. */}
+            <span className="k-claim-tab-soon">Soon</span>
           </div>
         </div>
       </section>
