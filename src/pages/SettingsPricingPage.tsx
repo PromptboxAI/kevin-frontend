@@ -1,5 +1,3 @@
-import { useState } from 'react'
-import Alert from '../components/Alert'
 import Badge from '../components/Badge'
 import { I, Icon } from '../components/Icon'
 import SettingsShell from '../components/SettingsShell'
@@ -35,6 +33,26 @@ const COVERAGE: [string, string][] = [
   ['Brand direct', 'Manufacturer storefronts, used as tiebreaker when merchants disagree'],
 ]
 
+/**
+ * How the engine values things TODAY. These were switches; nothing stored
+ * them, so they offered a choice the adjuster did not have (owner,
+ * 2026-09-20). They are statements until there is a route to change them.
+ */
+const BEHAVIOR: [string, string][] = [
+  [
+    'Like-kind and quality (LKQ) substitutions',
+    'When the exact make/model is discontinued or unmatched, Kevin prices the nearest comparable item still sold new, and records the substitution on the row.',
+  ],
+  [
+    'Class depreciation ceilings',
+    'Depreciation is capped where an item’s content class sets a ceiling. Most classes set none, so a line past its useful life runs to 100% and its ACV is $0.00.',
+  ],
+  [
+    'Brand-direct tiebreaker',
+    'When merchant offers disagree by more than 15%, the manufacturer’s own storefront price settles the median.',
+  ],
+]
+
 const BASES: [string, 'ok' | 'info' | 'wait', string][] = [
   [
     'Retail comp',
@@ -53,39 +71,8 @@ const BASES: [string, 'ok' | 'info' | 'wait', string][] = [
   ],
 ]
 
-function Toggle({
-  on,
-  set,
-  title,
-  desc,
-}: {
-  on: boolean
-  set: (fn: (v: boolean) => boolean) => void
-  title: string
-  desc: string
-}) {
-  return (
-    <div className="k-rule" style={{ alignItems: 'flex-start', gap: 12 }}>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--k-fg)' }}>{title}</div>
-        <div style={{ fontSize: 11.5, color: 'var(--k-fg-3)', lineHeight: 1.5, marginTop: 3 }}>
-          {desc}
-        </div>
-      </div>
-      <label className="k-switch" style={{ marginTop: 2 }}>
-        <input type="checkbox" checked={on} onChange={() => set((v) => !v)} />
-        <span className="k-switch-track">
-          <span className="k-switch-thumb" />
-        </span>
-      </label>
-    </div>
-  )
-}
 
 export default function SettingsPricingPage() {
-  const [lkq, setLkq] = useState(true)
-  const [ceilings, setCeilings] = useState(true)
-  const [tiebreak, setTiebreak] = useState(true)
 
   return (
     <SettingsShell activeId="pricing" title="Pricing" eyebrow="Pricing" save={false}>
@@ -140,27 +127,6 @@ export default function SettingsPricingPage() {
             </div>
           </div>
 
-          {/* Per-source telemetry is Phase 3b -- `/v1/sources` reports
-              `telemetry: "coming_soon"`. The design seeds this strip with
-              figures; showing invented ones here would be inventing evidence on
-              the screen that explains how evidence is gathered. */}
-          <div className="k-pricing-stats" style={{ marginBottom: 14 }}>
-            {['Comps fetched · today', 'Avg match rate', 'Avg variance · comps', 'Refresh cadence'].map(
-              (label) => (
-                <div className="k-ps" key={label}>
-                  <div className="k-ps-l">{label}</div>
-                  <div className="k-ps-v" style={{ fontSize: 15, color: 'var(--k-fg-4)' }}>
-                    —
-                  </div>
-                </div>
-              ),
-            )}
-          </div>
-          <div className="k-share-snapnote" style={{ marginTop: 0, marginBottom: 14 }}>
-            <Icon d={I.info} size={13} />
-            <span>Live source telemetry isn’t reported yet, so these stay blank.</span>
-          </div>
-
           <div
             style={{
               borderTop: '1px solid var(--k-line)',
@@ -203,30 +169,18 @@ export default function SettingsPricingPage() {
             Valuation behavior
           </span>
         </div>
-        <div style={{ padding: '8px 14px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <Toggle
-            on={lkq}
-            set={setLkq}
-            title="Like-kind and quality (LKQ) substitutions"
-            desc="When the exact make/model is discontinued or unmatched, price the nearest comparable item still sold new. The substitution is recorded on the row so the carrier can see what was priced."
-          />
-          <Toggle
-            on={ceilings}
-            set={setCeilings}
-            title="Enforce class depreciation ceilings"
-            desc="Cap each item's depreciation at the maximum its content class sets. Most classes set none, so depreciation runs to 100% once an item is past its useful life and its ACV is $0.00. Off, straight-line always runs to 100%."
-          />
-          <Toggle
-            on={tiebreak}
-            set={setTiebreak}
-            title="Brand-direct tiebreaker"
-            desc="When merchant offers disagree by more than 15%, weight the manufacturer's own storefront price to settle the median."
-          />
-          {/* The design puts Save here. There is no endpoint that stores these
-              three, so the toggles move locally and nothing is promised. */}
-          <Alert tone="info" title="Engine defaults">
-            No endpoint stores these per account yet, so a change here doesn’t persist.
-          </Alert>
+        <div className="k-pbehavior">
+          {BEHAVIOR.map(([title, desc]) => (
+            <div key={title} className="k-pbeh">
+              <span className="k-pbeh-on" aria-hidden="true">
+                <Icon d={I.check} size={10} stroke={2.5} />
+              </span>
+              <div>
+                <div className="k-pbeh-t">{title}</div>
+                <div className="k-pbeh-d">{desc}</div>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
