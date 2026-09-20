@@ -446,7 +446,7 @@ const Landing = ({ onStartClaim, onSampleClaim, onStartTrial }) => {
                 const comps = [
                   { source: 'Target',  price: 152.19 },
                   { source: 'Madden',  price: r.rcv_total_incl },
-                  { source: (r.alternative_sources || [])[2] ? r.alternative_sources[2].source : 'Google Shopping', price: 124.75 },
+                  { source: (r.alternative_sources || [])[2] ? r.alternative_sources[2].source : 'Walmart', price: 124.75 },
                 ];
                 return (<React.Fragment>
                   <div className="k-pg-mockrow">

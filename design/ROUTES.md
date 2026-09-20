@@ -76,7 +76,7 @@ _Removed._ The split/grouped/dense explorations were consolidated into the singl
 | `19-Team-management.html` | `/settings/team` | Auth | Members, roles, invites |
 | `10-Carrier-settings.html` | `/settings/carriers` | Auth | Carrier profiles (depreciation tables, limits, exclusions) |
 | `14-Settings-pricing.html` | `/settings/pricing` | Auth | Valuation behavior (unified comp source) |
-| `40-Pricing-source.html` | `/settings/pricing/source` | Auth | Comp-source detail (Google Shopping) |
+| `40-Pricing-source.html` | `/settings/pricing/source` | Auth | Comp-source detail (Kevin Content Pricing Engine) |
 | `33-Settings-export-defaults.html` | `/settings/export` | Auth | Export defaults |
 | `34-Settings-integrations.html` | `/settings/integrations` | Auth | Connected services |
 | `35-Settings-billing.html` | `/settings/billing` | Auth | Plan, seats, invoices |

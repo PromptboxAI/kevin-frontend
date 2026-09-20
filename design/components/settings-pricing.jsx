@@ -86,7 +86,7 @@ const SettingsPricing = () => {
               <div style={{ fontSize: 11, color: 'var(--k-fg-4)', fontFamily: 'var(--k-font-mono)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Pricing</div>
               <h1 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 28, letterSpacing: '-0.022em', margin: '4px 0 4px' }}>Where Kevin gets Replacement Cost Values.</h1>
               <p style={{ fontSize: 13, color: 'var(--k-fg-3)', margin: 0, maxWidth: 760 }}>
-                Every comp comes from <strong>one unified aggregator</strong> — there are no per-retailer integrations. What the source roster below controls is not <em>where</em> we fetch, but how results are <strong>classified and ranked</strong>: whether a confident new-replacement comp exists chooses the valuation basis, and the priority chain sets which comp leads. Jewelry, Fine Arts, Firearms and Furs are never auto-priced — they arrive flagged for a person. Google Shopping and the Google Immersive Product API span major retailers, specialty stores, brand-direct storefronts and marketplaces. There are no per-store scrapers to maintain or switch on. RCV defaults to the <strong>median of the live comps</strong> returned for an item, with the alternates one click away in the worksheet and a dated proof link kept for the file.
+                Every comp comes from <strong>one unified pricing engine</strong> — there are no per-retailer integrations. What the source roster below controls is not <em>where</em> we fetch, but how results are <strong>classified and ranked</strong>: whether a confident new-replacement comp exists chooses the valuation basis, and the priority chain sets which comp leads. Jewelry, Fine Arts, Firearms and Furs are never auto-priced — they arrive flagged for a person. The Kevin Content Pricing Engine spans major retailers, specialty stores, brand-direct storefronts and marketplaces. There are no per-store scrapers to maintain or switch on. RCV defaults to the <strong>median of the live comps</strong> returned for an item, with the alternates one click away in the worksheet and a dated proof link kept for the file.
               </p>
             </div>
           </div>
@@ -95,7 +95,7 @@ const SettingsPricing = () => {
           <section className="k-pricing-stats">
             <div className="k-ps">
               <div className="k-ps-l">Comp source</div>
-              <div className="k-ps-v" style={{ fontSize: 15 }}>Google Shopping</div>
+              <div className="k-ps-v" style={{ fontSize: 15 }}>Kevin Content Pricing Engine</div>
             </div>
             <div className="k-ps">
               <div className="k-ps-l">Comps fetched · today</div>
@@ -123,13 +123,13 @@ const SettingsPricing = () => {
             </div>
             <div style={{ padding: '4px 14px 14px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0 14px' }}>
-                <div className="k-source-logo">G</div>
+                <div className="k-source-logo">K</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: 13.5, fontWeight: 600 }}>Google Shopping · Immersive Product API</span>
+                    <span style={{ fontSize: 13.5, fontWeight: 600 }}>Kevin Content Pricing Engine</span>
                     <Badge tone="accent">unified</Badge>
                   </div>
-                  <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', marginTop: 3 }}>Served via SerpApi · one query per item returns live merchant offers with prices, links and availability</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', marginTop: 3 }}>One query per item returns live merchant offers with prices, links and availability</div>
                 </div>
                 <div className="k-source-stat">
                   <div className="k-ps-l">Last fetch</div>

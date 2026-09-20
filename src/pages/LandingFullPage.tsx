@@ -458,7 +458,7 @@ export default function LandingFullPage() {
                 {[
                   ['Target', '$152.19', false],
                   ['Madden', '$141.16', true],
-                  ['Google Shopping', '$124.75', false],
+                  ['Walmart', '$124.75', false],
                 ].map(([source, price, isMedian], i) => (
                   <div key={i} className="k-pg-pop-row">
                     <span

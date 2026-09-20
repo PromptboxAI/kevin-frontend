@@ -254,7 +254,7 @@ const DOC_ARTICLES_A = {
     title: 'RCV comps & proof links',
     summary: 'Where the price came from, how to switch it, and what prints on the export.',
     blocks: [
-      ['p', 'Every comp Kevin finds comes from one place: Google Shopping and the Google Immersive Product API, which already spans major retailers, specialty stores, brand-direct storefronts, and marketplaces. There is no list of individual stores to maintain or switch on.'],
+      ['p', 'Every comp Kevin finds comes from one place: the Kevin Content Pricing Engine, which already spans major retailers, specialty stores, brand-direct storefronts, and marketplaces. There is no list of individual stores to maintain or switch on.'],
       ['h2', 'How the price is chosen'],
       ['p', 'Kevin keeps the top three merchant offers for an item and takes the median as the replacement cost. The median is deliberately dull: it resists a single mispriced listing in either direction. When offers disagree by more than 15%, the manufacturer\u2019s own price is weighted to settle it.'],
       ['h2', 'Switching comps'],

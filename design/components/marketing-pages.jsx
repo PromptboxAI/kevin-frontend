@@ -489,13 +489,13 @@ const PricingSourceDetail = () => (
       <a className="k-link" style={{ fontSize: 12 }} href="14-Settings-pricing.html"><Icon d={I.chevleft} size={11} /> Back to Pricing</a>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 14, marginBottom: 22 }}>
-        <div className="k-source-logo" style={{ width: 56, height: 56, background: 'var(--k-accent)', color: '#fff', fontSize: 20 }}>G</div>
+        <div className="k-source-logo" style={{ width: 56, height: 56, background: 'var(--k-accent)', color: '#fff', fontSize: 20 }}>K</div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h1 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 32, letterSpacing: '-0.022em', margin: 0 }}>Google Shopping</h1>
+          <h1 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 32, letterSpacing: '-0.022em', margin: 0 }}>Kevin Content Pricing Engine</h1>
           <div style={{ display: 'flex', gap: 8, marginTop: 6, alignItems: 'center', flexWrap: 'wrap' }}>
             <Badge tone="accent">Unified comp source</Badge>
             <Badge tone="ok" dot={true}>Operational</Badge>
-            <span style={{ fontSize: 12, color: 'var(--k-fg-4)', fontFamily: 'var(--k-font-mono)' }}>Immersive Product API via SerpApi · last fetch 3m ago</span>
+            <span style={{ fontSize: 12, color: 'var(--k-fg-4)', fontFamily: 'var(--k-font-mono)' }}>Unified comp source · last fetch 3m ago</span>
           </div>
         </div>
       </div>

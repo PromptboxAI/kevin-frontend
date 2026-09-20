@@ -2,7 +2,7 @@
 
 _Where the price came from, how to switch it, and what prints on the export._
 
-Every comp Kevin finds comes from one place: Google Shopping and the Google Immersive Product API, which already spans major retailers, specialty stores, brand-direct storefronts, and marketplaces. There is no list of individual stores to maintain or switch on.
+Every comp Kevin finds comes from one place: the Kevin Content Pricing Engine, which already spans major retailers, specialty stores, brand-direct storefronts, and marketplaces. There is no list of individual stores to maintain or switch on.
 
 ## How the price is chosen
 
