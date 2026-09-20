@@ -107,35 +107,16 @@ export default function SettingsPricingPage() {
             </div>
           </div>
 
-          <div
-            style={{
-              borderTop: '1px solid var(--k-line)',
-              marginTop: 4,
-              paddingTop: 16,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 10,
-            }}
-          >
-            <div
-              className="k-mono"
-              style={{
-                fontSize: 11,
-                color: 'var(--k-fg-4)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
-                fontWeight: 600,
-                marginBottom: 6,
-              }}
-            >
-              What the aggregator covers
+          <div className="k-pcov-wrap">
+            <div className="k-pcov-h">What the aggregator covers</div>
+            <div className="k-pcov-list">
+              {COVERAGE.map(([title, desc]) => (
+                <div key={title} className="k-pcov">
+                  <span className="k-pcov-t">{title}</span>
+                  <span className="k-pcov-d">{desc}</span>
+                </div>
+              ))}
             </div>
-            {COVERAGE.map(([title, desc]) => (
-              <div key={title} className="k-pcov">
-                <span className="k-pcov-t">{title}</span>
-                <span className="k-pcov-d">{desc}</span>
-              </div>
-            ))}
           </div>
         </div>
       </section>
