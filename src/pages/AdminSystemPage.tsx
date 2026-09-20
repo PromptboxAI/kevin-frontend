@@ -8,6 +8,8 @@ import { API_BASE_URL } from '../lib/env'
 import { fmtInt } from '../lib/format'
 import { sinceHours, useFailedJobs, useJobsHealth, useOpsActions, vendorQuotaFrom } from '../lib/admin'
 import { bannerFor } from '../lib/service-status-rules'
+import { groupFailures, lastLine, summarize } from '../lib/failed-jobs-rules'
+import { copyText } from '../lib/clipboard'
 
 /**
  * Screen 72 — System. The one admin screen with live data behind every figure.
@@ -55,6 +57,8 @@ export default function AdminSystemPage() {
   const failed = useFailedJobs(50)
   const { reap, purgeExif } = useOpsActions()
   const [open, setOpen] = useState<string | null>(null)
+  const [openCause, setOpenCause] = useState<string | null>(null)
+  const [copied, setCopied] = useState<'yes' | 'no' | null>(null)
 
   // The same public status the customer banner reads, so ops and adjusters are
   // never told different things about pricing.
@@ -74,7 +78,8 @@ export default function AdminSystemPage() {
   const pricing = bannerFor(status.data, localTime)
   const quota = vendorQuotaFrom(h?.jobs)
   const jobs = h?.jobs ?? []
-  const failedJobs = failed.data?.jobs ?? []
+  /** Failures by CAUSE: one bug that killed 48 photos is one thing to fix. */
+  const failureGroups = groupFailures(failed.data?.jobs ?? [])
 
   const workersOk = !!h && h.workers_live === h.workers_total && h.workers_total > 0
   const troubles = [
@@ -251,44 +256,91 @@ export default function AdminSystemPage() {
           </div>
         </Card>
 
-        {/* — What actually broke — */}
+        {/* — What actually broke, grouped by cause — */}
         <Card
           id="failed-jobs"
-          title={`Failed jobs · ${fmtInt(failed.data?.count ?? 0)}`}
+          title={`Failed jobs · ${fmtInt(failed.data?.count ?? 0)} in ${fmtInt(failureGroups.length)} ${failureGroups.length === 1 ? 'cause' : 'causes'}`}
           action={
-            <span style={{ fontSize: 11.5, color: 'var(--k-fg-4)' }}>
-              {failed.data?.scope === 'all' ? 'Every account' : 'Your account'}
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 11.5, color: 'var(--k-fg-4)' }}>
+                {failed.data?.scope === 'all' ? 'Every account' : 'Your account'}
+              </span>
+              {failureGroups.length > 0 ? (
+                <button
+                  type="button"
+                  className="k-btn k-btn--ghost k-btn--sm"
+                  title="Copy a summary — causes, counts, dates, job ids and accounts — to send on"
+                  onClick={async () => {
+                    setCopied((await copyText(summarize(failureGroups))) ? 'yes' : 'no')
+                    window.setTimeout(() => setCopied(null), 2400)
+                  }}
+                >
+                  {copied === 'yes' ? 'Copied' : copied === 'no' ? 'Press Ctrl+C' : 'Copy summary'}
+                </button>
+              ) : null}
+            </div>
           }
         >
           <div className="k-set-card-body" style={{ padding: 0 }}>
-            {failedJobs.length === 0 ? (
+            {failureGroups.length === 0 ? (
               <p className="k-note" style={{ padding: '14px 16px' }}>
-                {failed.isPending ? 'Reading…' : 'Nothing has failed. '}
+                {failed.isPending ? 'Reading…' : 'Nothing has failed.'}
               </p>
             ) : (
-              failedJobs.map((job) => (
-                <div key={job.job_id} className="k-adm-fail">
-                  <div className="k-adm-fail-hd">
-                    <span className="k-mono" style={{ fontSize: 11.5, color: 'var(--k-fg-3)' }}>
-                      {job.job_id.slice(0, 8)}
-                    </span>
-                    <span style={{ fontSize: 12, color: 'var(--k-fg-4)' }}>
-                      {job.ended_at ? new Date(job.ended_at).toLocaleString() : 'still failing'}
-                    </span>
-                    {job.actor_id ? (
-                      <span className="k-mono" style={{ fontSize: 11, color: 'var(--k-fg-4)' }}>
-                        actor {job.actor_id.slice(0, 8)}
+              failureGroups.map((group) => {
+                const isOpen = openCause === group.cause
+                const days =
+                  group.first && group.last
+                    ? group.first.slice(0, 10) === group.last.slice(0, 10)
+                      ? new Date(group.last).toLocaleDateString()
+                      : `${new Date(group.first).toLocaleDateString()} – ${new Date(group.last).toLocaleDateString()}`
+                    : 'no date recorded'
+                return (
+                  <div key={group.cause}>
+                    <button
+                      type="button"
+                      className="k-adm-pipe-row k-adm-jobrow"
+                      onClick={() => setOpenCause(isOpen ? null : group.cause)}
+                    >
+                      <span className="k-adm-dot" style={{ background: 'var(--k-danger)' }} />
+                      <span className="k-adm-cause">{lastLine(group.jobs[0]?.exc_info)}</span>
+                      <span className="k-adm-jobmeta">
+                        {days} ·{' '}
+                        {group.actors.length
+                          ? `${fmtInt(group.actors.length)} account${group.actors.length === 1 ? '' : 's'}`
+                          : 'system job'}
                       </span>
+                      <Badge tone="warn">{fmtInt(group.count)}</Badge>
+                      <Icon d={isOpen ? I.chevdown : I.chevright} size={13} />
+                    </button>
+
+                    {isOpen ? (
+                      <div className="k-adm-causebody">
+                        {/* What an admin can actually do with this, said plainly:
+                            there is no retry-job or clear-queue route yet, so the
+                            honest move is to take it to the claim or to us. */}
+                        <div className="k-adm-causeact">
+                          {group.actors.length ? (
+                            <span>
+                              Affected {group.actors.length === 1 ? 'account' : 'accounts'}:{' '}
+                              <span className="k-mono">{group.actors.join(', ')}</span>
+                            </span>
+                          ) : (
+                            <span>No account attached — this ran as a system job.</span>
+                          )}
+                        </div>
+                        <pre className="k-adm-detail k-adm-detail--tight">
+                          {(group.jobs[0]?.exc_info ?? '').trim().split('\n').slice(-8).join('\n')}
+                        </pre>
+                        <div className="k-adm-causeids k-mono">
+                          {group.jobs.slice(0, 12).map((j) => j.job_id.slice(0, 8)).join('  ')}
+                          {group.count > 12 ? `  +${fmtInt(group.count - 12)} more` : ''}
+                        </div>
+                      </div>
                     ) : null}
                   </div>
-                  {job.exc_info ? (
-                    <pre className="k-adm-detail k-adm-detail--tight">
-                      {job.exc_info.trim().split('\n').slice(-6).join('\n')}
-                    </pre>
-                  ) : null}
-                </div>
-              ))
+                )
+              })
             )}
           </div>
         </Card>

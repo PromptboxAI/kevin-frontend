@@ -2204,3 +2204,9 @@ button.k-avatar-menu-item {
 
 /* An anchored card clears the dark topbar when jumped to. */
 .k-adm .k-set-card[id] { scroll-margin-top: 20px; }
+
+/* Failed jobs, grouped by cause. */
+.k-adm-cause { flex: 1; font-size: 12.5px; font-weight: 600; color: var(--k-fg); font-family: var(--k-font-mono); }
+.k-adm-causebody { padding: 4px 16px 14px; background: var(--k-bg-2); border-bottom: 1px solid var(--k-line); }
+.k-adm-causeact { padding: 10px 0 2px; font-size: 12.5px; color: var(--k-fg-2); }
+.k-adm-causeids { margin-top: 8px; font-size: 11px; color: var(--k-fg-4); word-spacing: 2px; }
