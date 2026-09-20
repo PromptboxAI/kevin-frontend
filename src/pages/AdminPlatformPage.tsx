@@ -148,7 +148,13 @@ export default function AdminPlatformPage() {
             <div className="k-adm-kpi-v">{fmtInt(Object.keys(rules.data?.schedule ?? {}).length)}</div>
             <div className="k-adm-kpi-d">
               <span style={{ color: 'var(--k-fg-3)' }}>
-                across {fmtInt((rules.data?.schedule_categories ?? rules.data?.categories ?? []).length)}{' '}
+                across{' '}
+                {fmtInt(
+                  (rules.data?.schedule_categories?.length
+                    ? rules.data.schedule_categories
+                    : (rules.data?.categories ?? [])
+                  ).length,
+                )}{' '}
                 categories
               </span>
             </div>
