@@ -1,77 +1,125 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
 import SettingsShell from '../components/SettingsShell'
-import { F, FSelect, FSelectOther, FBrandColor } from '../components/SettingsFields'
-import { US_STATES } from '../lib/us-states'
+import IntakeField from '../components/IntakeField'
+import { I, Icon } from '../components/Icon'
+import { useDirectory } from '../lib/directory'
+import {
+  BRAND_DEFAULT,
+  LOGO_ERROR,
+  accentFor,
+  companyLines,
+  logoProblem,
+  newId,
+  normalizeHex,
+} from '../lib/directory-rules'
+import type { Company } from '../lib/directory-rules'
 
 /**
- * Screen 32 — Business. Ported from `SettingsAgency` in
- * `design/components/settings-pages.jsx`.
+ * The firm's own details — the company header a claim carries.
  *
- * One deviation, noted: the Enterprise CTA points at `/contact` rather than
- * `15-Request-access.html`, since that is where the app's request-access flow
- * lives.
+ * REWRITTEN 2026-09-19. This screen used to display the design's demo values
+ * (Reyes Adjusting, a licence number, an EIN) as though they were the
+ * account's, with a dead Upload logo button and a line promising that exports
+ * carried them. None of it was true: there is no business write route, so
+ * nothing saved and nothing reached a document. Showing another firm's details
+ * as yours is worse than showing none.
  *
- * No business write route exists yet (BACKEND-ASKS ask 33), so the fields hold
- * the design's values and nothing persists. Each control's production target is
- * in INTERACTIONS.md.
+ * What is real now: these fields edit the company header kept in THIS BROWSER
+ * (lib/directory), the same one New claim offers, and the brand colour
+ * actually repaints the app. What still is not: none of it reaches the
+ * exported PDF, because that generator is server-side and the backend has no
+ * profile to read (BACKEND-ASKS 33). The page says so rather than implying
+ * otherwise.
  */
+const SWATCHES = ['#2E4B6F', '#1F3A5F', '#2F5D50', '#6B4E3D', '#5B4B8A', '#1a1d21']
 
-const BUSINESS_TYPES = [
-  'Independent adjuster',
-  'Public adjuster',
-  'Staff adjuster',
-  'Third-party administrator',
-  'Restoration contractor',
-  'Estate sale company',
-  'Estate liquidator',
-  'Appraiser',
-]
-
-const TAX_FALLBACKS = [
-  'Suffolk County, NY · 8.625%',
-  'Nassau County, NY · 8.625%',
-  'New York City · 8.875%',
-  'New York State only · 4%',
-  'No sales tax · 0%',
-]
-
-const POLICY_FORMS = [
-  'None · estate sale work',
-  'HO-1 · Basic',
-  'HO-2 · Broad',
-  'HO-3 · Open perils',
-  'HO-5 · Comprehensive',
-  'HO-4 · Renters',
-  'HO-6 · Condo',
-  'HO-8 · Older home',
-  'DP-1 · Dwelling basic',
-  'DP-3 · Dwelling fire',
-  'CP · Commercial property',
-  'BOP · Business owners',
-]
+/** A setting the backend cannot store yet: shown, inert, labelled. */
+function Soon({ label, detail }: { label: string; detail: string }) {
+  return (
+    <div className="k-set-soon">
+      <div>
+        <div className="k-set-soon-l">{label}</div>
+        <div className="k-set-soon-s">{detail}</div>
+      </div>
+      <span className="k-claim-tab-soon">Soon</span>
+    </div>
+  )
+}
 
 export default function SettingsBusinessPage() {
-  // Every field here is uncontrolled (defaultValue, per the design), so Discard
-  // remounts them rather than tracking a value for each.
-  const [fieldsKey, setFieldsKey] = useState(0)
+  const { dir, saveCompany } = useDirectory()
+  /** One company header per account, for now: the first saved one. */
+  const stored: Company | null = dir.companies[0] ?? null
+
+  const [name, setName] = useState('')
+  const [address, setAddress] = useState('')
+  const [license, setLicense] = useState('')
+  const [phone, setPhone] = useState('')
+  const [email, setEmail] = useState('')
+  const [website, setWebsite] = useState('')
+  const [logo, setLogo] = useState('')
+  const [brand, setBrand] = useState(BRAND_DEFAULT)
+  const [logoError, setLogoError] = useState<string | null>(null)
+  const [saved, setSaved] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  // Seed from storage once it has been read (an outside system, so an effect).
+  useEffect(() => {
+    if (!stored) return
+    setName(stored.name)
+    setAddress(stored.address ?? '')
+    setLicense(stored.license ?? '')
+    setPhone(stored.phone ?? '')
+    setEmail(stored.email ?? '')
+    setWebsite(stored.website ?? '')
+    setLogo(stored.logo ?? '')
+    setBrand(stored.brandColor ?? BRAND_DEFAULT)
+  }, [stored])
+
+  const takeLogo = (file: File) => {
+    const problem = logoProblem(file)
+    if (problem) {
+      setLogoError(LOGO_ERROR[problem])
+      return
+    }
+    setLogoError(null)
+    const reader = new FileReader()
+    reader.onload = () => setLogo(typeof reader.result === 'string' ? reader.result : '')
+    reader.onerror = () => setLogoError('That file could not be read.')
+    reader.readAsDataURL(file)
+  }
+
+  const save = () => {
+    saveCompany({
+      id: stored?.id ?? newId(),
+      name: name.trim() || 'My business',
+      address: address.trim() || undefined,
+      license: license.trim() || undefined,
+      phone: phone.trim() || undefined,
+      email: email.trim() || undefined,
+      website: website.trim() || undefined,
+      logo: logo || undefined,
+      brandColor: normalizeHex(brand) ?? BRAND_DEFAULT,
+    })
+    setSaved(true)
+    window.setTimeout(() => setSaved(false), 2500)
+  }
+
+  const preview: Company = {
+    id: 'preview',
+    name: name.trim() || 'Your business',
+    address: address.trim() || undefined,
+    license: license.trim() || undefined,
+    phone: phone.trim() || undefined,
+    email: email.trim() || undefined,
+    website: website.trim() || undefined,
+  }
+
+  const derived = normalizeHex(brand) && accentFor(brand) !== normalizeHex(brand)
 
   return (
-    <SettingsShell
-      activeId="agency"
-      title="Business"
-      eyebrow="Your business · branding"
-      saveDisabled
-      onDiscard={() => setFieldsKey((n) => n + 1)}
-      saveNote={
-        <>
-          Defaults apply to new claims, and anything already in a claim keeps
-          the value it was created with — but nothing saves yet: there is no
-          business write route (BACKEND-ASKS ask 35).
-        </>
-      }
-    >
-      <div style={{ marginBottom: 22 }}>
+    <SettingsShell activeId="agency" title="Business" eyebrow="Your business · branding" save={false}>
+      <div style={{ marginBottom: 20 }}>
         <h1
           style={{
             fontFamily: 'var(--k-font-display)',
@@ -81,132 +129,127 @@ export default function SettingsBusinessPage() {
             margin: '4px 0 4px',
           }}
         >
-          Reyes Adjusting, LLC
+          {name.trim() || 'Your business'}
         </h1>
-        <p style={{ fontSize: 13, color: 'var(--k-fg-3)', margin: 0 }}>
-          Your business details and branding. These appear on the inventories and PDFs you export.
+        <p style={{ fontSize: 13, color: 'var(--k-fg-3)', margin: 0, maxWidth: 620 }}>
+          The header your claims carry. Pick it on any claim under Personnel &amp; company.
         </p>
       </div>
 
-      <section className="k-set-card" key={fieldsKey}>
-        <div className="k-set-card-hd">Business details</div>
-        <div className="k-set-card-body">
-          <div className="k-set-grid2">
-            <F label="Legal name" value="Reyes Adjusting, LLC" />
-            <F label="DBA / brand" value="Reyes Adjusting" />
-            <F label="License # (New York)" value="2401-44210" mono />
-            <F label="Tax ID (EIN)" value="46-2018553" mono />
-            <FSelectOther label="Type" value="Independent adjuster" options={BUSINESS_TYPES} />
-            <F label="Founded" value="2020" mono />
-          </div>
-          <div style={{ marginTop: 14 }}>
-            <F label="Street" value="150 Motor Pkwy, Suite 401" />
-          </div>
-          <div className="k-set-grid3" style={{ marginTop: 14 }}>
-            <F label="City" value="Hauppauge" />
-            <FSelect label="State" value="NY" mono options={US_STATES} />
-            <F label="ZIP" value="11788" mono hint="Your office — does not affect claim tax" />
-          </div>
-        </div>
-      </section>
-
       <section className="k-set-card">
-        <div className="k-set-card-hd">Branding · on your exports</div>
+        <div className="k-set-card-hd">Company header</div>
         <div className="k-set-card-body">
-          <div className="k-set-row" style={{ marginBottom: 14 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>
-                &quot;Prepared with Kevin&quot; footer
-              </div>
-              <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', marginTop: 2 }}>
-                A small line in the PDF footer. Your firm stays the brand on the document — this
-                just credits the tool. On by default; turn it off any time.
-              </div>
+          <div className="k-set-logo-row" style={{ marginBottom: 16 }}>
+            <div className="k-dirmodal-logo-box">
+              {logo ? <img src={logo} alt="" /> : <span>No logo</span>}
             </div>
-            <label className="k-switch">
-              <input type="checkbox" defaultChecked={true} />
-              <span className="k-switch-track">
-                <span className="k-switch-thumb" />
-              </span>
-            </label>
-          </div>
-          <div className="k-set-grid2">
-            <div className="k-insp-field">
-              <label>Logo</label>
-              <div className="k-set-logo-row">
-                <div className="k-set-logo">RA</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12.5 }}>reyes-logo.svg</div>
-                  <div style={{ fontSize: 11, color: 'var(--k-fg-4)', marginTop: 2 }}>
-                    Your exports and share links carry YOUR name and logo in the header — Kevin
-                    never brands the document itself.
-                  </div>
-                </div>
-                <label className="k-btn k-btn--ghost" style={{ cursor: 'pointer' }}>
-                  Upload
-                  <input type="file" accept="image/svg+xml,image/png" style={{ display: 'none' }} />
-                </label>
-              </div>
-            </div>
-            <FBrandColor value="#2E4B6F" />
-          </div>
-        </div>
-      </section>
-
-      <section className="k-set-card">
-        <div className="k-set-card-hd">Defaults · applied to new claims</div>
-        <div className="k-set-card-body">
-          <div className="k-set-grid2">
-            <FSelect
-              label="Default tax-rate fallback"
-              value="Suffolk County, NY · 8.625%"
-              mono
-              options={TAX_FALLBACKS}
-              hint="Only used when the loss ZIP doesn’t resolve"
-            />
-            <FSelectOther
-              label="Default policy form"
-              value="HO-3 · Open perils"
-              placeholder="e.g. MH-3, FR-1, a state-specific form"
-              options={POLICY_FORMS}
-            />
-            <FSelect
-              label="Default condition"
-              value="Average"
-              options={['Excellent', 'Good', 'Average', 'Fair', 'Poor']}
-              hint="Starting grade on every new item"
-            />
-            <FSelect
-              label="Default depreciation schedule"
-              value="Straight-line · standard"
-              options={[
-                'Straight-line · standard',
-                'Bracketed · standard',
-                'Custom · preparer-entered',
-              ]}
-              hint="Selectable per claim at intake"
-            />
-          </div>
-        </div>
-      </section>
-
-      <section className="k-set-card">
-        <div className="k-set-card-hd">Working with a team?</div>
-        <div className="k-set-card-body">
-          <div className="k-set-row" style={{ alignItems: 'center' }}>
-            <div style={{ flex: 1 }}>
-              <div
-                style={{ fontSize: 13, color: 'var(--k-fg-3)', lineHeight: 1.55, maxWidth: 460 }}
+            <div>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) takeLogo(f)
+                  e.target.value = ''
+                }}
+              />
+              <button
+                type="button"
+                className="k-btn k-btn--ghost k-btn--sm"
+                onClick={() => fileRef.current?.click()}
               >
-                Pro is a single-user subscription. Reviewer roles, shared workspaces, and team
-                management are available on Enterprise — volume licensing for a whole desk or agency
-                on one invoice.
+                {logo ? 'Replace logo' : 'Upload logo'}
+              </button>
+              {logo ? (
+                <button
+                  type="button"
+                  className="k-link"
+                  style={{ marginLeft: 10 }}
+                  onClick={() => setLogo('')}
+                >
+                  Remove
+                </button>
+              ) : null}
+              <div className="k-dirmodal-hint">
+                {logoError ?? 'PNG, JPG, SVG or WebP, up to 512 KB.'}
               </div>
             </div>
-            <Link className="k-btn" to="/contact">
-              Talk to us about Enterprise →
-            </Link>
           </div>
+
+          <div className="k-set-grid2">
+            <IntakeField label="Business name" value={name} width="100%" onChange={setName} />
+            <IntakeField label="License #" value={license} width="100%" onChange={setLicense} />
+            <IntakeField label="Address" value={address} width="100%" onChange={setAddress} />
+            <IntakeField label="Phone" value={phone} width="100%" onChange={setPhone} />
+            <IntakeField label="Email" value={email} width="100%" onChange={setEmail} />
+            <IntakeField label="Website" value={website} width="100%" onChange={setWebsite} />
+          </div>
+
+          <div className="k-set-brand">
+            <div className="k-modal-label">Primary brand color</div>
+            <div className="k-brand-row">
+              {SWATCHES.map((hex) => (
+                <button
+                  key={hex}
+                  type="button"
+                  onClick={() => setBrand(hex)}
+                  className={`k-brand-sw${brand.toLowerCase() === hex.toLowerCase() ? ' is-on' : ''}`}
+                  style={{ background: hex }}
+                  title={hex}
+                  aria-label={`Use ${hex}`}
+                />
+              ))}
+              <label className="k-brand-custom" title="Pick any color">
+                <input type="color" value={brand} onChange={(e) => setBrand(e.target.value)} />
+                <Icon d={I.edit} size={11} />
+              </label>
+              <span className="k-mono" style={{ fontSize: 11.5, color: 'var(--k-fg-3)' }}>
+                {brand.toUpperCase()}
+              </span>
+            </div>
+            <div className="k-dirmodal-hint">
+              Saving repaints Kevin in this color for you.
+              {derived
+                ? ` Buttons use ${accentFor(brand).toUpperCase()} — a darkened version, because white text on this one would be unreadable.`
+                : ''}
+            </div>
+          </div>
+
+          <div className="k-intake-letterhead" style={{ marginTop: 16 }}>
+            {logo ? <img src={logo} alt="" /> : null}
+            <div>
+              {companyLines(preview).map((line) => (
+                <div key={line}>{line}</div>
+              ))}
+            </div>
+          </div>
+
+          <div className="k-set-savebar">
+            <button type="button" className="k-btn" onClick={save}>
+              {saved ? 'Saved' : 'Save business details'}
+            </button>
+            <span className="k-dirmodal-hint" style={{ marginTop: 0 }}>
+              Saved in this browser. Exports don’t carry it yet — the document generator is
+              server-side and has nowhere to read it from.
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <section className="k-set-card">
+        <div className="k-set-card-hd">Not built yet</div>
+        <div className="k-set-card-body">
+          <Soon
+            label="Defaults for new claims"
+            detail="Tax jurisdiction, policy form and depreciation method, prefilled on every claim."
+          />
+          <Soon
+            label="Branding on exports"
+            detail="Your logo and details on the inventory PDF and share links."
+          />
+          <Soon label="Team" detail="Invite colleagues and share one company header." />
         </div>
       </section>
     </SettingsShell>

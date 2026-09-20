@@ -2042,3 +2042,27 @@ button.k-avatar-menu-item {
   background: var(--k-bg);
 }
 .k-export-checklist { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+
+/* Business settings: brand row, save bar, and the unbuilt rows. */
+.k-set-brand { margin-top: 16px; }
+.k-set-brand .k-brand-row { margin-top: 8px; }
+.k-set-savebar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--k-line);
+}
+.k-set-soon {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--k-line);
+}
+.k-set-soon:last-child { border-bottom: 0; }
+.k-set-soon-l { font-size: 13px; font-weight: 600; color: var(--k-fg-3); }
+.k-set-soon-s { margin-top: 2px; font-size: 12px; color: var(--k-fg-4); }

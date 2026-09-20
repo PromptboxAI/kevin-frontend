@@ -33,6 +33,8 @@ export type Company = {
   license?: string
   /** A data URL. The account-level store is the backend's, once it exists. */
   logo?: string
+  /** Hex. Tints the app for this account and, later, the export header. */
+  brandColor?: string
 }
 
 export type Directory = { people: Person[]; companies: Company[] }
@@ -112,4 +114,71 @@ export function parseDirectory(raw: unknown): Directory {
       )
     : []
   return { people, companies }
+}
+
+/* ── Brand colour ────────────────────────────────────────────────────────
+   The firm's colour, used on the app chrome for its own people and, once the
+   backend stores the profile, on the client-facing PDF and portal header.
+   Kept as a hex because that is what a colour input and a document generator
+   both take; every other colour in the system stays an OKLCH token. */
+
+export const BRAND_DEFAULT = '#2E4B6F'
+
+/** #abc / #aabbcc / aabbcc -> #aabbcc, or null when it is not a colour. */
+export function normalizeHex(input: string): string | null {
+  const t = input.trim().replace(/^#/, '')
+  if (/^[0-9a-fA-F]{3}$/.test(t)) {
+    return `#${t[0]}${t[0]}${t[1]}${t[1]}${t[2]}${t[2]}`.toLowerCase()
+  }
+  if (/^[0-9a-fA-F]{6}$/.test(t)) return `#${t.toLowerCase()}`
+  return null
+}
+
+function channel(v: number): number {
+  const c = v / 255
+  return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+}
+
+/** WCAG relative luminance, 0 (black) to 1 (white). */
+export function luminance(hex: string): number {
+  const h = normalizeHex(hex) ?? BRAND_DEFAULT
+  const r = parseInt(h.slice(1, 3), 16)
+  const g = parseInt(h.slice(3, 5), 16)
+  const b = parseInt(h.slice(5, 7), 16)
+  return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
+}
+
+/** Contrast of white text on this colour. 4.5 is the readable floor. */
+export function contrastWithWhite(hex: string): number {
+  return 1.05 / (luminance(hex) + 0.05)
+}
+
+/**
+ * The colour the app may actually paint buttons with.
+ *
+ * A brand colour is chosen for a letterhead, not for white button text, and a
+ * bright yellow would make every primary button unreadable. So the accent is
+ * the brand colour darkened until white text clears 4.5:1 — the swatch the
+ * adjuster picked is still shown, and their documents still use it exactly.
+ */
+export function accentFor(hex: string): string {
+  const start = normalizeHex(hex)
+  if (!start) return BRAND_DEFAULT
+  let [r, g, b] = [1, 3, 5].map((i) => parseInt(start.slice(i, i + 2), 16))
+  for (let step = 0; step < 24; step += 1) {
+    const current = `#${[r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')}`
+    if (contrastWithWhite(current) >= 4.5) return current
+    r = Math.round(r * 0.9)
+    g = Math.round(g * 0.9)
+    b = Math.round(b * 0.9)
+  }
+  return '#000000'
+}
+
+/** A lighter partner for hovers and links, one step up from the accent. */
+export function accentHover(hex: string): string {
+  const base = normalizeHex(accentFor(hex)) ?? BRAND_DEFAULT
+  const lift = (v: number) => Math.min(255, Math.round(v + (255 - v) * 0.18))
+  const [r, g, b] = [1, 3, 5].map((i) => lift(parseInt(base.slice(i, i + 2), 16)))
+  return `#${[r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')}`
 }

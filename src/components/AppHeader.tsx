@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import AvatarMenu from './AvatarMenu'
+import BrandAccent from './BrandAccent'
 import ServiceStatusBanner from './ServiceStatusBanner'
 import TopNavTabs from './TopNavTabs'
 import { api } from '../lib/api'
@@ -30,6 +31,8 @@ export default function AppHeader({ actions }: { actions?: React.ReactNode }) {
         {me ? <AvatarMenu email={me.email} /> : null}
       </div>
     </header>
+    {/* The firm's colour, on the signed-in app only. Renders nothing. */}
+    <BrandAccent />
     {/* Site-wide pricing pause notice; renders nothing while pricing is ok. */}
     <ServiceStatusBanner />
     </>
