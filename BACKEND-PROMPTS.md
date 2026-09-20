@@ -8,6 +8,26 @@ nothing gets asked twice and nothing quietly falls off.
 
 ---
 
+## 5. A claim-wide audit trail (the Notes & audit tab) — NOT SENT
+
+**Status:** new, 2026-09-20.
+
+The claim's fourth tab has been greyed "Soon" since the port, because the audit
+trail is per ITEM: `GET /v1/claim_items/{row_id}/events` exists and works, but
+there is no claim-wide read. Assembling one in the browser means a request per
+row — 57 on the canonical claim, hundreds on a real one — so we have not.
+
+**`GET /v1/claims/{claim_id}/events?limit=&offset=`** would build it: the same
+event shape you already return, across every item on the claim, newest first,
+with the item id on each row so the UI can link to the line. Claim-level events
+(created, processed, exported, shared, status changed) in the same stream would
+make it the whole story rather than just the rows.
+
+That is the one endpoint standing between us and finishing the claim surface —
+the tab is designed, and the item drawer already renders this exact shape.
+
+---
+
 ## 4. The admin panel needs to ACT on an account — NOT SENT
 
 **Status:** new, 2026-09-20. This supersedes prompt 2 — read this one first.
