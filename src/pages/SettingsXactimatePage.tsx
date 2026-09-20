@@ -54,17 +54,12 @@ const FORMATS: [string, string, string, boolean, string][] = [
   [
     'PDF',
     'PDF inventory',
-    'The readable version, for an insured, an attorney, or an estate-sale client. Carries photos and comps.',
+    'The readable version, for an insured, an attorney, or an estate-sale client. Carries photos.',
     false,
     '/samples/kevin-sample-inventory.pdf',
   ],
-  [
-    'CSV',
-    'Universal CSV',
-    'A plain spreadsheet for any other estimating tool, accounting, or your own records.',
-    false,
-    '/samples/kevin-sample-items.csv',
-  ],
+  // No CSV row: the export builds .xlsx and PDF, and listing a third format
+  // sent adjusters looking for an option that isn't there (owner, 2026-09-20).
 ]
 
 export default function SettingsXactimatePage() {
@@ -186,7 +181,7 @@ export default function SettingsXactimatePage() {
         <div className="k-set-card-hd">Need a live integration?</div>
         <div className="k-set-card-body">
           <p style={{ fontSize: 13, color: 'var(--k-fg-3)', margin: '0 0 12px', lineHeight: 1.55 }}>
-            The .xlsx and CSV exports cover virtually every workflow on their own. Larger operations
+            The .xlsx and PDF exports cover virtually every workflow on their own. Larger operations
             that want Kevin wired straight into their own systems can do that on Enterprise via API
             + webhooks.
           </p>
