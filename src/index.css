@@ -2201,3 +2201,6 @@ button.k-avatar-menu-item {
   flex-direction: column;
 }
 .k-adm .k-adm-body { flex: 1; }
+
+/* An anchored card clears the dark topbar when jumped to. */
+.k-adm .k-set-card[id] { scroll-margin-top: 20px; }

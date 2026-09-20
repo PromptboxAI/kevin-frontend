@@ -26,16 +26,18 @@ const localTime = (iso: string) =>
   new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
 
 function Card({
+  id,
   title,
   action,
   children,
 }: {
+  id?: string
   title: React.ReactNode
   action?: React.ReactNode
   children: React.ReactNode
 }) {
   return (
-    <section className="k-set-card">
+    <section className="k-set-card" id={id}>
       <div
         className="k-set-card-hd"
         style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
@@ -138,15 +140,17 @@ export default function AdminSystemPage() {
               </span>
             </div>
           </div>
-          <div className="k-adm-kpi">
+          {/* A figure that says "needs a look" has to take you to it. */}
+          <a className="k-adm-kpi k-adm-kpi--link" href="#failed-jobs">
             <div className="k-adm-kpi-l">Failed jobs</div>
             <div className="k-adm-kpi-v">{failed.data ? fmtInt(failed.data.count) : '—'}</div>
             <div className="k-adm-kpi-d">
               <span className={(failed.data?.count ?? 0) > 0 ? 'k-adm-down' : 'k-adm-up'}>
-                {failed.data ? (failed.data.count > 0 ? 'Needs a look' : 'None') : ''}
+                {failed.data ? (failed.data.count > 0 ? 'See the queue' : 'None') : ''}
               </span>
+              {(failed.data?.count ?? 0) > 0 ? <Icon d={I.chevright} size={12} /> : null}
             </div>
-          </div>
+          </a>
           <div className="k-adm-kpi">
             <div className="k-adm-kpi-l">Searches left</div>
             <div className="k-adm-kpi-v">
@@ -249,6 +253,7 @@ export default function AdminSystemPage() {
 
         {/* — What actually broke — */}
         <Card
+          id="failed-jobs"
           title={`Failed jobs · ${fmtInt(failed.data?.count ?? 0)}`}
           action={
             <span style={{ fontSize: 11.5, color: 'var(--k-fg-4)' }}>
