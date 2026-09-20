@@ -33,26 +33,6 @@ const COVERAGE: [string, string][] = [
   ['Brand direct', 'Manufacturer storefronts, used as tiebreaker when merchants disagree'],
 ]
 
-/**
- * How the engine values things TODAY. These were switches; nothing stored
- * them, so they offered a choice the adjuster did not have (owner,
- * 2026-09-20). They are statements until there is a route to change them.
- */
-const BEHAVIOR: [string, string][] = [
-  [
-    'Like-kind and quality (LKQ) substitutions',
-    'When the exact make/model is discontinued or unmatched, Kevin prices the nearest comparable item still sold new, and records the substitution on the row.',
-  ],
-  [
-    'Class depreciation ceilings',
-    'Depreciation is capped where an item’s content class sets a ceiling. Most classes set none, so a line past its useful life runs to 100% and its ACV is $0.00.',
-  ],
-  [
-    'Brand-direct tiebreaker',
-    'When merchant offers disagree by more than 15%, the manufacturer’s own storefront price settles the median.',
-  ],
-]
-
 const BASES: [string, 'ok' | 'info' | 'wait', string][] = [
   [
     'Retail comp',
@@ -157,30 +137,6 @@ export default function SettingsPricingPage() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      <section className="k-ov-card k-pcard">
-        <div className="k-ov-card-hd k-pcard-hd">
-          <span className="k-pcard-t">
-            <span className="k-pcard-ic k-pcard-ic--ok">
-              <Icon d={I.spark} size={12} />
-            </span>
-            Valuation behavior
-          </span>
-        </div>
-        <div className="k-pbehavior">
-          {BEHAVIOR.map(([title, desc]) => (
-            <div key={title} className="k-pbeh">
-              <span className="k-pbeh-on" aria-hidden="true">
-                <Icon d={I.check} size={10} stroke={2.5} />
-              </span>
-              <div>
-                <div className="k-pbeh-t">{title}</div>
-                <div className="k-pbeh-d">{desc}</div>
-              </div>
-            </div>
-          ))}
         </div>
       </section>
 
