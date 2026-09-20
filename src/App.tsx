@@ -19,6 +19,8 @@ import WatchDemoPage from './pages/WatchDemoPage'
 import ForEstateLiquidatorsPage from './pages/ForEstateLiquidatorsPage'
 import ProductPage from './pages/ProductPage'
 import ClaimsPage from './pages/ClaimsPage'
+import AdminSystemPage from './pages/AdminSystemPage'
+import RequireAdmin from './components/RequireAdmin'
 import ExportsPage from './pages/ExportsPage'
 import ExportPage from './pages/ExportPage'
 import IntakePage from './pages/IntakePage'
@@ -337,6 +339,18 @@ export default function App() {
             </RequireAuth>
           }
         />
+
+        {/* The back office. Staff-only, separate chrome, and 404 for anyone
+            without the admin role -- the backend gates the data regardless. */}
+        <Route
+          path="/admin/system"
+          element={
+            <RequireAdmin>
+              <AdminSystemPage />
+            </RequireAdmin>
+          }
+        />
+        <Route path="/admin" element={<Navigate to="/admin/system" replace />} />
 
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
