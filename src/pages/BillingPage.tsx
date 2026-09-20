@@ -138,10 +138,30 @@ const BILLING_PLANS: Record<BillingPlan, PlanCopy> = {
 const fmtDate = (iso?: string | null) =>
   iso ? new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : null
 
+/**
+ * A TRIAL is a billing state, not a plan: `/v1/me` can return
+ * `plan: "pro", billing_state: "trial"`, and reading the plan alone told an
+ * account that is not being charged its "next invoice" and an auto-renew date
+ * (owner, 2026-09-20). Nothing bills until the card is actually charged, so
+ * the state wins wherever money is stated. Rule 9b: the trial is metered, not
+ * timed -- never a date, never a countdown.
+ */
+function onTrial(quota: Quota): boolean {
+  return quota.billing_state === 'trial'
+}
+
 /** The three-cell strip. Values come from the payload, never from the copy table. */
 function kpisFor(plan: BillingPlan, quota: Quota): [string, string, string][] {
   const renews = fmtDate(quota.period_end)
   const included = `${fmtInt(quota.included_items)} line items included${plan === 'free' ? ', one pool' : ' per month'}`
+
+  if (onTrial(quota)) {
+    return [
+      ['Current plan', 'Trial', 'Metered, not timed'],
+      ['Claims', 'Unlimited', included],
+      ['Items left', fmtInt(quota.items_remaining), 'Nothing billed yet'],
+    ]
+  }
 
   if (plan === 'enterprise') {
     return [
@@ -174,6 +194,15 @@ function kpisFor(plan: BillingPlan, quota: Quota): [string, string, string][] {
 function nextLineFor(plan: BillingPlan, quota: Quota): React.ReactNode {
   const renews = fmtDate(quota.period_end)
   if (quota.billing_state === 'canceled') return 'Subscription cancelled · nothing is deleted'
+  if (onTrial(quota))
+    return (
+      <>
+        No charge yet ·{' '}
+        <strong style={{ color: 'var(--k-fg-2)' }}>
+          {fmtInt(quota.items_remaining)} of {fmtInt(quota.included_items)} items left
+        </strong>
+      </>
+    )
   if (plan === 'enterprise')
     return (
       <>
@@ -443,7 +472,7 @@ export default function BillingPage() {
                   margin: '4px 0 4px',
                 }}
               >
-                {copy.heading}
+                {onTrial(quota) ? 'Trial.' : copy.heading}
               </h1>
               <p style={{ fontSize: 13, color: 'var(--k-fg-3)', margin: 0 }}>
                 {nextLineFor(plan, quota)}
@@ -453,7 +482,7 @@ export default function BillingPage() {
                 cannot self-serve; Pro's controls live in the plan card below.
                 Free is the exception -- upgrading is the whole point of this
                 screen for that account. */}
-            {plan === 'free' ? <UpgradeProButton planBefore={plan} /> : null}
+            {plan === 'free' || onTrial(quota) ? <UpgradeProButton planBefore={plan} /> : null}
           </div>
 
           {plan === 'comped' ? (
@@ -504,12 +533,20 @@ export default function BillingPage() {
                 }}
               >
                 <span style={{ color: 'var(--k-fg-3)', maxWidth: 460, lineHeight: 1.55 }}>
-                  {copy.blurb}
+                  {onTrial(quota) ? (
+                    <>
+                      You’re on a <strong style={{ color: 'var(--k-fg-2)' }}>metered trial</strong> —
+                      items, not days, so take as long as you like. Your card is verified but not
+                      charged; Pro starts when you say so.
+                    </>
+                  ) : (
+                    copy.blurb
+                  )}
                 </span>
                 <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                   {/* Stripe's hosted portal owns cancellation, so the
                       DESTINATION changes and the control does not. */}
-                  {copy.showCancel ? (
+                  {copy.showCancel && !onTrial(quota) ? (
                     <button
                       type="button"
                       className="k-btn k-btn--ghost"
