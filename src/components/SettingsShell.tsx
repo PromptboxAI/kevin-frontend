@@ -36,18 +36,22 @@ type NavItem = {
   off?: boolean
 }
 
+/**
+ * What is offered first, what is coming last: the two `off` rows sit together
+ * at the bottom (owner, 2026-09-20), so the working screens read as one group
+ * rather than being interrupted by a greyed one.
+ */
 const NAV: NavItem[] = [
   { id: 'my-profile', label: 'My profile', to: '/settings/profile' },
   { id: 'agency', label: 'Business', to: '/settings/business' },
-  // Carrier profiles is BUILT (SettingsCarriersPage) but not offered in beta.
-  // Flip `off` and restore the route in App.tsx to bring it back.
-  { id: 'carriers', label: 'Carrier profiles', to: '/settings/carriers', off: true },
   { id: 'pricing', label: 'Pricing', to: '/settings/pricing' },
   { id: 'integrations', label: 'Xactimate', to: '/settings/xactimate' },
   { id: 'billing', label: 'Billing', to: '/settings/billing' },
+  // Carrier profiles is BUILT (SettingsCarriersPage) but not offered in beta.
+  // Flip `off` and restore the route in App.tsx to bring it back.
+  { id: 'carriers', label: 'Carrier profiles', to: '/settings/carriers', off: true },
   // Not offered yet: no key route, no webhook route (owner, 2026-09-20).
-  // Same treatment as Carrier profiles -- greyed and labelled, with the route
-  // redirecting. Flip `off` and restore the route in App.tsx to bring it back.
+  // Flip `off` and restore the route in App.tsx to bring it back.
   { id: 'api', label: 'API & webhooks', to: '/settings/api', off: true },
 ]
 
