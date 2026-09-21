@@ -324,7 +324,13 @@ declare global {
  * The bot check. Rendered only when a site key exists, because the widget
  * cannot draw without one and every drop needs its token.
  */
-function Turnstile({ onToken }: { onToken: (t: string | null) => void }) {
+function Turnstile({
+  onToken,
+  onError,
+}: {
+  onToken: (t: string | null) => void
+  onError: (code: string) => void
+}) {
   const box = useRef<HTMLDivElement>(null)
   const widget = useRef<string | null>(null)
 
@@ -336,7 +342,13 @@ function Turnstile({ onToken }: { onToken: (t: string | null) => void }) {
         sitekey: TURNSTILE_SITE_KEY,
         callback: (t: string) => onToken(t),
         'expired-callback': () => onToken(null),
-        'error-callback': () => onToken(null),
+        // The code is the whole diagnosis -- 400020 is a bad site key, 300xxx
+        // an execution error, 600xxx a challenge the browser did not pass --
+        // and discarding it left a live failure with no trace of which it was.
+        'error-callback': (code: unknown) => {
+          onToken(null)
+          onError(String(code ?? 'unknown'))
+        },
         theme: 'light',
       })
     }
@@ -362,7 +374,7 @@ function Turnstile({ onToken }: { onToken: (t: string | null) => void }) {
       if (widget.current && window.turnstile) window.turnstile.remove(widget.current)
       widget.current = null
     }
-  }, [onToken])
+  }, [onToken, onError])
 
   return <div className="k-demo-turnstile" ref={box} />
 }
@@ -438,6 +450,13 @@ export default function PhotoDropDemo() {
   const [view, setView] = useState<View>({ k: 'idle' })
   const [over, setOver] = useState(false)
   const [token, setToken] = useState<string | null>(null)
+  /**
+   * The bot check's own failure, which is NOT a refused drop: the photo never
+   * left the browser. Held separately so the held-photo view can say so and
+   * offer another try, rather than sitting on "waiting" forever -- which is
+   * what it did, because a failed check only ever cleared the token.
+   */
+  const [checkError, setCheckError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const objectUrls = useRef<string[]>([])
   const stopped = useRef(false)
@@ -455,6 +474,25 @@ export default function PhotoDropDemo() {
    * React key discards the widget instance and its cached solve.
    */
   const [checkNonce, setCheckNonce] = useState(0)
+
+  const handleToken = useCallback((t: string | null) => {
+    setToken(t)
+    if (t) setCheckError(null)
+  }, [])
+
+  const handleCheckError = useCallback((code: string) => {
+    console.error('[demo] Turnstile failed:', code, { at: new Date().toISOString() })
+    setToken(null)
+    setCheckError(code)
+  }, [])
+
+  /** A new widget, and a clean slate to wait on. */
+  const retryCheck = useCallback(() => {
+    setCheckError(null)
+    setToken(null)
+    retireToken()
+    setCheckNonce((n) => n + 1)
+  }, [])
 
   /**
    * The file input is REMOUNTED after each pick, never cleared.
@@ -662,6 +700,19 @@ export default function PhotoDropDemo() {
     })()
   }, [token, submit])
 
+  /**
+   * A check that never answers. Turnstile can decline a browser by simply not
+   * mounting its challenge iframe -- no token, no error-callback, nothing --
+   * and a photo held against that wait showed "nothing to do" indefinitely.
+   * Reproduced in an embedded browser: render() returns a widget id and builds
+   * the container, and no callback ever fires.
+   */
+  useEffect(() => {
+    if (view.k !== 'awaiting' || token || checkError) return
+    const t = window.setTimeout(() => setCheckError('no-response'), 25_000)
+    return () => window.clearTimeout(t)
+  }, [view.k, token, checkError])
+
   const runSample = useCallback((s: Sample) => {
     setAge(3)
     setView({
@@ -673,7 +724,10 @@ export default function PhotoDropDemo() {
     })
   }, [])
 
-  const reset = () => setView({ k: 'idle' })
+  const reset = () => {
+    setCheckError(null)
+    setView({ k: 'idle' })
+  }
 
   return (
     <section className="k-demo">
@@ -750,7 +804,9 @@ export default function PhotoDropDemo() {
             </div>
           </div>
 
-          {demoConfigured() ? <Turnstile key={checkNonce} onToken={setToken} /> : null}
+          {demoConfigured() ? (
+            <Turnstile key={checkNonce} onToken={handleToken} onError={handleCheckError} />
+          ) : null}
 
           <div className="k-demo-or">or try one of ours</div>
           <div className="k-demo-samples">
@@ -774,19 +830,45 @@ export default function PhotoDropDemo() {
           <div className="k-demo-run">
             <Shot className="k-demo-run-img" src={view.src} alt="Your photo" />
             <div>
-              <div className="k-demo-seen">
-                <span className="k-demo-seen-l">Holding your photo</span>
-                <strong>Waiting on the bot check</strong>
-              </div>
-              <p className="k-demo-unavail">
-                Nothing to do — Kevin sends the photo the moment the check below clears. If it is
-                asking you to tick a box, that is the last step.
-              </p>
+              {checkError ? (
+                <div className="k-demo-unavail">
+                  <strong>The bot check did not clear</strong>
+                  <p>
+                    {checkError === 'no-response'
+                      ? 'Cloudflare’s check never finished. A privacy extension, a blocked third-party frame or an in-app browser will do that.'
+                      : 'Cloudflare would not verify this browser. A privacy extension or an in-app browser is the usual cause.'}{' '}
+                    Your photo is fine and still here — try the check again, or open the page in
+                    another browser.
+                  </p>
+                  <div className="k-demo-filefact">Turnstile {checkError}</div>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <button type="button" className="k-btn" onClick={retryCheck}>
+                      Try the check again
+                    </button>
+                    <button type="button" className="k-btn k-btn--ghost" onClick={reset}>
+                      Back to the samples
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="k-demo-seen">
+                    <span className="k-demo-seen-l">Holding your photo</span>
+                    <strong>Waiting on the bot check</strong>
+                  </div>
+                  <p className="k-demo-unavail">
+                    Nothing to do — Kevin sends the photo the moment the check below clears. If it
+                    is asking you to tick a box, that is the last step.
+                  </p>
+                </>
+              )}
             </div>
           </div>
           {/* The widget stays mounted here, so a fresh token can arrive without
               sending the visitor back to the start. */}
-          {demoConfigured() ? <Turnstile key={checkNonce} onToken={setToken} /> : null}
+          {demoConfigured() ? (
+            <Turnstile key={checkNonce} onToken={handleToken} onError={handleCheckError} />
+          ) : null}
         </div>
       ) : null}
 
