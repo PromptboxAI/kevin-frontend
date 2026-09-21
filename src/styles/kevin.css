@@ -5285,7 +5285,10 @@
     .k-demo-stage { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--k-fg-4); }
     .k-demo-stage-dot { width: 7px; height: 7px; border-radius: 99px; background: var(--k-line-2); flex: 0 0 auto; }
     .k-demo-stage--now { color: var(--k-fg); font-weight: 600; }
-    .k-demo-stage--now .k-demo-stage-dot { background: var(--k-accent); animation: k-pulse 1.4s ease-in-out infinite; }
+    /* The stage in flight pulses in the OK tone, not the accent: navy at 7px
+       beside a teal "done" dot reads as a dead grey bullet, so the one thing
+       that is actually happening looked like the one thing that was not. */
+    .k-demo-stage--now .k-demo-stage-dot { background: var(--k-ok); animation: k-pulse 1.4s ease-in-out infinite; }
     .k-demo-stage--done { color: var(--k-fg-3); }
     .k-demo-stage--done .k-demo-stage-dot { background: var(--k-ok); }
 
