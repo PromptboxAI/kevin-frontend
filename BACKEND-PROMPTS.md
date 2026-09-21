@@ -8,6 +8,60 @@ nothing gets asked twice and nothing quietly falls off.
 
 ---
 
+## 6. Pricing has been `degraded` for six days, and the demo blames the listings — NOT SENT
+
+**Status:** new, 2026-09-20.
+
+`GET /v1/status` right now:
+
+```json
+{"pricing":{"state":"degraded","reason":"vendor_degraded",
+  "since":"2026-09-14T10:21:29.774Z","next_check_at":null,
+  "check":{"result":"unverified","at":"2026-09-21T00:10:54Z","seconds":null}}}
+```
+
+Six days in `degraded`, `next_check_at: null`, and the only check recorded is
+`unverified`. Everything else is healthy: 4/4 workers live, every queue at 0,
+all four workers on `dcda4d5`.
+
+**What it did to a visitor.** The owner dropped a 1990s Star Trek: The Next
+Generation Thermos lunchbox on the homepage demo. It identified perfectly, then
+came back `no_price`, which the demo renders as *"Not enough live listings —
+Kevin found the item but too few current listings to stand behind a number."*
+**The same kind of item found multiple comps yesterday.** So the demo made a
+factual claim about the market that was probably a claim about our vendor.
+
+Three questions, in order of how much they matter:
+
+1. **Is `degraded` real, or is the flag stuck?** If pricing has genuinely been
+   impaired since 14 Sep that is the headline; if the state is sticky and
+   nothing re-clears it, the flag is worse than useless because it will still
+   say `degraded` on the day something actually breaks. `next_check_at: null`
+   and `check.result: "unverified"` suggest nothing is re-testing it.
+2. **`no_price` should not be returned while the vendor is degraded.** Rule 12b
+   is explicit that capacity and vendor problems are not editorial findings: a
+   throttled or failing vendor means *we* could not look, not that the market is
+   thin. The demo already has a separate `budget_paused` reason that says
+   exactly this and blames nobody's photo. Either reuse it, or add a
+   `service_degraded` reason to `NotPricedReason` and we will write the copy.
+   As it stands the frontend cannot tell the two apart — and per rule 20 it must
+   not guess, so this has to come from the payload.
+3. **Did the resale fall-through run?** Rule 11 (amended 2026-08-10) says a thin
+   retail bucket falls through to `comparable_sale` and the resale median
+   becomes the RCV raw, rather than short-circuiting. A vintage collectible
+   lunchbox is the exact case that path exists for, so `no_price` on it is
+   surprising even with a healthy vendor. If the demo route does not run that
+   fall-through, say so — the demo is what a visitor judges the product by, and
+   it should not be a worse pricer than the product.
+
+One more, smaller: while `pricing.state` is `degraded`, nothing on the public
+site says so. The service banner (rule 6b) is not on the marketing pages, so a
+visitor gets a bare "not enough listings" with no context. That is ours to fix
+and we will, but it is worth knowing that a degraded flag is currently invisible
+to everyone who is not signed in.
+
+---
+
 ## 5. A claim-wide audit trail (the Notes & audit tab) — NOT SENT
 
 **Status:** new, 2026-09-20.
