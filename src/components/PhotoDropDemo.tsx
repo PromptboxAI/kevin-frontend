@@ -714,6 +714,8 @@ export default function PhotoDropDemo() {
   }, [view.k, token, checkError])
 
   const runSample = useCallback((s: Sample) => {
+    // Walking away from the bot check abandons the photo too -- see reset().
+    pending.current = null
     setAge(3)
     setView({
       k: 'done',
@@ -725,6 +727,14 @@ export default function PhotoDropDemo() {
   }, [])
 
   const reset = () => {
+    // DROP THE HELD PHOTO. "Back to the samples" is how someone leaves a check
+    // that failed, and the photo is still sitting in `pending` waiting for a
+    // token. Turnstile can hand one over later -- a retry, or an auto-solve on
+    // the widget still mounted in the idle view -- and the effect below would
+    // then upload a photo the visitor had already walked away from, yanking
+    // them out of whatever they were looking at. Leaving = cancelling.
+    // retryCheck KEEPS it, because retrying the check is the opposite intent.
+    pending.current = null
     setCheckError(null)
     setView({ k: 'idle' })
   }
