@@ -8,9 +8,12 @@ nothing gets asked twice and nothing quietly falls off.
 
 ---
 
-## 6. Pricing has been `degraded` for six days, and the demo blames the listings — NOT SENT
+## 6. Pricing has been `degraded` for six days, and the demo blames the listings — PARTLY RESOLVED
 
-**Status:** new, 2026-09-20.
+**Status:** raised 2026-09-20. **Checked 2026-09-26: `/v1/status` now reads
+`pricing.state: "ok"`, so question 1 answered itself — the flag cleared. Questions 2
+and 3 stand, because the next degraded spell will do the same thing: a visitor was
+told the market was thin when the vendor was the problem.**
 
 `GET /v1/status` right now:
 
