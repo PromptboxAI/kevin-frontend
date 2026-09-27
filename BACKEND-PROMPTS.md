@@ -8,6 +8,37 @@ nothing gets asked twice and nothing quietly falls off.
 
 ---
 
+## 7. `X-Export-Preview` is invisible to the browser — NOT SENT
+
+**Status:** new, 2026-09-27. Small, and it defeats a header you added on purpose.
+
+The export route echoes **`X-Export-Preview: true|false`**, and the docstring
+says why: "A mistyped query param (`?previw=true`) is dropped by the framework
+without a word, and no server-side check can catch that." Exactly right — so we
+read it.
+
+We cannot. CORS hides any response header that is not in
+`Access-Control-Expose-Headers`, and `main.py:564` lists
+`X-Request-ID`, `Content-Disposition`, `X-Export-Contents`, `X-Export-Photos` —
+not `X-Export-Preview`. Measured against the live API on 2026-09-27 from
+kevin.co: a `?format=pdf&preview=true` response arrives with
+`content-disposition, content-length, content-type, x-export-contents,
+x-request-id` and nothing else. `headers.get('X-Export-Preview')` is null.
+
+**Please add `"X-Export-Preview"` to that list.** One string, same reasoning as
+`X-Export-Contents` beside it: a header the client cannot read verifies nothing.
+
+We have shipped the safe reading in the meantime — a null echo is treated as *no
+information*, not as "it stamped", because a false alarm under every successful
+preview is worse than silence. Once the header is exposed, the check starts
+working with no frontend change.
+
+While you are in there: the same call is the one that carries `?letterhead=`.
+That one we can verify by eye (a branded PDF is bigger), so it is not urgent —
+but if an `X-Export-Letterhead` echo is cheap, it closes the same hole.
+
+---
+
 ## 6. Pricing has been `degraded` for six days, and the demo blames the listings — PARTLY RESOLVED
 
 **Status:** raised 2026-09-20. **Checked 2026-09-26: `/v1/status` now reads

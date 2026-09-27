@@ -140,10 +140,12 @@ export default function ExportPage() {
    *
    * `preview: true` is what keeps it a look. Without it this endpoint stamps
    * `exported_at`, which is first-write-wins and cannot be undone -- so every
-   * Preview click used to file the claim and move its derived status. The
-   * server echoes X-Export-Preview because a mistyped param is dropped
-   * silently, and if it comes back saying it stamped, we say so rather than
-   * let the adjuster believe the claim is still unfiled.
+   * Preview click used to file the claim and move its derived status.
+   *
+   * The server echoes X-Export-Preview because a mistyped param is dropped
+   * silently. Only an explicit `false` is worth a word: the echo is null
+   * whenever CORS hides it (which it does today), and treating that as "it
+   * stamped" would warn on every successful preview.
    */
   const preview = async () => {
     setBusy(true)
@@ -151,7 +153,7 @@ export default function ExportPage() {
     setInfo(null)
     try {
       const { previewed } = await printExport(claimId, { preview: true, ...pdfOptions() })
-      if (!previewed) {
+      if (previewed === false) {
         void queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
         setInfo('That opened as a real export, not a preview — the claim is now marked exported.')
       }

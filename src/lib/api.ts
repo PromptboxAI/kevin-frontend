@@ -316,6 +316,14 @@ export async function downloadExport(
  * framework without a word and no server-side check can catch that -- so the
  * caller is told what actually happened rather than what it asked for.
  *
+ * That echo is NULL when the browser cannot read it, which today is always:
+ * CORS hides a response header unless the server lists it in
+ * `Access-Control-Expose-Headers`, and X-Export-Preview is not on that list
+ * (X-Export-Contents and X-Request-ID are). Verified 2026-09-27 against the
+ * live API; asked of the backend. Null therefore means "no information", NOT
+ * "it stamped" -- reading it as false would put a false alarm under every
+ * preview, which is worse than saying nothing.
+ *
  * MUST be called synchronously from the click. The tab is opened BEFORE the
  * fetch because pop-up blockers only allow a window.open inside the user's
  * gesture, and the gesture is gone by the time the PDF arrives. The blank tab
@@ -325,7 +333,7 @@ export async function downloadExport(
 export async function printExport(
   claimId: string,
   options: ExportOptions = {},
-): Promise<{ previewed: boolean }> {
+): Promise<{ previewed: boolean | null }> {
   const tab = window.open('', '_blank')
   if (tab) {
     tab.opener = null
@@ -361,7 +369,8 @@ export async function printExport(
   // The viewer reads the blob when it loads; keep it alive long enough for a
   // reload or a Save from the viewer, then let it go.
   window.setTimeout(() => URL.revokeObjectURL(url), 10 * 60_000)
-  return { previewed: headers.get('X-Export-Preview') === 'true' }
+  const echo = headers.get('X-Export-Preview')
+  return { previewed: echo === null ? null : echo === 'true' }
 }
 
 /**
