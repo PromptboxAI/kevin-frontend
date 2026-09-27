@@ -244,6 +244,13 @@ export type ExportOptions = {
   contents?: PdfContents
   /** PDF with photos only (`photos` or `packet`). */
   photosPerPage?: PhotosPerPage
+  /**
+   * `?preview=true` — the IDENTICAL document with NO side effects: no
+   * `exported_at`, so no move of the derived claim status. Without it a
+   * Preview button FILES the claim, and the stamp is first-write-wins and
+   * cannot be undone.
+   */
+  preview?: boolean
 }
 
 /** What the server says it actually built, from the response headers. */
@@ -291,8 +298,12 @@ export async function downloadExport(
  * used to print from a hidden iframe, which jumped straight to the operating
  * system's print dialog without ever showing the PDF.
  *
- * STILL STAMPS `exported_at` on a claim's first export: it is the same
- * endpoint as downloadExport, and there is no non-stamping PDF route.
+ * STAMPS `exported_at` on a claim's first export unless `options.preview` is
+ * set, which is the whole difference between Print (the document goes out)
+ * and Preview (a look before it does). The response echoes
+ * `X-Export-Preview`, because a mistyped query param is dropped by the
+ * framework without a word and no server-side check can catch that -- so the
+ * caller is told what actually happened rather than what it asked for.
  *
  * MUST be called synchronously from the click. The tab is opened BEFORE the
  * fetch because pop-up blockers only allow a window.open inside the user's
@@ -300,7 +311,10 @@ export async function downloadExport(
  * says what it is waiting for, then navigates to the PDF's blob URL.
  * The API needs a bearer token, so the tab cannot simply load the API URL.
  */
-export async function printExport(claimId: string, options: ExportOptions = {}): Promise<void> {
+export async function printExport(
+  claimId: string,
+  options: ExportOptions = {},
+): Promise<{ previewed: boolean }> {
   const tab = window.open('', '_blank')
   if (tab) {
     tab.opener = null
@@ -309,6 +323,7 @@ export async function printExport(claimId: string, options: ExportOptions = {}):
     tab.document.body.textContent = 'Preparing the inventory PDF…'
   }
   let blob: Blob
+  let headers: Headers
   try {
     const qs = new URLSearchParams({ format: 'pdf' })
     // Same options as the download, so the preview is the document that saves.
@@ -316,7 +331,10 @@ export async function printExport(claimId: string, options: ExportOptions = {}):
       qs.set('contents', options.contents)
       qs.set('photos_per_page', String(options.photosPerPage ?? 2))
     }
-    ;({ blob } = await fetchBinary(`/v1/claims/${encodeURIComponent(claimId)}/export?${qs.toString()}`))
+    if (options.preview) qs.set('preview', 'true')
+    ;({ blob, headers } = await fetchBinary(
+      `/v1/claims/${encodeURIComponent(claimId)}/export?${qs.toString()}`,
+    ))
   } catch (error) {
     tab?.close()
     throw error
@@ -331,6 +349,7 @@ export async function printExport(claimId: string, options: ExportOptions = {}):
   // The viewer reads the blob when it loads; keep it alive long enough for a
   // reload or a Save from the viewer, then let it go.
   window.setTimeout(() => URL.revokeObjectURL(url), 10 * 60_000)
+  return { previewed: headers.get('X-Export-Preview') === 'true' }
 }
 
 /**

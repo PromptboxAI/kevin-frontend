@@ -117,17 +117,26 @@ export default function ExportPage() {
    * a look before it goes to a carrier or a client. It is the SERVER's PDF,
    * not a rendering of our own, so what is reviewed is what downloads.
    *
-   * Caveat: it is the same endpoint, so it stamps `exported_at` like any
-   * export (there is no non-stamping route yet; asked of the backend).
-   * Exports are repeatable, so a later one is simply a new version.
+   * `preview: true` is what keeps it a look. Without it this endpoint stamps
+   * `exported_at`, which is first-write-wins and cannot be undone -- so every
+   * Preview click used to file the claim and move its derived status. The
+   * server echoes X-Export-Preview because a mistyped param is dropped
+   * silently, and if it comes back saying it stamped, we say so rather than
+   * let the adjuster believe the claim is still unfiled.
    */
   const preview = async () => {
     setBusy(true)
     setError(null)
     setInfo(null)
     try {
-      await printExport(claimId, wantsPhotos ? { contents: pdfContents, photosPerPage: perPage } : {})
-      void queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
+      const { previewed } = await printExport(claimId, {
+        preview: true,
+        ...(wantsPhotos ? { contents: pdfContents, photosPerPage: perPage } : {}),
+      })
+      if (!previewed) {
+        void queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
+        setInfo('That opened as a real export, not a preview — the claim is now marked exported.')
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not open the preview.')
     } finally {
@@ -378,7 +387,7 @@ export default function ExportPage() {
                 type="button"
                 className="k-btn k-btn--ghost"
                 disabled={busy || !c || c.status === 'processing'}
-                title="Opens the PDF in a new tab — the same document the download saves"
+                title="Opens the PDF in a new tab — the same document the download saves, and nothing is recorded"
                 onClick={() => void preview()}
               >
                 <Icon d={I.eye} size={12} /> Preview
