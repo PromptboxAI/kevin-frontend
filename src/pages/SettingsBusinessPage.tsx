@@ -126,7 +126,7 @@ export default function SettingsBusinessPage() {
       setProblem(null)
       setNote('Logo saved.')
     },
-    onError: (err) => setProblem(message(err, 'Could not upload the logo.')),
+    onError: (err) => setProblem(logoMessage(err)),
   })
 
   const removeLogo = useMutation({
@@ -327,6 +327,22 @@ export default function SettingsBusinessPage() {
       </section>
     </SettingsShell>
   )
+}
+
+/**
+ * The logo upload has one failure that is not the adjuster's file and not the
+ * server's answer: the route is `PUT /v1/me/logo`, and the API's CORS config
+ * does not allow PUT from a browser (`allow_methods` is GET, POST, PATCH,
+ * DELETE, OPTIONS). The preflight is refused with a 400, the real request is
+ * never sent, and `fetch` rejects with a bare "Failed to fetch" -- which reads
+ * as "your connection" or "your file", and is neither. Verified against the
+ * live API on 2026-09-27; backend prompt 8. When PUT is allowed this branch
+ * simply stops being reached.
+ */
+function logoMessage(err: unknown): string {
+  if (!(err instanceof ApiError))
+    return 'Kevin could not reach the upload. The API does not accept this request from a browser yet — nothing is wrong with your file, and we have asked for the fix.'
+  return message(err, 'Could not upload the logo.')
 }
 
 /** A server sentence if there is one, ours if there is not. */

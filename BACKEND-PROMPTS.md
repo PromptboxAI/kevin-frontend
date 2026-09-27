@@ -8,6 +8,40 @@ nothing gets asked twice and nothing quietly falls off.
 
 ---
 
+## 8. `PUT /v1/me/logo` cannot be called from a browser — NOT SENT
+
+**Status:** new, 2026-09-27. One line, and the logo feature is dead without it.
+
+The letterhead route is `PUT`, and the API's CORS config does not allow PUT:
+
+```
+main.py:552  allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"]
+```
+
+Measured against the live API today:
+
+```
+OPTIONS /v1/me/logo   Origin: https://www.kevin.co
+                      Access-Control-Request-Method: PUT
+-> 400 Bad Request
+   access-control-allow-methods: GET, POST, PATCH, DELETE, OPTIONS
+```
+
+The same preflight with `PATCH` returns 200. So the browser refuses the upload
+before it is sent, `fetch` rejects with a bare "Failed to fetch", and the
+adjuster is told nothing useful about a file that was perfectly fine. Confirmed
+end-to-end: picking a valid 180x48 PNG in Settings → Business fails this way
+every time.
+
+**Please add `"PUT"` to `allow_methods`.** The route itself is right — PUT is
+exactly what "an account has ONE logo and re-uploading replaces it" means, and
+it should not have to become a POST to be reachable.
+
+The frontend now names this cause instead of printing "Failed to fetch"; that
+branch stops being reached the moment PUT is allowed, with no frontend change.
+
+---
+
 ## 7. `X-Export-Preview` is invisible to the browser — NOT SENT
 
 **Status:** new, 2026-09-27. Small, and it defeats a header you added on purpose.
