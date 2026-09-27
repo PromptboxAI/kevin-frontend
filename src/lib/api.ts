@@ -174,6 +174,8 @@ export const api = {
     request<T>(path, { ...options, method: 'GET', retryOnRateLimit: true }),
   post: <T>(path: string, options?: Options) => request<T>(path, { ...options, method: 'POST' }),
   patch: <T>(path: string, options?: Options) => request<T>(path, { ...options, method: 'PATCH' }),
+  /** PUT /v1/me/logo: an account has ONE logo and re-uploading replaces it. */
+  put: <T>(path: string, options?: Options) => request<T>(path, { ...options, method: 'PUT' }),
   delete: <T>(path: string, options?: Options) => request<T>(path, { ...options, method: 'DELETE' }),
 }
 
@@ -251,6 +253,14 @@ export type ExportOptions = {
    * cannot be undone.
    */
   preview?: boolean
+  /**
+   * PDF only. `?letterhead=false` builds the SAME document without the firm's
+   * band -- a per-export choice, deliberately not a stored setting: the same
+   * claim goes to a client one day and to a carrier the next, and a setting
+   * would mean remembering to flip it back (owner, via backend 0058). The
+   * .xlsx never carries one either way.
+   */
+  letterhead?: boolean
 }
 
 /** What the server says it actually built, from the response headers. */
@@ -279,6 +289,7 @@ export async function downloadExport(
     qs.set('contents', options.contents)
     qs.set('photos_per_page', String(options.photosPerPage ?? 2))
   }
+  if (format === 'pdf' && options.letterhead === false) qs.set('letterhead', 'false')
   const headers = await downloadBinary(
     `/v1/claims/${encodeURIComponent(claimId)}/export?${qs.toString()}`,
     `${claimId}-inventory.${format}`,
@@ -332,6 +343,7 @@ export async function printExport(
       qs.set('photos_per_page', String(options.photosPerPage ?? 2))
     }
     if (options.preview) qs.set('preview', 'true')
+    if (options.letterhead === false) qs.set('letterhead', 'false')
     ;({ blob, headers } = await fetchBinary(
       `/v1/claims/${encodeURIComponent(claimId)}/export?${qs.toString()}`,
     ))

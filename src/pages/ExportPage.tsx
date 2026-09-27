@@ -17,7 +17,8 @@ import {
   type PhotosPerPage,
 } from '../lib/api'
 import { fmtInt, fmtPct, fmtUSD } from '../lib/format'
-import type { ClaimItem, ClaimItemListResponse, ClaimSummary } from '../lib/types'
+import { letterheadLines, formFrom } from '../lib/business-rules'
+import type { ClaimItem, ClaimItemListResponse, ClaimSummary, MeResponse } from '../lib/types'
 
 /**
  * The claim's Export tab -- the full report builder (screen 06).
@@ -69,6 +70,12 @@ const ITEM_PAGE = 500
 export default function ExportPage() {
   const { claimId = '' } = useParams()
   const queryClient = useQueryClient()
+  // The firm, only to decide whether offering the toggle means anything.
+  const me = useQuery({
+    queryKey: ['me'],
+    queryFn: () => api.get<MeResponse>('/v1/me'),
+    staleTime: 60_000,
+  })
 
   const claim = useQuery({
     queryKey: ['claim', claimId],
@@ -91,6 +98,13 @@ export default function ExportPage() {
   const [withInventory, setWithInventory] = useState(true)
   const [withPhotos, setWithPhotos] = useState(false)
   const [perPage, setPerPage] = useState<PhotosPerPage>(2)
+  /**
+   * Per EXPORT, never stored: "if they are sending it direct to a client they
+   * can add their letterhead but if they're sending it to an adjuster they can
+   * opt not to" (owner). A remembered setting is one an adjuster has to
+   * remember to flip back.
+   */
+  const [letterhead, setLetterhead] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   /** A successful export that still needs saying -- e.g. no photos linked. */
@@ -111,6 +125,13 @@ export default function ExportPage() {
     withInventory && withPhotos ? 'packet' : withPhotos ? 'photos' : 'worksheet'
 
   const wantsPhotos = format === 'pdf' && pdfContents !== 'worksheet'
+  const firmLines = letterheadLines(formFrom(me.data?.business))
+  /** A logo with no text is still a letterhead. */
+  const hasFirm = firmLines.length > 0 || Boolean(me.data?.business?.logo_url)
+  const pdfOptions = () => ({
+    ...(wantsPhotos ? { contents: pdfContents, photosPerPage: perPage } : {}),
+    ...(hasFirm && !letterhead ? { letterhead: false } : {}),
+  })
 
   /**
    * The same document, opened in the browser's PDF viewer instead of saved --
@@ -129,10 +150,7 @@ export default function ExportPage() {
     setError(null)
     setInfo(null)
     try {
-      const { previewed } = await printExport(claimId, {
-        preview: true,
-        ...(wantsPhotos ? { contents: pdfContents, photosPerPage: perPage } : {}),
-      })
+      const { previewed } = await printExport(claimId, { preview: true, ...pdfOptions() })
       if (!previewed) {
         void queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
         setInfo('That opened as a real export, not a preview — the claim is now marked exported.')
@@ -149,11 +167,7 @@ export default function ExportPage() {
     setError(null)
     setInfo(null)
     try {
-      const result = await downloadExport(
-        claimId,
-        format,
-        wantsPhotos ? { contents: pdfContents, photosPerPage: perPage } : {},
-      )
+      const result = await downloadExport(claimId, format, pdfOptions())
       void queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
       void queryClient.invalidateQueries({ queryKey: ['claims'] })
       // Verify against what the server built, never the query string: an
@@ -329,6 +343,34 @@ export default function ExportPage() {
                       }
                     />
                   </div>
+                </section>
+
+                <section className="k-export-sec">
+                  <div className="k-export-sec-h">Your letterhead</div>
+                  {hasFirm ? (
+                    <>
+                      <Toggle
+                        on={letterhead}
+                        onChange={setLetterhead}
+                        label="Print it on this PDF"
+                        sub={firmLines[0] ?? 'Your logo'}
+                      />
+                      {/* A per-export choice, so it says what THIS file will
+                          carry rather than what the account is set to. */}
+                      <p className="k-export-hint">
+                        Turn it off when the file is going to a carrier or another adjuster. The
+                        .xlsx never carries it either way — XactContents parses that file.
+                      </p>
+                    </>
+                  ) : (
+                    <p className="k-export-hint">
+                      No firm details saved, so this PDF prints without a letterhead. Add them in{' '}
+                      <Link className="k-link" to="/settings/business">
+                        Settings → Business
+                      </Link>
+                      .
+                    </p>
+                  )}
                 </section>
 
                 {pdfContents !== 'worksheet' ? (

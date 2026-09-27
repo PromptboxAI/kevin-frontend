@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
-import { useDirectory } from '../lib/directory'
-import { BRAND_DEFAULT, accentFor, accentHover } from '../lib/directory-rules'
+import { useBrand } from '../lib/brand'
+import { accentFor, accentHover } from '../lib/directory-rules'
 
 /**
  * Paints the app in the firm's colour.
@@ -14,13 +14,13 @@ import { BRAND_DEFAULT, accentFor, accentHover } from '../lib/directory-rules'
  * it is darkened until it carries white text. The swatch the adjuster chose
  * is what their documents will use, unchanged.
  *
- * Local until the backend stores the business profile, like the rest of the
- * directory. The default is Kevin's navy, so an account that sets nothing
- * looks exactly as it did.
+ * Local by design (lib/brand): the backend stores the firm's TEXT and LOGO,
+ * which are what the documents print, and has no column for a colour. The
+ * default is Kevin's navy, so an account that sets nothing looks exactly as
+ * it did.
  */
 export default function BrandAccent() {
-  const { dir } = useDirectory()
-  const brand = dir.companies.find((c) => c.brandColor)?.brandColor ?? BRAND_DEFAULT
+  const { brand } = useBrand()
 
   useEffect(() => {
     const root = document.documentElement

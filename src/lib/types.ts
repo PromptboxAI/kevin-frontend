@@ -36,6 +36,10 @@ export type Quota = {
   period_end?: string | null
 }
 
+/** Re-exported so callers type `/v1/me` from one place. */
+export type { BusinessProfile } from './business-rules'
+import type { BusinessProfile } from './business-rules'
+
 export type MeResponse = {
   id: string
   email: string | null
@@ -47,6 +51,13 @@ export type MeResponse = {
    * plan (rule 20).
    */
   quota?: Quota
+  /**
+   * The FIRM's letterhead (backend 0058). Never null once the backend serves
+   * it -- an account that has never opened Settings gets an all-null profile,
+   * and the documents simply print no letterhead. Optional here only because
+   * an older backend does not send the block at all.
+   */
+  business?: BusinessProfile
 }
 
 /**
