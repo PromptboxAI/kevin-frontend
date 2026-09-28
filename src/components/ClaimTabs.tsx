@@ -12,11 +12,11 @@ const TABS: [Tab, string | null][] = [
   // photo on the claim, including the ones a session already promoted.
   ['Photos', 'photos'],
   ['Worksheet', 'worksheet'],
-  // Greyed "Soon", by decision. It used to link to the worksheet -- where the
-  // per-item History panel lives -- which from the worksheet itself was a
-  // click that did nothing. A claim-wide timeline needs a claim-wide events
-  // endpoint the backend does not have; until then the tab says so.
-  ['Notes & audit', null],
+  // The claim's own timeline. It reads GET /v1/claims/{id}/events; while that
+  // route is still shipping the page says so itself, which is better than a
+  // greyed tab that cannot tell the adjuster their line-level history is
+  // already complete and readable.
+  ['Notes & audit', 'audit'],
   // The full report builder. The worksheet's Export button and the claims
   // menu's Export… stay the quick, one-click paths.
   ['Export', 'export'],

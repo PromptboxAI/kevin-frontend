@@ -2271,3 +2271,20 @@ button.k-avatar-menu-item {
   gap: 8px;
 }
 @media (max-width: 1080px) { .k-adm-calc { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* — Claim audit trail (screen 17) —
+   The rows are the drawer's `k-hist-*`, unchanged: one timeline vocabulary.
+   What is added here is the day grouping and the line each event points at. */
+.k-audit { padding: 18px 22px 40px; max-width: 1000px; }
+.k-audit-day { margin-bottom: 18px; }
+.k-audit-day-h {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--k-fg-4); padding: 6px 0; border-bottom: 1px solid var(--k-line);
+  margin-bottom: 2px; position: sticky; top: 0; background: var(--k-bg); z-index: 1;
+}
+.k-hist-item { display: block; font-size: 11px; margin-bottom: 1px; }
+.k-audit-line { color: var(--k-accent); text-decoration: none; }
+.k-audit-line:hover { text-decoration: underline; }
+/* A row that no longer exists, and the claim itself: both are read-only
+   labels, quieter than a link because there is nowhere to go. */
+.k-audit-line--gone, .k-audit-line--claim { color: var(--k-fg-4); }

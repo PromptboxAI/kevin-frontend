@@ -11,9 +11,10 @@ import type { ItemEvent } from '../lib/item-events'
  * asked about, so fetching it with the drawer would spend a request per row
  * click for something nobody opened.
  *
- * This is the whole audit surface. There is no claim-wide feed endpoint and
- * none should be built -- the claim-level "Notes & audit" tab collapses into
- * this item-scoped panel. Rule 5: a timeline, never a collaboration tool.
+ * The CLAIM-WIDE trail (pages/AuditPage) renders the same events through the
+ * same `HistoryRow` below -- one describer, so a sentence cannot mean one
+ * thing in the drawer and another on the timeline. Rule 5 holds on both: a
+ * timeline, never a collaboration tool.
  *
  * The payload can carry internal signals (`lkq`, `bucket_used`). They are
  * adjuster-facing IN THE APP and must never reach a carrier-facing document;
@@ -65,7 +66,15 @@ export default function ItemHistory({ rowId }: { rowId: number }) {
   )
 }
 
-function HistoryRow({ event }: { event: ItemEvent }) {
+export function HistoryRow({
+  event,
+  item,
+}: {
+  event: ItemEvent
+  /** Which line this belongs to. The drawer omits it -- there, every event is
+   *  about the row already on screen, and repeating it on each line is noise. */
+  item?: React.ReactNode
+}) {
   const line = describeEvent(event)
   const signals = internalSignals(event)
   // `worker` and `system` are Kevin; everyone else is a person, and the styling
@@ -77,6 +86,7 @@ function HistoryRow({ event }: { event: ItemEvent }) {
       <span className={'k-hist-actor' + (machine ? ' k-hist-actor--sys' : '')}>{line.actor}</span>
 
       <span className="k-hist-what">
+        {item ? <span className="k-hist-item">{item}</span> : null}
         <span
           style={
             line.tone === 'ok'

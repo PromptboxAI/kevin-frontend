@@ -31,6 +31,7 @@ import ProcessingPage from './pages/ProcessingPage'
 import ImportPage from './pages/ImportPage'
 import NotFoundPage from './pages/NotFoundPage'
 import OverviewPage from './pages/OverviewPage'
+import AuditPage from './pages/AuditPage'
 import PhotosPage from './pages/PhotosPage'
 import CapturePage from './pages/CapturePage'
 import PairPage from './pages/PairPage'
@@ -241,6 +242,15 @@ export default function App() {
           element={
             <RequireAuth>
               <PhotosPage />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/claims/:claimId/audit"
+          element={
+            <RequireAuth>
+              <AuditPage />
             </RequireAuth>
           }
         />
