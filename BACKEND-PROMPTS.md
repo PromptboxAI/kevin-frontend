@@ -8,9 +8,13 @@ nothing gets asked twice and nothing quietly falls off.
 
 ---
 
-## 8. `PUT /v1/me/logo` cannot be called from a browser — NOT SENT
+## 8. `PUT /v1/me/logo` cannot be called from a browser — DONE
 
-**Status:** new, 2026-09-27. One line, and the logo feature is dead without it.
+**Status:** raised 2026-09-27, **shipped by the backend 2026-09-28**. Verified:
+the PUT preflight now returns 200 with `access-control-allow-methods: GET, POST,
+PUT, PATCH, DELETE, OPTIONS`, and a 1,053-byte PNG uploads end to end and lands
+on the PDF. The backend also added a test deriving the allowed-method list from
+the route table, so a future PUT route cannot ship unreachable.
 
 The letterhead route is `PUT`, and the API's CORS config does not allow PUT:
 
@@ -42,9 +46,12 @@ branch stops being reached the moment PUT is allowed, with no frontend change.
 
 ---
 
-## 7. `X-Export-Preview` is invisible to the browser — NOT SENT
+## 7. `X-Export-Preview` is invisible to the browser — DONE
 
-**Status:** new, 2026-09-27. Small, and it defeats a header you added on purpose.
+**Status:** raised 2026-09-27, **shipped by the backend 2026-09-28**. Verified
+on a live response: `X-Export-Preview: true` now reads through from the browser.
+The null handling stays as written — the header can go missing for other
+reasons, and null means "no information", never "it stamped".
 
 The export route echoes **`X-Export-Preview: true|false`**, and the docstring
 says why: "A mistyped query param (`?previw=true`) is dropped by the framework

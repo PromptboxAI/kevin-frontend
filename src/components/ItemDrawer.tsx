@@ -466,11 +466,27 @@ export default function ItemDrawer({
                 <div className={`k-insp-field${repricing ? ' k-cell--pending' : ''}`}>
                   <label>Comparable listings</label>
                   {data.alternative_sources?.length ? (
-                    <div className="k-insp-alts">
-                      {data.alternative_sources.map((comp, index) => (
-                        <CompRow key={index} comp={comp} preferred={index === 0} />
-                      ))}
-                    </div>
+                    <>
+                      <div className="k-insp-alts">
+                        {data.alternative_sources.map((comp, index) => (
+                          <CompRow key={index} comp={comp} preferred={index === 0} />
+                        ))}
+                      </div>
+                      {/* WHY THE LINKED PRICE IS NOT THE PRICE ON THE LINE.
+                          The unit cost is a median over the whole comp set, so
+                          it routinely matches no single listing -- the sample
+                          claim's belt reads $74.94 against comps of $69.99,
+                          $79.90 and $79.99. An adjuster who clicks through and
+                          finds a different number reads that as an error, and
+                          then has to defend it to a carrier. Said once, here,
+                          rather than left to be discovered. */}
+                      {data.valuation_basis !== 'manual' ? (
+                        <span className="k-insp-hint">
+                          Unit cost is the median of the comps Kevin found, so it usually sits
+                          between these rather than matching one.
+                        </span>
+                      ) : null}
+                    </>
                   ) : (
                     <span className="k-insp-hint">
                       No comps on this line{unpriced ? ' — it is unpriced.' : '.'}
