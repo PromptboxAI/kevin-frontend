@@ -232,6 +232,16 @@ export type ClaimItem = {
   age_years: number | null
   alternative_sources: Comp[]
   /**
+   * How many listings the price was selected from -- the whole trimmed bucket,
+   * not the handful in `alternative_sources`, which it usually exceeds.
+   *
+   * NULL means NOT RECORDED: every line priced before the field shipped, and
+   * every hand-entered price, which comes from no bucket. The backend never
+   * sends 0, because "priced from no listings" would be a different and false
+   * statement -- so a 0 arriving here is treated as null too.
+   */
+  comp_sample_size?: number | null
+  /**
    * The adjuster's own proof URL, for lines Kevin did not price (or whose
    * comps were dropped by a manual price). Set through the DESCRIPTIVE patch,
    * so it never touches valuation.

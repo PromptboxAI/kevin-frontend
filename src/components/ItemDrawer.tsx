@@ -6,7 +6,7 @@ import Badge from './Badge'
 import EditableCell from './EditableCell'
 import { ApiError, api } from '../lib/api'
 import { fmtCompPrice, fmtConfidence, fmtPct, fmtUSD } from '../lib/format'
-import { citedCompIndex } from '../lib/comps-rules'
+import { citedCompIndex, sampleNote } from '../lib/comps-rules'
 import { editDisplayLine, overrideItem, repriceItem } from '../lib/mutations'
 import { useDepreciationRules } from '../lib/depreciation-rules'
 import ClassOptionList from './ClassOptionList'
@@ -186,6 +186,11 @@ export default function ItemDrawer({
   const unpriced = data?.status === 'needs_manual'
   /** Which listing the unit cost came from, when the payload proves it. */
   const cited = citedCompIndex(data?.rcv, data?.alternative_sources)
+  /**
+   * How many listings the price was chosen from. Inert until the backend
+   * ships `comp_sample_size`; null today, and null is "not recorded".
+   */
+  const sample = sampleNote(data?.comp_sample_size, data?.alternative_sources?.length ?? 0)
   const waiting = Boolean(
     unpriced && data?.manual_reason && CAPACITY_REASONS.has(data.manual_reason),
   )
@@ -500,7 +505,7 @@ export default function ItemDrawer({
                       {cited !== null && data.valuation_basis !== 'manual' ? (
                         <span className="k-insp-hint">
                           Unit cost is the price of a single listing — the one marked above — and
-                          the Source Link points at it.
+                          the Source Link points at it{sample ? `, ${sample}` : ''}.
                         </span>
                       ) : null}
                     </>
