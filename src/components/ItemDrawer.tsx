@@ -466,90 +466,11 @@ export default function ItemDrawer({
                 <div className={`k-insp-field${repricing ? ' k-cell--pending' : ''}`}>
                   <label>Comparable listings</label>
                   {data.alternative_sources?.length ? (
-                    <>
-                      <div className="k-insp-alts">
-                        {data.alternative_sources.map((comp, index) => (
-                          <CompRow key={index} comp={comp} preferred={index === 0} />
-                        ))}
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="k-insp-static">{data.query || '—'}</div>
-                      <span className="k-insp-hint">
-                        {data.confidence !== null
-                          ? `Confidence ${fmtConfidence(data.confidence)}`
-                          : 'No confidence recorded'}
-                        {data.is_manually_queried ? ' · manually refined' : ''}
-                      </span>
-                      <div className="k-insp-actions">
-                        <button
-                          type="button"
-                          className="k-btn k-btn--ghost k-btn--sm"
-                          disabled={repricing}
-                          onClick={() => {
-                            // Seed from the identity fields, trimmed at a word
-                            // boundary, and show the adjuster the exact text
-                            // that will be searched.
-                            setDraftQuery(
-                              data.query?.trim() ||
-                                composeQuery({
-                                  make_mfr: data.make_mfr,
-                                  model_number: data.model_number,
-                                  description: data.description,
-                                }),
-                            )
-                            setEditingQuery(true)
-                          }}
-                        >
-                          Edit &amp; re-price
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                {repricing ? (
-                  <div className="k-reprice-status">
-                    <span className="k-spinner" />
-                    Re-running the pricing engine — price and comps update when it lands.
-                  </div>
-                ) : null}
-
-                {notice ? <p className="k-error">{notice}</p> : null}
-
-                {/* Internal pricing provenance. Quiet, never a warning, never exported. */}
-                {data.substitution_note ? (
-                  <div className="k-lkq-note">
-                    <span className="k-lkq-note-l">Like-kind substitution</span>
-                    <span className="k-lkq-note-b">{data.substitution_note}</span>
-                  </div>
-                ) : null}
-
-                <div className={`k-insp-field${repricing ? ' k-cell--pending' : ''}`}>
-                  <label>Comparable listings</label>
-                  {data.alternative_sources?.length ? (
-                    <>
-                      <div className="k-insp-alts">
-                        {data.alternative_sources.map((comp, index) => (
-                          <CompRow key={index} comp={comp} preferred={index === 0} />
-                        ))}
-                      </div>
-                      {/* WHY THE LINKED PRICE IS NOT THE PRICE ON THE LINE.
-                          The unit cost is a median over the whole comp set, so
-                          it routinely matches no single listing -- the sample
-                          claim's belt reads $74.94 against comps of $69.99,
-                          $79.90 and $79.99. An adjuster who clicks through and
-                          finds a different number reads that as an error, and
-                          then has to defend it to a carrier. Said once, here,
-                          rather than left to be discovered. */}
-                      {data.valuation_basis !== 'manual' ? (
-                        <span className="k-insp-hint">
-                          Unit cost is the median of the comps Kevin found, so it usually sits
-                          between these rather than matching one.
-                        </span>
-                      ) : null}
-                    </>
+                    <div className="k-insp-alts">
+                      {data.alternative_sources.map((comp, index) => (
+                        <CompRow key={index} comp={comp} preferred={index === 0} />
+                      ))}
+                    </div>
                   ) : (
                     <span className="k-insp-hint">
                       No comps on this line{unpriced ? ' — it is unpriced.' : '.'}
