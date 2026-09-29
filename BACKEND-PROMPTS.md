@@ -8,6 +8,35 @@ nothing gets asked twice and nothing quietly falls off.
 
 ---
 
+## 9. `vendor_watch` has been reporting "unreadable" — NOT SENT
+
+**Status:** new, 2026-09-29. Small, and possibly nothing — but it is a blind
+spot rather than an alarm, which is the kind that stays quiet.
+
+`/v1/jobs/health` on the admin System screen:
+
+```json
+{"job": "vendor_watch", "last_status": "unreadable", "runs_total": 1971,
+ "last_detail": {"error": "status page unreadable", "status": "unreadable",
+                 "checked_at": "2026-09-29T14:56:58Z"}}
+```
+
+Last run a minute before we looked, so it is running fine — it just cannot read
+what it went to read. The other three scheduled jobs are `ok`, `jobs_degraded`
+is empty, pricing reads `ok` and the search canary is returning 40 comps a
+probe, so **nothing is wrong with pricing right now**. That is rather the point:
+the watcher whose job is to notice when something goes wrong with the vendor has
+not been able to see the vendor's status page, and the only surface that says so
+is one admin row.
+
+Worth knowing either way: if the vendor changed their status page, the check
+needs updating; if it is expected (an anti-scraping block, say), it may be worth
+reporting as `skipped` rather than `unreadable`, so the row stops looking like a
+fault. We render `last_status` verbatim and flag anything that is not `ok`, so
+whatever you call it is what the screen will say.
+
+---
+
 ## 8. `PUT /v1/me/logo` cannot be called from a browser — DONE
 
 **Status:** raised 2026-09-27, **shipped by the backend 2026-09-28**. Verified:
