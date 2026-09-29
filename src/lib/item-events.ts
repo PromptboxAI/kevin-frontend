@@ -90,6 +90,97 @@ export function actorLabel(event: ItemEvent): string {
  * does not recognise is worse than one that says "status changed", because the
  * gap is invisible.
  */
+
+/**
+ * A field diff, read the way an adjuster would describe the change.
+ *
+ * WHAT THE PERSON DID vs WHAT THE SERVER RECOMPUTED. An edit to `age_years`
+ * arrives with `acv`, `depreciation_pct` and the engine version in the same
+ * diff, because they all moved. Leading with the ACV would credit the adjuster
+ * with changing a number they never touched: they answered "how old was it"
+ * and the server did the arithmetic. So a consequence is never the headline
+ * while a primary field is present -- it rides along as a result.
+ */
+const CONSEQUENCE = new Set([
+  'acv',
+  'acv_total_incl',
+  'rcv_total_incl',
+  'ext_cost',
+  'tax',
+  'depreciation_amount',
+  'depreciation_pct',
+  'depreciation_capped',
+  'engine_version',
+  'rule_version',
+  'previous_status',
+  'status',
+])
+
+/** Money fields print as money; everything else prints as itself. */
+const MONEY = new Set(['rcv', 'acv', 'unit_cost', 'ext_cost', 'depreciation_amount'])
+
+const FIELD_LABEL: Record<string, string> = {
+  rcv: 'the price',
+  acv: 'the ACV',
+  age_years: 'the age',
+  make_mfr: 'the make',
+  model_number: 'the model number',
+  room_area: 'the room',
+  category: 'the content class',
+  depreciation_method: 'the depreciation method',
+  depreciation_pct: 'the depreciation',
+  description: 'the description',
+  quantity: 'the quantity',
+  qty: 'the quantity',
+}
+
+const label = (field: string) => FIELD_LABEL[field] ?? field.replace(/_/g, ' ')
+
+/** `null` is "none": an empty cell is a real before-state, not a missing one. */
+function fieldValue(field: string, v: unknown): string {
+  if (v === null || v === undefined || v === '') return 'none'
+  if (MONEY.has(field)) return usd(v) ?? String(v)
+  if (field === 'depreciation_pct') return pct(v) ?? String(v)
+  return str(v) ?? String(v)
+}
+
+type Diff = Record<string, { from?: unknown; to?: unknown }>
+
+/**
+ * The one field a change is ABOUT, from the diff the server sent.
+ *
+ * `fields` names it outright when the payload carries it. When it does not --
+ * and the live `edited` payload does not, it is a bare `{diff: {...}}` -- the
+ * first non-consequence key is the answer, and a diff of nothing but
+ * consequences means the money itself was the edit.
+ */
+export function primaryField(diff: Diff, fields: string[]): string | undefined {
+  const keys = Object.keys(diff)
+  const named = fields.find((f) => keys.includes(f))
+  if (named) return named
+  return keys.find((k) => !CONSEQUENCE.has(k)) ?? keys[0]
+}
+
+/** The change as a line: what moved, from what to what, and what followed. */
+function describeChange(
+  diff: Diff,
+  fields: string[],
+  actor: string,
+  verb: 'Changed' | 'Overrode',
+): EventLine | null {
+  const field = primaryField(diff, fields)
+  if (!field || !diff[field]) return null
+  const entry = diff[field]
+  const acv = diff.acv && field !== 'acv' ? usd(diff.acv.to) : undefined
+  return {
+    title: `${verb} ${label(field)}`,
+    diff: { from: fieldValue(field, entry.from), to: fieldValue(field, entry.to) },
+    detail: acv ? `ACV now ${acv}` : undefined,
+    actor,
+    tone: 'neutral',
+  }
+}
+
 export function describeEvent(event: ItemEvent): EventLine {
   const p = event.payload ?? {}
   const actor = actorLabel(event)
@@ -138,7 +229,24 @@ export function describeEvent(event: ItemEvent): EventLine {
       }
     }
 
-    case 'override': {
+    /*
+     * BOTH SPELLINGS. The live event_type is `overridden`; `override` was the
+     * name this branch was written against and nothing on the server emits it.
+     * The mismatch meant every override on a real claim fell through to the
+     * default and rendered as the bare word "Overridden" -- five consecutive
+     * rows reading identically on the audit tab, while the payload carried
+     * `{diff: {acv: {from: 35.99, to: 31.99}, age_years: {from: 1, to: 2}}}`.
+     * An audit trail that will not say what changed is not one.
+     */
+    case 'override':
+    case 'overridden': {
+      const diff = (p.diff ?? {}) as Record<string, { from?: unknown; to?: unknown }>
+      const fields = Array.isArray(p.fields)
+        ? (p.fields as unknown[]).map(str).filter(Boolean) as string[]
+        : []
+      const line = describeChange(diff, fields, actor, 'Overrode')
+      if (line) return line
+      // The older shape, kept because old rows still carry it.
       const from = usd(p.old_rcv) ?? str(p.old_value)
       const to = usd(p.new_rcv) ?? str(p.new_value)
       if (from && to) return { title: 'Price overridden', diff: { from, to }, actor, tone: 'neutral' }
@@ -158,22 +266,19 @@ export function describeEvent(event: ItemEvent): EventLine {
        * field, and the recomputed money rides along as a result.
        */
       const diff = (p.diff ?? {}) as Record<string, { from?: unknown; to?: unknown }>
-      const fields = Array.isArray(p.fields) ? (p.fields as unknown[]).map(str).filter(Boolean) : []
-      const field = fields[0] as string | undefined
+      const fields = Array.isArray(p.fields)
+        ? (p.fields as unknown[]).map(str).filter(Boolean) as string[]
+        : []
 
-      if (field && diff[field]) {
-        const from = str(diff[field].from) ?? 'none'
-        const to = str(diff[field].to) ?? 'none'
-        const acv = diff.acv ? usd(diff.acv.to) : undefined
-        return {
-          title: `Changed ${field.replace(/_/g, ' ')}`,
-          diff: { from, to },
-          detail: acv ? `ACV now ${acv}` : undefined,
-          actor,
-          tone: 'neutral',
-        }
-      }
-      // Older or unrecognised shape -- name the fields rather than say nothing.
+      /*
+       * `fields` is absent on the live payload -- an edit arrives as a bare
+       * `{diff: {make_mfr: {from: null, to: "WWE"}}}` -- and this branch used
+       * to require it, so a real edit rendered as the word "Edited" and
+       * nothing else. The diff itself names the field.
+       */
+      const line = describeChange(diff, fields, actor, 'Changed')
+      if (line) return line
+      // Nothing usable in the diff -- name the fields rather than say nothing.
       return {
         title: fields.length ? `Changed ${fields.join(', ').replace(/_/g, ' ')}` : 'Edited',
         actor,
