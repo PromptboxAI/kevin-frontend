@@ -9,6 +9,7 @@ import { fmtInt } from '../lib/format'
 import { sinceHours, useFailedJobs, useJobsHealth, useOpsActions, vendorQuotaFrom } from '../lib/admin'
 import { bannerFor } from '../lib/service-status-rules'
 import { groupFailures, lastLine, summarize } from '../lib/failed-jobs-rules'
+import { FAILED_JOBS_LIMIT, useJobActions } from '../lib/admin'
 import { copyText } from '../lib/clipboard'
 
 /**
@@ -59,6 +60,11 @@ export default function AdminSystemPage() {
   const [open, setOpen] = useState<string | null>(null)
   const [openCause, setOpenCause] = useState<string | null>(null)
   const [copied, setCopied] = useState<'yes' | 'no' | null>(null)
+  /** Which group's Clear is one click from destroying a traceback. */
+  const [confirming, setConfirming] = useState<string | null>(null)
+  const [jobNote, setJobNote] = useState<string | null>(null)
+  const { retry, clear } = useJobActions()
+  const working = retry.isPending || clear.isPending
 
   // The same public status the customer banner reads, so ops and adjusters are
   // never told different things about pricing.
@@ -259,7 +265,12 @@ export default function AdminSystemPage() {
         {/* — What actually broke, grouped by cause — */}
         <Card
           id="failed-jobs"
-          title={`Failed jobs · ${fmtInt(failed.data?.count ?? 0)} in ${fmtInt(failureGroups.length)} ${failureGroups.length === 1 ? 'cause' : 'causes'}`}
+          /* `count` is this PAGE, not the registry -- if it comes back at the
+             limit there are more, and printing it flat would understate the
+             queue the way the server's default 50 once did. */
+          title={`Failed jobs · ${fmtInt(failed.data?.count ?? 0)}${
+            (failed.data?.count ?? 0) >= FAILED_JOBS_LIMIT ? '+' : ''
+          } in ${fmtInt(failureGroups.length)} ${failureGroups.length === 1 ? 'cause' : 'causes'}`}
           action={
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ fontSize: 11.5, color: 'var(--k-fg-4)' }}>
@@ -316,9 +327,6 @@ export default function AdminSystemPage() {
 
                     {isOpen ? (
                       <div className="k-adm-causebody">
-                        {/* What an admin can actually do with this, said plainly:
-                            there is no retry-job or clear-queue route yet, so the
-                            honest move is to take it to the claim or to us. */}
                         <div className="k-adm-causeact">
                           {group.actors.length ? (
                             <span>
@@ -335,6 +343,99 @@ export default function AdminSystemPage() {
                         <div className="k-adm-causeids k-mono">
                           {group.jobs.slice(0, 12).map((j) => j.job_id.slice(0, 8)).join('  ')}
                           {group.count > 12 ? `  +${fmtInt(group.count - 12)} more` : ''}
+                        </div>
+
+                        {/* The two things an admin can now DO about it.
+                            Retry re-runs the work. Clear drops the row and the
+                            traceback with it -- the only surviving record of why
+                            the work died -- so it confirms first, and it is for
+                            history: a bug since fixed, or work whose subject was
+                            deleted. It is not a fix. If the cause can still fire
+                            the rows come back, and the count goes back to
+                            meaning nothing. */}
+                        <div className="k-adm-causebtns">
+                          <button
+                            type="button"
+                            className="k-btn k-btn--ghost k-btn--sm"
+                            disabled={working}
+                            title="Put these back on their queue"
+                            onClick={() => {
+                              setJobNote(null)
+                              retry.mutate(
+                                group.jobs.map((j) => j.job_id),
+                                {
+                                  onSuccess: (out) => {
+                                    const ok = out.filter((o) => o.ok).length
+                                    const bad = out.length - ok
+                                    setJobNote(
+                                      `Requeued ${fmtInt(ok)} of ${fmtInt(out.length)}` +
+                                        (bad
+                                          ? ` · ${fmtInt(bad)} could not be: ${
+                                              out.find((o) => !o.ok)?.detail ??
+                                              'already retried or cleared'
+                                            }`
+                                          : ''),
+                                    )
+                                  },
+                                  onError: (e) =>
+                                    setJobNote(e instanceof Error ? e.message : 'Retry failed.'),
+                                },
+                              )
+                            }}
+                          >
+                            {retry.isPending ? 'Retrying…' : `Retry ${fmtInt(group.count)}`}
+                          </button>
+
+                          {confirming === group.cause ? (
+                            <>
+                              <button
+                                type="button"
+                                className="k-btn k-btn--sm k-btn--delete"
+                                disabled={working}
+                                onClick={() => {
+                                  setConfirming(null)
+                                  setJobNote(null)
+                                  clear.mutate(
+                                    { job_ids: group.jobs.map((j) => j.job_id) },
+                                    {
+                                      onSuccess: (res) =>
+                                        setJobNote(
+                                          `Cleared ${fmtInt(res.cleared)}` +
+                                            (res.skipped.length
+                                              ? ` · ${fmtInt(res.skipped.length)} were already gone`
+                                              : ''),
+                                        ),
+                                      onError: (e) =>
+                                        setJobNote(
+                                          e instanceof Error ? e.message : 'Clear failed.',
+                                        ),
+                                    },
+                                  )
+                                }}
+                              >
+                                Yes, clear {fmtInt(group.count)} — the traceback goes too
+                              </button>
+                              <button
+                                type="button"
+                                className="k-link"
+                                onClick={() => setConfirming(null)}
+                              >
+                                Cancel
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              className="k-btn k-btn--ghost k-btn--sm"
+                              disabled={working}
+                              title="Drop these rows. There is no undo."
+                              onClick={() => setConfirming(group.cause)}
+                            >
+                              Clear {fmtInt(group.count)}
+                            </button>
+                          )}
+
+                          {jobNote ? <span className="k-adm-jobnote">{jobNote}</span> : null}
                         </div>
                       </div>
                     ) : null}

@@ -137,12 +137,18 @@ to everyone who is not signed in.
 
 ---
 
-## 5. A claim-wide audit trail (the Notes & audit tab) — SENT · IN PROGRESS
+## 5. A claim-wide audit trail (the Notes & audit tab) — DONE
 
-**Status:** sent; the backend is building it first (2026-09-28). The consumer
-is built and shipped ahead of it: `/claims/{id}/audit` is live, the tab is a
-link, and while the route 404s the page says the claim-wide join is still
-shipping rather than claiming the claim has no history. It lights up on deploy.
+**Status:** **shipped 2026-09-29** and consumed the same day. `?limit=&offset=`,
+newest first, `claim_item_description` on every row so the tab needs no item
+list, and `total` (lifetime) distinct from `count` (this page) — we page on
+`total`, which the first cut got wrong and would have stopped at the first short
+page. A 404 is "not your claim", never an empty history.
+
+**Known scope:** ITEM events only. Claim created / processed / exported / shared
+are not in the stream because there is no claim-level event table; folding them
+in is a separate piece of work, not a wider query. The tab's heading says "the
+lines on this claim" so nobody reads a missing export as an unrecorded one.
 
 The claim's fourth tab has been greyed "Soon" since the port, because the audit
 trail is per ITEM: `GET /v1/claim_items/{row_id}/events` exists and works, but
@@ -251,7 +257,7 @@ will build against it.
 
 ---
 
-## 3. Make the depreciation schedule and comp routing editable — SENT · ON HOLD
+## 3. Make the depreciation schedule and comp routing editable — DECLINED
 
 **Status:** sent 2026-09-28. **The contract question is answered: a schedule
 edit cannot rewrite priced lines.** Depreciation amount, pct, method and rule
@@ -259,11 +265,12 @@ version are stored on each item at pricing time, so a claim exported last week
 reopens exactly as it was — rule 22 holds by construction, and no re-price is
 implied by an edit.
 
-**On hold on the OWNER's decision, not the backend's:** whether the schedule
-should be editable at all. It is what carrier disputes turn on, and one line has
-already been mis-transcribed in a way that read as a deliberate rule. The
-frontend needs nothing until that is decided; the Platform screen reads the live
-values today and is correct as a read-only surface.
+**DECLINED 2026-09-29.** Kevin stays on the XactContents schedule, and
+depreciation is edited PER LINE inside a worksheet — `dep_manual` (0–1) on the
+override/edit path already locks a line's depreciation, and that path works. No
+schedule write routes are coming, so the Platform screen is final as a
+read-only surface: it answers "why did that line depreciate like that?", which
+is what it is for.
 
 The admin console's Platform screen (`/admin/platform`) reads
 `GET /v1/depreciation-rules` and `GET /v1/sources` and renders both: 87 schedule
@@ -310,10 +317,23 @@ remembers to apply. No per-seat language anywhere — pricing is flat monthly
 
 ---
 
-## 1. Failed jobs: an admin can see them and do nothing — SENT · NEXT UP
+## 1. Failed jobs: an admin can see them and do nothing — DONE
 
-**Status:** new, 2026-09-20. Folded into prompt 4 (§4.3), but the diagnosis is
-here.
+**Status:** **shipped 2026-09-29.** `POST /v1/jobs/{id}/retry` (409 rather than
+a second enqueue for a job that is not dead-lettered) and
+`POST /v1/jobs/failed/clear` (admin only, must name `job_ids` or
+`all_failed: true`). Both wired into the System screen, per cause group, with a
+confirm on Clear because it destroys the traceback.
+
+**Two corrections to what that screen was telling us**, both ours to own: the
+"50 rows" was the server's DEFAULT `limit=50` read as a total — the real number
+was 79 — and it now asks for 500 and prints "N+" if it ever fills. And 77 of
+those were not a fixed bug but a live race (deleting a claim while its photos
+were still extracting dead-lettered every queued job), since fixed. The queue
+reads 0.
+
+The original diagnosis follows, kept because it is how the count stopped meaning
+"needs attention".
 
 `/admin/system` now surfaces `GET /v1/jobs/failed`, grouped by cause. Today's
 queue is 50 rows in 2 causes:

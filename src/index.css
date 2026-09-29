@@ -2288,3 +2288,11 @@ button.k-avatar-menu-item {
 /* A row that no longer exists, and the claim itself: both are read-only
    labels, quieter than a link because there is nowhere to go. */
 .k-audit-line--gone, .k-audit-line--claim { color: var(--k-fg-4); }
+
+/* Job actions on a failure group. The destructive one is only ever reached
+   through its own confirm, so it is styled as what it is. */
+.k-adm-causebtns {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--k-line);
+}
+.k-adm-jobnote { font-size: 11.5px; color: var(--k-fg-3); }

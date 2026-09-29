@@ -22,8 +22,6 @@ export type DatedEvent = {
 
 export type EventDay<T> = { label: string; key: string; events: T[] }
 
-/** A row the timeline can point at, from the claim's own item list. */
-export type ItemRef = { lineNo: number; description: string | null }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
@@ -82,22 +80,34 @@ export function groupByDay<T extends DatedEvent>(events: T[], now: Date = new Da
 }
 
 /**
- * How a row is named on the timeline. `#0042 · Brown Leather Belt` when the
- * claim's items are loaded; the bare number when they are not, because an
- * event about a row deleted since still happened and must still be listed.
+ * How a line is named on the timeline.
+ *
+ * The description RIDES ON THE EVENT (`claim_item_description`): the join that
+ * scopes the query is already reading the row, so the tab does not hold the
+ * whole item list just to print a name -- 507 rows fetched to label a page of
+ * 50. A row deleted since keeps whatever name the event recorded, and falls
+ * back to its id rather than vanishing: the change still happened.
  */
-export function itemLabel(
-  claimItemId: number | null,
-  items: Map<number, ItemRef>,
-): string | null {
-  if (claimItemId == null) return null
-  const item = items.get(claimItemId)
-  if (!item) return 'Deleted line'
-  const number = `#${String(item.lineNo).padStart(4, '0')}`
-  return item.description ? `${number} · ${item.description}` : number
+export function lineLabel(event: {
+  claim_item_id: number
+  claim_item_description?: string | null
+}): string {
+  const desc = event.claim_item_description?.trim()
+  return desc || `Line ${event.claim_item_id}`
 }
 
-/** How many of these are the claim's own, not a line's. */
-export function claimLevelCount(events: DatedEvent[]): number {
-  return events.filter((e) => e.claim_item_id == null).length
+/**
+ * Whether there is another page, from the SERVER's two counts.
+ *
+ * `count` is this page and `total` is the claim's lifetime count; paging on
+ * `count` stops at the first short page. `total` is null when the count query
+ * failed, and then the only honest signal left is whether this page came back
+ * full -- a short page means the end, a full one means try again.
+ */
+export function nextOffset(
+  seen: number,
+  page: { count: number; total: number | null; limit: number },
+): number | undefined {
+  if (page.total != null) return seen < page.total ? seen : undefined
+  return page.count >= page.limit ? seen : undefined
 }

@@ -8,11 +8,9 @@ import ClaimTabs from '../components/ClaimTabs'
 import { HistoryRow } from '../components/ItemHistory'
 import { ApiError, api, retryUnlessMissing } from '../lib/api'
 import { fmtInt } from '../lib/format'
-import { numberRows } from '../lib/rows'
-import { claimLevelCount, groupByDay, itemLabel } from '../lib/claim-events-rules'
-import type { ItemRef } from '../lib/claim-events-rules'
+import { groupByDay, lineLabel, nextOffset } from '../lib/claim-events-rules'
 import type { ItemEvent } from '../lib/item-events'
-import type { ClaimItemListResponse, ClaimSummary } from '../lib/types'
+import type { ClaimSummary } from '../lib/types'
 
 /**
  * Screen 17 — the claim's audit trail. Who changed what, when.
@@ -26,16 +24,22 @@ import type { ClaimItemListResponse, ClaimSummary } from '../lib/types'
  * depending on where it is read. What this page adds is arrangement: by day,
  * newest first, with the line each event belongs to.
  *
- * `GET /v1/claims/{id}/events` is new (backend prompt 5). Until it is
- * deployed the call 404s, and a 404 here means "not shipped yet", NOT "this
- * claim has no history" -- saying "nothing recorded" over a missing route
- * would tell an adjuster their audit trail is empty, which is the one lie an
- * audit trail cannot afford.
+ * ⚠️ ITEM EVENTS ONLY, by the shape of the data: `claim_item_events` is the
+ * one audit table, so a claim being created, exported or shared is not in this
+ * stream. The heading says "the lines on this claim" rather than "this claim"
+ * so nobody reads a missing export as an unrecorded one. Folding those in
+ * means building an event source, which is the backend's separate piece of
+ * work.
+ *
+ * A 404 on this route means the claim is not yours, never an empty history --
+ * the backend looks the claim up first precisely so those two cannot be
+ * confused.
  */
+/** The server's max is 200; a page is a screenful plus room to scroll. */
 const PAGE = 100
 
-type ClaimEvent = ItemEvent & { claim_item_id: number | null }
-type EventPage = { items: ClaimEvent[]; count: number; limit: number; offset?: number }
+type ClaimEvent = ItemEvent & { claim_item_id: number; claim_item_description?: string | null }
+type EventPage = { items: ClaimEvent[]; count: number; total: number | null; limit: number }
 
 export default function AuditPage() {
   const { claimId = '' } = useParams()
@@ -53,48 +57,24 @@ export default function AuditPage() {
         `/v1/claims/${encodeURIComponent(claimId)}/events?limit=${PAGE}&offset=${pageParam}`,
       ),
     initialPageParam: 0,
-    getNextPageParam: (last, pages) => {
-      const seen = pages.reduce((n, p) => n + p.items.length, 0)
-      return seen < last.count ? seen : undefined
-    },
-    // A missing ROUTE is not a missing claim: do not spend three retries on it.
+    getNextPageParam: (last, pages) =>
+      nextOffset(pages.reduce((n, p) => n + p.items.length, 0), last),
+    // A 404 is "not your claim"; retrying it three times cannot change that.
     retry: retryUnlessMissing,
     staleTime: 30_000,
   })
-
-  /**
-   * The claim's rows, only to name the lines. Line numbers are assigned by
-   * `numberRows` over the whole set, exactly as the worksheet assigns them --
-   * an event pointing at "#0042" has to mean the same row on both screens.
-   */
-  const items = useQuery({
-    queryKey: ['claim-items-for-audit', claimId],
-    queryFn: () =>
-      api.get<ClaimItemListResponse>(
-        `/v1/claim_items?claim_id=${encodeURIComponent(claimId)}&limit=500`,
-      ),
-    staleTime: 60_000,
-  })
-
-  const byId = useMemo(() => {
-    const map = new Map<number, ItemRef>()
-    for (const row of numberRows(items.data?.items ?? []))
-      map.set(row.id, { lineNo: row.lineNo, description: row.description })
-    return map
-  }, [items.data])
 
   const all = useMemo(
     () => events.data?.pages.flatMap((p) => p.items) ?? [],
     [events.data],
   )
   const days = useMemo(() => groupByDay(all), [all])
-  const total = events.data?.pages[0]?.count ?? 0
+  /** The claim's LIFETIME count, not this page's -- they are different numbers. */
+  const total = events.data?.pages[0]?.total ?? null
 
   if (claim.error instanceof ApiError && claim.error.isMissing) {
     return <ClaimMissing claimId={claimId} />
   }
-
-  const notShippedYet = events.error instanceof ApiError && events.error.isMissing
 
   return (
     <div className="k-shell">
@@ -122,24 +102,18 @@ export default function AuditPage() {
                 Notes &amp; audit
               </h1>
               <p style={{ fontSize: 13, color: 'var(--k-fg-3)', margin: 0 }}>
-                Every change on this claim, newest first — what Kevin did, and what you changed.
+                Every change to the lines on this claim, newest first — what Kevin did, and what
+                you changed.
               </p>
             </div>
             {total ? (
               <span style={{ fontSize: 12, color: 'var(--k-fg-4)' }}>
                 {fmtInt(total)} {total === 1 ? 'entry' : 'entries'}
-                {claimLevelCount(all) ? ` · ${fmtInt(claimLevelCount(all))} claim-level` : ''}
               </span>
             ) : null}
           </div>
 
-          {notShippedYet ? (
-            <Alert tone="info" title="The claim-wide trail is still being built">
-              Each line's own history is complete and readable now — open any row from the
-              worksheet and expand History. This page joins them into one timeline as soon as the
-              API can return them together.
-            </Alert>
-          ) : events.error ? (
+          {events.error ? (
             <Alert tone="error" title="Could not load the audit trail">
               {events.error instanceof Error ? events.error.message : 'Try again in a moment.'}
             </Alert>
@@ -157,35 +131,22 @@ export default function AuditPage() {
               {days.map((day) => (
                 <section key={day.key} className="k-audit-day">
                   <div className="k-audit-day-h">{day.label}</div>
-                  {day.events.map((event) => {
-                    const label = itemLabel(event.claim_item_id, byId)
-                    return (
-                      <HistoryRow
-                        key={event.id}
-                        event={event}
-                        /* The line this belongs to, and a way to open it.
-                           A claim-level event has none, and says so by
-                           carrying nothing rather than a placeholder. */
-                        item={
-                          label ? (
-                            event.claim_item_id != null && byId.has(event.claim_item_id) ? (
-                              <Link
-                                className="k-audit-line"
-                                to={`/claims/${encodeURIComponent(claimId)}`}
-                                title="Open the worksheet"
-                              >
-                                {label}
-                              </Link>
-                            ) : (
-                              <span className="k-audit-line k-audit-line--gone">{label}</span>
-                            )
-                          ) : (
-                            <span className="k-audit-line k-audit-line--claim">This claim</span>
-                          )
-                        }
-                      />
-                    )
-                  })}
+                  {day.events.map((event) => (
+                    <HistoryRow
+                      key={event.id}
+                      event={event}
+                      /* The line this belongs to, named from the event itself. */
+                      item={
+                        <Link
+                          className="k-audit-line"
+                          to={`/claims/${encodeURIComponent(claimId)}`}
+                          title="Open the worksheet"
+                        >
+                          {lineLabel(event)}
+                        </Link>
+                      }
+                    />
+                  ))}
                 </section>
               ))}
 
@@ -197,7 +158,11 @@ export default function AuditPage() {
                   disabled={events.isFetchingNextPage}
                   onClick={() => void events.fetchNextPage()}
                 >
-                  {events.isFetchingNextPage ? 'Loading…' : `Show older (${fmtInt(total - all.length)})`}
+                  {events.isFetchingNextPage
+                    ? 'Loading…'
+                    : total != null
+                      ? `Show older (${fmtInt(total - all.length)})`
+                      : 'Show older'}
                 </button>
               ) : null}
             </>
