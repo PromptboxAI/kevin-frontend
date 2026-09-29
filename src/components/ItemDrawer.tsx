@@ -480,7 +480,15 @@ export default function ItemDrawer({
                           />
                         ))}
                       </div>
-                      {/* Only when the arithmetic proves it. Since 2026-09-29
+                      {/* NAMES THE LISTING, does not restate the method. The
+                          engine picks the middle price among ALL the comps it
+                          found, and this panel shows only a few of them -- on
+                          the sample's Hot Wheels line the unit cost is $11.00
+                          beside displayed comps of $11.00, $8.99 and $7.99, so
+                          "the middle one" would read as wrong against what is
+                          on screen. The badge does that work instead.
+
+                          Only when the arithmetic proves it. Since 2026-09-29
                           the engine prices at an actual listing -- the middle
                           one by price -- but lines priced before that keep a
                           median that matches no comp, and nothing in the
@@ -491,9 +499,8 @@ export default function ItemDrawer({
                           comps and carries the adjuster's own link. */}
                       {cited !== null && data.valuation_basis !== 'manual' ? (
                         <span className="k-insp-hint">
-                          Unit cost is the price of a single listing — the middle one by price
-                          among the comps Kevin found — and the Source Link points at that exact
-                          listing.
+                          Unit cost is the price of a single listing — the one marked above — and
+                          the Source Link points at it.
                         </span>
                       ) : null}
                     </>
