@@ -7,7 +7,7 @@ When Kevin cannot find a confident replacement price, the cell arrives empty rat
 ## Why an item comes back blank
 
 - The class requires judgment — jewelry, fine arts, firearms, furs.
-- Too few comparable listings to trust a median.
+- Too few comparable listings to price against.
 - Nothing matched at all: a handmade piece, something very old, or a photo that was not readable.
 
 ## What a blank row looks like

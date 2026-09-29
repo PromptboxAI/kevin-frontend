@@ -56,7 +56,7 @@ const DEMO_STEPS: [string, string, string, string[]][] = [
     '~8 min, unattended',
     [
       'Each set is identified — item, make, model number off the plate or barcode where it is readable.',
-      'Kevin assigns a content class, then pulls three live retail comps per item and takes the median as RCV.',
+      'Kevin assigns a content class, then pulls retail comps per item and takes the middle price as the RCV — an actual listing, which the Source Link points at.',
       'Depreciation comes from the schedule on the claim — straight-line by default — and ACV is derived from it. Anything Kevin cannot price confidently arrives blank instead of guessed.',
     ],
   ],

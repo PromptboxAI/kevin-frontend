@@ -6,7 +6,7 @@ Every comp Kevin finds comes from one place: the Kevin Content Pricing Engine, w
 
 ## How the price is chosen
 
-Kevin keeps the top three merchant offers for an item and takes the median as the replacement cost. The median is deliberately dull: it resists a single mispriced listing in either direction. When offers disagree by more than 15%, the manufacturer’s own price is weighted to settle it.
+Kevin takes the middle price among the comps it found and uses that listing’s price as the replacement cost. Picking the middle one is deliberately dull: it resists a single mispriced listing in either direction. Because the figure is a real listing rather than an average of several, the Source Link points at the exact listing the price came from. When offers disagree by more than 15%, the manufacturer’s own price is weighted to settle it.
 
 ## Switching comps
 

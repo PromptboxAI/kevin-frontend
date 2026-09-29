@@ -49,7 +49,7 @@ const BASES: [string, 'ok' | 'info' | 'wait', string][] = [
   [
     'Retail comp',
     'ok',
-    'Item still sold new — RCV = median of the live merchant comps returned for the query. Two alternates stay one click away in the worksheet, each with a dated proof link.',
+    'Item still sold new — the unit cost is the price of a single listing, the middle one by price among the comps Kevin found, and the Source Link points at that exact listing. The alternates stay one click away in the worksheet.',
   ],
   [
     'Like-kind substitute',
@@ -85,10 +85,12 @@ export default function SettingsPricingPage() {
           are no per-retailer integrations. What this screen controls is not{' '}
           <em>where</em> we fetch, but how results are{' '}
           <strong>classified and ranked</strong>. Jewelry, Fine Arts, Firearms
-          and Furs are never auto-priced — they arrive flagged for a person. RCV
-          defaults to the <strong>median of the live comps</strong> returned for
-          an item, with the alternates one click away in the worksheet and a
-          dated proof link kept for the file.
+          and Furs are never auto-priced — they arrive flagged for a person. The
+          unit cost is{' '}
+          <strong>the price of a single listing</strong> — the middle one by
+          price among the comps Kevin found — and the Source Link points at
+          that exact listing. The alternates stay one click away in the
+          worksheet, and the link is kept for the file.
         </p>
       </div>
 

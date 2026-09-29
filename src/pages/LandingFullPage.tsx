@@ -329,9 +329,11 @@ export default function LandingFullPage() {
             <div className="k-proof-eyebrow">One reviewable grid</div>
             <h3 className="k-proof-h">Every line defends itself.</h3>
             <p className="k-proof-body">
-              Each priced line cites live retail comps with dated merchant links — the median sets
-              RCV. Depreciation comes off the schedule you selected. And when Kevin cannot
-              corroborate a price, it leaves the cell blank for you rather than inventing one.
+              Each priced line cites retail comps with dated merchant links, and the unit cost is
+              the price of a single listing — the middle one by price — with the Source Link
+              pointing at that exact listing. Depreciation comes off the schedule you selected.
+              And when Kevin cannot corroborate a price, it leaves the cell blank for you rather
+              than inventing one.
             </p>
             <ul className="k-proof-list">
               {[
@@ -454,7 +456,7 @@ export default function LandingFullPage() {
                 </div>
               </div>
               <div className="k-pg-pop">
-                <div className="k-pg-pop-hd">Live comps · median sets RCV</div>
+                <div className="k-pg-pop-hd">Comps · the middle price is the RCV</div>
                 {[
                   ['Target', '$152.19', false],
                   ['Madden', '$141.16', true],
@@ -485,8 +487,9 @@ export default function LandingFullPage() {
               </div>
             </div>
             <p className="k-pg-body">
-              Click any RCV cell to see the live retailer comps behind it — the median sets the
-              price, the alternates stay one click away. Source URLs travel with the export.
+              Click any RCV cell to see the retailer comps behind it. The price is one of them —
+              the middle one — and the alternates stay one click away. Source URLs travel with
+              the export.
             </p>
           </article>
 

@@ -8,7 +8,7 @@ Processing drops you into a single editable grid — one row per item, every cel
 
 - Description, make, and model number where they were legible.
 - Content class, which drives the depreciation math.
-- Unit cost, from the median of three live retail comps, with a dated link to the comp behind it.
+- Unit cost, the price of one of the retail comps Kevin found, with a dated link to that listing.
 - Age and depreciation percent, from the schedule on the claim.
 
 ## What needs you

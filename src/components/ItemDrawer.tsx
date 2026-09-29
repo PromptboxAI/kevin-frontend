@@ -6,6 +6,7 @@ import Badge from './Badge'
 import EditableCell from './EditableCell'
 import { ApiError, api } from '../lib/api'
 import { fmtCompPrice, fmtConfidence, fmtPct, fmtUSD } from '../lib/format'
+import { citedCompIndex } from '../lib/comps-rules'
 import { editDisplayLine, overrideItem, repriceItem } from '../lib/mutations'
 import { useDepreciationRules } from '../lib/depreciation-rules'
 import ClassOptionList from './ClassOptionList'
@@ -183,6 +184,8 @@ export default function ItemDrawer({
   const repricing = data?.status === 'processing' || reprice.isPending
 
   const unpriced = data?.status === 'needs_manual'
+  /** Which listing the unit cost came from, when the payload proves it. */
+  const cited = citedCompIndex(data?.rcv, data?.alternative_sources)
   const waiting = Boolean(
     unpriced && data?.manual_reason && CAPACITY_REASONS.has(data.manual_reason),
   )
@@ -466,11 +469,34 @@ export default function ItemDrawer({
                 <div className={`k-insp-field${repricing ? ' k-cell--pending' : ''}`}>
                   <label>Comparable listings</label>
                   {data.alternative_sources?.length ? (
-                    <div className="k-insp-alts">
-                      {data.alternative_sources.map((comp, index) => (
-                        <CompRow key={index} comp={comp} preferred={index === 0} />
-                      ))}
-                    </div>
+                    <>
+                      <div className="k-insp-alts">
+                        {data.alternative_sources.map((comp, index) => (
+                          <CompRow
+                            key={index}
+                            comp={comp}
+                            preferred={index === 0}
+                            cited={index === cited}
+                          />
+                        ))}
+                      </div>
+                      {/* Only when the arithmetic proves it. Since 2026-09-29
+                          the engine prices at an actual listing -- the middle
+                          one by price -- but lines priced before that keep a
+                          median that matches no comp, and nothing in the
+                          payload says which rule ran. A comp whose price IS
+                          the unit cost is a fact about THIS line; the rule in
+                          general is a claim we cannot make from here.
+                          Suppressed on a hand-entered price, which has no
+                          comps and carries the adjuster's own link. */}
+                      {cited !== null && data.valuation_basis !== 'manual' ? (
+                        <span className="k-insp-hint">
+                          Unit cost is the price of a single listing — the middle one by price
+                          among the comps Kevin found — and the Source Link points at that exact
+                          listing.
+                        </span>
+                      ) : null}
+                    </>
                   ) : (
                     <span className="k-insp-hint">
                       No comps on this line{unpriced ? ' — it is unpriced.' : '.'}
@@ -582,23 +608,36 @@ function EditField({
 function CompRow({
   comp,
   preferred,
+  cited,
 }: {
   comp: Comp
   /**
    * alternative_sources[0] is the PREFERRED SOURCE for the item's content
-   * class -- not the source of the price. The price is the median of the
-   * trimmed comp set and frequently matches no individual comp, so this must
-   * never be labelled as backing it. Index 0 is also the only comp with a
-   * resolved merchant URL.
+   * class, and the only comp with a resolved merchant URL -- the rest are
+   * Google Shopping search links, which read as sloppy substantiation.
+   *
+   * It is NOT necessarily the comp the price came from. Since 2026-09-29 a
+   * priced line quotes an actual listing, and `cited` marks that one; on a
+   * line priced before then the unit cost is a median that may match no comp
+   * at all, and nothing is marked.
    */
   preferred: boolean
+  /** This comp's price IS the unit cost, so it is the listing being cited. */
+  cited?: boolean
 }) {
   const body = (
     <>
       <span className="k-comp-title">{comp.title || 'Untitled listing'}</span>
       <span className="k-comp-src">{comp.source || '—'}</span>
       <span className="k-comp-price k-mono">{fmtCompPrice(comp.price)}</span>
-      {preferred ? <Badge tone="accent">Preferred source</Badge> : null}
+      {/* One badge, and the cited listing wins it: "this is where the number
+          came from" is what an adjuster is looking for, and it outranks which
+          source the class prefers. */}
+      {cited ? (
+        <Badge tone="ok">This is the unit cost</Badge>
+      ) : preferred ? (
+        <Badge tone="accent">Preferred source</Badge>
+      ) : null}
     </>
   )
 
