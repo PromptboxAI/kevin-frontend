@@ -1739,6 +1739,22 @@ button.k-avatar-menu-item {
   box-sizing: border-box;
 }
 
+/* THE ITEM DRAWER IS FIXED TO THE VIEWPORT, so the frame's padding-top does
+   not move it: it opened at y=0, under a banner that is fixed at z-index 60
+   against the drawer's 41. The drawer's own header -- the item name and its
+   close control -- sat in that 40px strip, and elementFromPoint over the X
+   returned the banner's "See pricing" button, so the only way out of the
+   panel was Escape. Real claims have no banner and were never affected.
+
+   Inset rather than raised: a 440px panel drawn OVER the banner would hide
+   the one line telling a visitor this is a demo, and the pricing link with
+   it. The variable is the measured height, so a banner whose copy wraps on a
+   narrow window moves the drawer with it. */
+.k-sample-frame .k-drawer,
+.k-sample-frame .k-drawer-scrim {
+  top: var(--k-sample-banner-h, 34px);
+}
+
 /* ---- Alert banners (components/Alert.tsx) ---------------------------------
    One shape for every in-page notice, from the owner's reference: tinted
    panel, 1px edge, icon, bold title over a body line, optional action and
