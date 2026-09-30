@@ -415,8 +415,14 @@ export default function OverviewPage() {
                     margin: '10px 0 0',
                   }}
                 >
-                  Photos are always at least as many as items — context shots and
-                  second frames of an item already counted.
+                  {/* NOT "always at least as many as items". That is true of
+                      what PROCESSING produces -- one item per photo, and some
+                      photos are context -- but a line added by hand has no
+                      photo at all, so a claim can hold more items than photos
+                      and this very card can be the proof. An absolute the page
+                      itself disproves is worse than no sentence. */}
+                  Most photos back one line; context shots and second frames of an item already
+                  counted back none. Lines added by hand have no photo.
                 </p>
               </div>
             </section>

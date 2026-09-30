@@ -1439,6 +1439,13 @@
     }
     .k-seg:hover { color: var(--k-fg); }
     .k-seg--on { background: var(--k-bg); color: var(--k-fg); box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 0 0 1px var(--k-line); }
+    /* A segment that cannot be chosen must not look like one that can. The
+       Photos tab disables Timeline and Map when the payload carries no capture
+       timestamp or GPS, and both rendered in the ordinary unselected colour
+       with cursor:pointer -- so the click did nothing and the reason was
+       hidden in a title tooltip. */
+    .k-seg:disabled { opacity: 0.4; cursor: not-allowed; }
+    .k-seg:disabled:hover { color: var(--k-fg-3); }
     .k-claims-list { border: 1px solid var(--k-line); border-radius: 10px; background: var(--k-bg); overflow-x: auto; }
     /* Project · Claim number · Insured · Carrier · Items/photos · Status ·
        Total · menu -- Xactimate's project-list order (app deviation). The
