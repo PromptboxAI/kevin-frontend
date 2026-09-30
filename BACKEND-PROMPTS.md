@@ -8,6 +8,40 @@ nothing gets asked twice and nothing quietly falls off.
 
 ---
 
+## 10. Line numbers must survive a delete — the owner has decided — NOT SENT
+
+**Status:** new, 2026-09-30. This settles the open question in **BACKEND-ASKS
+29**, which laid the problem out and ended "happy to render whatever you land
+on". The owner has landed on it: **numbers stay stable across deletes.**
+
+Today both sides derive the number from POSITION — `enumerate(items, start=1)`
+in `services/export.py`, and `numberRows` (id-ascending, `index + 1`) in the
+worksheet. There is no `line_no` column on `claim_items`. So deleting a row
+shifts every row beneath it up by one, and a carrier holding an exported
+schedule has numbers that now point at different items.
+
+**What we need: a `line_no` assigned at item creation, never reused, returned
+on the list and detail payloads.** That is the same behaviour rule 22(b)
+already describes for appends — "numbering continues, session 2 starts at
+#0045" — extended to deletes, which is the case the rule was written about in
+the first place ("an export already sent to a carrier cites those numbers").
+
+Two details that decide whether it actually works:
+
+- **Never reused, and never renumbered.** Deleting #0002 leaves a gap, and the
+  gap is the point: it is evidence the line was removed, and it keeps every
+  other number pointing where the carrier thinks it does.
+- **Backfill the existing claims** in id order, so numbers do not jump the
+  first time a live claim is reloaded.
+
+The frontend cannot do this alone and should not try: if the UI invented a
+stable number it would disagree with the export, which is worse than both
+being wrong the same way. `numberRows` will read `line_no` and fall back to
+position while the field is null, so the change can land without a flag day.
+The delete confirmation's warning comes out on the day it does.
+
+---
+
 ## 9. `vendor_watch` has been reporting "unreadable" — NOT SENT
 
 **Status:** new, 2026-09-29. Small, and possibly nothing — but it is a blind
