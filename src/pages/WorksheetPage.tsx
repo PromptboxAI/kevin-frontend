@@ -205,8 +205,20 @@ export default function WorksheetPage() {
     const close = (e: MouseEvent) => {
       if (filterRef.current && !filterRef.current.contains(e.target as Node)) setFilterOpen(false)
     }
+    // Escape as well as an outside click. Every extracted popover on this
+    // screen already closes on Escape (AvatarMenu, RoomsPopover, CompsPopover,
+    // the row and claim menus) and so does the item drawer -- the two written
+    // inline here were the exceptions, so the same key worked everywhere
+    // except the two controls in the toolbar.
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setFilterOpen(false)
+    }
     document.addEventListener('mousedown', close)
-    return () => document.removeEventListener('mousedown', close)
+    document.addEventListener('keydown', esc)
+    return () => {
+      document.removeEventListener('mousedown', close)
+      document.removeEventListener('keydown', esc)
+    }
   }, [filterOpen])
 
   /** GET /v1/depreciation-rules is the live taxonomy; do not retype the classes. */
@@ -1385,8 +1397,15 @@ function DepExplainer({
     const close = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) onClose()
     }
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
     document.addEventListener('mousedown', close)
-    return () => document.removeEventListener('mousedown', close)
+    document.addEventListener('keydown', esc)
+    return () => {
+      document.removeEventListener('mousedown', close)
+      document.removeEventListener('keydown', esc)
+    }
   }, [onClose])
 
   const schedule = item.category ? (depRules?.[item.category] as Record<string, unknown>) : undefined
