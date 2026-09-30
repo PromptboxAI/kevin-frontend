@@ -99,6 +99,15 @@ type Options = Omit<RequestInit, 'body'> & {
  * this for as long as it shows the sample, and clears it on the way out.
  */
 let anonymousMode = false
+/**
+ * True while a public surface is on screen (today: the sample claim), which
+ * means every request goes out WITHOUT the signed-in user's token. A component
+ * that needs an identity has nothing to ask for -- see AppHeader.
+ */
+export function isAnonymous(): boolean {
+  return anonymousMode
+}
+
 export function setAnonymousMode(on: boolean) {
   anonymousMode = on
 }

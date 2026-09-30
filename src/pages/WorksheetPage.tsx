@@ -935,15 +935,23 @@ export default function WorksheetPage() {
           >
             <Icon d={I.pin} size={12} /> {docked ? 'Close panel' : 'Item panel'}
           </button>
-          <button
-            type="button"
-            className="k-btn"
-            disabled={addItem.isPending}
-            onClick={() => addItem.mutate()}
-            title="Add a line item without a photo"
-          >
-            <Icon d={I.plus} size={12} /> Add item
-          </button>
+          {/* NOT ON THE PUBLIC SAMPLE. Creating a row is a write, and the
+              sample is read anonymously, so this button POSTed and came back
+              "Missing Bearer token." -- a server string in a toast, on a
+              marketing page, under a banner inviting people to try things.
+              Editing the existing lines is what the demo is for and that
+              still works; a blank row teaches nobody anything. */}
+          {isSample ? null : (
+            <button
+              type="button"
+              className="k-btn"
+              disabled={addItem.isPending}
+              onClick={() => addItem.mutate()}
+              title="Add a line item without a photo"
+            >
+              <Icon d={I.plus} size={12} /> Add item
+            </button>
+          )}
         </div>
       </section>
 
