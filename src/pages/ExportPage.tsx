@@ -414,11 +414,15 @@ export default function ExportPage() {
               <span style={{ fontSize: 12, color: 'var(--k-fg-3)' }}>
                 Building the PDF with photos — this can take up to a minute.
               </span>
-            ) : (
+            ) : check.attention ? (
+              /* Only when something IS flagged. It read "Flagged items are for
+                 your review" directly above a panel saying "Nothing to flag",
+                 which is the page contradicting itself on the screen an
+                 adjuster uses to decide whether to send a document. */
               <span style={{ fontSize: 12, color: 'var(--k-fg-3)' }}>
                 Flagged items are for your review. Nothing here blocks the export.
               </span>
-            )}
+            ) : null}
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <Link className="k-btn k-btn--ghost" to={`/claims/${claimId}`}>
