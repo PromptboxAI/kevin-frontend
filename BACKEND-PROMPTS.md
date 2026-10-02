@@ -8,6 +8,52 @@ nothing gets asked twice and nothing quietly falls off.
 
 ---
 
+## 11. The trial renews every month — it should be 250 LIFETIME — NOT SENT
+
+**Status:** new, 2026-10-02. Owner's decision, and it changes what a free
+account costs us in aggregate.
+
+**What happens today.** `services/quota.py` sets `PLAN_INCLUDED_ITEMS["trial"]
+= 250`, and `current_period()` lazily creates a `billing_periods` row per
+calendar month with `included_items` snapshotted from the plan. A trial account
+therefore gets **a fresh 250 every month, indefinitely**, without ever being
+charged. At ~$0.08 an item that is ~$20 a month, per account, forever, and it
+grows with every signup that never converts.
+
+**What the owner wants:** 250 items **for the lifetime of the account**, not per
+cycle. The trial ends when the 250th item is produced and never refills; the
+only ways past it are Pro or credits.
+
+Note the marketing has always described it this way — /pricing says "your
+**first** 250 line items" and "what happens when I use up the 250 items?" — so
+this is the implementation catching up to the offer, not a change to it.
+
+Four things we need pinned down, because the frontend renders them:
+
+1. **Where the lifetime count lives.** A sum over the account's
+   `billing_periods.items_used` works until a period is deleted or a plan
+   changes mid-cycle; a counter on the plan row is harder to get wrong. Either
+   way `/v1/me`'s `quota` block needs `items_used` and `items_remaining` to mean
+   *lifetime* while `billing_state` is `trial`, or the usage meter will reset on
+   screen on the 1st of the month.
+2. **`period_end` on a trial.** It currently drives "renews" language. If the
+   pool never renews, send it null for trials, or tell us to ignore it — we have
+   just changed the Billing strip to say "one pool" rather than "per month", and
+   a renewal date beside that reads as a contradiction.
+3. **What happens on upgrade.** Converting to Pro should start a clean 2,000
+   period rather than inheriting a spent trial counter. Confirm, since the
+   lifetime counter would otherwise follow them.
+4. **Credits on a trial.** Rule 9c sells overage credits at $0.20; if a trial
+   user can buy them, the lifetime cap has a paid escape hatch and the copy
+   should say so. If they cannot, buying credits must surface as "upgrade to
+   Pro" rather than failing.
+
+Existing trial accounts that have already consumed several months of 250s are a
+one-time migration question — our vote is to count only what they have used
+rather than retroactively locking anyone out, but it is your data.
+
+---
+
 ## 10. Line numbers must survive a delete — the owner has decided — NOT SENT
 
 **Status:** new, 2026-09-30. This settles the open question in **BACKEND-ASKS

@@ -153,7 +153,15 @@ function onTrial(quota: Quota): boolean {
 /** The three-cell strip. Values come from the payload, never from the copy table. */
 function kpisFor(plan: BillingPlan, quota: Quota): [string, string, string][] {
   const renews = fmtDate(quota.period_end)
-  const included = `${fmtInt(quota.included_items)} line items included${plan === 'free' ? ', one pool' : ' per month'}`
+  /**
+   * "ONE POOL" ON A TRIAL, never "per month". The branch used to key off
+   * `plan`, and a trial account's plan is not 'free' -- so the strip told
+   * trial users their 250 items renewed monthly, while /pricing offered them
+   * "your first 250 line items". The trial is a lifetime pool (rule 9b,
+   * owner 2026-10-02); only a paid plan's allowance recurs.
+   */
+  const recurs = !onTrial(quota) && plan !== 'free'
+  const included = `${fmtInt(quota.included_items)} line items included${recurs ? ' per month' : ', one pool'}`
 
   if (onTrial(quota)) {
     return [
