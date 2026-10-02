@@ -230,6 +230,13 @@ export type ClaimItem = {
   pcs_code: string | null
   confidence: number | null
   age_years: number | null
+  /**
+   * The line's permanent number, assigned at creation and never reused, so a
+   * delete leaves a gap instead of renumbering the rows beneath it. Absent
+   * until the backend ships it (BACKEND-PROMPTS 10); `numberRows` falls back
+   * to position while any row lacks one.
+   */
+  line_no?: number | null
   alternative_sources: Comp[]
   /**
    * How many listings the price was selected from -- the whole trimmed bucket,

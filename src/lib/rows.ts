@@ -25,9 +25,25 @@ export type NumberedItem = ClaimItem & { lineNo: number }
  * beneath it.
  */
 export function numberRows(items: ClaimItem[]): NumberedItem[] {
-  return [...items]
-    .sort((a, b) => a.id - b.id)
-    .map((item, index) => ({ ...item, lineNo: index + 1 }))
+  const sorted = [...items].sort((a, b) => a.id - b.id)
+  /*
+   * PREFER THE SERVER'S NUMBER when it sends one. `line_no` is assigned at
+   * creation and never reused, so a delete leaves a gap rather than shifting
+   * every row beneath it -- which is what rule 22(b) has always required and
+   * what position-numbering cannot give (BACKEND-PROMPTS 10).
+   *
+   * ALL OR NOTHING, deliberately. A mixed set -- some rows backfilled, some
+   * not -- would mingle two numbering schemes and could repeat a number, which
+   * is worse on an exported schedule than being uniformly wrong. So the
+   * fallback only lifts when EVERY row carries one.
+   */
+  const numbered = sorted.every(
+    (item) => typeof item.line_no === 'number' && Number.isFinite(item.line_no),
+  )
+  return sorted.map((item, index) => ({
+    ...item,
+    lineNo: numbered ? (item.line_no as number) : index + 1,
+  }))
 }
 
 /**

@@ -55,16 +55,48 @@ server recomputes independently the two will disagree on a cent eventually.
    (`/v1/claims/{id}/share`, `/p/{token}/checkout`, unlock on webhook). The only
    new part is setting that price from the quote.
 
-### Three things that need a decision, not code
+### Three things the owner has now decided
 
-- **Who owns the claim before payment?** Our vote: the quote holds the photos,
-  and a claim is created only when the deposit clears — nothing half-built sits
+- **No claim exists until the deposit clears.** The quote holds the photos; the
+  claim and worksheet are created when the $199 is paid. Nothing half-built sits
   in a stranger's account.
-- **What happens if the final count exceeds the set count.** It should not, but
-  a hand-added line could do it. Our vote: the invoice caps at the quote and we
-  eat the difference, because we promised a ceiling in writing.
-- **How long a quote stands.** A set count is stable, but our rates may move. A
-  14- or 30-day expiry on the quote record would be ordinary.
+- **The invoice caps at the quote.** If a hand-added line pushes the final count
+  past the ceiling, we eat the difference — we promised a ceiling in writing.
+- **A quote stands for 14 days.** Deliberately not shorter: a client whose quote
+  lapses just re-drops the same zip and gets the same number, so a tight expiry
+  only adds a round trip.
+
+### The client is a HOMEOWNER, not an adjuster
+
+This is the part that changes the data model rather than the flow. A
+done-for-you client is typically the insured, and must not be asked for the
+intake an adjuster fills in — no carrier, no policy number, no policy form, no
+date of loss, no preparer fields.
+
+**Collected: first name, last name, address, phone, email. Only NAME and EMAIL
+are required.**
+
+Two consequences we would rather raise now than discover on an invoice:
+
+1. **Without an address there is no tax.** `claims.tax_rate` is nullable and
+   `_compute_tax` returns None when it is unset, so every line on an
+   addressless claim prices tax-free and the Sales Tax column is empty. That is
+   honest behaviour, but it understates what the client is owed, and tax is real
+   money in their favour. **Our recommendation: require the ZIP** (not the full
+   address) — it is what resolves the rate, it is one field, and a homeowner
+   knows it. Name and email stay the only contact requirements.
+2. **Whose quota do the items count against?** Quota is per owner, and a
+   homeowner has no account at the point the work runs. If the claim is created
+   under a Kevin-side owner, those items land on that owner's ceiling — which a
+   trial (250 lifetime) or Pro (2,000/month) account would exhaust quickly. The
+   DFY owner account probably wants to be an internal/comped plan with no
+   ceiling, billed to us rather than metered. Tell us which account id it is and
+   we will not show quota UI for it.
+
+Related: the letterhead on the client-facing PDF comes from the account's
+business profile (0058). For a DFY job that is OURS, not the homeowner's, which
+we think is right — but it is worth saying out loud, because the homeowner may
+hand that document to their own adjuster.
 
 ### What we will build when the shape is agreed
 
