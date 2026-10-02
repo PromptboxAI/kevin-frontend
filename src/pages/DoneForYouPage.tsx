@@ -3,6 +3,7 @@ import Seo from '../components/Seo'
 import Badge from '../components/Badge'
 import { I, Icon } from '../components/Icon'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
+import { DFY_BANDS, DFY_SETUP_FEE, quoteFor } from '../lib/dfy-pricing-rules'
 
 /**
  * Done-for-you — the service line: send Kevin the photos, we build the
@@ -71,16 +72,25 @@ const STEPS: [string, string][] = [
 
 const COLLAGE = ['20260805_144436', '20260805_144542', '20260805_144723', '20260805_144808']
 
-/** Marginal bands: each rate prices only the lines that fall inside it. */
-const RATES: [string, string, string][] = [
-  ['First 100 lines', '$5.00', 'a line'],
-  ['Lines 101–250', '$4.50', 'a line'],
-  ['Lines 251–500', '$4.00', 'a line'],
-  ['Lines 501–1,000', '$3.50', 'a line'],
-  ['1,001 and up', 'Custom', 'talk to us'],
-]
+/**
+ * The table and the worked example are both DERIVED from
+ * lib/dfy-pricing-rules, so the published rate, the quote a client is given
+ * and the invoice cannot drift apart. They were three hand-written copies of
+ * the same numbers, which is how the previous table ended up contradicting
+ * its own example.
+ */
+const RATES: [string, string, string][] = DFY_BANDS.map((b) => [
+  b.label,
+  b.rate === null ? 'Custom' : `$${b.rate.toFixed(2)}`,
+  b.rate === null ? 'talk to us' : 'a line',
+])
 
-const SETUP_FEE = '$199'
+const SETUP_FEE = `$${DFY_SETUP_FEE}`
+
+/** The example on the page. 400 lines is big enough to cross three bands. */
+const EXAMPLE = quoteFor(400)!
+const usd = (n: number) =>
+  `$${n.toLocaleString('en-US', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 })}`
 
 export default function DoneForYouPage() {
   return (
@@ -505,32 +515,30 @@ export default function DoneForYouPage() {
           </dl>
 
           <div className="k-dfy-worked">
-            <div className="k-dfy-worked-hd">A 400-line contents inventory, worked through</div>
+            <div className="k-dfy-worked-hd">
+              A {EXAMPLE.lines}-line contents inventory, worked through
+            </div>
             <table className="k-dfy-worked-t">
               <tbody>
                 <tr>
                   <td>Setup</td>
-                  <td className="k-mono">$199</td>
+                  <td className="k-mono">{usd(EXAMPLE.setup)}</td>
                 </tr>
-                <tr>
-                  <td>First 100 lines at $5.00</td>
-                  <td className="k-mono">$500</td>
-                </tr>
-                <tr>
-                  <td>Lines 101–250 at $4.50</td>
-                  <td className="k-mono">$675</td>
-                </tr>
-                <tr>
-                  <td>Lines 251–400 at $4.00</td>
-                  <td className="k-mono">$600</td>
-                </tr>
+                {EXAMPLE.breakdown.map((row) => (
+                  <tr key={row.label}>
+                    <td>
+                      {row.label} at ${row.rate.toFixed(2)}
+                    </td>
+                    <td className="k-mono">{usd(row.amount)}</td>
+                  </tr>
+                ))}
                 <tr>
                   <td>You sent the photos, so no site day</td>
                   <td className="k-mono">—</td>
                 </tr>
                 <tr className="k-dfy-worked-tot">
-                  <td>Total · $4.94 a line all in</td>
-                  <td className="k-mono">$1,974</td>
+                  <td>Total · {usd(EXAMPLE.perLine)} a line all in</td>
+                  <td className="k-mono">{usd(EXAMPLE.total)}</td>
                 </tr>
               </tbody>
             </table>
@@ -539,10 +547,11 @@ export default function DoneForYouPage() {
                 estimate-writing market. The hours are the honest variable, so
                 they are stated as a range rather than a single figure. */}
             <p className="k-dfy-worked-foot">
-              The alternative is someone looking up 400 replacement costs one at a time. Outsourced
-              claim prep bills <strong>$99–$125 an hour</strong>; at 400 items that is a week of
-              someone's attention, and you are still waiting at the end of it. This is{' '}
-              <strong>$1,974</strong>, back in a day.
+              The alternative is someone looking up {EXAMPLE.lines} replacement costs one at a
+              time. Outsourced
+              claim prep bills <strong>$99–$125 an hour</strong>; at {EXAMPLE.lines} items that is
+              a week of someone's attention, and you are still waiting at the end of it. This is{' '}
+              <strong>{usd(EXAMPLE.total)}</strong>, back in a day.
             </p>
           </div>
         </section>
