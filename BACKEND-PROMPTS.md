@@ -8,6 +8,72 @@ nothing gets asked twice and nothing quietly falls off.
 
 ---
 
+## 12. Self-serve Done-for-you: quote before work, deposit, balance — NOT SENT
+
+**Status:** new, 2026-10-02. Owner's design. This is a flow, not an endpoint,
+so it is worth agreeing the shape before anyone builds a piece of it.
+
+**What the client does.** Drops a `.zip` (or pastes a Drive link) with no
+account. Clustering runs. They get back a quote: `$199` setup plus the marginal
+line price for the number of sets. They accept, pay the $199, we build, and the
+balance is collected on delivery.
+
+**Why the set count is the right number to quote on.** Clustering is pre-Vision
+and costs us nothing to run, and a set becomes **at most** one line — a context
+or duplicate set promotes to zero. So the set count is a CEILING the final
+invoice cannot pass, which is what makes a per-line price acceptable to someone
+who cannot count the lines themselves. The page now promises exactly that, so
+the quote must be computed from sets and the invoice must never exceed it.
+
+**The pricing is already written and tested on our side.**
+`src/lib/dfy-pricing-rules.ts`: marginal bands ($5.00 first 100, $4.50 to 250,
+$4.00 to 500, $3.50 to 1,000, custom past that), `$199` setup, integer-cent
+arithmetic, and a test asserting the total strictly increases at every count
+from 1 to 1,000. Port it or call it — but it should exist once, and if the
+server recomputes independently the two will disagree on a cent eventually.
+
+### What we think we need from you
+
+1. **An anonymous intake bucket.** A pre-claim upload that needs no account:
+   `POST /v1/dfy/quotes` with files (or a Drive URL), returning a quote id. It
+   has to tolerate a 2 GB zip the same way the authenticated path does — chunked
+   client-side, duplicates reconciled, the same `rejected[]` enum.
+2. **Cluster without pricing.** The existing clusterer, stopping before Vision,
+   so a quote costs us compute and no vendor spend. `GET /v1/dfy/quotes/{id}`
+   returns `photo_count`, `set_count`, status.
+3. **The quote record itself** — set count, the computed total, and the
+   **ceiling**, frozen at acceptance so a later re-cluster cannot raise it.
+4. **Deposit checkout.** `POST /v1/dfy/quotes/{id}/accept` → a Stripe Checkout
+   session for $199. `services/payments.py` already builds sessions with ad-hoc
+   `price_data`/`unit_amount`, so **no new Stripe price object and no dashboard
+   work** — the same helper covers the deposit and the balance.
+5. **Promotion to a real claim** on payment, via the webhook rather than the
+   browser return (the portal already does it this way).
+6. **The balance.** We would rather reuse the share-link paywall than build a
+   second payment surface: the finished claim goes out as a share link priced at
+   `total − 199`, and paying unlocks the files. That machinery exists
+   (`/v1/claims/{id}/share`, `/p/{token}/checkout`, unlock on webhook). The only
+   new part is setting that price from the quote.
+
+### Three things that need a decision, not code
+
+- **Who owns the claim before payment?** Our vote: the quote holds the photos,
+  and a claim is created only when the deposit clears — nothing half-built sits
+  in a stranger's account.
+- **What happens if the final count exceeds the set count.** It should not, but
+  a hand-added line could do it. Our vote: the invoice caps at the quote and we
+  eat the difference, because we promised a ceiling in writing.
+- **How long a quote stands.** A set count is stable, but our rates may move. A
+  14- or 30-day expiry on the quote record would be ordinary.
+
+### What we will build when the shape is agreed
+
+The drop-and-quote screen, the accept/deposit step, and the delivery view with
+the balance. None of it is worth starting before the quote record exists,
+because every screen is a view of it.
+
+---
+
 ## 11. The trial renews every month — it should be 250 LIFETIME — NOT SENT
 
 **Status:** new, 2026-10-02. Owner's decision, and it changes what a free
