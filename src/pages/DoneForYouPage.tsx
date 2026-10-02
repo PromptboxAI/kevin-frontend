@@ -12,15 +12,21 @@ import { MktFooter, MktNav } from '../components/MarketingChrome'
  * (rule 9). Site days are an on-site charge and live in the on-site band,
  * because a client who sends their own photos never incurs one.
  *
- * Rates are FLAT PER TIER, not marginal: the line count selects ONE rate and
- * every line bills at it, so an adjuster can price a job in their head.
+ * RATES ARE MARGINAL (owner, 2026-10-02). Each band prices only the lines
+ * inside it, so 400 lines is 100 x $5.00 + 150 x $4.50 + 150 x $4.00 = $1,775
+ * and 401 lines is $1,779. **Crossing a tier can never lower the invoice.**
  *
- * KNOWN EDGE, carried over from the design and worth keeping visible: the
- * bands are non-monotonic at their boundaries. 800 lines bills $2,800; 801
- * bills $2,002.50 — $797.50 less for one MORE line — and an 800-line job bills
- * more than an 1,100-line one. Deliberate trade-off for legibility; the fix, if
- * it ever bites, is to cap each band at the next band's entry price rather than
- * to go marginal.
+ * That replaces a flat-per-tier table whose bands fell backwards at every
+ * boundary: 800 lines billed $2,800 and 801 billed $2,002.50 -- $797.50 less
+ * for one MORE line -- and an 800-line job cost the same as an 1,120-line one.
+ *
+ * THE UNIT IS A COMPLETED LINE ITEM, never an uploaded photo. Kevin merges
+ * several photos of one object into one line, so photos would bill a customer
+ * for our clustering rather than for what they receive.
+ *
+ * The $199 setup fee is what makes a small job viable: a 20-line claim still
+ * takes onboarding, a review pass, correspondence and delivery, and 20 x $5
+ * does not pay for a morning of anyone's time.
  *
  * `k-dfy` is a page hook: every section here is inline-styled with no class of
  * its own, so there is nothing for a breakpoint to target.
@@ -49,12 +55,16 @@ const STEPS: [string, string][] = [
 
 const COLLAGE = ['20260805_144436', '20260805_144542', '20260805_144723', '20260805_144808']
 
+/** Marginal bands: each rate prices only the lines that fall inside it. */
 const RATES: [string, string, string][] = [
-  ['1–150 lines', '$7.00', 'a line, all lines'],
-  ['151–400 lines', '$5.00', 'a line, all lines'],
-  ['401–800 lines', '$3.50', 'a line, all lines'],
-  ['801+ lines', '$2.50', 'a line, all lines'],
+  ['First 100 lines', '$5.00', 'a line'],
+  ['Lines 101–250', '$4.50', 'a line'],
+  ['Lines 251–500', '$4.00', 'a line'],
+  ['Lines 501–1,000', '$3.50', 'a line'],
+  ['1,001 and up', 'Custom', 'talk to us'],
 ]
+
+const SETUP_FEE = '$199'
 
 export default function DoneForYouPage() {
   return (
@@ -429,7 +439,7 @@ export default function DoneForYouPage() {
               lineHeight: 1.1,
             }}
           >
-            Priced by the line. The bigger the loss, the less each line costs.
+            Priced by the line item. The bigger the loss, the less each line costs.
           </h2>
           <p
             style={{
@@ -440,7 +450,25 @@ export default function DoneForYouPage() {
               maxWidth: 620,
             }}
           >
-            Your line count sets one rate, and every line on the claim bills at it.
+            Each band prices only the lines inside it, so a bigger claim never costs less than a
+            smaller one. A <strong style={{ color: 'var(--k-fg-2)' }}>{SETUP_FEE} setup fee</strong>{' '}
+            covers onboarding, the review pass and delivery, whatever the size.
+          </p>
+          <p
+            style={{
+              fontSize: 13,
+              color: 'var(--k-fg-3)',
+              lineHeight: 1.6,
+              margin: '-12px 0 22px',
+              maxWidth: 620,
+            }}
+          >
+            {/* The unit matters more than the rate. Several photos of one
+                object become one line, so billing photos would charge for our
+                clustering rather than for what the adjuster receives. */}
+            A line item is one finished row on the inventory —{' '}
+            <strong style={{ color: 'var(--k-fg-2)' }}>not a photo</strong>. Six shots of the same
+            sofa are one line.
           </p>
 
           <dl className="k-dfy-rates">
@@ -456,28 +484,44 @@ export default function DoneForYouPage() {
           </dl>
 
           <div className="k-dfy-worked">
-            <div className="k-dfy-worked-hd">A 2,000-line contents inventory, worked through</div>
+            <div className="k-dfy-worked-hd">A 400-line contents inventory, worked through</div>
             <table className="k-dfy-worked-t">
               <tbody>
                 <tr>
-                  <td>2,000 lines — past 800, so every line is $2.50</td>
-                  <td className="k-mono">$5,000</td>
+                  <td>Setup</td>
+                  <td className="k-mono">$199</td>
+                </tr>
+                <tr>
+                  <td>First 100 lines at $5.00</td>
+                  <td className="k-mono">$500</td>
+                </tr>
+                <tr>
+                  <td>Lines 101–250 at $4.50</td>
+                  <td className="k-mono">$675</td>
+                </tr>
+                <tr>
+                  <td>Lines 251–400 at $4.00</td>
+                  <td className="k-mono">$600</td>
                 </tr>
                 <tr>
                   <td>You sent the photos, so no site day</td>
                   <td className="k-mono">—</td>
                 </tr>
                 <tr className="k-dfy-worked-tot">
-                  <td>Total · $2.50 a line</td>
-                  <td className="k-mono">$5,000</td>
+                  <td>Total · $4.94 a line all in</td>
+                  <td className="k-mono">$1,974</td>
                 </tr>
               </tbody>
             </table>
+            {/* The comparison is to a PUBLISHED rate rather than an invented
+                one: outsourced claim prep bills $99–$125 an hour across the
+                estimate-writing market. The hours are the honest variable, so
+                they are stated as a range rather than a single figure. */}
             <p className="k-dfy-worked-foot">
-              The alternative on a loss that size is two field adjusters and an inside rep working
-              it for two weeks — and the rep is still looking up replacement costs one item at a
-              time. That runs about <strong>$9,000</strong>. This is <strong>$5,000</strong>, a{' '}
-              <strong>$4,000</strong> saving, and you get it back in a day.
+              The alternative is someone looking up 400 replacement costs one at a time. Outsourced
+              claim prep bills <strong>$99–$125 an hour</strong>; at 400 items that is a week of
+              someone's attention, and you are still waiting at the end of it. This is{' '}
+              <strong>$1,974</strong>, back in a day.
             </p>
           </div>
         </section>
