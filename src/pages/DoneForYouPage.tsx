@@ -24,9 +24,17 @@ import { MktFooter, MktNav } from '../components/MarketingChrome'
  * several photos of one object into one line, so photos would bill a customer
  * for our clustering rather than for what they receive.
  *
- * The $199 setup fee is what makes a small job viable: a 20-line claim still
- * takes onboarding, a review pass, correspondence and delivery, and 20 x $5
- * does not pay for a morning of anyone's time.
+ * The $199 setup fee is what makes a small job viable: a tiny claim still
+ * takes onboarding, a review pass, correspondence and delivery, and a handful
+ * of lines at $5 does not pay for a morning of anyone's time.
+ *
+ * THERE IS NO MINIMUM LINE COUNT, and none should be added (owner,
+ * 2026-10-02). The setup fee already is the floor, and it self-polices:
+ * nobody pays $199 plus $50 to have ten items written up, so the job that
+ * would have been refused by a minimum simply never gets sent. A published
+ * minimum would only turn a quiet non-starter into a visible refusal on the
+ * page -- and it would be wrong the first time somebody has a genuine
+ * eight-line jewellery schedule they are happy to pay for.
  *
  * `k-dfy` is a page hook: every section here is inline-styled with no class of
  * its own, so there is nothing for a breakpoint to target.
