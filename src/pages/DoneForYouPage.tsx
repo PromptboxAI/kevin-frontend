@@ -42,7 +42,11 @@ import { MktFooter, MktNav } from '../components/MarketingChrome'
 
 const STATS: [string, string, string][] = [
   ['1 business day', 'Typical turnaround', 'photo dump in, worksheet + PDF back'],
-  ['Every photo', 'Becomes a priced line', 'duplicates and context shots sorted out for you'],
+  /* NOT "every photo becomes a priced line". Several shots of one object are
+     one line, and context shots and duplicates are none -- which the sub-line
+     already said, contradicting its own headline. On a page that bills by the
+     line, a customer who reads "every photo" expects a photo-count invoice. */
+  ['One item, one line', 'However many photos it took', 'duplicates and context shots cost nothing'],
   ['3 sources', 'On every priced line', 'live comps with dated proof links'],
 ]
 
@@ -50,6 +54,10 @@ const STEPS: [string, string][] = [
   [
     'You send',
     'A folder, a .zip, or a written list — plus the claim basics (insured, loss address, policy form if you have it). No photos yet? We can shoot the site for you — see below.',
+  ],
+  [
+    'We quote',
+    'Your photos cluster into sets before anything is priced, and a set becomes at most one line — so the set count is a ceiling your invoice cannot pass. You get that number, and the price it implies, before we run anything.',
   ],
   [
     'We build',
@@ -476,7 +484,12 @@ export default function DoneForYouPage() {
                 clustering rather than for what the adjuster receives. */}
             A line item is one finished row on the inventory —{' '}
             <strong style={{ color: 'var(--k-fg-2)' }}>not a photo</strong>. Six shots of the same
-            sofa are one line.
+            sofa are one line. You see the number before we start: your photos cluster into sets
+            first, a set becomes at most one line, so{' '}
+            <strong style={{ color: 'var(--k-fg-2)' }}>
+              the quote is a ceiling the invoice cannot pass
+            </strong>
+            .
           </p>
 
           <dl className="k-dfy-rates">
