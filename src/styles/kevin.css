@@ -3873,8 +3873,10 @@
     .k-signout-note > svg { flex: 0 0 auto; }
     .k-signout-note { display: flex; align-items: flex-start; gap: 9px; margin-top: 22px; padding: 12px 14px; border: 1px solid var(--k-line); border-radius: 9px; background: var(--k-bg-2); font-size: 11.5px; color: var(--k-fg-3); line-height: 1.5; }
 
-    a.k-prod-surface { text-decoration: none; color: inherit; transition: border-color 0.12s, background 0.12s; }
-    a.k-prod-surface:hover { border-color: var(--k-accent); background: var(--k-bg-2); }
+    /* The hover/link treatment for .k-prod-surface is gone with the links:
+       the five product cards are descriptive, not navigable, because every
+       target was behind RequireAuth (see ProductPage.tsx). A card that
+       highlights on hover promises a click that does not happen. */
 
     /* ── Docs · article renderer ──────────────────────────────────── */
     .k-docs-list--num { list-style: decimal; }

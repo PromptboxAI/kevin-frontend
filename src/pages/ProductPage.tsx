@@ -14,40 +14,48 @@ import MktShotGuide from '../components/MktShotGuide'
  * other agent's routes: linked to, never touched.
  */
 
-const SURFACES: { n: string; t: string; img: string; to: string; body: string }[] = [
+/**
+ * The five screens, as DESCRIPTION rather than navigation.
+ *
+ * These were five <Link>s into /claims/new, /claims and /exports. All of
+ * those sit behind RequireAuth, so every visitor reading this page -- which
+ * is the whole audience for it -- clicked a card and got the sign-in wall.
+ * Four of the five have no public equivalent to point at either: the one
+ * product surface open without an account is the sample worksheet.
+ *
+ * So the cards describe the screens and the row carries a single CTA to the
+ * sample. Owner's call, 2026-10-03. There is deliberately no `to` here --
+ * re-adding one puts the login wall back.
+ */
+const SURFACES: { n: string; t: string; img: string; body: string }[] = [
   {
     n: '01',
     t: 'Intake',
     img: 'intake-form',
-    to: '/claims/new',
     body: 'Claim and policy details, the contents coverage limit, and a loss ZIP that resolves the sales-tax rate. One short form, then straight to the photos.',
   },
   {
     n: '02',
     t: 'Stage',
     img: 'staging-sets',
-    to: '/claims',
     body: 'Drop a folder, a phone dump, or a whole .zip — no total-size cap. Duplicates are hashed out, and shots taken seconds apart are grouped into one set — merge, split, or exclude before anything is identified.',
   },
   {
     n: '03',
     t: 'Process',
     img: 'processing-live',
-    to: '/claims',
     body: 'Item, make, model number, content class. Live comps per item, and the replacement cost is the price of one of them rather than a blend, with the Source Link pointing at that listing.',
   },
   {
     n: '04',
     t: 'Review',
     img: 'worksheet-review',
-    to: '/claims',
     body: 'One grid, every cell editable. Pin the item panel to see the source photo and comps beside the row. Special-limits flags, room filters, class grouping.',
   },
   {
     n: '05',
     t: 'Export',
     img: 'export-modal',
-    to: '/exports',
     body: 'The XactContents spreadsheet for claims, a client-ready PDF for estate sales, or the whole bundle with photos and the audit log.',
   },
 ]
@@ -131,12 +139,13 @@ export default function ProductPage() {
             <div className="k-proof-eyebrow">The five screens</div>
             <h2 className="k-proof-h2">Intake to export, end to end.</h2>
             <p className="k-proof-sub">
-              The whole claim lives on five screens. Each one opens where you would start it.
+              The whole claim lives on five screens. Here is what each one does — and the
+              review worksheet is open to anyone, no account needed.
             </p>
           </div>
           <div className="k-prod-surfaces">
             {SURFACES.map((s) => (
-              <Link key={s.n} className="k-prod-surface" to={s.to}>
+              <div key={s.n} className="k-prod-surface">
                 <div className="k-prod-surface-img">
                   <img
                     className="k-prod-surface-shot"
@@ -172,8 +181,13 @@ export default function ProductPage() {
                     {s.body}
                   </p>
                 </div>
-              </Link>
+              </div>
             ))}
+          </div>
+          <div className="k-hero-actions" style={{ justifyContent: 'center', marginTop: 32 }}>
+            <Link className="k-btn k-btn--lg" to="/sample">
+              Open the sample claim
+            </Link>
           </div>
         </section>
 
