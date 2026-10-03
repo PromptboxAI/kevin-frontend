@@ -146,7 +146,7 @@ const NOT_PRICED: Record<NotPricedReason, { head: string; body: string }> = {
   },
   needs_adjuster: {
     head: 'This one goes to an adjuster',
-    body: 'Jewellery, fine art, firearms and furs are valued by a person rather than a search — exactly as in the product, where they arrive unpriced for you to fill in.',
+    body: 'Jewelry, fine art, firearms and furs are valued by a person rather than a search — exactly as in the product, where they arrive unpriced for you to fill in.',
   },
   no_price: {
     head: 'Not enough live listings',

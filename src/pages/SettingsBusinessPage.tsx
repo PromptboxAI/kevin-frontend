@@ -287,7 +287,7 @@ export default function SettingsBusinessPage() {
       </section>
 
       <section className="k-set-card">
-        <div className="k-set-card-hd">Accent colour</div>
+        <div className="k-set-card-hd">Accent color</div>
         <div className="k-set-card-body">
           <div className="k-set-brand">
             <div className="k-brand-row">
@@ -302,7 +302,7 @@ export default function SettingsBusinessPage() {
                   aria-label={`Use ${hex}`}
                 />
               ))}
-              <label className="k-brand-custom" title="Pick any colour">
+              <label className="k-brand-custom" title="Pick any color">
                 <input type="color" value={brand} onChange={(e) => commitBrand(e.target.value)} />
                 <Icon d={I.edit} size={11} />
               </label>

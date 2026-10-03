@@ -35,7 +35,7 @@ import { DFY_BANDS, DFY_SETUP_FEE, quoteFor } from '../lib/dfy-pricing-rules'
  * would have been refused by a minimum simply never gets sent. A published
  * minimum would only turn a quiet non-starter into a visible refusal on the
  * page -- and it would be wrong the first time somebody has a genuine
- * eight-line jewellery schedule they are happy to pay for.
+ * eight-line jewelry schedule they are happy to pay for.
  *
  * `k-dfy` is a page hook: every section here is inline-styled with no class of
  * its own, so there is nothing for a breakpoint to target.
@@ -407,7 +407,7 @@ export default function DoneForYouPage() {
           >
             <img
               src="/marketing/kevin-godfrey.png"
-              alt=""
+              alt="Kevin Godfrey, founder"
               style={{
                 width: 56,
                 height: 56,
