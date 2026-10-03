@@ -330,8 +330,8 @@ export default function LandingFullPage() {
             <h3 className="k-proof-h">Every line defends itself.</h3>
             <p className="k-proof-body">
               Each priced line cites retail comps with dated merchant links, and the unit cost is
-              the price of a single listing — the middle one by price — with the Source Link
-              pointing at that exact listing. Depreciation comes off the schedule you selected.
+              the price of a single listing rather than a blend, with the Source Link pointing at
+              that exact listing. Depreciation comes off the schedule you selected.
               And when Kevin cannot corroborate a price, it leaves the cell blank for you rather
               than inventing one.
             </p>

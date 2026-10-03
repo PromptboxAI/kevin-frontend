@@ -7,8 +7,9 @@ import SettingsShell from '../components/SettingsShell'
  *
  * Ported from `design/components/settings-pricing.jsx`. This screen carries
  * rule 10, so the shape matters as much as the styling: Kevin runs NO
- * per-retailer scrapers. Every comp comes from ONE aggregator (Google Shopping
- * + the Immersive Product API via SerpApi). There is no store roster and no
+ * per-retailer scrapers. Every comp comes from ONE aggregator, named in
+ * design/CLAUDE.md rule 10 and deliberately not repeated here or in any
+ * customer-facing string. There is no store roster and no
  * per-store toggles — the coverage list below is informational, and what the
  * screen actually controls is how results are classified and ranked, never
  * where they are fetched from.
@@ -49,7 +50,7 @@ const BASES: [string, 'ok' | 'info' | 'wait', string][] = [
   [
     'Retail comp',
     'ok',
-    'Item still sold new — the unit cost is the price of a single listing, the middle one by price among the comps Kevin found, and the Source Link points at that exact listing. The alternates stay one click away in the worksheet.',
+    'Item still sold new — the unit cost is the price of a single listing rather than a blend of several, and the Source Link points at that exact listing. The alternates stay one click away in the worksheet.',
   ],
   [
     'Like-kind substitute',
