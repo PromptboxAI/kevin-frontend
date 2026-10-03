@@ -232,6 +232,20 @@ export default function AdminSystemPage() {
             ) : (
               jobs.map((job) => {
                 const bad = job.stale || (job.last_status && job.last_status !== 'ok')
+                /*
+                 * A JOB CAN FAIL AND NOT MATTER, and only the job knows which.
+                 * vendor_watch reports `unreadable` when the vendor's status
+                 * page does not answer twice -- a real failure of that check,
+                 * and no failure of anything an adjuster touches, which its
+                 * own detail says: `impact: "none: the breaker and control
+                 * search are unaffected"`. Buried in the expandable JSON, an
+                 * amber row read as an outage; on the row it reads as what it
+                 * is. Rendered verbatim, so the job's own words are what the
+                 * admin sees (backend 698dd9c).
+                 */
+                const detail = (job.last_detail ?? {}) as Record<string, unknown>
+                const impact = typeof detail.impact === 'string' ? detail.impact : null
+                const why = typeof detail.reason === 'string' ? detail.reason : null
                 return (
                   <button
                     key={job.job}
@@ -246,6 +260,10 @@ export default function AdminSystemPage() {
                     <span className="k-adm-jobname k-mono">{job.job}</span>
                     <span className="k-adm-jobmeta">
                       {sinceHours(job.age_hours)} · {fmtInt(job.runs_total ?? 0)} runs
+                      {bad && why ? ` · ${why}` : ''}
+                      {bad && impact ? (
+                        <span className="k-adm-impact"> · impact {impact}</span>
+                      ) : null}
                     </span>
                     <Badge tone={bad ? 'warn' : 'ok'}>{job.last_status ?? 'unknown'}</Badge>
                     <Icon d={I.chevright} size={13} />

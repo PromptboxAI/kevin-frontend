@@ -8,7 +8,7 @@ nothing gets asked twice and nothing quietly falls off.
 
 ---
 
-## 12. Self-serve Done-for-you: quote before work, deposit, balance — SENT 2026-10-03
+## 12. Self-serve Done-for-you: quote before work, deposit, balance — SENT · AWAITING OWNER GO-AHEAD
 
 **Status:** new, 2026-10-02. Owner's design. This is a flow, not an endpoint,
 so it is worth agreeing the shape before anyone builds a piece of it.
@@ -102,7 +102,7 @@ because every screen is a view of it.
 
 ---
 
-## 11. The trial renews every month — it should be 250 LIFETIME — SENT 2026-10-03
+## 11. The trial renews every month — it should be 250 LIFETIME — SENT · AWAITING OWNER GO-AHEAD
 
 **Status:** new, 2026-10-02. Owner's decision, and it changes what a free
 account costs us in aggregate.
@@ -148,10 +148,19 @@ rather than retroactively locking anyone out, but it is your data.
 
 ---
 
-## 10. Line numbers must survive a delete — the owner has decided — SENT 2026-10-03
+## 10. Line numbers must survive a delete — BUILT (26eb4c2), AWAITING DEPLOY
 
-**Status:** new, 2026-09-30. This settles the open question in **BACKEND-ASKS
-29**, which laid the problem out and ended "happy to render whatever you land
+**Status:** **built by the backend 2026-10-03** as `26eb4c2`, migration
+`0062_line_no.sql`: the counter lives on `claims.next_line_no`, an insert
+trigger assigns it, it is never reused, and existing claims are backfilled in
+id order. `line_no` rides on `ClaimItemSummary` for both list and detail.
+**Not yet on production** — checked the live sample claim on 2026-10-03 and the
+field is absent from the payload entirely, so the worksheet is still numbering
+by position (correctly, via the fallback). Legacy rows with a null `created_by`
+keep `line_no` null, which is exactly why the fallback is all-or-nothing: a
+claim holding both would otherwise mingle two schemes.
+
+This settles the open question in **BACKEND-ASKS 29**, which laid the problem out and ended "happy to render whatever you land
 on". The owner has landed on it: **numbers stay stable across deletes.**
 
 Today both sides derive the number from POSITION — `enumerate(items, start=1)`
@@ -182,10 +191,19 @@ The delete confirmation's warning comes out on the day it does.
 
 ---
 
-## 9. `vendor_watch` has been reporting "unreadable" — SENT 2026-10-03
+## 9. `vendor_watch` has been reporting "unreadable" — ANSWERED (698dd9c)
 
-**Status:** new, 2026-09-29. Small, and possibly nothing — but it is a blind
-spot rather than an alarm, which is the kind that stays quiet.
+**Status:** **answered 2026-10-03.** Our reading (14:56Z on the 29th) predates
+`698dd9c` from the same day: the status page is intermittent rather than broken,
+so the check now retries once and the heartbeat carries `reason` (`http_503`, a
+timeout string) and `impact: "none: the breaker and control search are
+unaffected"`. The status stays `unreadable` when both attempts fail, so the row
+still flags — which is right, and now it flags with its own explanation beside
+it: the System screen renders `reason` and `impact` on the row rather than
+leaving them in the expandable JSON, because an amber row with no context read
+as an outage. Not yet verified on production.
+
+The original report follows.
 
 `/v1/jobs/health` on the admin System screen:
 

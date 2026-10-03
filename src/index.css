@@ -2312,3 +2312,8 @@ button.k-avatar-menu-item {
   margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--k-line);
 }
 .k-adm-jobnote { font-size: 11.5px; color: var(--k-fg-3); }
+
+/* A failing job's own account of what it cost. vendor_watch can be
+   `unreadable` while nothing an adjuster touches is affected, and the job
+   says so in its heartbeat; quieter than the status so it reads as context. */
+.k-adm-impact { color: var(--k-fg-4); }
