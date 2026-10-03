@@ -5020,9 +5020,12 @@
         background: var(--k-bg); border-bottom: 1px solid var(--k-line);
         box-shadow: 0 12px 28px oklch(0.2 0.01 250 / 0.10);
       }
+      /* No rules between the rows -- owner's call. Five hairlines in a 200px
+         sheet read as a table of contents; the spacing separates them well
+         enough on its own. */
       .k-nav-sheet-item {
         padding: 11px 2px; font-size: 15px; color: var(--k-fg-2);
-        text-decoration: none; border-bottom: 1px solid var(--k-line);
+        text-decoration: none;
       }
       .k-nav-sheet-div { height: 6px; }
       .k-nav-sheet-cta { width: 100%; justify-content: center; margin-top: 8px; }
@@ -5822,8 +5825,7 @@
        rather than as the account action it is. */
     .k-nav-sheet-foot {
       display: flex; flex-direction: column; gap: 8px;
-      margin-top: 14px; padding-top: 14px;
-      border-top: 1px solid var(--k-line);
+      margin-top: 18px; padding-top: 0;
     }
     .k-nav-sheet-foot > .k-btn { width: 100%; justify-content: center; }
     @media (prefers-reduced-motion: reduce) {
@@ -6080,6 +6082,13 @@
 
     @media (min-width: 821px) {
       .k-flow { padding: 88px 40px; }
+      /* The MARKUP leads with the step's words, because that is the reading
+         order on a phone -- "1 Capture / Drop the whole folder" and then the
+         photographs it describes. The owner hit the old order while scrolling:
+         pictures first, explanation after, which reads backwards. Desktop
+         keeps the picture on top, where the three vignettes form a row the eye
+         scans before reading any of the three bodies. */
+      .k-flow-viz { order: -1; }
       /* Across, not down: the connector turns and sits in the 20px column gap,
          vertically centred on the picture rather than on the whole card. */
       .k-flow-step:not(:last-child)::after {

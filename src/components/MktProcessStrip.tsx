@@ -78,6 +78,17 @@ export default function MktProcessStrip() {
 
       <ol className="k-flow-steps">
         <li className="k-flow-step">
+          <div className="k-flow-body">
+            <span className="k-flow-step-h">
+              <span className="k-flow-n" aria-hidden="true">1</span>
+              <span className="k-flow-step-l">Capture</span>
+            </span>
+            <h3 className="k-flow-t">Drop the whole folder</h3>
+            <p className="k-flow-p">
+              Hundreds of photos in one go. Kevin uploads them in batches and folds the duplicates
+              back in as they arrive.
+            </p>
+          </div>
           <div className="k-flow-viz k-flow-viz--shots">
             {CAPTURE_SHOTS.map((s) => (
               <div key={s.src} className="k-flow-shot">
@@ -92,20 +103,20 @@ export default function MktProcessStrip() {
               </div>
             ))}
           </div>
-          <div className="k-flow-body">
-            <span className="k-flow-step-h">
-              <span className="k-flow-n" aria-hidden="true">1</span>
-              <span className="k-flow-step-l">Capture</span>
-            </span>
-            <h3 className="k-flow-t">Drop the whole folder</h3>
-            <p className="k-flow-p">
-              Hundreds of photos in one go. Kevin uploads them in batches and folds the duplicates
-              back in as they arrive.
-            </p>
-          </div>
         </li>
 
         <li className="k-flow-step">
+          <div className="k-flow-body">
+            <span className="k-flow-step-h">
+              <span className="k-flow-n" aria-hidden="true">2</span>
+              <span className="k-flow-step-l">Review</span>
+            </span>
+            <h3 className="k-flow-t">Every line, yours to change</h3>
+            <p className="k-flow-p">
+              Kevin identifies the item, matches make and model, and prices it. Description,
+              quantity, age and price all stay editable.
+            </p>
+          </div>
           <div className="k-flow-viz k-flow-viz--rows">
             {/* RCV + Tax BEFORE ACV, the order of every worksheet an adjuster
                 has ever read. % Depr. sits between them in the real grid and is
@@ -121,7 +132,7 @@ export default function MktProcessStrip() {
                   "RCV + Tax". */}
               <span aria-hidden="true" />
               <span>Description</span>
-              <span>RCV + Tax</span>
+              <span>RCV</span>
               <span>ACV</span>
             </div>
             {LINE_ROWS.map((r) => (
@@ -145,20 +156,20 @@ export default function MktProcessStrip() {
                 header note on why no aggregate appears on this page. */}
             <div className="k-flow-row k-flow-row--more">+ more lines</div>
           </div>
-          <div className="k-flow-body">
-            <span className="k-flow-step-h">
-              <span className="k-flow-n" aria-hidden="true">2</span>
-              <span className="k-flow-step-l">Review</span>
-            </span>
-            <h3 className="k-flow-t">Every line, yours to change</h3>
-            <p className="k-flow-p">
-              Kevin identifies the item, matches make and model, and prices it. Description,
-              quantity, age and price all stay editable.
-            </p>
-          </div>
         </li>
 
         <li className="k-flow-step">
+          <div className="k-flow-body">
+            <span className="k-flow-step-h">
+              <span className="k-flow-n" aria-hidden="true">3</span>
+              <span className="k-flow-step-l">Export</span>
+            </span>
+            <h3 className="k-flow-t">Hand it to the carrier</h3>
+            <p className="k-flow-p">
+              Export the file the desk can import as-is, with the proof link behind each price kept
+              on the row.
+            </p>
+          </div>
           <div className="k-flow-viz k-flow-viz--out">
             <div className="k-flow-file">
               <Icon d={I.file} size={15} />
@@ -178,17 +189,6 @@ export default function MktProcessStrip() {
               <Icon d={I.link} size={12} />
               Source link on every priced line
             </div>
-          </div>
-          <div className="k-flow-body">
-            <span className="k-flow-step-h">
-              <span className="k-flow-n" aria-hidden="true">3</span>
-              <span className="k-flow-step-l">Export</span>
-            </span>
-            <h3 className="k-flow-t">Hand it to the carrier</h3>
-            <p className="k-flow-p">
-              Export the file the desk can import as-is, with the proof link behind each price kept
-              on the row.
-            </p>
           </div>
         </li>
       </ol>
