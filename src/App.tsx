@@ -6,6 +6,7 @@ import { AuthProvider } from './lib/auth'
 import RootRoute from './components/RootRoute'
 import PricingPage from './pages/PricingPage'
 import ForAdjustersPage from './pages/ForAdjustersPage'
+import PaContentsSoftwarePage from './pages/PaContentsSoftwarePage'
 import AboutPage from './pages/AboutPage'
 import ContactPage from './pages/ContactPage'
 import DoneForYouPage from './pages/DoneForYouPage'
@@ -142,6 +143,10 @@ export default function App() {
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/product" element={<ProductPage />} />
         <Route path="/for-adjusters" element={<ForAdjustersPage />} />
+        <Route
+          path="/public-adjusters/ai-contents-inventory-software"
+          element={<PaContentsSoftwarePage />}
+        />
         <Route path="/for-estate-liquidators" element={<ForEstateLiquidatorsPage />} />
         <Route path="/done-for-you" element={<DoneForYouPage />} />
         <Route path="/about" element={<AboutPage />} />

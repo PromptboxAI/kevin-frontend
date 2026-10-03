@@ -40,6 +40,16 @@ export const SEO_PAGES: Record<string, SeoEntry> = {
       'Drop your claim photos and Kevin builds a defensible, Xactimate-ready contents inventory: identified items, live retail comps, depreciation, and ACV — reviewed by you.',
     image: 'og-landing.png',
   },
+  /* ── SEO / AI-answer pages ───────────────────────────────────────────
+     An entry here is all a page needs to be prerendered with real markup
+     (entry-server.tsx derives ROUTES from this table), listed in the sitemap
+     and given OG tags. Spec: kevin_co_seo_ai_answer_page_specs.md. */
+  '/public-adjusters/ai-contents-inventory-software': {
+    title: 'AI Contents Inventory Software for Public Adjusters | Kevin',
+    description:
+      'Create insurance-ready contents line items faster with Kevin. Identify items, source replacement pricing, apply depreciation, and export carrier-ready contents worksheets.',
+    image: 'og-default.png',
+  },
   '/pricing': {
     title: 'Pricing — Kevin',
     description:
