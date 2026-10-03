@@ -31,21 +31,20 @@ export const ITEMS_MAX = 20000
 export const CREDIT_BLOCKS = [250, 500, 1000, 2500] as const
 
 /**
- * TWO PRICES, and they are no longer the same number.
+ * ONE PRICE, because there is only one way to pay for an item past the
+ * allowance: buy credits, up front.
  *
- * `PRO_OVERAGE_PRICE` is what an item past the Pro allowance costs on the next
- * invoice. `CREDIT_PRICE` is what buying items up front costs, and since
- * 2026-10-03 it is deliberately much higher: Pro's effective rate is $0.125 an
- * item ($249 / 2,000), so credits at $0.75 are 6x that and cannot undercut a
- * subscription at any volume. That is what made it safe to leave credits
- * available on a trial — a lifetime 250 pool with cheap credits beside it
- * would have been pay-as-you-go without subscribing.
+ * ⛔ THERE IS NO POST-PAY OVERAGE, and a `PRO_OVERAGE_PRICE` constant is not
+ * missing from this file — it was deliberately removed (backend, 2026-10-03).
+ * `services/quota.py` refuses with 402 once allowance and credits are both
+ * exhausted, because an append-only counter cannot support billable overage:
+ * a user invoiced for 400 overage items could delete them and leave the
+ * invoice disagreeing with the table.
  *
- * They were one constant while they were one number, which is how a rename
- * would have gone unnoticed: buying credits would have quietly charged what
- * Pro overage costs.
+ * $0.75 against Pro's effective $0.125 an item ($249 / 2,000) is 6x, so
+ * credits cannot undercut a subscription at any volume — which is what makes
+ * them safe to leave available on a trial.
  */
-export const PRO_OVERAGE_PRICE = 0.2
 export const CREDIT_PRICE = 0.75
 
 /**

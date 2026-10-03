@@ -1,4 +1,4 @@
-import { CREDIT_BLOCKS, CREDIT_PRICE, PRO_OVERAGE_PRICE } from '../lib/billing'
+import { CREDIT_BLOCKS, CREDIT_PRICE } from '../lib/billing'
 import type { Quota } from '../lib/types'
 
 /**
@@ -59,9 +59,20 @@ export default function ItemUsageCard({
       ? Math.min(Math.round((cycleUsed / quota.included_items) * 1000) / 10, 100)
       : 0
 
-  // Billable overage begins only once BOTH pools are empty.
+  /*
+   * ⛔ THERE IS NO BILLABLE OVERAGE. The backend's model is quota → prepaid
+   * credits → 402: `consume()` raises QuotaExhausted once the allowance and
+   * credits together cannot cover a request, and post-pay was deliberately
+   * rejected because an append-only counter cannot support it -- "a user
+   * billed for 400 overage items could delete them and leave the invoice
+   * disagreeing with the table" (services/quota.py).
+   *
+   * This card used to say the work finishes and the overage bills after, at
+   * $0.20 an item. The server does not do that and never has. A promise to
+   * invoice is worse than a refusal: the adjuster plans around an invoice that
+   * is not coming, and finds out when the next batch stops instead.
+   */
   const over = Math.max(quota.items_used - (quota.included_items + credits), 0)
-  const overageCost = Math.round(over * PRO_OVERAGE_PRICE * 100) / 100
 
   const resetsOn = quota.period_end
     ? new Date(quota.period_end).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
@@ -122,7 +133,7 @@ export default function ItemUsageCard({
           {/* Deviation 3: what is actually owed, once both pools are spent. */}
           {over > 0 ? (
             <span className="k-store-key" style={{ color: 'var(--k-warn)' }}>
-              {over.toLocaleString()} over · ${overageCost.toFixed(2)} on the next invoice
+              {over.toLocaleString()} past your allowance · add credits to keep processing
             </span>
           ) : null}
         </div>
@@ -136,10 +147,11 @@ export default function ItemUsageCard({
             </p>
           ) : (
             <p>
-              Your cycle allowance is used first — credits are only drawn once it reaches zero.{' '}
-              <strong>Going over never locks a claim.</strong> The work finishes and the overage
-              bills after — items past your allowance are ${PRO_OVERAGE_PRICE.toFixed(2)}{' '}
-              each.
+              Your cycle allowance is used first — credits are only drawn once it reaches zero.
+              When both are empty, processing stops until you add credits at{' '}
+              ${CREDIT_PRICE.toFixed(2)} an item.{' '}
+              <strong>Nothing already built is taken away</strong> — finished lines, photos and
+              exports stay exactly as they are.
             </p>
           )}
           {/* Rule 9c. The likeliest support ticket, answered on the meter itself. */}
