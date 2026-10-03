@@ -450,6 +450,14 @@ export default function LandingPage() {
           <figure className="k-hero-shot">
             <img
               src="/marketing/worksheet-review-2x.webp"
+              // The largest thing on the page, and on a phone it was the full
+              // 1740px file (117 KB) drawn about 380px wide. The 720 and 1100
+              // copies are resizes of the 2x file: regenerate them whenever it
+              // is replaced, or a phone shows the old screenshot. `sizes`
+              // follows .k-hero-shot: inside the gutters to 820px, 128% of a
+              // single column to 1080px, then the bled desktop column.
+              srcSet="/marketing/worksheet-review-720.webp 720w, /marketing/worksheet-review-1100.webp 1100w, /marketing/worksheet-review-2x.webp 1740w"
+              sizes="(max-width: 820px) calc(100vw - 40px), (max-width: 1080px) 128vw, 900px"
               alt="Kevin's review worksheet: 57 priced lines with room, quantity, description, make, model, content class, unit cost, tax, age, depreciation and ACV, totalling $2,428.05 ACV"
               width={1740}
               height={964}

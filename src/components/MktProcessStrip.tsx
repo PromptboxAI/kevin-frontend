@@ -93,8 +93,8 @@ export default function MktProcessStrip() {
             {CAPTURE_SHOTS.map((s) => (
               <div key={s.src} className="k-flow-shot">
                 <img
-                  src={`/marketing/loss/w192/${s.src}.jpg`}
-                  srcSet={`/marketing/loss/w192/${s.src}.jpg 192w, /marketing/loss/w480/${s.src}.jpg 480w`}
+                  src={`/marketing/loss/w192/${s.src}.webp`}
+                  srcSet={`/marketing/loss/w192/${s.src}.webp 192w, /marketing/loss/w480/${s.src}.webp 480w`}
                   sizes="(max-width: 820px) 44vw, 150px"
                   alt={s.alt}
                   loading="lazy"

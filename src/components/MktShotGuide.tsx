@@ -84,8 +84,8 @@ export default function MktShotGuide() {
           <li key={s.src} className={`k-guide-card${s.good ? '' : ' k-guide-card--no'}`}>
             <div className="k-guide-img">
               <img
-                src={`/marketing/loss/w480/${s.src}.jpg`}
-                srcSet={`/marketing/loss/w192/${s.src}.jpg 192w, /marketing/loss/w480/${s.src}.jpg 480w`}
+                src={`/marketing/loss/w480/${s.src}.webp`}
+                srcSet={`/marketing/loss/w192/${s.src}.webp 192w, /marketing/loss/w480/${s.src}.webp 480w`}
                 sizes="(max-width: 820px) 46vw, 260px"
                 alt={s.alt}
                 loading="lazy"

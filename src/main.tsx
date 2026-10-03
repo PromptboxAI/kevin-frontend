@@ -26,8 +26,18 @@ const queryClient = new QueryClient({
  * where nobody is waiting on it, not to the adjuster's first edit. Preconnect
  * covers the API and the auth host, which are the only two cross-origin hops.
  */
+const container = document.getElementById('root')!
+// Set by scripts/prerender-html.mjs to the route the markup was rendered for.
+const renderedFor = container.dataset.prerendered
+const here = window.location.pathname.replace(/(.)\/$/, '$1')
+const isPrerenderedPage = renderedFor === here
+
 for (const origin of [API_BASE_URL, SUPABASE_URL]) {
   if (!origin) continue
+  // Not on a prerendered marketing page: nothing there calls either host
+  // during load, and an unused preconnect is a handshake spent competing
+  // with the page's own first requests.
+  if (isPrerenderedPage) continue
   const link = document.createElement('link')
   link.rel = 'preconnect'
   link.href = origin
@@ -70,11 +80,7 @@ const tree = (
  * first, and its head tags are handed back to <Seo> to retire, exactly as on a
  * page that was never prerendered.
  */
-const container = document.getElementById('root')!
-const renderedFor = container.dataset.prerendered
-const here = window.location.pathname.replace(/(.)\/$/, '$1')
-
-if (renderedFor === here) {
+if (isPrerenderedPage) {
   hydrateRoot(container, tree)
 } else {
   if (renderedFor !== undefined) {
