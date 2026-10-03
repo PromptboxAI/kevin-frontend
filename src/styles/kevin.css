@@ -6246,7 +6246,12 @@
       .k-proof-hd { margin-top: 88px; margin-bottom: 32px; }
       .k-proof-row + .k-proof-hd { margin-top: 88px; }
       .k-proof-row { margin-top: 88px; margin-bottom: 40px; }
-      .k-proof-solo { padding-top: 88px; }
+      /* NOT the 88px section break: on /product (its only user) this shot is
+         the hero's own graphic, so it takes the CONTINUATION value. 88 on top
+         of the hero's own 28px bottom padding measured a 116px dead band
+         between the CTA buttons and the image on a 375px screen -- owner,
+         2026-10-03. 28 + 12 = the 40px continuation step. */
+      .k-proof-solo { padding-top: 12px; }
       .k-guide { padding: 88px 20px 48px; }
       .k-seg-work { padding-top: 88px; }
       .k-social { padding-top: 88px; }
