@@ -30,9 +30,23 @@ export const ITEMS_MAX = 20000
 /** The blocks offered in the modal. Every one sits inside the server bounds. */
 export const CREDIT_BLOCKS = [250, 500, 1000, 2500] as const
 
-/** $0.20 an item — the SAME rate as Pro overage, deliberately. Credits are
- *  never a discount and buying them is never a plan change. */
-export const OVERAGE_PRICE = 0.2
+/**
+ * TWO PRICES, and they are no longer the same number.
+ *
+ * `PRO_OVERAGE_PRICE` is what an item past the Pro allowance costs on the next
+ * invoice. `CREDIT_PRICE` is what buying items up front costs, and since
+ * 2026-10-03 it is deliberately much higher: Pro's effective rate is $0.125 an
+ * item ($249 / 2,000), so credits at $0.75 are 6x that and cannot undercut a
+ * subscription at any volume. That is what made it safe to leave credits
+ * available on a trial — a lifetime 250 pool with cheap credits beside it
+ * would have been pay-as-you-go without subscribing.
+ *
+ * They were one constant while they were one number, which is how a rename
+ * would have gone unnoticed: buying credits would have quietly charged what
+ * Pro overage costs.
+ */
+export const PRO_OVERAGE_PRICE = 0.2
+export const CREDIT_PRICE = 0.75
 
 /**
  * What the return leg is waiting for. Recorded at checkout time because the

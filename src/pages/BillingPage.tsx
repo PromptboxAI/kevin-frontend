@@ -139,15 +139,38 @@ const fmtDate = (iso?: string | null) =>
   iso ? new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : null
 
 /**
- * A TRIAL is a billing state, not a plan: `/v1/me` can return
- * `plan: "pro", billing_state: "trial"`, and reading the plan alone told an
- * account that is not being charged its "next invoice" and an auto-renew date
- * (owner, 2026-09-20). Nothing bills until the card is actually charged, so
- * the state wins wherever money is stated. Rule 9b: the trial is metered, not
- * timed -- never a date, never a countdown.
+ * TWO QUESTIONS, TWO COLUMNS. `plan` and `billing_state` are independent, and
+ * live data holds accounts at `plan: "pro", billing_state: "trial"` -- so each
+ * answers only what it actually knows.
+ *
+ * `billing_state` answers IS ANYTHING BEING CHARGED. Reading the plan for that
+ * told an account that is not being billed its "next invoice" and an
+ * auto-renew date (owner, 2026-09-20).
+ *
+ * `plan` answers WHAT ALLOWANCE THEY HAVE, which the engine keys off
+ * (backend, 2026-10-03). Reading the state for that would show a
+ * pro/trial account a 250 lifetime pool while the engine hands it 2,000 a
+ * month -- the same class of error in the other direction.
+ *
+ * Rule 9b still governs the shape of the trial itself: metered, never timed,
+ * never a date, never a countdown.
  */
 function onTrial(quota: Quota): boolean {
   return quota.billing_state === 'trial'
+}
+
+/**
+ * The 250 pool belongs to the TRIAL PLAN, not the trial state.
+ *
+ * Our vocabulary calls that plan `free`; the server's column is constrained to
+ * ('trial','pro'), so the string is compared rather than the union — an
+ * unrecognised plan falls to the smaller allowance, which understates rather
+ * than overstates what an account can produce.
+ */
+const RECURRING_PLANS = new Set(['pro', 'enterprise', 'comped'])
+
+function onTrialPlan(plan: BillingPlan): boolean {
+  return !RECURRING_PLANS.has(String(plan))
 }
 
 /** The three-cell strip. Values come from the payload, never from the copy table. */
@@ -160,12 +183,16 @@ function kpisFor(plan: BillingPlan, quota: Quota): [string, string, string][] {
    * "your first 250 line items". The trial is a lifetime pool (rule 9b,
    * owner 2026-10-02); only a paid plan's allowance recurs.
    */
-  const recurs = !onTrial(quota) && plan !== 'free'
+  const recurs = !onTrialPlan(plan)
   const included = `${fmtInt(quota.included_items)} line items included${recurs ? ' per month' : ', one pool'}`
 
   if (onTrial(quota)) {
+    // The PLAN names the row; the STATE says nothing is being charged. An
+    // account at pro/trial has Pro's allowance and no invoice, and saying
+    // "Trial" there would understate what it can actually produce.
+    const onPro = plan === 'pro' || plan === 'enterprise'
     return [
-      ['Current plan', 'Trial', 'Metered, not timed'],
+      ['Current plan', onPro ? 'Pro' : 'Trial', onPro ? 'Not billed yet' : 'Metered, not timed'],
       ['Claims', 'Unlimited', included],
       ['Items left', fmtInt(quota.items_remaining), 'Nothing billed yet'],
     ]

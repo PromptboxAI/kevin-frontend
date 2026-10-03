@@ -1,4 +1,4 @@
-import { CREDIT_BLOCKS, OVERAGE_PRICE } from '../lib/billing'
+import { CREDIT_BLOCKS, CREDIT_PRICE, PRO_OVERAGE_PRICE } from '../lib/billing'
 import type { Quota } from '../lib/types'
 
 /**
@@ -21,7 +21,8 @@ import type { Quota } from '../lib/types'
  *
  * 2. **Credit block prices are derived, not literal.** The design originally
  *    read "500 for $75 · 1,000 for $140" — $0.15 and $0.14 an item, which
- *    contradicted rule 9c (credits sell at the same $0.20 as Pro overage) and
+ *    contradicted the rule then in force (credits at the same rate as Pro
+ *    overage) and
  *    disagreed with what AddCreditsModal actually charges one click away.
  *    Design has since adopted flat per-item pricing. Computed here from the
  *    same two constants the modal uses, so the hint and the charge cannot
@@ -60,14 +61,14 @@ export default function ItemUsageCard({
 
   // Billable overage begins only once BOTH pools are empty.
   const over = Math.max(quota.items_used - (quota.included_items + credits), 0)
-  const overageCost = Math.round(over * OVERAGE_PRICE * 100) / 100
+  const overageCost = Math.round(over * PRO_OVERAGE_PRICE * 100) / 100
 
   const resetsOn = quota.period_end
     ? new Date(quota.period_end).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
     : null
 
   const hint = CREDIT_BLOCKS.slice(0, 2)
-    .map((n) => `${n.toLocaleString()} for $${(n * OVERAGE_PRICE).toFixed(0)}`)
+    .map((n) => `${n.toLocaleString()} for $${(n * CREDIT_PRICE).toFixed(0)}`)
     .join(' · ')
 
   return (
@@ -137,7 +138,7 @@ export default function ItemUsageCard({
             <p>
               Your cycle allowance is used first — credits are only drawn once it reaches zero.{' '}
               <strong>Going over never locks a claim.</strong> The work finishes and the overage
-              bills after — items past your allowance and credits are ${OVERAGE_PRICE.toFixed(2)}{' '}
+              bills after — items past your allowance are ${PRO_OVERAGE_PRICE.toFixed(2)}{' '}
               each.
             </p>
           )}
@@ -166,7 +167,7 @@ export default function ItemUsageCard({
           </button>
           {free ? onUpgrade : null}
           <span style={{ fontSize: 11.5, color: 'var(--k-fg-4)' }}>
-            {hint} · ${OVERAGE_PRICE.toFixed(2)} per item · credits never expire
+            {hint} · ${CREDIT_PRICE.toFixed(2)} per item · credits never expire
           </span>
         </div>
       </div>

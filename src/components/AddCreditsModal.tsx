@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react'
 import { I, Icon } from './Icon'
-import { CREDIT_BLOCKS, OVERAGE_PRICE, startCreditsCheckout } from '../lib/billing'
+import { CREDIT_BLOCKS, CREDIT_PRICE, startCreditsCheckout } from '../lib/billing'
 import { ApiError } from '../lib/api'
 
 /**
  * Ported from design/components/settings-pages.jsx (AddCreditsModal).
  *
- * Credits are priced at the SAME $0.20 an item as Pro overage, so this must
- * never read as an upgrade path or a discount — no plan comparison, no "best
- * value" nudge, just a quantity and a price. Built from the export-modal shell
+ * Credits are DEARER than Pro, deliberately ($0.75 an item against Pro's
+ * effective $0.125), so they can never undercut a subscription — which is what
+ * makes them safe to offer on a trial. The screen still must not read as an
+ * upgrade path or a discount: no plan comparison, no "best value" nudge, just a
+ * quantity and a price. Somebody buying a lot of these should be told Pro is
+ * cheaper, not nudged with a bigger block. Built from the export-modal shell
  * and the .k-volume option grid the intake form already uses.
  */
 export default function AddCreditsModal({
@@ -122,7 +125,7 @@ export default function AddCreditsModal({
                     marginTop: 4,
                   }}
                 >
-                  ${(n * OVERAGE_PRICE).toFixed(2)}
+                  ${(n * CREDIT_PRICE).toFixed(2)}
                 </div>
               </button>
             ))}
@@ -141,10 +144,10 @@ export default function AddCreditsModal({
           >
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>
-                {pick.toLocaleString()} items × ${OVERAGE_PRICE.toFixed(2)}
+                {pick.toLocaleString()} items × ${CREDIT_PRICE.toFixed(2)}
               </span>
               <span className="k-mono" style={{ color: 'var(--k-fg-2)' }}>
-                ${(pick * OVERAGE_PRICE).toFixed(2)}
+                ${(pick * CREDIT_PRICE).toFixed(2)}
               </span>
             </div>
             <div
@@ -159,7 +162,7 @@ export default function AddCreditsModal({
             >
               <span style={{ color: 'var(--k-fg-2)' }}>Charged today</span>
               <span className="k-mono" style={{ color: 'var(--k-fg)' }}>
-                ${(pick * OVERAGE_PRICE).toFixed(2)}
+                ${(pick * CREDIT_PRICE).toFixed(2)}
               </span>
             </div>
           </div>
@@ -202,7 +205,7 @@ export default function AddCreditsModal({
           <button type="button" className="k-btn" onClick={() => void buy()} disabled={busy}>
             {busy
               ? 'Redirecting to Stripe…'
-              : `Add ${pick.toLocaleString()} items — $${(pick * OVERAGE_PRICE).toFixed(2)}`}
+              : `Add ${pick.toLocaleString()} items — $${(pick * CREDIT_PRICE).toFixed(2)}`}
           </button>
         </div>
       </div>
