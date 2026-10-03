@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
 import Seo from '../components/Seo'
-import Badge from '../components/Badge'
 import { I, Icon } from '../components/Icon'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
 import { MktROISection, MktSocialProof } from './LandingPage'
@@ -163,9 +162,9 @@ export default function PricingPage() {
           className="k-mkt-hero k-price-hero"
           style={{ textAlign: 'center', maxWidth: 760, margin: '0 auto' }}
         >
-          <Badge tone="accent" dot>
+          <span className="k-badge k-badge--ok k-eyebrow">
             Pricing
-          </Badge>
+          </span>
           <h1
             style={{
               fontFamily: 'var(--k-font-display)',
@@ -175,7 +174,10 @@ export default function PricingPage() {
               lineHeight: 1.04,
             }}
           >
-            One subscription. Unlimited claims.
+            {/* Two lines, owner's call -- the break is set, not left to the
+                measure, so the pair always reads as a pair. */}
+            <span style={{ display: 'block' }}>One subscription.</span>
+            <span style={{ display: 'block' }}>Unlimited claims.</span>
           </h1>
           <p
             style={{
@@ -343,7 +345,10 @@ export default function PricingPage() {
         <MktROISection />
 
         {/* — FAQ — */}
-        <section className="k-faq">
+        {/* Anchored: the FAQ lives here and nothing on the site pointed at it,
+            so it was effectively invisible unless you were already pricing. The
+            footer now links /pricing#faq. */}
+        <section className="k-faq" id="faq">
           <h2
             style={{
               fontFamily: 'var(--k-font-display)',
@@ -401,8 +406,13 @@ export default function PricingPage() {
           </div>
         </section>
 
-        <MktFooter />
       </main>
+
+      {/* OUTSIDE <main>: .k-mkt-main caps content at 1280px with a 40px
+          gutter, so a footer inside it stopped short of the page edges on
+          every page except the home page, whose footer is a direct child of
+          .k-landing. A footer is not main content either way. */}
+      <MktFooter />
     </div>
   )
 }

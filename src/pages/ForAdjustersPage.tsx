@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
 import Seo from '../components/Seo'
-import Badge from '../components/Badge'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
 import { MktROISection, MktShot, MktSocialProof } from './LandingPage'
 
@@ -138,9 +137,9 @@ export default function ForAdjustersPage() {
       <main className="k-mkt-main">
         <section className="k-seg-hero">
           <div className="k-seg-hero-l">
-            <Badge tone="accent" dot>
+            <span className="k-badge k-badge--ok k-eyebrow">
               For independent, carrier &amp; public adjusters
-            </Badge>
+            </span>
             <h1
               style={{
                 fontFamily: 'var(--k-font-display)',
@@ -476,7 +475,9 @@ export default function ForAdjustersPage() {
                 }}
               >
                 <img
-                  src="/marketing/kevin-godfrey.png"
+                  src="/marketing/kevin-godfrey.webp"
+                  width={500}
+                  height={500}
                   alt="Kevin Godfrey"
                   style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                 />
@@ -572,8 +573,13 @@ export default function ForAdjustersPage() {
           </div>
         </section>
 
-        <MktFooter />
       </main>
+
+      {/* OUTSIDE <main>: .k-mkt-main caps content at 1280px with a 40px
+          gutter, so a footer inside it stopped short of the page edges on
+          every page except the home page, whose footer is a direct child of
+          .k-landing. A footer is not main content either way. */}
+      <MktFooter />
     </div>
   )
 }

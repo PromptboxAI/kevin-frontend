@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
 import Seo from '../components/Seo'
-import Badge from '../components/Badge'
 import CalendlyInline from '../components/CalendlyInline'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
 
@@ -44,9 +43,9 @@ export default function BookCallPage() {
       <main className="k-mkt-main">
         <section style={{ maxWidth: 1060, margin: '0 auto', padding: '52px 40px 40px' }}>
           <div style={{ textAlign: 'center', marginBottom: 32 }}>
-            <Badge tone="accent" dot>
+            <span className="k-badge k-badge--ok k-eyebrow">
               30 minutes · no slides
-            </Badge>
+            </span>
             <h1
               style={{
                 fontFamily: 'var(--k-font-display)',
@@ -86,7 +85,9 @@ export default function BookCallPage() {
               ))}
               <div className="k-cal-who">
                 <img
-                  src="/marketing/kevin-godfrey.png"
+                  src="/marketing/kevin-godfrey.webp"
+                  width={500}
+                  height={500}
                   alt="Kevin Godfrey"
                   className="k-cal-who-img"
                   loading="lazy"

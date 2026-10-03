@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
 import Seo from '../components/Seo'
-import Badge from '../components/Badge'
 import { I, Icon } from '../components/Icon'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
 import { DFY_BANDS, DFY_SETUP_FEE, quoteFor } from '../lib/dfy-pricing-rules'
@@ -102,9 +101,9 @@ export default function DoneForYouPage() {
           className="k-mkt-hero"
           style={{ textAlign: 'center', maxWidth: 780, margin: '0 auto', padding: '60px 40px 30px' }}
         >
-          <Badge tone="accent" dot>
+          <span className="k-badge k-badge--ok k-eyebrow">
             Done-for-you · per claim
-          </Badge>
+          </span>
           <h1
             style={{
               fontFamily: 'var(--k-font-display)',
@@ -406,7 +405,9 @@ export default function DoneForYouPage() {
             }}
           >
             <img
-              src="/marketing/kevin-godfrey.png"
+              src="/marketing/kevin-godfrey.webp"
+              width={500}
+              height={500}
               alt="Kevin Godfrey, founder"
               style={{
                 width: 56,

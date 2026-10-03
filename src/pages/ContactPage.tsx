@@ -1,4 +1,3 @@
-import Badge from '../components/Badge'
 import Seo from '../components/Seo'
 import CalendlyInline, { CALENDLY_URL } from '../components/CalendlyInline'
 import { I, Icon } from '../components/Icon'
@@ -22,9 +21,9 @@ export default function ContactPage() {
       <main className="k-mkt-main">
         <section className="k-contact">
           <div className="k-contact-l">
-            <Badge tone="accent" dot>
+            <span className="k-badge k-badge--ok k-eyebrow">
               Talk to us
-            </Badge>
+            </span>
             <h1
               style={{
                 fontFamily: 'var(--k-font-display)',
@@ -194,8 +193,13 @@ export default function ContactPage() {
           <CalendlyInline minHeight={CALENDLY_URL ? 700 : 300} />
         </section>
 
-        <MktFooter />
       </main>
+
+      {/* OUTSIDE <main>: .k-mkt-main caps content at 1280px with a 40px
+          gutter, so a footer inside it stopped short of the page edges on
+          every page except the home page, whose footer is a direct child of
+          .k-landing. A footer is not main content either way. */}
+      <MktFooter />
     </div>
   )
 }

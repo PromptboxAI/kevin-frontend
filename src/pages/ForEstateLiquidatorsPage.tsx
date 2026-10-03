@@ -151,9 +151,9 @@ export default function ForEstateLiquidatorsPage() {
       <main className="k-mkt-main">
         <section className="k-seg-hero">
           <div className="k-seg-hero-l">
-            <Badge tone="accent" dot>
+            <span className="k-badge k-badge--ok k-eyebrow">
               For estate liquidators &amp; trust officers
-            </Badge>
+            </span>
             <h1
               style={{
                 fontFamily: 'var(--k-font-display)',
@@ -516,8 +516,13 @@ export default function ForEstateLiquidatorsPage() {
           </div>
         </section>
 
-        <MktFooter />
       </main>
+
+      {/* OUTSIDE <main>: .k-mkt-main caps content at 1280px with a 40px
+          gutter, so a footer inside it stopped short of the page edges on
+          every page except the home page, whose footer is a direct child of
+          .k-landing. A footer is not main content either way. */}
+      <MktFooter />
     </div>
   )
 }

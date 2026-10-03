@@ -34,9 +34,9 @@ export default function CareersPage() {
       <MktNav />
       <main className="k-mkt-main">
         <section style={{ maxWidth: 920, margin: '0 auto', padding: '60px 40px 40px' }}>
-          <Badge tone="accent" dot>
+          <span className="k-badge k-badge--ok k-eyebrow">
             We're hiring carefully
-          </Badge>
+          </span>
           <h1
             style={{
               fontFamily: 'var(--k-font-display)',
@@ -148,8 +148,13 @@ export default function CareersPage() {
           </a>
         </section>
 
-        <MktFooter />
       </main>
+
+      {/* OUTSIDE <main>: .k-mkt-main caps content at 1280px with a 40px
+          gutter, so a footer inside it stopped short of the page edges on
+          every page except the home page, whose footer is a direct child of
+          .k-landing. A footer is not main content either way. */}
+      <MktFooter />
     </div>
   )
 }

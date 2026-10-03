@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
 import Seo from '../components/Seo'
-import Badge from '../components/Badge'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
 
 /**
@@ -90,9 +89,9 @@ export default function AboutPage() {
       <MktNav />
       <main className="k-mkt-main">
         <section className="k-about-hero">
-          <Badge tone="accent" dot>
+          <span className="k-badge k-badge--ok k-eyebrow">
             About
-          </Badge>
+          </span>
           <h1
             style={{
               fontFamily: 'var(--k-font-display)',
@@ -202,7 +201,9 @@ export default function AboutPage() {
         <section className="k-about-founder">
           <div className="k-about-founder-media">
             <img
-              src="/marketing/kevin-godfrey.png"
+              src="/marketing/kevin-godfrey.webp"
+              width={500}
+              height={500}
               alt="Kevin Godfrey, founder"
               loading="lazy"
               decoding="async"
@@ -310,8 +311,13 @@ export default function AboutPage() {
           </Link>
         </section>
 
-        <MktFooter />
       </main>
+
+      {/* OUTSIDE <main>: .k-mkt-main caps content at 1280px with a 40px
+          gutter, so a footer inside it stopped short of the page edges on
+          every page except the home page, whose footer is a direct child of
+          .k-landing. A footer is not main content either way. */}
+      <MktFooter />
     </div>
   )
 }

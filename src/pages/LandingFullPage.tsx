@@ -47,9 +47,9 @@ export default function LandingFullPage() {
 
       <main className="k-hero">
         <div className="k-hero-l">
-          <Badge tone="accent" dot>
+          <span className="k-badge k-badge--ok k-eyebrow">
             Photos in. XactContents-ready inventory out.
-          </Badge>
+          </span>
           {/* No manual breaks. The old copy was three hand-set lines; this one
               is long enough that a fixed break left "Estimate" alone on a line
               at desktop. `text-wrap: balance` evens the lines at every width

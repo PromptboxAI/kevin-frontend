@@ -207,6 +207,7 @@ export function MktFooter() {
           <MktLink to="/for-estate-liquidators">For estate liquidators</MktLink>
           <MktLink to="/demo">Watch demo</MktLink>
           <MktLink to="/docs">Docs</MktLink>
+          <MktLink to="/pricing#faq">FAQ</MktLink>
         </div>
         <div className="k-footx-col">
           <div className="k-footx-h">Company</div>

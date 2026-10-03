@@ -90,7 +90,7 @@ export default function WatchDemoPage() {
       <main className="k-mkt-main">
         <section
           className="k-demo-sec"
-          style={{ textAlign: 'center', maxWidth: 800, margin: '0 auto', padding: '52px 40px 30px' }}
+          style={{ textAlign: 'center', maxWidth: 800, margin: '0 auto', padding: '80px 40px 30px' }}
         >
           <Badge tone="accent" dot>
             Written walkthrough
@@ -123,7 +123,14 @@ export default function WatchDemoPage() {
           </p>
         </section>
 
-        <section className="k-demo-sec" style={{ maxWidth: 800, margin: '0 auto', padding: '0 40px' }}>
+        {/* CONTINUATION, not a new topic: the heading above says "Every step,
+            start to export" and these ARE those steps, so 56px -- not the
+            ~150px break between unrelated sections. A first pass put 112px
+            here and it read as a page break mid-sentence. */}
+        <section
+          className="k-demo-sec"
+          style={{ maxWidth: 800, margin: '0 auto', padding: '56px 40px 0' }}
+        >
           <div className="k-demo-steps">
             {DEMO_STEPS.map(([n, t, time, items]) => (
               <div key={n} className="k-demo-step">
@@ -184,8 +191,13 @@ export default function WatchDemoPage() {
             </Link>
           </div>
         </section>
-        <MktFooter />
       </main>
+
+      {/* OUTSIDE <main>: .k-mkt-main caps content at 1280px with a 40px
+          gutter, so a footer inside it stopped short of the page edges on
+          every page except the home page, whose footer is a direct child of
+          .k-landing. A footer is not main content either way. */}
+      <MktFooter />
     </div>
   )
 }
