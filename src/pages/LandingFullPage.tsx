@@ -487,9 +487,9 @@ export default function LandingFullPage() {
               </div>
             </div>
             <p className="k-pg-body">
-              Click any RCV cell to see the retailer comps behind it. The price is one of them —
-              the middle one — and the alternates stay one click away. Source URLs travel with
-              the export.
+              Click any RCV cell to see the retailer comps behind it. The price is one of them
+              rather than a blend, and the alternates stay one click away. Source URLs travel
+              with the export.
             </p>
           </article>
 

@@ -34,7 +34,7 @@ const SURFACES: { n: string; t: string; img: string; to: string; body: string }[
     t: 'Process',
     img: 'processing-live',
     to: '/claims',
-    body: 'Item, make, model number, content class. Live comps per item, and the replacement cost is the price of one of them — the middle one — with the Source Link pointing at that listing.',
+    body: 'Item, make, model number, content class. Live comps per item, and the replacement cost is the price of one of them rather than a blend, with the Source Link pointing at that listing.',
   },
   {
     n: '04',

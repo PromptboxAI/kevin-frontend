@@ -3047,8 +3047,21 @@
        screen instead of scrolling inside it. On /pricing the swipeable
        testimonials took main to 662px on a 375px phone, and the page's
        overflow-x: clip hid the result rather than fixing it. */
-    .k-mkt-main { max-width: 1280px; margin: 0 auto; padding: 0 40px 60px; min-width: 0; }
-    .k-landing > main { min-width: 0; }
+    /* width: 100% is as load-bearing as the min-width: 0 below it, and for a
+       different reason. `margin: 0 auto` centres this block -- but in a column
+       flex container (.k-landing), AUTO CROSS-AXIS MARGINS DISABLE
+       align-items: stretch. The item then sizes to its own content instead of
+       its parent, so a wide child (a table with nowrap headers) made <main>
+       450px inside a 375px phone, and the page's overflow-x: clip hid the
+       result: the measured page overflow was 0 while the heading, the lede and
+       the tables all ran off the right edge. Caught on
+       /contents-claims/without-photos and
+       /guides/automate-replacement-cost-research. */
+    .k-mkt-main {
+      max-width: 1280px; margin: 0 auto; padding: 0 40px 60px;
+      min-width: 0; width: 100%; box-sizing: border-box;
+    }
+    .k-landing > main { min-width: 0; width: 100%; box-sizing: border-box; }
     /* ── MARKETING VERTICAL SCALE (owner, 2026-10-03) ───────────────────
        Four numbers, applied across every marketing page instead of tuning
        joins one at a time:
@@ -6248,7 +6261,7 @@
     /* ── SEO / AI-answer pages (seo-kit.tsx) ─────────────────────────────
        Long-form reading pages: one measure, generous leading, real tables.
        Marketing-scoped like the rest — .k-seopage sits inside .k-landing. */
-    .k-seopage { max-width: 820px; margin: 0 auto; }
+    .k-seopage { max-width: 820px; margin: 0 auto; width: 100%; box-sizing: border-box; }
     .k-seohead { padding: 8px 0 0; }
     .k-crumbs { font-size: 12.5px; color: var(--k-fg-4); display: flex; flex-wrap: wrap; gap: 6px; }
     .k-crumbs a { color: var(--k-fg-3); text-decoration: none; }
