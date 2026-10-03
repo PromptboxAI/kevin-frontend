@@ -374,7 +374,7 @@ Every comp Kevin finds comes from one place: the Kevin Content Pricing Engine, w
 
 ### How the price is chosen
 
-Kevin takes the middle price among the comps it found and uses that listing’s price as the replacement cost. Picking the middle one is deliberately dull: it resists a single mispriced listing in either direction. Because the figure is a real listing rather than an average of several, the Source Link points at the exact listing the price came from. When offers disagree by more than 15%, the manufacturer’s own price is weighted to settle it.
+Kevin prices a line at a single listing rather than a blend of several, so the number on the worksheet is a real price somebody is asking rather than an average of prices nobody charges — and the Source Link points at the exact listing it came from. Which listing is chosen is deliberately dull, and resists a single mispriced one in either direction. When offers disagree by more than 15%, the manufacturer’s own price is weighted to settle it.
 
 ### Switching comps
 

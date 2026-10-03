@@ -256,7 +256,7 @@ const DOC_ARTICLES_A = {
     blocks: [
       ['p', 'Every comp Kevin finds comes from one place: the Kevin Content Pricing Engine, which already spans major retailers, specialty stores, brand-direct storefronts, and marketplaces. There is no list of individual stores to maintain or switch on.'],
       ['h2', 'How the price is chosen'],
-      ['p', 'Kevin takes the middle price among the comps it found and uses that listing\u2019s price as the replacement cost. Picking the middle one is deliberately dull: it resists a single mispriced listing in either direction. Because the figure is a real listing rather than an average of several, the Source Link points at the exact listing the price came from. When offers disagree by more than 15%, the manufacturer\u2019s own price is weighted to settle it.'],
+      ['p', 'Kevin prices a line at a single listing rather than a blend of several, so the number on the worksheet is a real price somebody is asking rather than an average of prices nobody charges — and the Source Link points at the exact listing it came from. Which listing is chosen is deliberately dull, and resists a single mispriced one in either direction. When offers disagree by more than 15%, the manufacturer’s own price is weighted to settle it.'],
       ['h2', 'Switching comps'],
       ['p', 'Click a unit cost cell and all three comps open — merchant, title, price, and a link to the listing. Pick a different one and the price changes, and so does the proof link on that row. The link always points at the comp actually behind the price.'],
       ['h2', 'The proof link'],

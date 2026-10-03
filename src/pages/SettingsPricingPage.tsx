@@ -88,10 +88,13 @@ export default function SettingsPricingPage() {
           <strong>classified and ranked</strong>. Jewelry, Fine Arts, Firearms
           and Furs are never auto-priced — they arrive flagged for a person. The
           unit cost is{' '}
-          <strong>the price of a single listing</strong> — the middle one by
-          price among the comps Kevin found — and the Source Link points at
-          that exact listing. The alternates stay one click away in the
-          worksheet, and the link is kept for the file.
+          {/* The PROPERTY, not the recipe (owner, 2026-10-03): a real asking
+              price rather than an average, with a link to it. How the listing
+              is chosen is ours, and lives in CLAUDE.md rule 10. */}
+          <strong>the price of a single listing</strong> rather than a blend of
+          several — and the Source Link points at that exact listing. The
+          alternates stay one click away in the worksheet, and the link is kept
+          for the file.
         </p>
       </div>
 
