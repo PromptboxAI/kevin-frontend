@@ -134,7 +134,7 @@ const TERMS_SECTIONS: Section[] = [
   [
     't-fees',
     '7 · Fees and billing',
-    'Pro is billed as a flat monthly subscription with unlimited claims and an allowance of 2,000 line items per billing month, with additional items charged at $0.20 each on the following invoice, preceded by a free tier of 250 line items with no time limit; the subscription begins when you choose to start it, or when your account passes the free item allowance. Enterprise is billed under a separate order form. Subscriptions renew automatically until cancelled, and cancellation takes effect at the end of the current billing period. Fees are non-refundable except where required by law. We will give at least 30 days’ notice by email before changing the price of an active subscription.',
+    'Pro is billed as a flat monthly subscription with unlimited claims and an allowance of 2,000 line items per billing month, with additional items available as prepaid credits at $0.75 each rather than billed in arrears, preceded by a free tier of 250 line items with no time limit; the subscription begins when you choose to start it, or when your account passes the free item allowance. Enterprise is billed under a separate order form. Subscriptions renew automatically until cancelled, and cancellation takes effect at the end of the current billing period. Fees are non-refundable except where required by law. We will give at least 30 days’ notice by email before changing the price of an active subscription.',
   ],
   [
     't-ip',

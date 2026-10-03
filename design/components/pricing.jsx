@@ -8,7 +8,7 @@ const TIERS = [
   {
     id: 'pro', name: 'Pro', tag: 'One adjuster. Unlimited claims.',
     price: 249, suffix: '/mo',
-    blurb: 'One flat monthly subscription. Unlimited claims, 2,000 items a month included, then $0.20 an item. Cancel anytime.',
+    blurb: 'One flat monthly subscription. Unlimited claims, 2,000 items a month included, then credits at $0.75 an item. Cancel anytime.',
     cta: 'Start with 250 free items',
     primary: true,
     features: [
@@ -26,7 +26,7 @@ const TIERS = [
       ['Client-facing share links',                                     true],
       ['Version retention and change history on every line',            true],
       ['Mobile capture, any phone, nothing to install',                 true],
-      ['Unlimited claims · 2,000 items a month · $0.20 an item after',  true],
+      ['Unlimited claims · 2,000 items a month · credits at $0.75 after',  true],
       ['500 GB photo storage, archive and restore',                     true],
     ],
   },
@@ -60,11 +60,11 @@ const FAQS = [
   ['Do I lose my work if I cancel?',
    'No. Your claims, worksheets and exports stay available to download.'],
   ['Is \u201cunlimited claims\u201d really unlimited?',
-   'Yes \u2014 run as many claims as you like, with no per-claim fee. What is metered is line items: 2,000 a month are included, and past that it is $0.20 an item. A 60-photo kitchen fire is about 57 items, so 2,000 is roughly 35 claims of that size in a month.'],
+   'Yes \u2014 run as many claims as you like, with no per-claim fee. What is metered is line items: 2,000 a month are included, and past that you add credits at $0.75 an item. A 60-photo kitchen fire is about 57 items, so 2,000 is roughly 35 claims of that size in a month.'],
   ['What counts as a claim?',
    'One loss event \u2014 one insured, one date of loss, one address. On Pro it doesn\'t matter: claims are unlimited, so run as many as you need.'],
   ['Do I pay extra for photos or items?',
-   'Photos, no \u2014 upload as many as you like, with 500 GB of active storage on the account. Items, only past the 2,000 a month included, and then $0.20 each. The count is in Settings \u2192 Billing before it costs anything, and going over never locks a claim.'],
+   'Photos, no \u2014 upload as many as you like, with 500 GB of active storage on the account. Items, only past the 2,000 a month included, and then credits at $0.75 each. The count is in Settings \u2192 Billing before it costs anything, and nothing already built is ever taken away.'],
   ['If I delete an item, do I get the quota back?',
    'No, and this is the one part of the meter worth knowing up front. The count records items Kevin produced, not items you kept, because the pricing lookups are already paid for by the time the row appears. Delete a duplicate and the row goes away; the count does not move.'],
   ['Are pricing comps included or extra?',
@@ -88,7 +88,7 @@ const Pricing = () => (
           One subscription. Unlimited claims.
         </h1>
         <p style={{ fontSize: 16, color: 'var(--k-fg-2)', lineHeight: 1.55, margin: 0, maxWidth: 560, marginLeft: 'auto', marginRight: 'auto' }}>
-          A flat monthly price, the way you already pay for Xactimate. $249 covers 2,000 line items a month — more claims than most adjusters write — and anything past that is $0.20 an item. No per-seat math, no per-claim fee, and your first 250 line items are free.
+          A flat monthly price, the way you already pay for Xactimate. $249 covers 2,000 line items a month — more claims than most adjusters write — and past that you top up with credits at $0.75 an item. No per-seat math, no per-claim fee, and your first 250 line items are free.
         </p>
       </section>
 

@@ -598,14 +598,17 @@ const KIU = (planId, credits) => {
   return window.buildItemUsage ? window.buildItemUsage(planId || 'pro', credits || 0) : window.KEVIN_ITEM_USAGE;
 };
 
-// Blocks of overage credits at the same $0.20 an item as Pro overage (rule 9c).
+// Blocks of prepaid credits at $0.75 an item (rule 9c, amended 2026-10-03).
+// There is no post-pay overage: past the allowance, processing stops until
+// credits are added. Credits are dearer than Pro's effective $0.125 an item on
+// purpose, so they can never undercut a subscription.
 // Buying credits is NEVER a plan change, so this must not read as an upgrade
 // path — no plan comparison, no "best value" nudge, just a quantity and a price.
 // Built from the export-modal primitives and the k-volume option grid rather
 // than new ones. Static by design: engineering wires the checkout.
 const AddCreditsModal = ({ usage, onClose }) => {
   const blocks = (usage && usage.blocks) || [250, 500, 1000, 2500];
-  const price = (usage && usage.overagePrice) || 0.2;
+  const price = (usage && usage.creditPrice) || 0.75;
   const [pick, setPick] = React.useState(blocks[1]);
   // Disabled while in flight: a second click mints a second Stripe session,
   // and a customer who completes both is charged twice.
@@ -718,7 +721,7 @@ const ItemUsageCard = ({ plan, included, credits, note, onAddCredits }) => {
           </span>
           <span className="k-store-key" style={{ color: (over || tight) ? 'var(--k-warn)' : 'var(--k-fg-4)' }}>
             {over
-              ? u.over.toLocaleString() + ' over · $' + u.overageCost.toFixed(2) + ' on the next invoice'
+              ? u.over.toLocaleString() + ' past your allowance · add credits to keep processing'
               : u.remaining.toLocaleString() + ' remaining'}
           </span>
         </div>
@@ -726,7 +729,7 @@ const ItemUsageCard = ({ plan, included, credits, note, onAddCredits }) => {
           {free ? (
             <p><strong>No clock on the free tier.</strong> Your {u.included.toLocaleString()} items last as long as you need them — take a week or take three months. Kevin asks you to start Pro when they run out, not before.</p>
           ) : (
-            <p><strong>Going over never locks a claim.</strong> The work finishes and the overage bills after — items past {u.allowance.toLocaleString()} are ${u.overagePrice.toFixed(2)} each.</p>
+            <p>When the allowance and your credits are both spent, processing stops until you add credits at ${u.creditPrice.toFixed(2)} an item. <strong>Nothing already built is taken away</strong> — finished lines, photos and exports stay exactly as they are.</p>
           )}
           {/* Rule 9c. The likeliest support ticket, answered on the meter itself. */}
           <p className="k-usage-fine">

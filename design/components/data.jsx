@@ -688,7 +688,7 @@ const KEVIN_CLAIMS = [
 // Line-item allowance (CLAUDE.md rules 9, 9b, 9c). Items are the second metered
 // dimension. Two tiers: the FREE tier gets 250 items once (a metered trial, not
 // a timed one — there is no clock and no expiry), and Pro gets 2,000 per billing
-// month, then $0.20 an item. Like storage, the used figure is DERIVED from the
+// month, then credits at $0.75 an item. Like storage, the used figure is DERIVED from the
 // claim roster — never typed in — so changing a claim's item count moves it.
 //
 // The counter is APPEND-ONLY (rule 9c): it records items PRODUCED, not items
@@ -708,7 +708,10 @@ const ITEM_PLANS = {
   pro:  { included: 2000, cycle: true,  label: 'Pro' },
 };
 const ITEM_INCLUDED = ITEM_PLANS.pro.included;
-const ITEM_OVERAGE_PRICE = 0.20;
+// Prepaid credits, $0.75 an item (rule 9c, amended 2026-10-03). There is no
+// post-pay overage: past the allowance, processing stops until credits are
+// added, so this is a purchase price rather than an invoice rate.
+const ITEM_CREDIT_PRICE = 0.75;
 const ITEM_CYCLE_DAYS = 30;
 // Credit blocks sold against overage, at the SAME price as Pro overage (rule 9c)
 // -- buying credits is never a plan change and never a discount.
@@ -731,10 +734,10 @@ const buildItemUsage = (planId, creditsBought) => {
   return {
     plan: planId, planLabel: plan.label, cycle: plan.cycle,
     included: plan.included, credits, allowance,
-    overagePrice: ITEM_OVERAGE_PRICE, cycleDays: ITEM_CYCLE_DAYS, blocks: ITEM_CREDIT_BLOCKS,
+    creditPrice: ITEM_CREDIT_PRICE, cycleDays: ITEM_CYCLE_DAYS, blocks: ITEM_CREDIT_BLOCKS,
     used, claims: scope.length, over,
     remaining: Math.max(allowance - used, 0),
-    overageCost: Math.round(over * ITEM_OVERAGE_PRICE * 100) / 100,
+    creditCost: Math.round(over * ITEM_CREDIT_PRICE * 100) / 100,
     pct: Math.min(Math.round((used / allowance) * 1000) / 10, 100),
   };
 };

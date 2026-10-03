@@ -41,7 +41,7 @@ const TIERS: {
     price: 249,
     suffix: '/mo',
     blurb:
-      'One flat monthly subscription. Unlimited claims, 2,000 items a month included, then $0.20 an item. Cancel anytime.',
+      'One flat monthly subscription. Unlimited claims, 2,000 items a month included, then credits at $0.75 an item. Cancel anytime.',
     cta: 'Start for Free',
     primary: true,
     features: [
@@ -62,7 +62,7 @@ const TIERS: {
       ['Client-facing share links', true],
       ['Version retention and change history on every line', true],
       ['Mobile capture, any phone, nothing to install', true],
-      ['Unlimited claims · 2,000 items a month · $0.20 an item after', true],
+      ['Unlimited claims · 2,000 items a month · credits at $0.75 after', true],
       ['500 GB photo storage, archive and restore', true],
     ],
   },
@@ -108,7 +108,7 @@ const FAQS: [string, string][] = [
   ['Do I lose my work if I cancel?', 'No. Your claims, worksheets and exports stay available to download.'],
   [
     'Is “unlimited claims” really unlimited?',
-    'Yes — run as many claims as you like, with no per-claim fee. What is metered is line items: 2,000 a month are included, and past that it is $0.20 an item. A 60-photo kitchen fire is about 57 items, so 2,000 is roughly 35 claims of that size in a month.',
+    'Yes — run as many claims as you like, with no per-claim fee. What is metered is line items: 2,000 a month are included, and past that you add credits at $0.75 an item. A 60-photo kitchen fire is about 57 items, so 2,000 is roughly 35 claims of that size in a month.',
   ],
   [
     'What counts as a claim?',
@@ -116,7 +116,7 @@ const FAQS: [string, string][] = [
   ],
   [
     'Do I pay extra for photos or items?',
-    'Photos, no — upload as many as you like, with 500 GB of active storage on the account. Items, only past the 2,000 a month included, and then $0.20 each. The count is in Settings → Billing before it costs anything, and going over never locks a claim.',
+    'Photos, no — upload as many as you like, with 500 GB of active storage on the account. Items, only past the 2,000 a month included, and then credits at $0.75 each. The count is in Settings → Billing before it costs anything, and nothing already built is ever taken away.',
   ],
   [
     'If I delete an item, do I get the quota back?',
@@ -191,8 +191,9 @@ export default function PricingPage() {
             }}
           >
             A flat monthly price, the way you already pay for Xactimate. $249 covers 2,000 line
-            items a month — more claims than most adjusters write — and anything past that is $0.20
-            an item. No per-seat math, no per-claim fee, and your first 250 line items are free.
+            items a month — more claims than most adjusters write — and past that you top up with
+            credits at $0.75 an item. No per-seat math, no per-claim fee, and your first 250 line
+            items are free.
           </p>
         </section>
 

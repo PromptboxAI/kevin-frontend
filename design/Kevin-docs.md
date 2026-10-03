@@ -923,9 +923,9 @@ Claims are unlimited on every plan — run as many as you like, with no per-clai
 ### Line items
 
 - Pro includes 2,000 line items per billing month.
-- Additional items are $0.20 each, added to the following invoice.
+- Past that, add credits at $0.75 an item — bought up front, never expiring.
 - A 60-photo kitchen fire is roughly 57 items, so 2,000 covers about thirty-five claims that size in a month.
-- Going over never locks a claim or blocks an export — the work finishes, the overage bills after.
+- Nothing already built is ever taken away: finished lines, photos and exports stay exactly as they are.
 
 > Estate sales are priced separately at $249 per estate rather than against the monthly allowance, because a single estate can run to thousands of items.
 
@@ -952,7 +952,7 @@ Kevin is a flat monthly subscription, the way you already pay for Xactimate. The
 
 | Plan | For | Price |
 | --- | --- | --- |
-| Pro | Content inventory specialists, IAs and public adjusters | $249 / month · unlimited claims · 2,000 line items, then $0.20 an item |
+| Pro | Content inventory specialists, IAs and public adjusters | $249 / month · unlimited claims · 2,000 line items, then credits at $0.75 an item |
 | Enterprise | Carriers, TPAs, and multi-adjuster teams | Custom, volume licensing on one invoice |
 
 ### The free tier
