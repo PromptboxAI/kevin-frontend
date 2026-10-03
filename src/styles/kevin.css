@@ -4857,7 +4857,11 @@
       .k-proof { padding: 44px 24px 4px; }
       .k-proof-h2 { font-size: 30px; }
       .k-proof-h { font-size: 23px; }
-      .k-proof-solo { padding: 36px 24px 40px; }
+      /* 16px gutters, not 24: this is the product shot that opens /product,
+         and at 24 it measured 285px against the home page hero's 343 -- the
+         owner read it as small. The home hero uses 16, so this matches it.
+         (The 88px top from the phone scale block still applies.) */
+      .k-proof-solo { padding: 36px 0 40px; }
       .k-proof-two { grid-template-columns: minmax(0, 1fr); gap: 22px; padding: 0 24px 40px; }
       .k-carrier-marquee {
         -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
