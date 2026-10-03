@@ -1438,7 +1438,7 @@ export const DOC_ARTICLES: Record<string, DocArticle> = {
   },
   "fair-market-value": {
     "title": "Fair market value",
-    "summary": "Secondary-market pricing, not replacement cost.",
+    "summary": "What an item fetches resold, derived from the retail figure.",
     "blocks": [
       [
         "p",
@@ -1450,7 +1450,11 @@ export const DOC_ARTICLES: Record<string, DocArticle> = {
       ],
       [
         "p",
-        "Comps are drawn from completed secondary-market sales rather than retail listings: sold prices, auction results, and resale platforms. The median of the comps becomes the fair market value, and each figure keeps a dated link to the sale behind it."
+        "Fair market value is derived from the retail figure rather than researched separately. The pricing engine establishes what the item costs to buy now, from listings that are currently offered for sale, and a category-specific reduction brings that to what the item would realistically fetch resold — furniture, electronics and apparel each come down by different amounts. The retail figure keeps its dated source link, so the basis for the number stays visible."
+      ],
+      [
+        "note",
+        "These are asking prices from current listings, not records of completed sales. The reduction is what accounts for the gap between the two."
       ],
       [
         "h2",
@@ -1458,7 +1462,7 @@ export const DOC_ARTICLES: Record<string, DocArticle> = {
       ],
       [
         "p",
-        "The value cell is fully editable — you will often know a local market better than any comp set does. You can also re-price from the item panel after sharpening the description, and the comps will come back from the same secondary market."
+        "The value cell is fully editable — you will often know a local market better than any comp set does. You can also re-price from the item panel after sharpening the description, and the valuation comes back on the same basis."
       ],
       [
         "note",
