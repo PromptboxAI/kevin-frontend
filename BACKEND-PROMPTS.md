@@ -8,7 +8,7 @@ nothing gets asked twice and nothing quietly falls off.
 
 ---
 
-## 12. Self-serve Done-for-you: quote before work, deposit, balance — SENT · AWAITING OWNER GO-AHEAD
+## 12. Self-serve Done-for-you: quote before work, deposit, balance — GO-AHEAD GIVEN 2026-10-03
 
 **Status:** new, 2026-10-02. Owner's design. This is a flow, not an endpoint,
 so it is worth agreeing the shape before anyone builds a piece of it.
@@ -102,7 +102,7 @@ because every screen is a view of it.
 
 ---
 
-## 11. The trial renews every month — it should be 250 LIFETIME — SENT · AWAITING OWNER GO-AHEAD
+## 11. The trial renews every month — it should be 250 LIFETIME — GO-AHEAD GIVEN 2026-10-03
 
 **Status:** new, 2026-10-02. Owner's decision, and it changes what a free
 account costs us in aggregate.
@@ -145,6 +145,14 @@ Four things we need pinned down, because the frontend renders them:
 Existing trial accounts that have already consumed several months of 250s are a
 one-time migration question — our vote is to count only what they have used
 rather than retroactively locking anyone out, but it is your data.
+
+**Backend's findings, 2026-10-03, before building:** `set_plan` on upgrade
+already starts a fresh period at `items_used = 0` (question 3 answered, nothing
+to change), and `POST /v1/billing/credits/checkout` has **no plan check**, so a
+trial user can buy credits today (question 4 answered). That second one is left
+as it is for now and put back to the owner: a trial that can buy credits is
+pay-as-you-go without subscribing, which is a pricing decision rather than an
+implementation detail. **OPEN QUESTION FOR THE OWNER.**
 
 ---
 
