@@ -43,9 +43,11 @@
       canonicals pointing at different URLs is worse than none, because Google
       ignores both when they conflict.
 
-      The real fix is pre-rendering the 14 public routes, or a Vercel edge
-      function that injects per-route meta for crawler user-agents. Until one of
-      those exists, deep-link previews are generic by design, not by accident.
+      This file is the TEMPLATE, not what most URLs serve. The build writes a
+      copy per public route with that route's own tags
+      (scripts/prerender-meta.mjs) and, for the marketing pages, the rendered
+      page inside #root (scripts/prerender-html.mjs). Unfilled, it ships as
+      app.html: the fallback for the signed-in app's routes.
     -->
     <title data-default>Kevin — Photos in. Inventory out.</title>
     <meta data-default
@@ -73,7 +75,25 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Merriweather:ital,wght@0,400;0,700;0,900;1,400&family=Lato:ital,wght@0,400;0,700;0,900;1,400&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <!--
+      The font stylesheet loads WITHOUT blocking the first paint.
+
+      As a plain rel="stylesheet" it held every page blank until a second
+      origin had been looked up, connected to and answered: with the marketing
+      pages prerendered, the hero image was already downloaded and waiting, and
+      this request alone accounted for most of the delay before anything
+      showed. media="print" makes the browser fetch it without waiting on it,
+      and onload switches it on.
+
+      The cost is a moment in the fallback faces kevin.css already names
+      (Georgia, Arial) before the real ones swap in. The URL already asks for
+      display=swap, so that moment existed before; it now starts earlier.
+      The noscript copy is for a reader with JavaScript off, who would
+      otherwise never get the fonts at all.
+    -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Merriweather:ital,wght@0,400;0,700;0,900;1,400&family=Lato:ital,wght@0,400;0,700;0,900;1,400&family=Geist+Mono:wght@400;500&display=swap" />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Merriweather:ital,wght@0,400;0,700;0,900;1,400&family=Lato:ital,wght@0,400;0,700;0,900;1,400&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+    <noscript><link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Merriweather:ital,wght@0,400;0,700;0,900;1,400&family=Lato:ital,wght@0,400;0,700;0,900;1,400&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" /></noscript>
   </head>
   <body>
     <div id="root"></div>

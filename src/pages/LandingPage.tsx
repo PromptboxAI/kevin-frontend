@@ -454,6 +454,7 @@ export default function LandingPage() {
               width={1740}
               height={964}
               loading="eager"
+              fetchPriority="high"
               decoding="async"
             />
           </figure>

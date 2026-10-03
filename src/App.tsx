@@ -112,15 +112,27 @@ function ClaimRoute() {
 
 export default function App() {
   return (
+    // The boundary the split routes suspend to. No fallback UI: React Router
+    // navigates inside a transition, so the page being left stays up until the
+    // next one's chunk has arrived, and on a cold load straight onto a split
+    // route the screen is blank before the bundle runs anyway.
+    //
+    // OUTSIDE AuthProvider, and it has to stay there. React hydrates a
+    // prerendered page in two steps: everything above a Suspense boundary
+    // first, the boundary's contents a tick later. With AuthProvider above the
+    // boundary its effect ran in between and resolved `loading`, so the nav
+    // hydrated as "signed out" against markup rendered as "still checking" —
+    // a mismatch on every marketing page, which makes React discard the
+    // prerendered HTML and build the page again. Nothing above this line may
+    // change state on mount, for the same reason.
+    //
+    // (Not re-indented: this file is shared, and 300 lines of whitespace would
+    // bury every other session's diff.)
+    <Suspense fallback={null}>
     <AuthProvider>
       {/* A SPA keeps the scroll offset across a route change, so a footer link
           opened the next page halfway down. */}
       <ScrollToTop />
-      {/* No fallback UI: React Router navigates inside a transition, so the
-          page being left stays up until the next one's chunk has arrived. The
-          only time this renders is a cold load straight onto a split route,
-          where the screen is blank before the bundle runs anyway. */}
-      <Suspense fallback={null}>
       <Routes>
         {/* PUBLIC. `/` is the marketing site for visitors and a redirect to
             the app for anyone signed in -- ad traffic must not land on a
@@ -397,7 +409,7 @@ export default function App() {
 
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
-      </Suspense>
     </AuthProvider>
+    </Suspense>
   )
 }

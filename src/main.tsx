@@ -1,5 +1,5 @@
 import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
+import { createRoot, hydrateRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App'
@@ -44,12 +44,45 @@ for (const origin of [API_BASE_URL, SUPABASE_URL]) {
  */
 registerServiceWorker()
 
-createRoot(document.getElementById('root')!).render(
+// Must match the tree in entry-server.tsx, router aside.
+const tree = (
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <App />
       </BrowserRouter>
     </QueryClientProvider>
-  </StrictMode>,
+  </StrictMode>
 )
+
+/**
+ * Hydrate a prerendered page; render everything else from scratch.
+ *
+ * The marketing pages arrive with their markup already in #root
+ * (scripts/prerender-html.mjs), stamped with the route it was rendered for.
+ * Hydrating keeps that markup on screen and attaches to it.
+ *
+ * Only when the stamp IS this URL. Markup for one route can be served at
+ * another — the service worker's offline fallback answers /capture with the
+ * cached homepage, and `vite preview` answers every unknown path with it —
+ * and hydrating the landing page as some other screen is a mismatch React
+ * would have to notice and throw away. So a stranger's markup is cleared
+ * first, and its head tags are handed back to <Seo> to retire, exactly as on a
+ * page that was never prerendered.
+ */
+const container = document.getElementById('root')!
+const renderedFor = container.dataset.prerendered
+const here = window.location.pathname.replace(/(.)\/$/, '$1')
+
+if (renderedFor === here) {
+  hydrateRoot(container, tree)
+} else {
+  if (renderedFor !== undefined) {
+    container.replaceChildren()
+    document.head.querySelectorAll('[data-prerendered-head]').forEach((el) => {
+      el.removeAttribute('data-prerendered-head')
+      el.setAttribute('data-default', '')
+    })
+  }
+  createRoot(container).render(tree)
+}
