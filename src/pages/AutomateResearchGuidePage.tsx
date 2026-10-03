@@ -21,17 +21,13 @@ import {
  * engineering history rather than positioning, and they are the most useful
  * part of the page:
  *
- *  - DAMAGE WORDING MUST NOT REACH THE QUERY. A MacBook came back described
- *    as "...with Cracked Screen..." and that phrase went into the search,
- *    which returned nothing usable and the line came back unpriced. Fixed
- *    backend-side on 2026-09-20 by stripping condition and damage language
- *    from the query while keeping it in the description. It is systemic, not a
- *    one-off: every photograph on a contents claim is of damaged property.
- *  - A LONG DESCRIPTION IS A BAD QUERY. Measured the same week: the full
- *    description of a championship belt returned 0 results, while
- *    "WWE Championship Replica Belt" returned 40. Specificity in a
- *    description is a virtue; in a query it is a filter that excludes the
- *    item.
+ * TRIMMED 2026-10-03, owner's call: this page originally carried the measured
+ * experiment behind both points -- the exact failing query, the exact listing
+ * counts, and the date we fixed the damage-wording bug. Those are a working
+ * recipe for a competitor and taught them something we paid to learn. The
+ * PRINCIPLES stay, because a buyer needs them to judge whether we know what we
+ * are doing; the measurements and the fix history are gone. Keep it that way:
+ * state what must be true of a good search, never our tuning.
  *
  * Rule 10 as amended: the unit cost is one listing's price, the middle by
  * price among the comparables; the panel shows a sample of the bucket, not the
@@ -45,15 +41,15 @@ const FAQS: Faq[] = [
   },
   {
     q: 'Why does a long, detailed description make a worse search?',
-    a: 'Because every extra word is a filter. A description reading "WWE World Wrestling Entertainment Championship Replica Belt, Black Leather with Gold Plates" returned nothing; "WWE Championship Replica Belt" returned forty listings. The description should be specific — it is what the adjuster reads — and the query should be short.',
+    a: 'Because every extra word is a filter. A description should be specific — it is what the adjuster and the carrier read — while the terms used to search need to be short enough that the product is still findable. They are not the same string, and treating them as one is a common way to end up with no results at all.',
   },
   {
     q: 'Does damage language affect the price?',
-    a: 'It should not, and it used to. A description noting a cracked screen once carried that phrase into the search, which found nothing and left the line unpriced. Condition and damage wording is now stripped from the query and kept in the description, where it belongs. Every photograph on a contents claim is of damaged property; the replacement being priced is not damaged.',
+    a: 'It should not. Condition and damage wording belongs in the description of the item, not in the terms used to find a replacement — every photograph on a contents claim is of damaged property, and the replacement being priced is not damaged. Kevin keeps those two separate.',
   },
   {
     q: 'How is one comparable chosen out of many?',
-    a: 'Listings that are not the same product are discarded, duplicates collapse, and outliers are dropped. The line is then priced from a single remaining listing — the middle one by price — and that listing is linked on the row. The price is therefore a real number somebody is charging, not an average of several.',
+    a: 'Listings that are not the same product are discarded, duplicates collapse, and outliers are dropped. The line is then priced from a single remaining listing — and that listing is linked on the row. The price is therefore a real number somebody is charging, not an average of several.',
   },
   {
     q: 'Does the panel show every comparable found?',
@@ -119,22 +115,12 @@ export default function AutomateResearchGuidePage() {
             short as will still identify the product, because every additional word excludes
             listings.
           </p>
-          <ComparisonTable
-            caption="Measured on the live engine, 20 September 2026"
-            columns={['Query', 'Listings found']}
-            rows={[
-              ['The full description: "WWE World Wrestling Entertainment Championship Replica Belt, Black Leather with Gold Plates"', '0'],
-              ['"WWE Championship Replica Belt"', '40'],
-              ['"WWE championship belt replica"', '40'],
-            ]}
-          />
           <EvidenceCallout>
             <p>
-              <strong>Damage language must never reach the query.</strong> A laptop described as
-              having a cracked screen once carried that phrase into the search, found nothing, and
-              came back unpriced. On a contents claim every photograph is of damaged property — and
-              the replacement being priced is not damaged. Condition wording belongs in the
-              description, not the search.
+              <strong>Damage language must not drive the search.</strong> On a contents claim every
+              photograph is of damaged property, and the replacement being priced is not damaged.
+              Condition belongs in the description of the item; searching on it looks for a broken
+              one.
             </p>
           </EvidenceCallout>
         </section>

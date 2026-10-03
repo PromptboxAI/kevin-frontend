@@ -155,9 +155,8 @@ export default function BestContentsSoftwareGuidePage() {
           <h2>Our answers, for comparison</h2>
           <p>
             Kevin returns a blank, editable field when the evidence does not support an
-            identification. Every engine-priced line is priced from a single listing — the middle
-            one by price among the comparables found — and that listing is stored on the row and
-            printed in the export. The depreciation schedule carries 31 categories and 87 sub-lines,
+            identification. Every engine-priced line is priced from a single listing rather than an
+            average of several, and that listing is stored on the row and printed in the export. The depreciation schedule carries 31 categories and 87 sub-lines,
             is age-based, runs to 100%, and is computed server-side so the worksheet and the export
             agree. The export is Xactimate (Excel) · .xlsx in the XactContents template, with static
             values because the importer rejects formulas. A person reviews the grouping before

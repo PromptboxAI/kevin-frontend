@@ -52,7 +52,7 @@ import {
 const FAQS: Faq[] = [
   {
     q: 'How does Kevin choose which comparable to price from?',
-    a: 'It searches current listings for the item, discards the ones that are not the same thing — wrong variant, wrong capacity, a bundle instead of a single unit, a duplicate of a listing already counted — and prices the line from a single remaining listing: the middle one by price. The source link on the row points at that exact listing, so the number and its evidence are the same object.',
+    a: 'It searches current listings for the item, discards the ones that are not the same thing — wrong variant, wrong capacity, a bundle instead of a single unit, a duplicate of a listing already counted — and prices the line from a single remaining listing: a single representative listing. The source link on the row points at that exact listing, so the number and its evidence are the same object.',
   },
   {
     q: 'Does Kevin price from resale marketplaces?',
@@ -111,7 +111,7 @@ export default function ContentsPricingSoftwarePage() {
           answer="Kevin searches current listings for each identified item, filters out the ones that are not the same product, prices the line from a single listing, and keeps that listing's link on the row as the evidence."
         >
           <p>
-            The price on a line is the price of one real listing — the middle one by price among the
+            The price on a line is the price of one real listing — a single representative listing among the
             comparables found for that item — not an average and not a figure assembled from
             several. That matters when a number is questioned: the link on the row opens the exact
             listing the unit cost came from. Quantity and sales tax are applied on top to produce
@@ -157,7 +157,7 @@ export default function ContentsPricingSoftwarePage() {
               },
               {
                 t: 'Price from one listing',
-                d: 'The middle one by price among what survives. The unit cost equals a real listing, and the row links to it.',
+                d: 'The unit cost equals one real listing rather than an average of several, and the row links to it.',
               },
               {
                 t: 'Fall through to resale',

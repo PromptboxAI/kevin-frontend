@@ -55,6 +55,7 @@ const LIVE = new Set<string>([
   '/guides/rcv-vs-acv-personal-property',
   '/guides/contents-inventory-after-house-fire',
   '/guides/best-contents-software-public-adjusters',
+  '/case-studies/4000-contents-line-items-30-days',
 ])
 
 function MktLink({

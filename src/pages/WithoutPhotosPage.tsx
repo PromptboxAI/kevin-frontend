@@ -39,7 +39,7 @@ import {
  *
  * One conflict resolved: rule 24 describes a described item as priced at "the
  * median of live retail comps", but rule 10 was amended later (2026-09-29) so
- * the unit cost is the price of a SINGLE listing -- the middle one by price.
+ * the unit cost is the price of a SINGLE listing -- a single representative listing.
  * The later amendment governs, and this page uses it.
  */
 

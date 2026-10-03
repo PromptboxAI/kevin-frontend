@@ -28,9 +28,11 @@ import {
  *
  *  - QUOTA IS CHARGED AT PROMOTION, not at upload. Photographs sitting in
  *    staging have produced no line items and cost nothing (rule 22e).
- *  - Clustering is pre-Vision. Staging knows capture time and EXIF proximity
- *    and NOTHING about what the items are -- it must never be described as
- *    showing identified data (rule 23).
+ *  - Clustering is pre-Vision. Staging works from capture metadata and knows
+ *    NOTHING about what the items are -- it must never be described as showing
+ *    identified data (rule 23). The exact signals it uses are deliberately not
+ *    spelled out on a public page (owner's call, 2026-10-03: describe the
+ *    property, not the mechanism).
  *  - One photograph backs at most one item, so items are always <= photos
  *    (rule 1). This is the whole difference from room-level object counting
  *    and the brief asks for the distinction explicitly.
@@ -127,8 +129,8 @@ export default function MethodologyPage() {
           <h2>Cluster</h2>
           <p>
             Shots taken within seconds of each other, in the same place, are proposed as one set.
-            This step is deliberately <em>pre-identification</em>: the clusterer knows capture time
-            and EXIF proximity and nothing about what the item is. Staging shows you set numbers,
+            This step is deliberately <em>pre-identification</em>: the clusterer works from
+            capture metadata and knows nothing about what the item is. Staging shows you set numbers,
             timestamps and filenames — never guessed item names, because a guess shown at this stage
             would be read as a finding.
           </p>
@@ -161,7 +163,7 @@ export default function MethodologyPage() {
           <p>
             One query per item against the Kevin Content Pricing Engine. Listings that are not the
             same product are discarded, duplicates collapse, outliers are dropped, and the line is
-            priced from a single remaining listing — the middle one by price — with that listing's
+            priced from a single remaining listing — with that listing's
             link stored on the row. Where retail cannot price an item, the resale market can, used
             raw and labelled as resale. Where neither can, the cell arrives blank and editable.
           </p>

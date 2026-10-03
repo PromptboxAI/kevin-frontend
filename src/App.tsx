@@ -18,6 +18,7 @@ import DepreciationGuidePage from './pages/DepreciationGuidePage'
 import ComparableGuidePage from './pages/ComparableGuidePage'
 import CompareXactcontentsPage from './pages/CompareXactcontentsPage'
 import GuidesIndexPage from './pages/GuidesIndexPage'
+import CaseStudy4000Page from './pages/CaseStudy4000Page'
 import FireLossInventoryGuidePage from './pages/FireLossInventoryGuidePage'
 import RcvVsAcvGuidePage from './pages/RcvVsAcvGuidePage'
 import BestContentsSoftwareGuidePage from './pages/BestContentsSoftwareGuidePage'
@@ -172,6 +173,10 @@ export default function App() {
         <Route path="/guides/replacement-cost-comparable" element={<ComparableGuidePage />} />
         <Route path="/compare/kevin-vs-xactcontents" element={<CompareXactcontentsPage />} />
         <Route path="/guides" element={<GuidesIndexPage />} />
+        <Route
+          path="/case-studies/4000-contents-line-items-30-days"
+          element={<CaseStudy4000Page />}
+        />
         <Route path="/guides/contents-inventory-after-house-fire" element={<FireLossInventoryGuidePage />} />
         <Route path="/guides/rcv-vs-acv-personal-property" element={<RcvVsAcvGuidePage />} />
         <Route path="/guides/best-contents-software-public-adjusters" element={<BestContentsSoftwareGuidePage />} />

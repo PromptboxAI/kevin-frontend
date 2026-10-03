@@ -117,6 +117,11 @@ const GROUPS: { h: string; blurb: string; items: Entry[] }[] = [
         t: 'What to look for in contents software',
         d: 'Evaluation criteria and the questions to put to any vendor, including us.',
       },
+      {
+        to: '/case-studies/4000-contents-line-items-30-days',
+        t: '4,000+ line items in 30 days',
+        d: "What one adjuster's month looked like through Kevin, and what a person still reviewed on every line.",
+      },
     ],
   },
 ]

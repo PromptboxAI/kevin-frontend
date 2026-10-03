@@ -134,6 +134,12 @@ export const SEO_PAGES: Record<string, SeoEntry> = {
       "Evaluation criteria rather than rankings: what to test in a trial, the four categories of tool, and the questions to put to any vendor.",
     image: 'og-default.png',
   },
+  '/case-studies/4000-contents-line-items-30-days': {
+    title: 'Case Study: 4,000+ Insurance Contents Line Items in 30 Days | Kevin',
+    description:
+      "How one practising adjuster produced more than four thousand carrier-facing contents line items through Kevin in a single month — and what a person still reviewed on every line.",
+    image: 'og-default.png',
+  },
   '/pricing': {
     title: 'Pricing — Kevin',
     description:
