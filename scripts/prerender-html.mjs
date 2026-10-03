@@ -27,10 +27,27 @@
  *    site as it was before this script existed. It does not fail the build: a
  *    page that reads `window` during render should cost that page its fast
  *    first paint, not block every other deploy to the site.
+ *
+ * CRITICAL CSS. With the markup static, the one thing still between the HTML
+ * and the first paint was the stylesheet: a single file carrying the whole
+ * product's CSS — worksheet, staging, settings, admin — which a pricing-page
+ * visitor waited on in full. kevin.css is NOT split to fix that: it is one
+ * cascade, edited by several sessions, and where a rule sits in it decides
+ * which rule wins. Instead each rendered page gets the rules its own markup
+ * matches inlined in a <style> (beasties does the matching), and the full
+ * stylesheet loads without blocking, the same way the fonts do.
+ *
+ * The inlined set is computed from the markup as rendered, so a rule that only
+ * applies after an interaction (an open menu, a modal) is not in it. That is
+ * fine: those arrive with the full stylesheet, which lands well before the
+ * JavaScript that makes anything interactive. What must NOT differ is the page
+ * at rest — check that when touching this: with the full stylesheet disabled
+ * and then enabled, every element should sit in the same place.
  */
 import { copyFile, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import Beasties from 'beasties'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const dist = join(root, 'dist')
@@ -60,8 +77,37 @@ try {
  */
 const LEADING_HOISTED = /^(?:<title[^>]*>[^<]*<\/title>|<meta\b[^>]*>|<link\b[^>]*>)+/
 
+const beasties = new Beasties({
+  path: dist,
+  publicPath: '/',
+  // media="print" + onload, with a <noscript> copy for a reader without JS.
+  preload: 'media',
+  noscriptFallback: true,
+  // The file itself stays whole: app.html and every unprerendered route still
+  // load it the ordinary way.
+  pruneSource: false,
+  // Fonts come from Google's stylesheet, which index.html already handles.
+  inlineFonts: false,
+  preloadFonts: false,
+  logLevel: 'warn',
+})
+
 const done = []
 const skipped = []
+const cssSkipped = []
+
+/** Falls back to the page as it was: a blocking stylesheet is slow, not broken. */
+async function inlineCritical(path, html) {
+  try {
+    return await beasties.process(html)
+  } catch (err) {
+    cssSkipped.push(path)
+    console.warn(`prerender-html: critical CSS SKIPPED for ${path} — it keeps the blocking stylesheet.`)
+    console.warn(err)
+    return html
+  }
+}
+
 for (const path of server.ROUTES) {
   const file = join(dist, path.replace(/^\//, ''), 'index.html')
   try {
@@ -69,15 +115,12 @@ for (const path of server.ROUTES) {
     if (!body.trim()) throw new Error('rendered nothing')
     const html = await readFile(file, 'utf8')
     if (!html.includes(EMPTY_ROOT)) throw new Error('shell has no empty root')
-    await writeFile(
-      file,
-      html
-        .replace(/<(title|meta|link) data-default\b/g, '<$1 data-prerendered-head')
-        // A function, so a "$&" or "$1" inside the page's own text is not
-        // read as a replacement pattern.
-        .replace(EMPTY_ROOT, () => `<div id="root" data-prerendered="${path}">${body}</div>`),
-      'utf8',
-    )
+    const filled = html
+      .replace(/<(title|meta|link) data-default\b/g, '<$1 data-prerendered-head')
+      // A function, so a "$&" or "$1" inside the page's own text is not
+      // read as a replacement pattern.
+      .replace(EMPTY_ROOT, () => `<div id="root" data-prerendered="${path}">${body}</div>`)
+    await writeFile(file, await inlineCritical(path, filled), 'utf8')
     done.push(path)
   } catch (err) {
     skipped.push(path)
@@ -89,6 +132,7 @@ for (const path of server.ROUTES) {
 console.log(
   `prerender-html: ${done.length} pages rendered` +
     (skipped.length ? `, ${skipped.length} SKIPPED (${skipped.join(', ')})` : '') +
+    (cssSkipped.length ? `, critical CSS SKIPPED on ${cssSkipped.join(', ')}` : '') +
     '; app.html is the SPA fallback',
 )
 // Anything the app left running at import time (timers, sockets) must not
