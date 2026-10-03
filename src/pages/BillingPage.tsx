@@ -139,6 +139,27 @@ const fmtDate = (iso?: string | null) =>
   iso ? new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : null
 
 /**
+ * The copy block for a plan NAME WE MAY NOT RECOGNISE.
+ *
+ * `BILLING_PLANS` is keyed by our vocabulary (free · pro · enterprise ·
+ * comped) and the server's column is constrained to ('trial','pro'). Backend
+ * migration 0063 makes `/v1/me` return `plan: "trial"` for a trial account,
+ * and `BILLING_PLANS["trial"]` is undefined -- so `copy.heading` would have
+ * thrown and taken the whole Billing page down for every trial account the
+ * day that deployed.
+ *
+ * `trial` is our `free`, and anything else unrecognised falls there too: the
+ * smallest plan's copy is the one that overstates nothing.
+ */
+const PLAN_COPY_ALIAS: Record<string, BillingPlan> = { trial: 'free' }
+
+function planCopy(plan?: string | null): PlanCopy | null {
+  if (!plan) return null
+  const key = PLAN_COPY_ALIAS[plan] ?? (plan as BillingPlan)
+  return BILLING_PLANS[key] ?? BILLING_PLANS.free
+}
+
+/**
  * TWO QUESTIONS, TWO COLUMNS. `plan` and `billing_state` are independent, and
  * live data holds accounts at `plan: "pro", billing_state: "trial"` -- so each
  * answers only what it actually knows.
@@ -375,7 +396,7 @@ export default function BillingPage() {
 
   const quota = me?.quota
   const plan = quota?.plan
-  const copy = plan ? BILLING_PLANS[plan] : null
+  const copy = planCopy(plan)
   // Dunning is ORTHOGONAL to plan: a failed card leaves the account on Pro and
   // moves billing_state to past_due, so we warn without locking anyone out.
   const dunning = quota?.billing_state === 'past_due'
