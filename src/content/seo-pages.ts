@@ -76,34 +76,46 @@ export const SEO_PAGES: Record<string, SeoEntry> = {
   },
   '/contact': {
     title: 'Contact — Kevin',
-    description: 'Questions, support, or Enterprise inquiries — reach the Kevin team.',
+    description:
+      'Questions about Kevin, help with a claim in progress, or Enterprise licensing for a carrier, TPA or agency — email the team and a person replies.',
   },
   '/careers': {
     title: 'Careers — Kevin',
-    description: 'Help build the content inventory tool adjusters actually want to use.',
+    description:
+      'Help build the content inventory tool adjusters actually want to use. See the open roles at Kevin, or tell us what you would bring if yours is not listed.',
   },
   '/demo': {
     title: 'Watch the Demo — Kevin',
     description:
-      'From photo drop to Xactimate. Every step of a real kitchen-fire claim, start to export.',
+      'A written walkthrough of a real kitchen-fire claim in Kevin: photo drop, photo sets, the priced worksheet, depreciation, and the Xactimate (Excel) export.',
   },
   '/book-call': {
     title: 'Book a call — Kevin',
-    description: 'Bring a real claim and we will run it together. 30 minutes, no slides.',
+    description:
+      'Book a 30-minute call and bring the photos from a real claim. We run it together, from upload to an Xactimate-ready contents inventory. No slides.',
   },
   '/request-access': {
     title: 'Kevin for Teams — Enterprise',
     description:
-      'Volume licensing for carriers, TPAs, and multi-adjuster agencies. One invoice, custom terms.',
+      'Kevin Enterprise: volume licensing for carriers, TPAs and multi-adjuster agencies. One invoice, custom terms, and contents inventories built from claim photos.',
   },
   '/legal': {
     title: 'Privacy & Terms — Kevin',
-    description: "Kevin's privacy policy, terms of service and security practices.",
+    description:
+      "Kevin's privacy policy, terms of service and security practices: what claim data we hold, how it is protected, and what the service does and does not promise.",
   },
+  /**
+   * /docs only redirects, to the first article — so, like /sample, it names
+   * the URL that actually renders. The articles themselves are not in this
+   * table: their metadata comes from docs-content.generated.ts, at runtime in
+   * DocsPage and at build time in scripts/prerender-meta.mjs, which fails the
+   * build if this path stops being the first article.
+   */
   '/docs': {
     title: 'Documentation — Kevin',
     description:
       'Guides for every step: uploading photos, staging and grouping, the review worksheet, pricing, depreciation, and exporting to Xactimate.',
+    canonicalPath: '/docs/quick-start',
   },
 
   /**

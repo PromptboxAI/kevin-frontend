@@ -22,18 +22,37 @@ Rules:
 |---|---|---|---|
 | 00-Sign-in.html | /signin | Sign in — Kevin | Sign in to your Kevin account. |
 | 02-Landing.html | / | Kevin — Photos in. Inventory out. | Drop your claim photos and Kevin builds a defensible, Xactimate-ready contents inventory: identified items, live retail comps, depreciation, and ACV — reviewed by you. |
-| 15-Request-access.html | /request-access | Kevin for Teams — Enterprise | Volume licensing for carriers, TPAs, and multi-adjuster agencies. One invoice, custom terms. |
+| 15-Request-access.html | /request-access | Kevin for Teams — Enterprise | Kevin Enterprise: volume licensing for carriers, TPAs and multi-adjuster agencies. One invoice, custom terms, and contents inventories built from claim photos. |
 | 21-Pricing.html | /pricing | Pricing — Kevin | $249/mo for content inventory specialists, IAs and public adjusters. Unlimited claims, 2,000 items a month included, no per-seat fee. First 250 items free. |
 | 22-For-Adjusters.html | /for-adjusters | Kevin for Insurance Adjusters | Turn pack-out photo dumps into priced, defensible contents inventories that import straight into Xactimate and XactContents. |
-| 23-For-Estate-Liquidators.html | /for-estate-liquidators | Kevin for Estate Sale Professionals | Photograph an estate, get a fair-market-value inventory with sold comps, conditions, and statuses — ready to hand a client. |
+| 23-For-Estate-Liquidators.html | /for-estate-liquidators | Kevin for Estate Sale Professionals | Photograph an estate, get a fair-market-value inventory with conditions and statuses — ready to hand a client. |
 | 24-Docs.html | /docs | Documentation — Kevin | Guides for every step: uploading photos, staging and grouping, the review worksheet, pricing, depreciation, and exporting to Xactimate. |
-| 25-Legal-hub.html | /legal | Privacy & Terms — Kevin | Kevin’s privacy policy and terms of service. |
+| 25-Legal-hub.html | /legal | Privacy & Terms — Kevin | Kevin's privacy policy, terms of service and security practices: what claim data we hold, how it is protected, and what the service does and does not promise. |
 | 37-Product-overview.html | /product | Product — Kevin | How Kevin works end to end: photo ingestion, item identification, live retail comps, depreciation, and carrier-ready exports. |
-| 38-Contact.html | /contact | Contact — Kevin | Questions, support, or Enterprise inquiries — reach the Kevin team. |
+| 38-Contact.html | /contact | Contact — Kevin | Questions about Kevin, help with a claim in progress, or Enterprise licensing for a carrier, TPA or agency — email the team and a person replies. |
 | 39-About.html | /about | About — Kevin | Built by an adjuster who settled over 10,000 claims in twenty-two years, because contents inventory should not cost you a Friday night. Long Island, NY. |
 | 48-Sample-claim.html | /sample | Sample Claim — Kevin | Explore a real 60-photo kitchen-fire claim: the photos Kevin read and the 57-line priced worksheet it produced. |
-| 52-Watch-demo.html | /demo | Watch the Demo — Kevin | From photo drop to Xactimate. Real footage, real photos. |
-| 53-Careers.html | /careers | Careers — Kevin | Help build the content inventory tool adjusters actually want to use. |
+| 52-Watch-demo.html | /demo | Watch the Demo — Kevin | A written walkthrough of a real kitchen-fire claim in Kevin: photo drop, photo sets, the priced worksheet, depreciation, and the Xactimate (Excel) export. |
+| 53-Careers.html | /careers | Careers — Kevin | Help build the content inventory tool adjusters actually want to use. See the open roles at Kevin, or tell us what you would bring if yours is not listed. |
+
+**The live site's table is `src/content/seo-pages.ts`** — it carries routes this one
+predates (`/done-for-you`, `/book-call`, `/security`, `/claims/sample`), uses
+`https://www.kevin.co` as the origin, and is what the build reads. Where the two
+disagree, that file is right; mirror a copy change into both.
+
+## Live site (2026-10-03)
+
+- `robots.txt` is `public/robots.txt`. `sitemap.xml` and `llms.txt` are GENERATED at build
+  by `scripts/prerender-meta.mjs` from `seo-pages.ts` and the docs nav — never hand-kept.
+  The copies in `deploy/` are the prototype's and are stale (apex host, `/signin`).
+- Each docs article has its own title (`<article> — Kevin Docs`), description (its
+  summary) and canonical, plus a static shell per slug. `/docs` canonicalises to the
+  first article.
+- JSON-LD: Organization + WebSite + SoftwareApplication on `/`
+  (`src/content/structured-data.ts`); FAQPage on `/pricing`, built from the page's own
+  `FAQS` array. No ratings or reviews — there are none to mark up.
+- Share links (`/p/*`), `/pair`, `/capture` and the in-app claim screens send
+  `X-Robots-Tag: noindex` from `vercel.json`.
 
 ## Auth / app / internal pages
 

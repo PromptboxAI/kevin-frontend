@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import Seo from '../components/Seo'
-import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { I, Icon } from '../components/Icon'
 import KevinWordmark from '../components/KevinWordmark'
 import { MktFooter } from '../components/MarketingChrome'
@@ -26,7 +26,19 @@ import {
  * indexable page, break every deep link into the docs, and make the browser
  * back button skip the whole section. Nav items, search results and the pager
  * are links now, so all three work. /docs redirects to the first article.
+ *
+ * Links in the literal sense: <a href>, not a button calling navigate(). A
+ * crawler follows hrefs and nothing else, so as buttons the sidebar gave it no
+ * path to 44 of the 45 articles. The k- classes are unchanged — they never
+ * selected on the tag, and kevin.css already resets `a`.
+ *
+ * Each article also declares its OWN title, description and canonical. They
+ * all used to announce themselves as /docs, which asks a search engine to fold
+ * 45 pages into one. scripts/prerender-meta.mjs writes the matching static
+ * shell per slug and builds the title the same way — change DOC_TITLE there
+ * too.
  */
+const DOC_TITLE = (title: string) => `${title} — Kevin Docs`
 
 const DOC_FLAT = DOC_NAV.flatMap((s) =>
   s.items.map(([id, label]) => ({ id, label, section: s.section })),
@@ -120,7 +132,6 @@ function scrollToHeading(heading: string) {
 
 export default function DocsPage() {
   const { slug } = useParams()
-  const navigate = useNavigate()
   // Seeded from ?q= so another page can hand off a search — the 404's box does
   // exactly that, which is the difference between a decorative input and one.
   const [params] = useSearchParams()
@@ -151,16 +162,16 @@ export default function DocsPage() {
   const next = idx < DOC_FLAT.length - 1 ? DOC_FLAT[idx + 1] : null
   const headings = art.blocks.filter((b) => b[0] === 'h2').map((b) => b[1] as string)
 
-  const open = (id: string) => {
+  // The href does the navigating; this is what else a click has to do.
+  const onOpen = () => {
     setQ('')
-    navigate(`/docs/${id}`)
     const se = (document.scrollingElement || document.documentElement) as HTMLElement
     se.scrollTop = 0
   }
 
   return (
     <div className="k-docs">
-      <Seo path="/docs" />
+      <Seo path={`/docs/${slug}`} title={DOC_TITLE(art.title)} description={art.summary} />
       <header className="k-topbar">
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <KevinWordmark size={16} suffix to="/" />
@@ -190,14 +201,15 @@ export default function DocsPage() {
             <div key={sec.section} style={{ marginBottom: 18 }}>
               <div className="k-docs-nav-h">{sec.section}</div>
               {sec.items.map(([id, label]) => (
-                <button
-                  type="button"
+                <Link
                   key={id}
+                  to={`/docs/${id}`}
                   className={`k-docs-nav-item ${id === slug ? 'k-docs-nav-item--on' : ''}`}
-                  onClick={() => open(id)}
+                  aria-current={id === slug ? 'page' : undefined}
+                  onClick={onOpen}
                 >
                   {label}
-                </button>
+                </Link>
               ))}
             </div>
           ))}
@@ -214,16 +226,16 @@ export default function DocsPage() {
               </p>
               <div className="k-docs-results">
                 {hits.map((h) => (
-                  <button
-                    type="button"
+                  <Link
                     key={h.id}
+                    to={`/docs/${h.id}`}
                     className="k-docs-result"
-                    onClick={() => open(h.id)}
+                    onClick={onOpen}
                   >
                     <span className="k-docs-result-sec">{h.section}</span>
                     <span className="k-docs-result-t">{h.label}</span>
                     <span className="k-docs-result-d">{DOC_ARTICLES[h.id].summary}</span>
-                  </button>
+                  </Link>
                 ))}
                 {hits.length === 0 && (
                   <p style={{ color: 'var(--k-fg-3)' }}>
@@ -287,22 +299,22 @@ export default function DocsPage() {
 
               <div className="k-docs-pager">
                 {prev ? (
-                  <button type="button" className="k-docs-pagebtn" onClick={() => open(prev.id)}>
+                  <Link to={`/docs/${prev.id}`} className="k-docs-pagebtn" onClick={onOpen}>
                     <span className="k-docs-pagebtn-l">← Previous</span>
                     <span className="k-docs-pagebtn-t">{prev.label}</span>
-                  </button>
+                  </Link>
                 ) : (
                   <div />
                 )}
                 {next ? (
-                  <button
-                    type="button"
+                  <Link
+                    to={`/docs/${next.id}`}
                     className="k-docs-pagebtn k-docs-pagebtn--next"
-                    onClick={() => open(next.id)}
+                    onClick={onOpen}
                   >
                     <span className="k-docs-pagebtn-l">Next →</span>
                     <span className="k-docs-pagebtn-t">{next.label}</span>
-                  </button>
+                  </Link>
                 ) : (
                   <div />
                 )}

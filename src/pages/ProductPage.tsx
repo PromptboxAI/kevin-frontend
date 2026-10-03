@@ -74,7 +74,11 @@ export default function ProductPage() {
               lineHeight: 1.02,
             }}
           >
-            Photo dump in. XactContents out.
+            {/* Two lines, owner's call 2026-10-03 -- the break is set rather
+                than left to the measure, so "Photo dump in." and
+                "XactContents out." always read as the pair they are. */}
+            <span style={{ display: 'block' }}>Photo dump in.</span>
+            <span style={{ display: 'block' }}>XactContents out.</span>
           </h1>
           <p
             style={{
@@ -162,7 +166,7 @@ export default function ProductPage() {
         <div className="k-proof-row k-proof-row--flip" style={{ paddingTop: 8 }}>
           <div className="k-proof-copy">
             <div className="k-proof-eyebrow">Where a claim starts</div>
-            <h3 className="k-proof-h">One short form, then the photos.</h3>
+            <h2 className="k-proof-h">One short form, then the photos.</h2>
             <p className="k-proof-body">
               Claim and policy details, the contents coverage limit under whatever name the policy
               gives it, and the loss ZIP — which resolves the sales-tax rate so every line carries

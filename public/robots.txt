@@ -1,0 +1,15 @@
+# www.kevin.co
+#
+# Deliberately short. Sign-in, the password-reset flow, share links (/p/),
+# phone pairing and the in-app claim screens are kept out of search by a
+# noindex they send themselves (the page's own tag, or the X-Robots-Tag header
+# in vercel.json) -- NOT by a Disallow here. A crawler that is forbidden to
+# fetch a URL never sees its noindex, and a blocked URL that somebody links to
+# can still be listed, bare. Only paths with nothing to say either way are
+# disallowed.
+
+User-agent: *
+Disallow: /settings/
+Disallow: /admin/
+
+Sitemap: https://www.kevin.co/sitemap.xml

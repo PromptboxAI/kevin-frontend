@@ -67,7 +67,7 @@ export default function CareersPage() {
         <section style={{ maxWidth: 920, margin: '0 auto', padding: '0 40px 60px' }}>
           {TEAMS.map((team) => (
             <div key={team} style={{ marginBottom: 28 }}>
-              <h3
+              <h2
                 style={{
                   fontFamily: 'var(--k-font-mono)',
                   fontSize: 11,
@@ -79,7 +79,7 @@ export default function CareersPage() {
                 }}
               >
                 {team}
-              </h3>
+              </h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {ROLES.filter((r) => r.team === team).map((r) => (
                   <a

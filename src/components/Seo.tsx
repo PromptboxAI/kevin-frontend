@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { NOINDEX_TITLES, ORIGIN, SEO_PAGES } from '../content/seo-pages'
+import { SITE_JSON_LD } from '../content/structured-data'
 
 /**
  * Per-page search and social metadata.
@@ -34,12 +35,27 @@ export type SeoProps = {
   noindex?: boolean
   /** Only for routes with no table entry, e.g. the 404 catch-all. */
   title?: string
+  /** As `title`: for routes with no table entry, e.g. one docs article. */
+  description?: string
+  /**
+   * schema.org data for this page. Rendered where <Seo> sits rather than in
+   * <head> — React hoists title/meta/link but not an inline script, and Google
+   * reads JSON-LD from the body just the same.
+   */
+  jsonLd?: object
 }
 
-export default function Seo({ path, noindex, title: titleOverride }: SeoProps) {
+export default function Seo({
+  path,
+  noindex,
+  title: titleOverride,
+  description: descriptionOverride,
+  jsonLd,
+}: SeoProps) {
   const entry = SEO_PAGES[path]
   const title = titleOverride ?? entry?.title ?? NOINDEX_TITLES[path] ?? 'Kevin'
-  const description = entry?.description ?? ''
+  const description = descriptionOverride ?? entry?.description ?? ''
+  const ld = jsonLd ?? (path === '/' ? SITE_JSON_LD : undefined)
   const canonical = entry?.canonicalPath ?? path
   const url = `${ORIGIN}${canonical === '/' ? '' : canonical}`
   const card = `${ORIGIN}/og/${entry?.image ?? 'og-default.png'}`
@@ -76,6 +92,14 @@ export default function Seo({ path, noindex, title: titleOverride }: SeoProps) {
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={card} />
+
+      {ld && (
+        <script
+          type="application/ld+json"
+          // "<" escaped so a "</script>" inside any string cannot end the block.
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(ld).replace(/</g, '\\u003c') }}
+        />
+      )}
     </>
   )
 }

@@ -141,10 +141,21 @@ const FAQS: [string, string][] = [
   ],
 ]
 
+/* Built from FAQS, the array the page renders — never a second copy. */
+const FAQ_JSON_LD = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: FAQS.map(([q, a]) => ({
+    '@type': 'Question',
+    name: q,
+    acceptedAnswer: { '@type': 'Answer', text: a },
+  })),
+}
+
 export default function PricingPage() {
   return (
     <div className="k-landing">
-      <Seo path="/pricing" />
+      <Seo path="/pricing" jsonLd={FAQ_JSON_LD} />
       <MktNav active="pri" />
 
       <main className="k-mkt-main">
