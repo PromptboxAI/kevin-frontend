@@ -108,8 +108,14 @@ export default function ExportsPage() {
             <p style={{ fontSize: 12.5, color: 'var(--k-fg-4)' }}>Loading…</p>
           ) : exported.length === 0 ? (
             <p style={{ fontSize: 12.5, color: 'var(--k-fg-4)', lineHeight: 1.55 }}>
-              Nothing exported yet. Open a claim and use <strong>Generate carrier
-              export</strong> — the date it goes out is stamped once and shown here.
+              {/* Names the tab, not a button label. It used to say "use
+                  Generate carrier export", and no control anywhere says that —
+                  the Export screen's button reads "Export XactContents .xlsx"
+                  or "Export PDF — inventory", and it changes with the options.
+                  An instruction that names a control the reader cannot find is
+                  worse than one that names the screen. */}
+              Nothing exported yet. Open a claim and use its <strong>Export</strong> tab — the date
+              it goes out is stamped once, and shown here.
             </p>
           ) : (
             <div className="k-exp-rows">
@@ -154,6 +160,10 @@ export default function ExportsPage() {
                       type="button"
                       className="k-btn k-btn--ghost k-btn--sm"
                       disabled={busy !== null}
+                      /* Says what the .xlsx button says, for the same reason:
+                         a re-pull is rebuilt from the claim as it stands now,
+                         which is the one surprising thing about this page. */
+                      title="The Proof of Loss as a PDF, rebuilt from the claim as it stands now"
                       onClick={() => void pull(c, 'export', 'pdf')}
                     >
                       <Icon d={I.download} size={11} /> PDF
