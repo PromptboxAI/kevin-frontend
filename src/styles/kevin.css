@@ -6272,6 +6272,9 @@
     }
     .k-seosec p, .k-ans-x p { font-size: 16.5px; line-height: 1.65; color: var(--k-fg-2); margin: 0 0 14px; max-width: 72ch; }
     .k-seonote { font-size: 14px !important; color: var(--k-fg-4) !important; }
+    .k-seolist { margin: 0 0 14px; padding-left: 22px; max-width: 72ch; }
+    .k-seolist li { font-size: 16.5px; line-height: 1.65; color: var(--k-fg-2); margin-bottom: 9px; }
+    .k-seolist strong { color: var(--k-fg); }
 
     /* The direct-answer block: the sentence an answer engine should lift. */
     .k-ans {

@@ -50,6 +50,36 @@ export const SEO_PAGES: Record<string, SeoEntry> = {
       'Create insurance-ready contents line items faster with Kevin. Identify items, source replacement pricing, apply depreciation, and export carrier-ready contents worksheets.',
     image: 'og-default.png',
   },
+  '/insurance-contents-pricing-software': {
+    title: 'Insurance Contents Pricing Software | Kevin',
+    description:
+      "Automate replacement-cost research, source links, depreciation, RCV and ACV for insurance contents claims with Kevin.",
+    image: 'og-default.png',
+  },
+  '/xactcontents-alternative': {
+    title: 'XactContents Alternative for Faster Contents Claims | Kevin',
+    description:
+      "Looking for a faster XactContents workflow? Kevin identifies items, researches replacement pricing, applies depreciation, and exports carrier-ready worksheets. Not affiliated with Verisk.",
+    image: 'og-default.png',
+  },
+  '/methodology': {
+    title: 'How Kevin Builds Insurance Contents Line Items | Kevin',
+    description:
+      "Upload, extract, cluster, review, promote, price, depreciate, export — how Kevin turns photographs into insurance-ready contents line items, and where a person confirms the work.",
+    image: 'og-default.png',
+  },
+  '/guides/how-to-price-contents-claims-faster': {
+    title: 'How to Price Contents Claims Faster | Kevin',
+    description:
+      "The biggest time savings come from automating identification, replacement-cost research, source documentation, classification and depreciation — while keeping human review.",
+    image: 'og-default.png',
+  },
+  '/contents-claims/without-photos': {
+    title: 'Contents Claim Pricing Without Photos | Kevin',
+    description:
+      "For total losses, Kevin prices contents from item descriptions when usable photographs no longer exist. A separate workflow from the photo-based engine.",
+    image: 'og-default.png',
+  },
   '/pricing': {
     title: 'Pricing — Kevin',
     description:

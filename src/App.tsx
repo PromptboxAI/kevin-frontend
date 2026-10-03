@@ -7,6 +7,11 @@ import RootRoute from './components/RootRoute'
 import PricingPage from './pages/PricingPage'
 import ForAdjustersPage from './pages/ForAdjustersPage'
 import PaContentsSoftwarePage from './pages/PaContentsSoftwarePage'
+import ContentsPricingSoftwarePage from './pages/ContentsPricingSoftwarePage'
+import XactcontentsAlternativePage from './pages/XactcontentsAlternativePage'
+import MethodologyPage from './pages/MethodologyPage'
+import PriceFasterGuidePage from './pages/PriceFasterGuidePage'
+import WithoutPhotosPage from './pages/WithoutPhotosPage'
 import AboutPage from './pages/AboutPage'
 import ContactPage from './pages/ContactPage'
 import DoneForYouPage from './pages/DoneForYouPage'
@@ -147,6 +152,11 @@ export default function App() {
           path="/public-adjusters/ai-contents-inventory-software"
           element={<PaContentsSoftwarePage />}
         />
+        <Route path="/insurance-contents-pricing-software" element={<ContentsPricingSoftwarePage />} />
+        <Route path="/xactcontents-alternative" element={<XactcontentsAlternativePage />} />
+        <Route path="/methodology" element={<MethodologyPage />} />
+        <Route path="/guides/how-to-price-contents-claims-faster" element={<PriceFasterGuidePage />} />
+        <Route path="/contents-claims/without-photos" element={<WithoutPhotosPage />} />
         <Route path="/for-estate-liquidators" element={<ForEstateLiquidatorsPage />} />
         <Route path="/done-for-you" element={<DoneForYouPage />} />
         <Route path="/about" element={<AboutPage />} />
