@@ -76,27 +76,23 @@ date of loss, no preparer fields.
 **Collected: first name, last name, address, phone, email. Only NAME and EMAIL
 are required.**
 
-Two consequences we would rather raise now than discover on an invoice:
+Both consequences of that are now decided (owner, 2026-10-03):
 
-1. **Without an address there is no tax.** `claims.tax_rate` is nullable and
-   `_compute_tax` returns None when it is unset, so every line on an
-   addressless claim prices tax-free and the Sales Tax column is empty. That is
-   honest behaviour, but it understates what the client is owed, and tax is real
-   money in their favour. **Our recommendation: require the ZIP** (not the full
-   address) — it is what resolves the rate, it is one field, and a homeowner
-   knows it. Name and email stay the only contact requirements.
-2. **Whose quota do the items count against?** Quota is per owner, and a
-   homeowner has no account at the point the work runs. If the claim is created
-   under a Kevin-side owner, those items land on that owner's ceiling — which a
-   trial (250 lifetime) or Pro (2,000/month) account would exhaust quickly. The
-   DFY owner account probably wants to be an internal/comped plan with no
-   ceiling, billed to us rather than metered. Tell us which account id it is and
-   we will not show quota UI for it.
-
-Related: the letterhead on the client-facing PDF comes from the account's
-business profile (0058). For a DFY job that is OURS, not the homeowner's, which
-we think is right — but it is worth saying out loud, because the homeowner may
-hand that document to their own adjuster.
+1. **ZIP IS REQUIRED**, as the one address field. `claims.tax_rate` is nullable
+   and `_compute_tax` returns None when it is unset, so an addressless claim
+   prices every line tax-free and the Sales Tax column comes out empty — honest,
+   but it understates what the client is owed, and tax is real money in their
+   favour. The ZIP is what resolves the rate. So: **name, email and ZIP
+   required; first/last name split, street address and phone optional.**
+2. **The claim is created under a COMPED INTERNAL ACCOUNT.** Quota is per owner
+   and a homeowner has none, so DFY work runs on an account with no ceiling,
+   billed to us rather than metered. Tell us the account id and we will show no
+   quota UI for it, and keep it out of revenue rollups the way comped and
+   internal accounts already are.
+3. **The Kevin letterhead on the client's PDF stays, deliberately.** The
+   business profile on that account is ours, so a homeowner who hands the
+   worksheet to their own adjuster is handing over a Kevin-branded document.
+   The owner's call: that is top-of-funnel awareness, not a leak.
 
 ### What we will build when the shape is agreed
 
