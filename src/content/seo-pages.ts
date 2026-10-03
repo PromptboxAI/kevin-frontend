@@ -110,6 +110,30 @@ export const SEO_PAGES: Record<string, SeoEntry> = {
       "Kevin and XactContents overlap in part of the personal-property valuation workflow but are not the same product. A row-by-row comparison, with no declared winner.",
     image: 'og-default.png',
   },
+  '/guides': {
+    title: 'Guides — Contents Claims, Pricing and Depreciation | Kevin',
+    description:
+      "How contents claims get built, priced and depreciated: method guides for public adjusters, plus how Kevin works and where it stops.",
+    image: 'og-default.png',
+  },
+  '/guides/contents-inventory-after-house-fire': {
+    title: 'How to Build a Contents Inventory After a Total House Fire | Kevin',
+    description:
+      "Rebuild a contents inventory room by room after a total loss, using the evidence that survives: cloud photos, order histories, receipts and statements.",
+    image: 'og-default.png',
+  },
+  '/guides/rcv-vs-acv-personal-property': {
+    title: 'RCV vs ACV for Personal Property Claims | Kevin',
+    description:
+      "Replacement cost value is what the item costs today; actual cash value is that figure less depreciation for its age and class. How a real worksheet line foots.",
+    image: 'og-default.png',
+  },
+  '/guides/best-contents-software-public-adjusters': {
+    title: 'Best Contents Software for Public Adjusters: What to Look For | Kevin',
+    description:
+      "Evaluation criteria rather than rankings: what to test in a trial, the four categories of tool, and the questions to put to any vendor.",
+    image: 'og-default.png',
+  },
   '/pricing': {
     title: 'Pricing — Kevin',
     description:

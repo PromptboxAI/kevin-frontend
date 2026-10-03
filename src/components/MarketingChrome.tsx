@@ -32,7 +32,30 @@ import KevinWordmark from './KevinWordmark'
  */
 
 /** Routes that actually resolve today. Add as pages are ported. */
-const LIVE = new Set<string>(['/', '/sign-in', '/pricing', '/product', '/for-adjusters', '/for-estate-liquidators', '/done-for-you', '/about', '/contact', '/legal', '/security', '/careers', '/demo', '/book-call', '/docs', '/sign-up', '/request-access', '/sample'])
+const LIVE = new Set<string>([
+  '/', '/sign-in', '/pricing', '/product', '/for-adjusters', '/for-estate-liquidators',
+  '/done-for-you', '/about', '/contact', '/legal', '/security', '/careers', '/demo',
+  '/book-call', '/docs', '/sign-up', '/request-access', '/sample',
+  // The SEO / answer pages. MISSING ENTRIES HERE ARE SILENT: MktLink renders an
+  // unknown route as a dead "Coming soon" span, so the Guides nav item and the
+  // whole footer column shipped as plain text on the first build of them --
+  // links that looked like links to me and were not clickable.
+  '/guides',
+  '/methodology',
+  '/insurance-contents-pricing-software',
+  '/xactcontents-alternative',
+  '/compare/kevin-vs-xactcontents',
+  '/public-adjusters/ai-contents-inventory-software',
+  '/contents-claims/without-photos',
+  '/guides/how-to-price-contents-claims-faster',
+  '/guides/automate-replacement-cost-research',
+  '/guides/item-level-photos-insurance-contents',
+  '/guides/insurance-contents-depreciation',
+  '/guides/replacement-cost-comparable',
+  '/guides/rcv-vs-acv-personal-property',
+  '/guides/contents-inventory-after-house-fire',
+  '/guides/best-contents-software-public-adjusters',
+])
 
 function MktLink({
   to,
@@ -101,6 +124,7 @@ export function MktNav({ active }: { active?: string }) {
     ['product', 'Product', '/product'],
     ['adj', 'For Adjusters', '/for-adjusters'],
     ['pri', 'Pricing', '/pricing'],
+    ['gui', 'Guides', '/guides'],
   ]
   return (
     <header className="k-nav">
@@ -208,6 +232,16 @@ export function MktFooter() {
           <MktLink to="/demo">Watch demo</MktLink>
           <MktLink to="/docs">Docs</MktLink>
           <MktLink to="/pricing#faq">FAQ</MktLink>
+        </div>
+        <div className="k-footx-col">
+          <div className="k-footx-h">Guides</div>
+          <MktLink to="/guides">All guides</MktLink>
+          <MktLink to="/methodology">How Kevin works</MktLink>
+          <MktLink to="/insurance-contents-pricing-software">Contents pricing</MktLink>
+          <MktLink to="/guides/insurance-contents-depreciation">Depreciation</MktLink>
+          <MktLink to="/guides/rcv-vs-acv-personal-property">RCV vs ACV</MktLink>
+          <MktLink to="/xactcontents-alternative">XactContents alternative</MktLink>
+          <MktLink to="/contents-claims/without-photos">Pricing without photos</MktLink>
         </div>
         <div className="k-footx-col">
           <div className="k-footx-h">Company</div>

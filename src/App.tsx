@@ -17,6 +17,10 @@ import ItemLevelPhotosGuidePage from './pages/ItemLevelPhotosGuidePage'
 import DepreciationGuidePage from './pages/DepreciationGuidePage'
 import ComparableGuidePage from './pages/ComparableGuidePage'
 import CompareXactcontentsPage from './pages/CompareXactcontentsPage'
+import GuidesIndexPage from './pages/GuidesIndexPage'
+import FireLossInventoryGuidePage from './pages/FireLossInventoryGuidePage'
+import RcvVsAcvGuidePage from './pages/RcvVsAcvGuidePage'
+import BestContentsSoftwareGuidePage from './pages/BestContentsSoftwareGuidePage'
 import AboutPage from './pages/AboutPage'
 import ContactPage from './pages/ContactPage'
 import DoneForYouPage from './pages/DoneForYouPage'
@@ -167,6 +171,10 @@ export default function App() {
         <Route path="/guides/insurance-contents-depreciation" element={<DepreciationGuidePage />} />
         <Route path="/guides/replacement-cost-comparable" element={<ComparableGuidePage />} />
         <Route path="/compare/kevin-vs-xactcontents" element={<CompareXactcontentsPage />} />
+        <Route path="/guides" element={<GuidesIndexPage />} />
+        <Route path="/guides/contents-inventory-after-house-fire" element={<FireLossInventoryGuidePage />} />
+        <Route path="/guides/rcv-vs-acv-personal-property" element={<RcvVsAcvGuidePage />} />
+        <Route path="/guides/best-contents-software-public-adjusters" element={<BestContentsSoftwareGuidePage />} />
         <Route path="/for-estate-liquidators" element={<ForEstateLiquidatorsPage />} />
         <Route path="/done-for-you" element={<DoneForYouPage />} />
         <Route path="/about" element={<AboutPage />} />

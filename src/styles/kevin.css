@@ -6376,6 +6376,7 @@
     .k-seocta .k-btn--ghost { color: #fff; border-color: rgba(255,255,255,0.3); }
     .k-seocta .k-btn--ghost:hover { background: rgba(255,255,255,0.1); color: #fff; }
 
+    .k-rel-grid--wide { grid-template-columns: minmax(0, 1fr) !important; }
     .k-rel { margin-top: 56px; }
     .k-rel-h { font-family: var(--k-font-display); font-weight: 700; font-size: 20px; margin: 0 0 14px; color: var(--k-fg); }
     .k-rel-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
