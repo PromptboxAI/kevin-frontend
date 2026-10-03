@@ -464,7 +464,13 @@
        things competing, which is what made the page feel busy before anyone
        scrolled. 210px lets the hero own the screen with the stats peeking
        below it as the invitation to scroll. */
-    .k-hero { display: grid; grid-template-columns: 1.12fr minmax(0, 0.88fr); gap: 60px; padding: 72px 40px 120px; max-width: 1280px; margin: 0 auto; align-items: center; }
+    /* THE GRAPHIC LEADS. Owner's call 2026-10-03, after SightSync: their hero
+       is carried by the product shot, with the headline second and the eyebrow
+       last. Ours gave the copy the wider column (1.12 : 0.88) and hung two
+       annotation callouts off the card, which fought it for attention -- the
+       callouts are gone and the ratio is inverted, so the card is the visual.
+       Gap drops 60 -> 48 to buy the card width rather than air. */
+    .k-hero { display: grid; grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr); gap: 48px; padding: 72px 40px 120px; max-width: 1280px; margin: 0 auto; align-items: center; }
     .k-h1 {
       font-family: var(--k-font-display); font-weight: 400;
       font-size: 60px; line-height: 1.02; letter-spacing: -0.028em;
@@ -511,6 +517,19 @@
     .k-card-row {
       display: flex; align-items: center; gap: 10px;
       padding: 9px 8px; border-radius: 4px;
+    }
+    /* Scaled with the column, marketing only -- the same .k-card markup is
+       reused in narrower places that should not grow. */
+    @media (min-width: 821px) {
+      .k-landing .k-hero-r .k-card-row { padding: 11px 10px; gap: 12px; }
+      /* The wider card has room for the whole description. The nowrap +
+         ellipsis is an INLINE style on the element, so this needs !important
+         to reach it; two lines, then clamp. */
+      .k-landing .k-hero-r .k-card-row-title {
+        font-size: 13.5px !important; white-space: normal !important; line-height: 1.3;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      }
+      .k-landing .k-hero-r .k-card-bar { padding: 12px 16px; }
     }
     .k-card-row:hover { background: var(--k-bg-2); }
     .k-card-row--more {
@@ -2947,7 +2966,7 @@
     }
     .k-social {
       max-width: 1280px; margin: 0 auto;
-      padding: 80px 40px 60px;
+      padding: 112px 40px 60px;
       border-top: 1px solid var(--k-line);
     }
     .k-social-hd { max-width: 760px; margin: 0 auto 40px; text-align: center; }
@@ -2961,10 +2980,13 @@
       background: var(--k-bg); border: 1px solid var(--k-line); border-radius: 14px;
       display: flex; flex-direction: column; gap: 22px;
     }
+    /* Upright and smaller, owner's call 2026-10-03: a 22px italic serif was
+       louder than the headings around it and read as a pull-quote from a
+       different site. A testimonial is someone talking, not display type. */
     .k-testi-quote {
       margin: 0;
-      font-family: var(--k-font-display); font-style: italic;
-      font-size: 22px; line-height: 1.32; letter-spacing: -0.012em;
+      font-family: var(--k-font-display); font-style: normal;
+      font-size: 17px; line-height: 1.45; letter-spacing: -0.008em;
       color: var(--k-fg); text-wrap: pretty;
       flex: 1;
     }
@@ -3019,8 +3041,25 @@
     }
 
 
-    .k-mkt-main { max-width: 1280px; margin: 0 auto; padding: 0 40px 60px; }
-    .k-mkt-hero { padding: 60px 0 40px; }
+    /* min-width: 0 is load-bearing. .k-landing is a flex container, so <main>
+       is a flex ITEM and its automatic minimum size is min-content -- any wide
+       child (a horizontal scroll row, a table) pushes the item wider than the
+       screen instead of scrolling inside it. On /pricing the swipeable
+       testimonials took main to 662px on a 375px phone, and the page's
+       overflow-x: clip hid the result rather than fixing it. */
+    .k-mkt-main { max-width: 1280px; margin: 0 auto; padding: 0 40px 60px; min-width: 0; }
+    .k-landing > main { min-width: 0; }
+    /* ── MARKETING VERTICAL SCALE (owner, 2026-10-03) ───────────────────
+       Four numbers, applied across every marketing page instead of tuning
+       joins one at a time:
+         nav -> hero            ~80px
+         section -> section     ~150px  (distinct topics)
+         continuation           ~56px   (a section the one above it promised)
+         heading -> its content  44px
+       Totals are what the eye sees, so these are the SUM of the gap plus the
+       paddings either side -- which is why the padding values below differ.
+       Measured after each change, not estimated. */
+    .k-mkt-hero { padding: 80px 0 40px; }
     .k-mkt-band {
       display: flex; gap: 40px; align-items: center;
       padding: 40px; margin: 40px 0; background: var(--k-bg-2);
@@ -3082,7 +3121,7 @@
     .k-calc-foot { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--k-fg-3); font-family: var(--k-font-mono); }
 
     /* — FAQ — */
-    .k-faq { padding: 60px 0 40px; }
+    .k-faq { padding: 112px 0 40px; }
     .k-faq-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
     .k-faq-card {
       padding: 22px 24px; background: var(--k-bg);
@@ -3094,7 +3133,7 @@
     /* ── Segment pages (For Adjusters / For Liquidators) ─────────── */
     .k-seg-hero {
       display: grid; grid-template-columns: 1.1fr minmax(0, 1fr); gap: 56px;
-      padding: 60px 0 40px; align-items: center;
+      padding: 80px 0 40px; align-items: center;
     }
     .k-stat-stack { display: flex; flex-direction: column; gap: 12px; }
     .k-stat-card {
@@ -3107,7 +3146,11 @@
     .k-stat-l { font-size: 13.5px; color: var(--k-fg-2); margin-top: 6px; font-weight: 500; }
     .k-stat-s { font-size: 11.5px; color: var(--k-fg-4); margin-top: 4px; font-family: var(--k-font-mono); }
 
-    .k-seg-work { padding: 60px 0 40px; }
+    /* 60px top left only 64px of whitespace under the stats strip, against
+       146-192px at every other break on this page. The hero -> stats join
+       stays tight on purpose: the strip belongs to the hero, not to the
+       workflow below it. */
+    .k-seg-work { padding: 148px 0 40px; }
     .k-seg-work-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
     .k-workstep {
       padding: 22px 22px 24px; background: var(--k-bg);
@@ -4428,7 +4471,17 @@
 
 .k-proof { border-top: 1px solid var(--k-line); padding: 64px 40px 8px; }
 
-.k-proof-hd { max-width: 760px; margin: 0 auto 44px; text-align: center; }
+    /* The SECTION BREAK lives here, not on .k-proof-two below it.
+       .k-proof-hd is a heading block that sits OUTSIDE the section it
+       introduces, so padding added to that section opens a gap between the
+       heading and its own images -- which is what a first pass did, leaving
+       the heading still crowded against the block above it. The top margin
+       puts the space where the break actually is. */
+    .k-proof-hd { max-width: 760px; margin: 96px auto 44px; text-align: center; }
+    /* Adjacent margins COLLAPSE, so a row's 64px bottom and a heading's 112px
+       top produced 112px, not 176 -- the one join still reading tight. The
+       pair gets the full break explicitly. */
+    .k-proof-row + .k-proof-hd { margin-top: 152px; }
 
 .k-proof-h2 {
       font-family: var(--k-font-display); font-weight: 400; font-size: 38px;
@@ -4437,8 +4490,12 @@
 
 .k-proof-sub { font-size: 15.5px; color: var(--k-fg-3); line-height: 1.6; margin: 0; }
 
+/* 112 above / 64 below is the same break the heading blocks carry, so a row
+   that opens a section sits as far from the block above it as a heading does.
+   Measured on /product: the owner called the photos -> five-screens gap
+   (176px) correct, and these two joins were 68px and 72px. */
 .k-proof-row {
-      max-width: 1080px; margin: 0 auto 56px; display: grid;
+      max-width: 1080px; margin: 96px auto 64px; display: grid;
       grid-template-columns: 0.85fr 1.15fr; gap: 48px; align-items: center;
     }
 
@@ -4446,7 +4503,9 @@
 
 .k-proof-eyebrow {
       font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
-      color: var(--k-accent);
+      /* Teal, not navy -- owner's call, 2026-10-03. It matches the hero pill
+         and the mid-CTA band's eyebrow, which was already this colour. */
+      color: oklch(0.36 0.08 175);
     }
 
 .k-proof-h {
@@ -4465,7 +4524,11 @@
 
 .k-proof-list li svg { flex: 0 0 auto; margin-top: 3px; color: var(--k-ok); }
 
-.k-proof-solo { max-width: 1080px; margin: 0 auto; padding: 8px 40px 56px; }
+    /* 8px of top padding put 48px between the hero and this shot, against
+       136-160px at every other join on the page -- the sections read as
+       crowded in one place and airy in the next. 56px top brings both thin
+       joins into the same band as the rest. */
+    .k-proof-solo { max-width: 1080px; margin: 0 auto; padding: 112px 40px 56px; }
 
 .k-proof-two {
       max-width: 1080px; margin: 0 auto; padding: 0 40px 56px;
@@ -4517,7 +4580,9 @@
 
 .k-price-stats { padding: 56px 40px 64px; }
 
-.k-prod-hero { padding: 60px 40px 40px; }
+/* 80px under the nav, like every other marketing hero -- this override was
+   still carrying the old 60. */
+.k-prod-hero { padding: 80px 40px 40px; }
 
 .k-prod-hero h1 { font-size: 64px; }
 
@@ -4552,9 +4617,10 @@
       margin: 0 0 16px; max-width: 620px; text-wrap: pretty;
     }
 
+/* Same change as .k-testi-quote: upright, and down from 25px. */
 .k-about-founder-quote {
-      font-family: var(--k-font-display); font-style: italic;
-      font-size: 25px; line-height: 1.3; color: var(--k-fg);
+      font-family: var(--k-font-display); font-style: normal;
+      font-size: 19px; line-height: 1.45; color: var(--k-fg);
       margin: 26px 0 14px; padding-left: 20px;
       border-left: 3px solid var(--k-accent); text-wrap: balance;
     }
@@ -4731,13 +4797,10 @@
       .k-footx-cols > :nth-child(3) { grid-column: 2; grid-row: 2; }
       .k-footx-cols > :nth-child(4) { grid-column: 2; grid-row: 3; align-self: start; }
       .k-footx-base { padding: 14px 20px 22px; gap: 4px 14px; align-items: flex-start; }
-      /* On most pages the footer sits INSIDE .k-mkt-main, which already carries
-         a 20px gutter below 900 -- so the footer's own 20px stacked on top and
-         its content sat 40px from the edge while the body text above sat at 20.
-         Landing, whose footer is a direct child of .k-landing, was the only one
-         aligned. Drop the inner gutter where it is doubled. */
-      .k-mkt-main .k-footx-cols,
-      .k-mkt-main .k-footx-base { padding-left: 0; padding-right: 0; }
+      /* The doubled-gutter fix that used to live here is GONE because its
+         cause is gone: every marketing page now renders <MktFooter /> outside
+         <main>, so the footer is a direct child of the page wrapper exactly as
+         it always was on the home page, and carries its own gutter once. */
     }
 
 @media (max-width: 560px) {
@@ -4794,7 +4857,7 @@
       .k-proof { padding: 44px 24px 4px; }
       .k-proof-h2 { font-size: 30px; }
       .k-proof-h { font-size: 23px; }
-      .k-proof-solo { padding: 4px 24px 40px; }
+      .k-proof-solo { padding: 36px 24px 40px; }
       .k-proof-two { grid-template-columns: minmax(0, 1fr); gap: 22px; padding: 0 24px 40px; }
       .k-carrier-marquee {
         -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
@@ -5160,7 +5223,14 @@
          What is left is centred vertically in a full screen, so the copy sits
          in the middle of the phone rather than hanging from the top, and
          "What you actually get" begins exactly at the fold. */
-      .k-hero-r { display: none; }
+      /* THE SHOT IS BACK ON PHONES, owner's call 2026-10-03 -- but below the
+         first screen, not in it. The hero keeps min-height: 100svh and
+         centres the copy, so the headline, the sentence and the two buttons
+         still own the fold exactly as before; the worksheet now follows,
+         peeking enough to pull the scroll. That is what the earlier attempt
+         got wrong: it put the card IN the fold and made the first screen a
+         list of things to look at. The stats ribbon stays out. */
+      .k-hero-r { display: block; margin-top: 36px; }
       .k-stats-ribbon { display: none; }
       /* A little air above the eyebrow badge so the block does not start hard
          against the nav -- 32px read as cramped, 52px sits it down without
@@ -5241,7 +5311,23 @@
        no new colours. The result is a CARD rather than a worksheet row on
        purpose -- a 17-column grid needs side-scrolling on a phone, and the
        thing being demonstrated is one line, not the grid. */
-    .k-demo { max-width: 1280px; margin: 0 auto; padding: 88px 40px; }
+    /* The try-it band sits on the accent wash rather than on bare white: it
+       is the one interactive thing on the page and it read as another white
+       block between two white blocks.
+       --k-bg-2, which is EXACTLY the calculator's background: the owner
+       recognised that tint behind the drop zone and wanted it kept, so the
+       band uses the same token rather than a second, nearly-identical wash.
+       (A first pass used --k-accent-soft.) The page ground itself stays
+       white; only this band is tinted. The full-bleed background is painted
+       by the ::before so the section keeps its 1280px content width. */
+    .k-demo { max-width: 1280px; margin: 0 auto; padding: 88px 40px; position: relative; }
+    .k-demo::before {
+      content: ''; position: absolute; z-index: 0;
+      left: 50%; transform: translateX(-50%); width: 100vw; top: 0; bottom: 0;
+      background: var(--k-bg-2);
+      border-top: 1px solid var(--k-line); border-bottom: 1px solid var(--k-line);
+    }
+    .k-demo > * { position: relative; z-index: 1; }
     .k-demo-hd { text-align: center; max-width: 620px; margin: 0 auto 32px; }
     .k-demo-h2 {
       font-family: var(--k-font-display); font-size: clamp(28px, 3.4vw, 40px);
@@ -5628,8 +5714,41 @@
     @media (max-width: 768px) {
       .k-pg-grid > .k-pg-card:nth-child(2),
       .k-pg-grid > .k-pg-card:nth-child(4) { display: none; }
-      .k-testimonials > *:nth-child(1),
-      .k-testimonials > *:nth-child(3) { display: none; }
+      /* The testimonials are NO LONGER HIDDEN. Dropping two of three did keep
+         the page short, but it left a lone quote with nothing to say there
+         were others -- the owner read it as "we have one customer". They now
+         swipe: a snap-scrolling row, each card 86% wide so the next one peeks
+         and the gesture is discoverable without arrows or a dot row. Costs
+         ~40px of height instead of ~460px, and keeps all three.
+         (The gallery cards above still drop two -- they restate the stats
+         ribbon, which is a different argument.) */
+      /* WIDTH IS PINNED TO THE VIEWPORT, which is the whole trick. Auto-width
+         let the row grow to fit its cards, which grew <main> (a flex item that
+         sizes to content) to 662px and then 1067px on a 375px screen -- and
+         the row never scrolled, because nothing ever overflowed it. At exactly
+         100vw the cards overflow the ROW, so the row scrolls and no ancestor
+         changes size. */
+      .k-testimonials {
+        grid-template-columns: none !important;
+        display: flex; gap: 12px !important;
+        width: 100vw; max-width: 100vw; min-width: 0; box-sizing: border-box;
+        margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw);
+        padding: 2px 20px 10px;
+        overflow-x: auto; scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+      .k-testimonials::-webkit-scrollbar { display: none; }
+      /* 82vw, NOT 86%: a percentage is resolved against the row, whose own
+         width was being resolved from the cards' min-content -- a circular
+         dependency that sized <main> to 662px on a 375px screen and let the
+         page's overflow clip hide it. A viewport unit has no such cycle.
+         min-width: 0 stops each card's automatic minimum size from doing the
+         same thing again. */
+      .k-testimonials > * {
+        flex: 0 0 82vw; max-width: 320px; min-width: 0;
+        scroll-snap-align: start; margin: 0;
+      }
     }
 
     /* — "Built for" strip: hidden on a phone, its space kept —
@@ -5814,17 +5933,11 @@
        buttons -- app-toolbar sizes on a page whose whole job is to be read by
        someone deciding whether to care.
 
-       1 - THE GROUND. The page was pure white and so were the cards on it, so
-       a card's only edge was a 1px line. The ground drops to --k-bg-2 and
-       cards keep --k-bg, which separates them without a heavier border. No new
-       colour: both tokens already exist, and the palette stays cool slate
-       rather than the warm paper the competitor uses. Deliberately subtle at
-       1.5% -- say the word and it goes deeper.
-       `.k-roi` KEEPS --k-bg-2 and is not promoted to a white band: its own
-       content is a white card, and a white card on a white band separates by
-       border alone -- the exact problem this change exists to fix. It now
-       simply shares the ground, and the card is what reads. */
-    .k-landing, .k-mkt-main, .k-req { background: var(--k-bg-2); }
+       1 - THE GROUND: REVERTED 2026-10-03, owner's call. Marketing pages were
+       briefly given a --k-bg-2 ground so white cards would separate from it.
+       The owner does not want the blue-grey wash: WHITE IS THE PRIMARY
+       BACKGROUND. Cards separate by their border, as before. Do not
+       reintroduce a tinted page ground without asking. */
 
     /* 2 - THE SCALE, desktop and tablet only. The phone sweep already raised
        this copy, and it lives in a max-width: 820px block BELOW this one, so
@@ -5839,9 +5952,282 @@
         font-size: 15.5px; padding: 13px 22px; border-radius: 10px;
       }
       .k-roi-sub { font-size: 16px; line-height: 1.6; }
+      /* Owner's call, 2026-10-03: Merriweather 700 was too heavy, and the face
+         to use is the competitor's -- DM Sans. The display family is swapped
+         by overriding --k-font-display on the marketing roots below, so this
+         only needs to set the weight and the tracking a sans wants.
+         SightSync's own h1 spec, measured: 60px / line-height 1.0 / -1.5px
+         (-0.025em) / 700. */
+      .k-landing .k-h1 { font-weight: 700; letter-spacing: -0.025em; line-height: 1.02; }
       .k-landing .k-midcta-p { font-size: 15.5px; line-height: 1.55; }
       .k-audience-r { font-size: 15px; }
       .k-step p { font-size: 15px; line-height: 1.6; }
       .k-roi-slider-l { font-size: 14px; }
       .k-demo-disclosure { font-size: 13.5px; }
+    }
+
+    /* ── the three-step process strip (MktProcessStrip) ──────────────────
+       MOBILE FIRST, on purpose: the hero card is `display: none` below 820px,
+       so this is the only place a phone visitor sees the folder, the lines and
+       the export. One column stacked, three across from 821px. */
+    .k-flow { max-width: 1280px; margin: 0 auto; padding: 56px 20px; }
+    .k-flow-hd { text-align: center; max-width: 620px; margin: 0 auto 26px; }
+    .k-flow-h {
+      font-family: var(--k-font-display); font-weight: 400; font-size: 26px;
+      letter-spacing: -0.022em; line-height: 1.15; margin: 8px 0 10px; color: var(--k-fg);
+    }
+    .k-flow-sub { font-size: 16px; line-height: 1.55; color: var(--k-fg-2); margin: 0; }
+
+    .k-flow-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; }
+    .k-flow-step {
+      background: var(--k-bg); border: 1px solid var(--k-line); border-radius: 14px;
+      overflow: hidden; display: flex; flex-direction: column; position: relative;
+    }
+    /* THE STEPS READ AS A SEQUENCE, not three cards that happen to sit in a row.
+       Three things carry that: a numbered chip on the image where the eye lands
+       first, a stage word above each heading, and a connector in the gap
+       between cards -- pointing right across the desktop row, down the stack on
+       a phone. The old "01" was grey mono text under the picture and nobody
+       read it as step one of three. */
+    /* IN THE BODY, NOT ON THE PICTURE. Overlaid top-left it covered the review
+       vignette's "Description" header; moved top-right it covered "ACV". A
+       numeral that has to dodge the content does not belong on the content --
+       it now leads the stage label, which is where a numbered step reads
+       anyway. */
+    .k-flow-step-h { display: flex; align-items: center; gap: 8px; }
+    .k-flow-n {
+      flex: 0 0 auto;
+      width: 22px; height: 22px; border-radius: 50%;
+      display: grid; place-items: center;
+      background: var(--k-accent); color: var(--k-bg);
+      font-family: var(--k-font-mono); font-size: 11.5px; font-weight: 700; line-height: 1;
+    }
+    .k-flow-step-l {
+      font-family: var(--k-font-mono); font-size: 10.5px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.08em; color: var(--k-accent);
+    }
+    /* The connector lives in the grid gap, so it never changes a card's size. */
+    .k-flow-step:not(:last-child)::after {
+      content: ''; position: absolute; background: var(--k-line);
+      left: 50%; bottom: -18px; width: 1px; height: 18px; transform: translateX(-50%);
+    }
+    /* The vignette sits on --k-bg-2 so the white tiles inside it read as
+       separate objects, the same relationship the page ground now has. */
+    /* FIXED height, not min-height: the shots grid is two rows tall and the
+       other two vignettes are not, so min-height let card 1 run deeper and the
+       three bodies started at three different heights. */
+    .k-flow-viz {
+      background: var(--k-bg-2); border-bottom: 1px solid var(--k-line);
+      padding: 14px; height: 208px; box-sizing: border-box; display: flex; overflow: hidden;
+    }
+    /* The grid FILLS the fixed vignette; tiles take their height from the row
+       rather than from an aspect ratio, which overflowed the box and clipped
+       the bottom pair (worse on a phone, where the columns are wider). */
+    .k-flow-viz--shots { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 8px; min-height: 0; }
+    .k-flow-shot {
+      border-radius: 8px; overflow: hidden; background: var(--k-bg); min-height: 0;
+      box-shadow: inset 0 0 0 1px var(--k-line);
+    }
+    .k-flow-shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    /* Clear of the numbered chip: it is absolutely placed at 10px / 26px, and
+       this vignette's header row was running underneath it. */
+    .k-flow-viz--rows, .k-flow-viz--out { flex-direction: column; gap: 8px; justify-content: center; }
+    .k-flow-row {
+      display: flex; align-items: center; gap: 6px; background: var(--k-bg);
+      border: 1px solid var(--k-line); border-radius: 8px; padding: 7px 8px; min-width: 0;
+    }
+    .k-flow-row-thumb { width: 26px; height: 26px; border-radius: 4px; object-fit: cover; flex: 0 0 auto; display: block; }
+    /* First track is the thumbnail's, so the labels sit over their columns. */
+    .k-flow-wshead {
+      display: grid; grid-template-columns: 26px minmax(0, 1fr) 50px 46px; gap: 6px;
+      padding: 0 10px 2px; font-family: var(--k-font-mono); font-size: 9px;
+      text-transform: uppercase; letter-spacing: 0.05em; color: var(--k-fg-4);
+    }
+    .k-flow-wshead span:nth-child(n+3) { text-align: right; }
+    .k-flow-row-n {
+      font-family: var(--k-font-mono); font-size: 11.5px; font-feature-settings: "tnum";
+      color: var(--k-fg-2); text-align: right; flex: 0 0 auto;
+    }
+    .k-flow-row-n--acv { color: var(--k-accent); font-weight: 700; width: 46px; }
+    .k-flow-row-n:not(.k-flow-row-n--acv) { width: 50px; }
+    .k-flow-row-txt { flex: 1; min-width: 0; }
+    .k-flow-row-t {
+      font-size: 12.5px; line-height: 1.3; color: var(--k-fg);
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .k-flow-row-s { font-size: 11px; color: var(--k-fg-4); margin-top: 1px; }
+    .k-flow-row--more { justify-content: center; border-style: dashed; font-size: 11.5px; color: var(--k-fg-4); }
+
+    .k-flow-file { display: flex; align-items: center; gap: 10px; background: var(--k-bg); border: 1px solid var(--k-line); border-radius: 8px; padding: 10px 12px; color: var(--k-fg-3); }
+    .k-flow-file strong { display: block; font-size: 12.5px; color: var(--k-fg); font-weight: 700; }
+    .k-flow-file span { font-size: 11px; color: var(--k-fg-4); }
+    .k-flow-proof { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--k-fg-3); padding-left: 2px; }
+    .k-flow-proof svg { color: var(--k-ok); }
+
+    .k-flow-body { padding: 16px 18px 18px; }
+    .k-flow-t { font-family: var(--k-font-display); font-weight: 400; font-size: 19px; letter-spacing: -0.02em; line-height: 1.2; margin: 5px 0 8px; color: var(--k-fg); }
+    .k-flow-p { font-size: 15px; line-height: 1.55; color: var(--k-fg-3); margin: 0; }
+    .k-flow-foot { text-align: center; margin-top: 22px; }
+    @media (max-width: 820px) {
+      .k-flow-row .k-badge { display: none; }
+    }
+
+    @media (min-width: 821px) {
+      .k-flow { padding: 88px 40px; }
+      /* Across, not down: the connector turns and sits in the 20px column gap,
+         vertically centred on the picture rather than on the whole card. */
+      .k-flow-step:not(:last-child)::after {
+        left: auto; right: -20px; bottom: auto; top: 113px;
+        width: 20px; height: 1px; transform: none;
+      }
+      .k-flow-step:not(:last-child)::before {
+        content: ''; position: absolute; z-index: 1;
+        right: -7px; top: 109px; width: 7px; height: 7px;
+        border-top: 1px solid var(--k-line); border-right: 1px solid var(--k-line);
+        transform: rotate(45deg); background: transparent;
+      }
+      .k-flow-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+      .k-flow-h { font-size: 30px; }
+      .k-flow-viz { height: 226px; }
+    }
+
+    /* ── marketing primary CTA ──────────────────────────────────────────
+       The primary button used --k-fg (near-black ink) and disappeared into a
+       page of black text. It is now --k-accent: OUR navy, the one the mid-page
+       CTA band and the step numerals already use.
+       Corrected 2026-10-03 -- a first pass invented a brighter indigo
+       (oklch 0.55 0.20 262) to chase the competitor's. That is exactly the
+       new colour outside the token set that CLAUDE.md forbids, and the owner
+       caught it. No --k-cta token: the accent already exists. */
+    .k-landing .k-btn:not(.k-btn--ghost):not(.k-btn--danger),
+    .k-mkt-main .k-btn:not(.k-btn--ghost):not(.k-btn--danger),
+    .k-req .k-btn:not(.k-btn--ghost):not(.k-btn--danger) {
+      background: var(--k-accent); border-color: var(--k-accent); color: #fff;
+    }
+    .k-landing .k-btn:not(.k-btn--ghost):not(.k-btn--danger):hover,
+    .k-mkt-main .k-btn:not(.k-btn--ghost):not(.k-btn--danger):hover,
+    .k-req .k-btn:not(.k-btn--ghost):not(.k-btn--danger):hover {
+      background: oklch(0.30 0.07 252); border-color: oklch(0.30 0.07 252);
+    }
+
+    /* ── marketing display face: DM Sans ─────────────────────────────────
+       DRAFT, owner reviewing. Scoped to the marketing roots rather than
+       changed in :root, so the app keeps Merriweather while this is judged.
+       Everything inside reads --k-font-display, so the h1, the section
+       headings and the step titles all move together. If the owner keeps it,
+       this collapses into the :root token and CLAUDE.md's font list changes
+       with it -- that file says not to switch the typeface until asked, and
+       this is the asking. */
+    .k-landing, .k-mkt-main, .k-req {
+      --k-font-display: 'DM Sans', 'Lato', 'Helvetica Neue', Arial, sans-serif;
+      /* The try-it band bleeds to 100vw, which is wider than the content box by
+         the scrollbar's width and put a horizontal scrollbar on the page. */
+      overflow-x: clip;
+    }
+
+    /* ── hero shot: the real worksheet screenshot ────────────────────────
+       The same asset /product uses. It is 1740x964, and at the hero column's
+       width (~465px) the grid is a grey blur -- so it is shown oversized and
+       allowed to run past the column's right edge, which also gives the hero
+       the asymmetry the owner asked for. `.k-landing` clips the overflow, so
+       nothing widens the page. */
+    .k-hero-shot {
+      margin: 0; position: relative;
+      border: 1px solid var(--k-line-2); border-radius: 12px; overflow: hidden;
+      box-shadow: 0 2px 6px oklch(0.2 0.02 250 / 0.06), 0 28px 64px oklch(0.2 0.02 250 / 0.16);
+      width: 148%; max-width: none;
+    }
+    .k-hero-shot img { display: block; width: 100%; height: auto; }
+    @media (max-width: 1180px) {
+      .k-hero-shot { width: 128%; }
+    }
+    @media (max-width: 820px) {
+      /* No bleed on a phone: the grid is unreadable at any width here, so it
+         reads as a picture OF the product rather than as a table, and a
+         picture should sit inside the gutters like everything else. */
+      .k-hero-shot { width: 100%; }
+    }
+
+    /* ── hero eyebrow pill ───────────────────────────────────────────────
+       Shaped after the competitor's: 12px, weight 500, sentence case, no
+       tracking, 4px/12px in a fully-rounded tint with a hairline border.
+       Ours is teal rather than their indigo. Only the pill's proportions are
+       borrowed; every value here is one of our tokens. */
+    .k-badge.k-eyebrow {
+      font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none;
+      padding: 5px 13px; border-radius: 999px;
+      border: 1px solid oklch(0.66 0.13 175 / 0.22);
+    }
+
+    /* ── shot guide: what a usable claim photo looks like ────────────────
+       Two "do" frames and two "not this", all real captures. Mobile-first:
+       two columns on a phone (the frames are the content and they survive the
+       crop), four across from 821px. */
+    .k-guide { max-width: 1280px; margin: 0 auto; padding: 56px 20px; }
+    .k-guide-hd { text-align: center; max-width: 620px; margin: 0 auto 26px; }
+    .k-guide-h {
+      font-family: var(--k-font-display); font-weight: 400; font-size: 26px;
+      letter-spacing: -0.022em; line-height: 1.15; margin: 8px 0 10px; color: var(--k-fg);
+    }
+    .k-guide-sub { font-size: 16px; line-height: 1.55; color: var(--k-fg-2); margin: 0; }
+    .k-guide-grid {
+      list-style: none; margin: 0; padding: 0;
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;
+    }
+    .k-guide-card {
+      background: var(--k-bg); border: 1px solid var(--k-line); border-radius: 12px;
+      overflow: hidden; display: flex; flex-direction: column;
+    }
+    .k-guide-img { position: relative; aspect-ratio: 4 / 3; background: var(--k-bg-2); }
+    .k-guide-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    /* The verdict rides on the frame, so it is read with the photograph rather
+       than after it. Teal for do; --k-danger for not-this, which is the one
+       place on these pages that colour is right. */
+    .k-guide-tag {
+      position: absolute; left: 8px; bottom: 8px;
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 9px 3px 7px; border-radius: 999px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.01em;
+      background: oklch(0.36 0.08 175); color: #fff;
+    }
+    .k-guide-card--no .k-guide-tag { background: oklch(0.45 0.17 25); }
+    .k-guide-body { padding: 12px 14px 14px; }
+    .k-guide-t {
+      font-size: 14px; font-weight: 700; line-height: 1.25; margin: 0 0 5px; color: var(--k-fg);
+    }
+    .k-guide-p { font-size: 13px; line-height: 1.5; color: var(--k-fg-3); margin: 0; }
+
+    @media (min-width: 821px) {
+      .k-guide { padding: 96px 40px 64px; }
+      .k-guide-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+      .k-guide-h { font-size: 30px; }
+      .k-guide-t { font-size: 15px; }
+      .k-guide-p { font-size: 13.5px; }
+    }
+
+    /* ── the vertical scale, phone values ────────────────────────────────
+       A phone screen is ~a third the height of a laptop's, so the desktop
+       breaks (150px) eat half a screen. Measured on /product at 375px before
+       this block: 64 / 96 / 152 / 164 / 152 / 48 / 94 / 122 -- both too big
+       and uneven. Phone scale is 2/3 of desktop:
+         nav -> hero            ~48px
+         section -> section     ~88px
+         continuation           ~40px
+         heading -> its content  32px */
+    @media (max-width: 820px) {
+      .k-proof-hd { margin-top: 88px; margin-bottom: 32px; }
+      .k-proof-row + .k-proof-hd { margin-top: 88px; }
+      .k-proof-row { margin-top: 88px; margin-bottom: 40px; }
+      .k-proof-solo { padding-top: 88px; }
+      .k-guide { padding: 88px 20px 48px; }
+      .k-seg-work { padding-top: 88px; }
+      .k-social { padding-top: 88px; }
+      .k-faq { padding-top: 88px; }
+      .k-mkt-hero, .k-prod-hero, .k-seg-hero { padding-top: 48px; }
+      /* The demo page sets its section padding inline, so these need the
+         specificity to reach it. */
+      .k-demo-sec[style] { padding-top: 48px !important; }
+      .k-demo-sec[style] + .k-demo-sec[style] { padding-top: 40px !important; }
     }
