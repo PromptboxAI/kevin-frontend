@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom'
 import Seo from '../components/Seo'
-import Badge from '../components/Badge'
 import { I, Icon } from '../components/Icon'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
 import { MktShot } from './LandingPage'
+import MktShotGuide from '../components/MktShotGuide'
 
 /**
  * Product overview — ported from design/components/marketing-pages.jsx
@@ -62,9 +62,9 @@ export default function ProductPage() {
           className="k-mkt-hero k-prod-hero"
           style={{ textAlign: 'center', maxWidth: 820, margin: '0 auto' }}
         >
-          <Badge tone="accent" dot>
+          <span className="k-badge k-badge--ok k-eyebrow">
             Product overview
-          </Badge>
+          </span>
           <h1
             style={{
               fontFamily: 'var(--k-font-display)',
@@ -117,8 +117,23 @@ export default function ProductPage() {
           />
         </section>
 
+        <MktShotGuide />
+
         {/* Five surfaces */}
-        <section style={{ padding: '40px 0 60px' }}>
+        <section style={{ padding: '0 0 60px' }}>
+          {/* This list had no heading of any kind: the page went from the shot
+              guide's photographs straight into a card reading "01 Intake",
+              with nothing saying what was being counted. The next heading on
+              the page belongs to the section AFTER this one, so a reader had
+              to infer the list from its own first item. Same heading block the
+              rest of the page uses. */}
+          <div className="k-proof-hd">
+            <div className="k-proof-eyebrow">The five screens</div>
+            <h2 className="k-proof-h2">Intake to export, end to end.</h2>
+            <p className="k-proof-sub">
+              The whole claim lives on five screens. Each one opens where you would start it.
+            </p>
+          </div>
           <div className="k-prod-surfaces">
             {SURFACES.map((s) => (
               <Link key={s.n} className="k-prod-surface" to={s.to}>
@@ -341,8 +356,13 @@ export default function ProductPage() {
             </Link>
           </div>
         </section>
-        <MktFooter />
       </main>
+
+      {/* OUTSIDE <main>: .k-mkt-main caps content at 1280px with a 40px
+          gutter, so a footer inside it stopped short of the page edges on
+          every page except the home page, whose footer is a direct child of
+          .k-landing. A footer is not main content either way. */}
+      <MktFooter />
     </div>
   )
 }

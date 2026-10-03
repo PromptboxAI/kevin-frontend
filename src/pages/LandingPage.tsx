@@ -3,9 +3,8 @@ import Seo from '../components/Seo'
 import { Link } from 'react-router-dom'
 import StickyCta from '../components/StickyCta'
 import PhotoDropDemo from '../components/PhotoDropDemo'
-import { I, Icon } from '../components/Icon'
-import Badge from '../components/Badge'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
+import MktProcessStrip from '../components/MktProcessStrip'
 
 /**
  * The public landing page — ported from design/components/landing.jsx.
@@ -46,8 +45,8 @@ type HeroRow = {
 /** The same five rows and the same five field captures the design hero shows —
  *  descriptions and photo filenames read off the rendered prototype, not
  *  paraphrased. Photos live in public/marketing/items/. */
-export
-const HERO_ROWS: HeroRow[] = [
+
+export const HERO_ROWS: HeroRow[] = [
   { desc: 'Guess Branded Leather Belt with Silver Buckle, Black', meta: 'Guess · Clothing — Adult', note: '2 photos merged', tone: 'accent', price: '$77.25', photo: '20260805_144542.jpg' },
   { desc: 'Black Rubber-Soled Boot, Madden Brand', meta: 'Madden · Clothing — Adult', note: 'Vision match', tone: 'ok', price: '$141.16', photo: '20260805_143711.jpg' },
   { desc: 'Honeywell FilterPower Replacement Vacuum Filter for Bissell', meta: 'Honeywell · Major Appliances', note: 'Vision match', tone: 'ok', price: '$17.91', photo: '20260805_143757.jpg' },
@@ -389,9 +388,14 @@ export default function LandingPage() {
 
       <main className="k-hero">
         <div className="k-hero-l">
-          <Badge tone="accent" dot>
+          {/* Eyebrow pill, after SightSync's: a fully-rounded tint with a
+              hairline edge, 12px and sentence case rather than a tight
+              uppercase chip. Teal (--k-ok / --k-ok-soft), the owner's pick --
+              both existing tokens, and the tone .k-badge--ok already carries.
+              The dot goes: their pill has none and it read as a status light. */}
+          <span className="k-badge k-badge--ok k-eyebrow">
             Photos in. XactContents-ready inventory out.
-          </Badge>
+          </span>
           {/* No manual breaks. The old copy was three hand-set lines; this one
               is long enough that a fixed break left "Estimate" alone on a line
               at desktop. `text-wrap: balance` evens the lines at every width
@@ -433,149 +437,26 @@ export default function LandingPage() {
         </div>
 
         <div className="k-hero-r">
-          <div className="k-card">
-            <div className="k-card-bar">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span
-                  style={{
-                    fontFamily: 'var(--k-font-mono)',
-                    fontSize: 11,
-                    color: 'var(--k-fg-4)',
-                  }}
-                >
-                  CLM-2026-04412
-                </span>
-                <Badge tone="ok" dot>
-                  Processing complete
-                </Badge>
-              </div>
-              {/* Deliberately NOT a photo/item count. This card sits directly
-                  above "See a finished claim", so any aggregate here is one a
-                  visitor compares against the claim the CTA opens — and the
-                  two are set by different authorities (CLAUDE.md's canonical
-                  demo here, the live API there), so they drift apart with
-                  nothing failing. Non-numeric copy cannot. */}
-              <span
-                style={{
-                  fontSize: 11,
-                  color: 'var(--k-fg-4)',
-                  fontFamily: 'var(--k-font-mono)',
-                }}
-              >
-                Xactimate ready
-              </span>
-            </div>
-            <div className="k-card-rows">
-              {HERO_ROWS.map((r, i) => (
-                <div key={i} className="k-card-row">
-                  {/* Matches the design's <Thumb>: a real <img> so the browser
-                      can defer it, cover-fitted in a 4px-radius 28px box. */}
-                  <div
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: 4,
-                      overflow: 'hidden',
-                      flex: '0 0 auto',
-                      position: 'relative',
-                      boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.08)',
-                    }}
-                  >
-                    <img
-                      src={`/marketing/items/w192/${r.photo}`}
-                      alt={r.desc}
-                      loading="lazy"
-                      decoding="async"
-                      style={{
-                        position: 'absolute',
-                        inset: 0,
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        display: 'block',
-                      }}
-                    />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    {/* Classed so the phone crop can let it wrap; the inline
-                        nowrap below is right on the wide desktop card and
-                        wrong in a 333px row, where it left 87px for the name
-                        and cut it mid-word. */}
-                    <div
-                      className="k-card-row-title"
-                      style={{
-                        fontSize: 12.5,
-                        color: 'var(--k-fg)',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      {r.desc}
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--k-fg-4)', marginTop: 1 }}>
-                      {r.meta}
-                    </div>
-                  </div>
-                  <Badge tone={r.tone}>{r.note}</Badge>
-                  <div
-                    style={{
-                      fontFamily: 'var(--k-font-mono)',
-                      fontSize: 12.5,
-                      fontFeatureSettings: '"tnum"',
-                      color: 'var(--k-fg)',
-                      minWidth: 70,
-                      textAlign: 'right',
-                    }}
-                  >
-                    {r.price}
-                  </div>
-                </div>
-              ))}
-              {/* Count and RCV total removed for the same reason as the bar
-                  above — see that comment. The row stays so the card still
-                  reads as truncated rather than as a five-item inventory. */}
-              <div className="k-card-row k-card-row--more">
-                <span>+ more items</span>
-              </div>
-            </div>
-          </div>
+          {/* THE REAL SCREENSHOT, not a rebuilt one. An earlier pass hand-made
+              a miniature grid here; the owner pointed out /product already
+              ships a shot of the actual worksheet, and a real screenshot
+              cannot get the columns, the order or the totals wrong because it
+              IS the product. Same asset as ProductPage.
 
-          <div className="k-anno k-anno--1">
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                fontSize: 11,
-                color: 'var(--k-accent)',
-                fontWeight: 600,
-              }}
-            >
-              <Icon d={I.spark} size={11} /> Two frames, one item
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--k-fg-2)', marginTop: 2 }}>
-              Wide shot + label close-up merged at staging — priced once, never twice
-            </div>
-          </div>
-          <div className="k-anno k-anno--2">
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                fontSize: 11,
-                color: 'oklch(0.45 0.13 70)',
-                fontWeight: 600,
-              }}
-            >
-              <Icon d={I.warn} size={11} /> Priced from proof, not guesses
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--k-fg-2)', marginTop: 2 }}>
-              Every cell cites live retailer comps with dated links — and when Kevin can't
-              corroborate, the cell stays blank for you
-            </div>
-          </div>
+              It bleeds past the column to the right: at the column's own width
+              the grid is unreadable, and cropping it would cut the money
+              columns off the right-hand side, which are the half that matters.
+              The overflow is clipped by `.k-landing { overflow-x: clip }`. */}
+          <figure className="k-hero-shot">
+            <img
+              src="/marketing/worksheet-review-2x.webp"
+              alt="Kevin's review worksheet: 57 priced lines with room, quantity, description, make, model, content class, unit cost, tax, age, depreciation and ACV, totalling $2,428.05 ACV"
+              width={1740}
+              height={964}
+              loading="eager"
+              decoding="async"
+            />
+          </figure>
         </div>
       </main>
 
@@ -647,6 +528,8 @@ export default function LandingPage() {
            the short homepage just ends, and the detail that used to be here
            becomes unreachable from the front door. Reuses the mid-funnel CTA
            band this page already had rather than inventing a new shape. — */}
+      <MktProcessStrip />
+
       <section className="k-midcta">
         <div className="k-midcta-inner">
           <div className="k-midcta-l">
