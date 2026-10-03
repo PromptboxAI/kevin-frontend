@@ -8,7 +8,7 @@ nothing gets asked twice and nothing quietly falls off.
 
 ---
 
-## 12. Self-serve Done-for-you: quote before work, deposit, balance — NOT SENT
+## 12. Self-serve Done-for-you: quote before work, deposit, balance — SENT 2026-10-03
 
 **Status:** new, 2026-10-02. Owner's design. This is a flow, not an endpoint,
 so it is worth agreeing the shape before anyone builds a piece of it.
@@ -102,7 +102,7 @@ because every screen is a view of it.
 
 ---
 
-## 11. The trial renews every month — it should be 250 LIFETIME — NOT SENT
+## 11. The trial renews every month — it should be 250 LIFETIME — SENT 2026-10-03
 
 **Status:** new, 2026-10-02. Owner's decision, and it changes what a free
 account costs us in aggregate.
@@ -148,7 +148,7 @@ rather than retroactively locking anyone out, but it is your data.
 
 ---
 
-## 10. Line numbers must survive a delete — the owner has decided — NOT SENT
+## 10. Line numbers must survive a delete — the owner has decided — SENT 2026-10-03
 
 **Status:** new, 2026-09-30. This settles the open question in **BACKEND-ASKS
 29**, which laid the problem out and ended "happy to render whatever you land
@@ -182,7 +182,7 @@ The delete confirmation's warning comes out on the day it does.
 
 ---
 
-## 9. `vendor_watch` has been reporting "unreadable" — NOT SENT
+## 9. `vendor_watch` has been reporting "unreadable" — SENT 2026-10-03
 
 **Status:** new, 2026-09-29. Small, and possibly nothing — but it is a blind
 spot rather than an alarm, which is the kind that stays quiet.
