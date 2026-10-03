@@ -144,6 +144,27 @@ export default function PortalPage() {
     retry: (count, err) => !(err instanceof ApiError) && count < 2,
   })
 
+  /**
+   * The tab says whose inventory this is.
+   *
+   * This page is served from the SPA shell, so it inherited the marketing
+   * title -- an insured opening their own contents schedule saw "Kevin —
+   * Photos in. Inventory out." in the tab, and a browser full of tabs gave
+   * them nothing to find it by. The claim's own name is what they recognise.
+   *
+   * NO <Seo>: this route is noindex by header and the document is somebody's
+   * property schedule, so it gets a title and nothing else -- no description,
+   * no canonical, nothing that reads as a page meant to be found.
+   */
+  const claimName = data?.claim?.name ?? data?.claim?.insured_name ?? null
+  useEffect(() => {
+    const before = document.title
+    document.title = claimName ? `${claimName} — Kevin` : 'Shared claim — Kevin'
+    return () => {
+      document.title = before
+    }
+  }, [claimName])
+
   const paid = data?.paid ?? false
 
   /**
