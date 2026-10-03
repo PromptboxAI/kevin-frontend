@@ -12,6 +12,11 @@ import XactcontentsAlternativePage from './pages/XactcontentsAlternativePage'
 import MethodologyPage from './pages/MethodologyPage'
 import PriceFasterGuidePage from './pages/PriceFasterGuidePage'
 import WithoutPhotosPage from './pages/WithoutPhotosPage'
+import AutomateResearchGuidePage from './pages/AutomateResearchGuidePage'
+import ItemLevelPhotosGuidePage from './pages/ItemLevelPhotosGuidePage'
+import DepreciationGuidePage from './pages/DepreciationGuidePage'
+import ComparableGuidePage from './pages/ComparableGuidePage'
+import CompareXactcontentsPage from './pages/CompareXactcontentsPage'
 import AboutPage from './pages/AboutPage'
 import ContactPage from './pages/ContactPage'
 import DoneForYouPage from './pages/DoneForYouPage'
@@ -157,6 +162,11 @@ export default function App() {
         <Route path="/methodology" element={<MethodologyPage />} />
         <Route path="/guides/how-to-price-contents-claims-faster" element={<PriceFasterGuidePage />} />
         <Route path="/contents-claims/without-photos" element={<WithoutPhotosPage />} />
+        <Route path="/guides/automate-replacement-cost-research" element={<AutomateResearchGuidePage />} />
+        <Route path="/guides/item-level-photos-insurance-contents" element={<ItemLevelPhotosGuidePage />} />
+        <Route path="/guides/insurance-contents-depreciation" element={<DepreciationGuidePage />} />
+        <Route path="/guides/replacement-cost-comparable" element={<ComparableGuidePage />} />
+        <Route path="/compare/kevin-vs-xactcontents" element={<CompareXactcontentsPage />} />
         <Route path="/for-estate-liquidators" element={<ForEstateLiquidatorsPage />} />
         <Route path="/done-for-you" element={<DoneForYouPage />} />
         <Route path="/about" element={<AboutPage />} />

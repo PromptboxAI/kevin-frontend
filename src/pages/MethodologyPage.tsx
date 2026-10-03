@@ -174,7 +174,10 @@ export default function MethodologyPage() {
             schedule carries 31 categories and 87 sub-lines, so footwear, collectible media and
             major appliances are not treated as one category. Depreciation applies to the
             tax-inclusive line total and runs to 100%: property past its useful life shows $0.00
-            ACV. Jewelry, fine arts, firearms and furs carry no automatic depreciation at all.
+            ACV. Furs and jewelry other than costume pieces and watches have no useful life at all and are
+            appraisal-based; costume jewelry (10 years), watches (20) and firearms (20) are ordinary
+            age-based lines. Those four classes are never automatically PRICED, which is a separate
+            rule from how they depreciate.
           </p>
           <p className="k-seonote">
             Counts read from the live schedule on 3 October 2026. Depreciation is subject to the

@@ -80,6 +80,36 @@ export const SEO_PAGES: Record<string, SeoEntry> = {
       "For total losses, Kevin prices contents from item descriptions when usable photographs no longer exist. A separate workflow from the photo-based engine.",
     image: 'og-default.png',
   },
+  '/guides/automate-replacement-cost-research': {
+    title: 'How to Automate Replacement Cost Research for Contents Claims | Kevin',
+    description:
+      "Automation should search, filter and rank comparable listings — but item identity stays the gatekeeper. What a defensible search needs, and the bad matches to filter out.",
+    image: 'og-default.png',
+  },
+  '/guides/item-level-photos-insurance-contents': {
+    title: 'Why Item-Level Photos Matter in Insurance Contents Claims | Kevin',
+    description:
+      "A room photo establishes that property was there; it rarely establishes what it was. What belongs in frame for a defensible contents line item.",
+    image: 'og-default.png',
+  },
+  '/guides/insurance-contents-depreciation': {
+    title: 'How Insurance Contents Depreciation Works | Kevin',
+    description:
+      "Depreciation reduces replacement cost to reflect age against the useful life of the item class. Kevin’s schedule: 31 categories, 87 sub-lines, running to 100%.",
+    image: 'og-default.png',
+  },
+  '/guides/replacement-cost-comparable': {
+    title: 'How to Find a Defensible Replacement Cost Comparable | Kevin',
+    description:
+      "A defensible comparable matches the item’s identity and functional characteristics closely enough to represent the real replacement cost — and keeps the listing as evidence.",
+    image: 'og-default.png',
+  },
+  '/compare/kevin-vs-xactcontents': {
+    title: 'Kevin vs XactContents: Workflow Comparison | Kevin',
+    description:
+      "Kevin and XactContents overlap in part of the personal-property valuation workflow but are not the same product. A row-by-row comparison, with no declared winner.",
+    image: 'og-default.png',
+  },
   '/pricing': {
     title: 'Pricing — Kevin',
     description:
