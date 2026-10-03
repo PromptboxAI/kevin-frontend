@@ -1,8 +1,8 @@
+import { Suspense } from 'react'
 import { Navigate, Route, Routes, useParams } from 'react-router-dom'
 import RequireAuth from './components/RequireAuth'
 import ScrollToTop from './components/ScrollToTop'
 import { AuthProvider } from './lib/auth'
-import BillingPage from './pages/BillingPage'
 import RootRoute from './components/RootRoute'
 import PricingPage from './pages/PricingPage'
 import ForAdjustersPage from './pages/ForAdjustersPage'
@@ -10,48 +10,67 @@ import AboutPage from './pages/AboutPage'
 import ContactPage from './pages/ContactPage'
 import DoneForYouPage from './pages/DoneForYouPage'
 import LegalPage from './pages/LegalPage'
-import LandingFullPage from './pages/LandingFullPage'
 import BookCallPage from './pages/BookCallPage'
 import RequestAccessPage from './pages/RequestAccessPage'
-import DocsPage from './pages/DocsPage'
 import CareersPage from './pages/CareersPage'
 import WatchDemoPage from './pages/WatchDemoPage'
 import ForEstateLiquidatorsPage from './pages/ForEstateLiquidatorsPage'
 import ProductPage from './pages/ProductPage'
-import ClaimsPage from './pages/ClaimsPage'
-import AdminSystemPage from './pages/AdminSystemPage'
-import AdminPlatformPage from './pages/AdminPlatformPage'
 import RequireAdmin from './components/RequireAdmin'
-import ExportsPage from './pages/ExportsPage'
-import ExportPage from './pages/ExportPage'
-import IntakePage from './pages/IntakePage'
-import AddPhotosPage from './pages/AddPhotosPage'
-import StagingPage from './pages/StagingPage'
-import ProcessingPage from './pages/ProcessingPage'
-import ImportPage from './pages/ImportPage'
 import NotFoundPage from './pages/NotFoundPage'
-import OverviewPage from './pages/OverviewPage'
-import AuditPage from './pages/AuditPage'
-import PhotosPage from './pages/PhotosPage'
 import CapturePage from './pages/CapturePage'
 import PairPage from './pages/PairPage'
-import PortalPage from './pages/PortalPage'
-import PortalReturnPage from './pages/PortalReturnPage'
-import RecoveryPage from './pages/RecoveryPage'
-import SettingsBusinessPage from './pages/SettingsBusinessPage'
-import SettingsXactimatePage from './pages/SettingsXactimatePage'
-import SettingsPricingPage from './pages/SettingsPricingPage'
-import SettingsProfilePage from './pages/SettingsProfilePage'
-import SettingsSecurityPage from './pages/SettingsSecurityPage'
 import SignInPage from './pages/SignInPage'
 import SignUpPage from './pages/SignUpPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetSentPage from './pages/ResetSentPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
-import WorksheetPage from './pages/WorksheetPage'
 import SampleBanner from './components/SampleBanner'
 import { SAMPLE_CLAIM_ID } from './lib/worksheet-preview'
 import Seo from './components/Seo'
+import { lazyRoute } from './lib/lazy-route'
+
+/**
+ * The signed-in product, the docs and the insured's portal load on demand.
+ *
+ * They were all in the one bundle, so a visitor reading the pricing page
+ * downloaded and parsed the worksheet, staging, settings, the admin console
+ * and 45 docs articles first. Everything a marketing visitor can reach in one
+ * click stays in the main chunk and is imported above as before: the marketing
+ * pages, sign-in and sign-up.
+ *
+ * /pair and /capture stay eager on purpose. public/sw.js caches the capture
+ * shell's assets as they are requested so the phone can reload with no signal;
+ * a chunk of its own would be one more file that has to have been fetched
+ * before the basement.
+ *
+ * lazyRoute, not React.lazy — see lib/lazy-route.ts for the stale-tab case.
+ */
+const BillingPage = lazyRoute(() => import('./pages/BillingPage'))
+const DocsPage = lazyRoute(() => import('./pages/DocsPage'))
+const LandingFullPage = lazyRoute(() => import('./pages/LandingFullPage'))
+const ClaimsPage = lazyRoute(() => import('./pages/ClaimsPage'))
+const AdminSystemPage = lazyRoute(() => import('./pages/AdminSystemPage'))
+const AdminPlatformPage = lazyRoute(() => import('./pages/AdminPlatformPage'))
+const ExportsPage = lazyRoute(() => import('./pages/ExportsPage'))
+const ExportPage = lazyRoute(() => import('./pages/ExportPage'))
+const IntakePage = lazyRoute(() => import('./pages/IntakePage'))
+const AddPhotosPage = lazyRoute(() => import('./pages/AddPhotosPage'))
+const StagingPage = lazyRoute(() => import('./pages/StagingPage'))
+const ProcessingPage = lazyRoute(() => import('./pages/ProcessingPage'))
+const ImportPage = lazyRoute(() => import('./pages/ImportPage'))
+const OverviewPage = lazyRoute(() => import('./pages/OverviewPage'))
+const AuditPage = lazyRoute(() => import('./pages/AuditPage'))
+const PhotosPage = lazyRoute(() => import('./pages/PhotosPage'))
+const PortalPage = lazyRoute(() => import('./pages/PortalPage'))
+const PortalReturnPage = lazyRoute(() => import('./pages/PortalReturnPage'))
+const RecoveryPage = lazyRoute(() => import('./pages/RecoveryPage'))
+const SettingsBusinessPage = lazyRoute(() => import('./pages/SettingsBusinessPage'))
+const SettingsXactimatePage = lazyRoute(() => import('./pages/SettingsXactimatePage'))
+const SettingsPricingPage = lazyRoute(() => import('./pages/SettingsPricingPage'))
+const SettingsProfilePage = lazyRoute(() => import('./pages/SettingsProfilePage'))
+const SettingsSecurityPage = lazyRoute(() => import('./pages/SettingsSecurityPage'))
+const WorksheetPage = lazyRoute(() => import('./pages/WorksheetPage'))
 
 /**
  * The one claim id that is public. Backed by a real, owner-scoped row on the
@@ -97,6 +116,11 @@ export default function App() {
       {/* A SPA keeps the scroll offset across a route change, so a footer link
           opened the next page halfway down. */}
       <ScrollToTop />
+      {/* No fallback UI: React Router navigates inside a transition, so the
+          page being left stays up until the next one's chunk has arrived. The
+          only time this renders is a cold load straight onto a split route,
+          where the screen is blank before the bundle runs anyway. */}
+      <Suspense fallback={null}>
       <Routes>
         {/* PUBLIC. `/` is the marketing site for visitors and a redirect to
             the app for anyone signed in -- ad traffic must not land on a
@@ -373,6 +397,7 @@ export default function App() {
 
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
+      </Suspense>
     </AuthProvider>
   )
 }
