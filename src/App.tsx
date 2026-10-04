@@ -21,6 +21,11 @@ import GuidesIndexPage from './pages/GuidesIndexPage'
 import CaseStudy4000Page from './pages/CaseStudy4000Page'
 import FireLossInventoryGuidePage from './pages/FireLossInventoryGuidePage'
 import RcvVsAcvGuidePage from './pages/RcvVsAcvGuidePage'
+import PaFieldGuidePage from './pages/PaFieldGuidePage'
+import CarrierReviewGuidePage from './pages/CarrierReviewGuidePage'
+import NonSalvageableGuidePage from './pages/NonSalvageableGuidePage'
+import DiscontinuedItemsGuidePage from './pages/DiscontinuedItemsGuidePage'
+import RetailVsResaleGuidePage from './pages/RetailVsResaleGuidePage'
 import BestContentsSoftwareGuidePage from './pages/BestContentsSoftwareGuidePage'
 import AboutPage from './pages/AboutPage'
 import ContactPage from './pages/ContactPage'
@@ -179,6 +184,11 @@ export default function App() {
         />
         <Route path="/guides/contents-inventory-after-house-fire" element={<FireLossInventoryGuidePage />} />
         <Route path="/guides/rcv-vs-acv-personal-property" element={<RcvVsAcvGuidePage />} />
+        <Route path="/guides/public-adjuster-contents-inventory" element={<PaFieldGuidePage />} />
+        <Route path="/guides/what-carriers-look-for-contents-inventory" element={<CarrierReviewGuidePage />} />
+        <Route path="/guides/non-salvageable-contents-inventory" element={<NonSalvageableGuidePage />} />
+        <Route path="/guides/discontinued-items-insurance-claims" element={<DiscontinuedItemsGuidePage />} />
+        <Route path="/guides/retail-vs-secondary-market-contents" element={<RetailVsResaleGuidePage />} />
         <Route path="/guides/best-contents-software-public-adjusters" element={<BestContentsSoftwareGuidePage />} />
         <Route path="/for-estate-liquidators" element={<ForEstateLiquidatorsPage />} />
         <Route path="/done-for-you" element={<DoneForYouPage />} />

@@ -48,7 +48,7 @@ const FAQS: Faq[] = [
   },
   {
     q: 'Does Kevin use XactContents depreciation classes?',
-    a: 'Kevin carries its own schedule — 31 categories and 87 sub-lines — and each line is exported with a content class so it lands in the template correctly. A carrier profile can select a bracketed schedule instead of straight-line where that is what the carrier uses.',
+    a: 'Yes — that is what the schedule is built on. Each line is classified to an XactContents category and sub-category, and the depreciation follows from that class and the age of the item: 31 categories, 87 sub-lines, age-based, running to 100%. A carrier profile can select a bracketed schedule instead of straight-line where that is what the carrier uses. Using the taxonomy is not a relationship with its owner — see below.',
   },
   {
     q: 'Is Kevin a fit for public adjusters specifically?',
@@ -111,7 +111,7 @@ export default function XactcontentsAlternativePage() {
               ['Pricing', 'One query per item, priced from a single listing — a single representative listing.'],
               ['Source', 'That listing is stored on the row and prints into the export.'],
               ['Content class', 'Each line carries a class, which drives its depreciation and its place in the template.'],
-              ['Depreciation', '31 categories, 87 sub-lines, age-based, computed server-side and running to 100%.'],
+              ['Depreciation', 'Classified to XactContents categories and sub-categories — 31 categories, 87 sub-lines, age-based, computed server-side and running to 100%.'],
               ['RCV and ACV', 'Unit cost × quantity, plus sales tax, less depreciation — footed left to right on the row.'],
               ['Export', 'Xactimate (Excel) · .xlsx · XactContents template, plus a room-by-room PDF.'],
             ]}

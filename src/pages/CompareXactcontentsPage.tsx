@@ -103,7 +103,7 @@ export default function CompareXactcontentsPage() {
               ['Replacement research', 'One query per item; priced from a single listing', 'Price list and catalogue driven'],
               ['Source URL on the line', 'Stored on the row and printed in the export', 'Not in this form'],
               ['Content classification', 'On every line, driving its depreciation', 'Native to the platform'],
-              ['Depreciation', '31 categories, 87 sub-lines, age-based, to 100%', 'Platform and carrier schedules'],
+              ['Depreciation', 'XactContents classes — 31 categories, 87 sub-lines, age-based, to 100%', 'Platform and carrier schedules'],
               ['RCV and ACV', 'Computed server-side, footed on the row', 'Yes'],
               ['Structural estimating', 'No', 'Yes, with Xactimate'],
               ['Carrier ecosystem', 'No. Kevin exports a file you send', 'Yes, including assignment flow'],

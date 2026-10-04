@@ -128,6 +128,36 @@ export const SEO_PAGES: Record<string, SeoEntry> = {
       "Replacement cost value is what the item costs today; actual cash value is that figure less depreciation for its age and class. How a real worksheet line foots.",
     image: 'og-default.png',
   },
+  '/guides/public-adjuster-contents-inventory': {
+    title: 'Public Adjuster Contents Inventory Field Guide | Kevin',
+    description:
+      "What belongs on a contents line item, how specific a description has to be to price, and why several photographs describe one piece of property.",
+    image: 'og-default.png',
+  },
+  '/guides/what-carriers-look-for-contents-inventory': {
+    title: 'What Adjusters Look for in a Contents Inventory | Kevin',
+    description:
+      "The ten checks a desk adjuster applies to a contents schedule — identification, quantity, comparability, source, depreciation — and why consistency decides a large claim.",
+    image: 'og-default.png',
+  },
+  '/guides/non-salvageable-contents-inventory': {
+    title: 'How to Document Non-Salvageable Contents | Kevin',
+    description:
+      "Photograph non-salvageable property before disposal: what each frame establishes, why four photos are not four items, and how the line is priced afterwards.",
+    image: 'og-default.png',
+  },
+  '/guides/discontinued-items-insurance-claims': {
+    title: 'How to Price Discontinued Items in Contents Claims | Kevin',
+    description:
+      "Exact model, successor, same-brand equivalent, like kind and quality, then the resale market — the hierarchy for valuing property that is no longer sold.",
+    image: 'og-default.png',
+  },
+  '/guides/retail-vs-secondary-market-contents': {
+    title: 'Retail vs eBay Pricing for Insurance Contents Claims | Kevin',
+    description:
+      "When retail replacement pricing fits and when the resale market is the honest source — plus why Kevin prices from active listings rather than completed sales.",
+    image: 'og-default.png',
+  },
   '/guides/best-contents-software-public-adjusters': {
     title: 'Best Contents Software for Public Adjusters: What to Look For | Kevin',
     description:

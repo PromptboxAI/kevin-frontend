@@ -45,6 +45,16 @@ const GROUPS: { h: string; blurb: string; items: Entry[] }[] = [
     blurb: 'Method that holds up whether or not you use our software.',
     items: [
       {
+        to: '/guides/public-adjuster-contents-inventory',
+        t: 'Contents inventory field guide',
+        d: 'What belongs on a line, how specific a description has to be, and why several photographs describe one item.',
+      },
+      {
+        to: '/guides/what-carriers-look-for-contents-inventory',
+        t: 'What a reviewer looks for',
+        d: 'The ten checks a desk adjuster applies, and why consistency is what a large schedule is judged on.',
+      },
+      {
         to: '/guides/how-to-price-contents-claims-faster',
         t: 'How to price contents claims faster',
         d: 'The five bottlenecks on a large claim, and where automation should stop.',
@@ -71,6 +81,16 @@ const GROUPS: { h: string; blurb: string; items: Entry[] }[] = [
     blurb: 'The arithmetic behind the two numbers on every line.',
     items: [
       {
+        to: '/guides/discontinued-items-insurance-claims',
+        t: 'Pricing a discontinued item',
+        d: 'Exact model, successor, like kind and quality — and where the resale market takes over.',
+      },
+      {
+        to: '/guides/retail-vs-secondary-market-contents',
+        t: 'Retail vs the resale market',
+        d: 'Which market represents the item, why asking prices mislead, and what Kevin prices from.',
+      },
+      {
         to: '/guides/insurance-contents-depreciation',
         t: 'How contents depreciation works',
         d: 'Useful life by class, real schedule lines, and why depreciation runs all the way to 100%.',
@@ -90,6 +110,11 @@ const GROUPS: { h: string; blurb: string; items: Entry[] }[] = [
         to: '/contents-claims/without-photos',
         t: 'Pricing a contents claim without photos',
         d: 'How a written inventory is parsed, mapped, previewed and priced — and where it is weaker than photographs.',
+      },
+      {
+        to: '/guides/non-salvageable-contents-inventory',
+        t: 'Documenting non-salvageable contents',
+        d: 'What to photograph before the dumpster, and why that decides what the schedule can say.',
       },
       {
         to: '/guides/contents-inventory-after-house-fire',

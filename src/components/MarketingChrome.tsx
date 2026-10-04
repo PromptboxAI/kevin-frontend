@@ -54,6 +54,11 @@ const LIVE = new Set<string>([
   '/guides/replacement-cost-comparable',
   '/guides/rcv-vs-acv-personal-property',
   '/guides/contents-inventory-after-house-fire',
+  '/guides/public-adjuster-contents-inventory',
+  '/guides/what-carriers-look-for-contents-inventory',
+  '/guides/non-salvageable-contents-inventory',
+  '/guides/discontinued-items-insurance-claims',
+  '/guides/retail-vs-secondary-market-contents',
   '/guides/best-contents-software-public-adjusters',
   '/case-studies/4000-contents-line-items-30-days',
 ])
