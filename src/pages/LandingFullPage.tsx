@@ -456,12 +456,12 @@ export default function LandingFullPage() {
                 </div>
               </div>
               <div className="k-pg-pop">
-                <div className="k-pg-pop-hd">Comps · the middle price is the RCV</div>
+                <div className="k-pg-pop-hd">Comps · the RCV is one of these listings</div>
                 {[
                   ['Target', '$152.19', false],
                   ['Madden', '$141.16', true],
                   ['Walmart', '$124.75', false],
-                ].map(([source, price, isMedian], i) => (
+                ].map(([source, price, isCited], i) => (
                   <div key={i} className="k-pg-pop-row">
                     <span
                       style={{
@@ -475,9 +475,9 @@ export default function LandingFullPage() {
                     >
                       {source}
                     </span>
-                    <span className={`k-mini-dot k-mini-dot--${isMedian ? 'ok' : 'quiet'}`} />
+                    <span className={`k-mini-dot k-mini-dot--${isCited ? 'ok' : 'quiet'}`} />
                     <span style={{ fontSize: 11, color: 'var(--k-fg-4)' }}>
-                      {isMedian ? 'Direct listing' : 'Search result'}
+                      {isCited ? 'Direct listing' : 'Search result'}
                     </span>
                     <span className="k-mono" style={{ fontWeight: 600 }}>
                       {price}

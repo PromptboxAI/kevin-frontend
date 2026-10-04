@@ -47,19 +47,30 @@ RULES = [
     ("9b", "a trial cap other than 250 items",  r"\b(?!250\b)[\d,]{2,7}\s+free\s+items\b(?!\s+(left|remaining|used))"),
     ("10", "per-retailer sources / store list",  r"per[- ](retailer|store)\s+(integration|scraper|adapter)|18\s+stores|toggleable\s+stores"),
     ("10", "domain allowlist / blocklist",       r"(domain|strict)\s+(allow|block)list|allowlists?\s+govern"),
+    # AMENDED 2026-10-04. The comp-SELECTION METHOD is internal only, the same
+    # status as the vendor name: the Source Link is what an adjuster is owed,
+    # not the recipe. Rule 10 had read as permission to publish it ("three
+    # constraints on how this is worded anywhere"), and three surfaces carried
+    # it -- /product, /landing-full and the watch-demo script. "prose" skips
+    # comments: code that explains the engine to the next engineer is wanted.
+    ("10", "the comp-selection METHOD (internal only)",
+     r"middle\s+(one|listing|price|comp)\b|middle\s+by\s+price|"
+     r"median\s+of\s+(the\s+)?(comps?|listings?|prices?|offers?)|"
+     r"midpoint\s+of\s+(the\s+)?(comps?|listings?)|"
+     r"average\s+of\s+(the\s+)?(comps?|listings?)", "prose"),
     # AMENDED 2026-09-03. `comparable_sale` / `market_comp` are LIVE again --
     # the backend reintroduced the resale fall-through, so flagging them
     # produced false positives on correct code (ItemDrawer's basis label).
     # What stays banned is the BACK-SOLVE, which was never reinstated: deriving
     # RCV by dividing a comp by (1 - depr%). The frontend computes no valuation
     # at all (rule 20), so any such formula in this codebase is a bug.
-    ("11", "the removed back-solve (RCV = comp / (1 - depr))", r"back[- ]solve|marketComp|RCV\s*=\s*comp\s*[/÷]|gross(?:ed)?[- ]up\s+to\s+a\s+replacement"),
+    ("11", "the removed back-solve (RCV = comp / (1 - depr))", r"back[- ]solve|marketComp|RCV\s*=\s*comp\s*[/÷]|\bgross(?:ed)?[- ]up\s+to\s+a\s+replacement"),
     # Estate FMV is a haircut off ACTIVE listings, so naming a merchant that
     # returns active listings is fine -- what is false is calling any of it
     # SOLD. LiveAuctioneers stays listed: an auction house only reports
     # hammer prices, so naming it is itself sold provenance.
     ("11", "sold provenance (FMV is a haircut off active listings)",
-     r"\(sold\)|sold\s+comps?|sold\s+listings?|hammer\s+price|LiveAuctioneers|resale\s+market\s+decides"),
+     r"\(sold\)|sold\s+comps?\b|sold\s+listings?\b|auction\s+results?|hammer\s+price|LiveAuctioneers|resale\s+market\s+decides"),
     ("12", "dead needs_manual badges",           r"Appraisal\s+req'?d|Low\s+sample\s+badge|\$5k\s+(gate|approval)"),
     ("16", "an export readiness gate",           r"Export\s+anyway|not\s+ready\s+to\s+export"),
     ("19", "unlimited storage (it is 500 GB)",   r"unlimited\s+storage"),
@@ -85,6 +96,32 @@ NEGATION_WINDOW_AFTER = 48
 
 
 COMMENT_CONT = re.compile(r"^\s*(\*|//|#)")
+
+BLOCK_OPEN = re.compile(r"/\*")
+BLOCK_CLOSE = re.compile(r"\*/")
+
+
+def comment_lines(lines):
+    """1-based line numbers that sit inside a comment.
+
+    Only rules marked "prose" use this. The distinction matters for rule 10:
+    the selection method is internal, so a JSX comment explaining why the comps
+    panel names a listing instead of restating the method is exactly the
+    reasoning to keep -- flagging it would park a permanent false positive in
+    the report, and a guard nobody reads catches nothing. Tracks /* */ across
+    lines because the real case is a wrapped JSX comment whose continuation
+    lines carry no marker of their own.
+    """
+    inside, depth = set(), 0
+    for n, line in enumerate(lines, 1):
+        stripped = line.strip()
+        if depth > 0:
+            inside.add(n)
+        elif stripped.startswith(("//", "#", "*", "/*", "{/*")):
+            inside.add(n)
+        depth = max(0, depth + len(BLOCK_OPEN.findall(line)) - len(BLOCK_CLOSE.findall(line)))
+    return inside
+
 
 
 def negated(line, match, prev=""):
@@ -140,11 +177,17 @@ def main():
     print("checking %d shipping files against %d rules\n" % (len(cache), len(RULES)))
     flagged = 0
 
-    for rule, what, pat in RULES:
+    comments = {p: comment_lines(lines) for p, lines in cache.items()}
+
+    for rule, what, pat, *opts in RULES:
         rx = re.compile(pat, re.I)
+        prose_only = "prose" in opts
         hits = []
         for p, lines in cache.items():
+            skip = comments[p] if prose_only else ()
             for n, line in enumerate(lines, 1):
+                if n in skip:
+                    continue
                 m = rx.search(line)
                 if m and not negated(line, m, lines[n - 2] if n >= 2 else ""):
                     hits.append((os.path.relpath(p, BASE), n, line.strip()[:104]))

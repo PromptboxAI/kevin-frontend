@@ -18,10 +18,13 @@ const EPDF_ESTATE = {
   preparer: 'M. Reyes · Reyes Adjusting, LLC',
 };
 
-// Median sold comp for a row — the source line the client can verify.
-// Seed data multiplies one figure by fixed factors, so the literal median is
-// always the same marketplace; rotate per row so the mock reads like real data.
-const epdfMedian = (r) => {
+// The source listing for a row — the line the client can verify. NOT a sold
+// comp and not a median: estate FMV is a haircut off the retail figure, taken
+// from listings currently offered for sale (rule 8b), and labelling any of it
+// "sold" is false provenance on a document a liquidator hands a client.
+// Seed data multiplies one figure by fixed factors, so a fixed pick is always
+// the same marketplace; rotate per row so the mock reads like real data.
+const epdfSource = (r) => {
   const s = r.alternative_sources || [];
   return s.length ? s[r.id % s.length] : null;
 };
@@ -101,7 +104,7 @@ const EstatePdf = () => {
         </thead>
         <tbody>
           {rows.map((r, i) => {
-            const m = epdfMedian(r);
+            const m = epdfSource(r);
             return (
               <tr key={r.id}>
                 <td className="pdf-c-num pdf-mono">{String(i + 1).padStart(3, '0')}</td>
