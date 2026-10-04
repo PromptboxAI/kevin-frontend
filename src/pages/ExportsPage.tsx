@@ -7,7 +7,8 @@ import Badge from '../components/Badge'
 import { I, Icon } from '../components/Icon'
 import { ApiError, api, downloadExport, downloadRecovery } from '../lib/api'
 import { fmtDate, fmtUSD } from '../lib/format'
-import type { ClaimListResponse, ClaimSummary } from '../lib/types'
+import { formFrom, letterheadLines } from '../lib/business-rules'
+import type { ClaimListResponse, ClaimSummary, MeResponse } from '../lib/types'
 
 /**
  * Screen 13 -- exports.
@@ -34,14 +35,41 @@ export default function ExportsPage() {
     queryFn: () => api.get<ClaimListResponse>('/v1/claims?limit=100'),
   })
 
+  /**
+   * The firm, only to decide whether the plain/branded choice means anything.
+   * With no letterhead saved both buttons produce the identical file, and
+   * offering a choice that changes nothing is worse than not offering one.
+   */
+  const me = useQuery({
+    queryKey: ['me'],
+    queryFn: () => api.get<MeResponse>('/v1/me'),
+    staleTime: 60_000,
+  })
+  const hasFirm =
+    letterheadLines(formFrom(me.data?.business)).length > 0 ||
+    Boolean(me.data?.business?.logo_url)
+
   const exported = (claims.data?.claims ?? []).filter((c) => c.exported_at)
 
-  const pull = async (claim: ClaimSummary, kind: 'export' | 'recovery', format: 'xlsx' | 'pdf') => {
-    setBusy(`${claim.claim_id}:${kind}:${format}`)
+  const pull = async (
+    claim: ClaimSummary,
+    kind: 'export' | 'recovery',
+    format: 'xlsx' | 'pdf',
+    /**
+     * Per EXPORT, never stored — the same rule as the Export screen, and the
+     * owner's reason for it: the same claim goes to a client one day and to a
+     * carrier the next, so a remembered setting is one somebody has to
+     * remember to flip back. This page used to re-pull branded with no way to
+     * choose, so a document pulled from here could not be the one the Export
+     * screen offered.
+     */
+    letterhead = true,
+  ) => {
+    setBusy(`${claim.claim_id}:${kind}:${format}:${letterhead ? 'brand' : 'plain'}`)
     setNotice(null)
     try {
       if (kind === 'export') {
-        await downloadExport(claim.claim_id, format)
+        await downloadExport(claim.claim_id, format, letterhead ? {} : { letterhead: false })
         // Re-pulling the Proof of Loss does NOT re-stamp: exported_at is
         // first-write-wins, so the date on screen stays the date it went out.
         setNotice(`${claim.name} — Proof of Loss downloaded.`)
@@ -163,11 +191,27 @@ export default function ExportsPage() {
                       /* Says what the .xlsx button says, for the same reason:
                          a re-pull is rebuilt from the claim as it stands now,
                          which is the one surprising thing about this page. */
-                      title="The Proof of Loss as a PDF, rebuilt from the claim as it stands now"
+                      title={
+                        hasFirm
+                          ? 'The Proof of Loss as a PDF, with your letterhead, rebuilt from the claim as it stands now'
+                          : 'The Proof of Loss as a PDF, rebuilt from the claim as it stands now'
+                      }
                       onClick={() => void pull(c, 'export', 'pdf')}
                     >
                       <Icon d={I.download} size={11} /> PDF
                     </button>
+                    {/* Only when there is a letterhead to leave off. */}
+                    {hasFirm ? (
+                      <button
+                        type="button"
+                        className="k-btn k-btn--ghost k-btn--sm"
+                        disabled={busy !== null}
+                        title="The same PDF without your firm's letterhead — for a carrier or another adjuster"
+                        onClick={() => void pull(c, 'export', 'pdf', false)}
+                      >
+                        <Icon d={I.download} size={11} /> PDF, plain
+                      </button>
+                    ) : null}
                     {/* A different document, not a variant -- and one that
                         409s until something has actually been replaced, which
                         is why the failure says so in words. */}
