@@ -14,6 +14,54 @@ nothing gets asked twice and nothing quietly falls off.
 
 ---
 
+## 13. Sales tax rounds half-DOWN on a line and half-UP in the rollup, so the tax column does not foot
+
+**Status:** new, 2026-10-04. Found in an end-to-end test, claim
+`test-b-append` (21 lines, 8.75% Suffolk). Small, but it lands in the one
+document that gets added up by somebody else.
+
+**What the claim says.** `total_tax` = **$825.35**. Summing the 21 lines'
+own `tax` values gives **$825.31**. Four lines are each a cent light:
+
+| # | Ext. Cost | ext x 0.0875 | line `tax` | half-up |
+|---|---|---|---|---|
+| 0012 | 30.00 | 2.625 | **2.62** | 2.63 |
+| 0017 | 5034.00 | 440.475 | **440.47** | 440.48 |
+| 0018 | 2414.00 | 211.225 | **211.22** | 211.23 |
+| 0021 | 358.00 | 31.325 | **31.32** | 31.33 |
+
+Every one is an exact half-cent, and every one goes down. Recomputing each
+line as `round_half_up(ext * rate)` and summing reproduces `total_tax`
+**exactly** ($825.35) -- so the rollup is already half-up and only the
+per-line value is not. Two rounding modes, one codebase.
+
+The cause looks like Python's float `round()`: 2.625 is exactly representable
+and banker's rounding takes it to the even 2.62, while 440.475, 211.225 and
+31.325 are stored a hair below their decimal value and round down for that
+reason instead. Different mechanisms, same direction.
+
+**Why it is worth a fix rather than a shrug.** Rule 18 puts tax on every line,
+and the .xlsx carries static values (no formulas) -- so an adjuster or a
+carrier who sums the Sales Tax column in Excel gets a number that disagrees
+with the total Kevin printed. It scales with line count, not with amount: 4
+cents on 21 lines, and an estate runs hundreds to thousands.
+
+RCV + Tax and ACV inherit it: they are built from the rounded tax, so the
+same four lines carry the cent forward, and the RCV and ACV totals are each
+4 cents above the sum of their own column.
+
+**What we are asking for:** per-line money through `Decimal` with
+`ROUND_HALF_UP`, which is what the rollup already effectively does and what
+sales tax conventionally uses. The frontend reads all of this verbatim and
+will not patch it -- `computeACV()` was deleted precisely so there is one
+answer, and it is yours.
+
+**Not asking** for the existing rows to be rewritten. Lines already exported
+cite numbers a carrier has seen; a silent restatement is worse than a cent.
+New lines being right is enough, unless you would rather do both.
+
+---
+
 ## 12. Self-serve Done-for-you: quote before work, deposit, balance — NEEDS THE OWNER IN THE BACKEND SESSION
 
 **Status:** new, 2026-10-02. Owner's design. This is a flow, not an endpoint,
