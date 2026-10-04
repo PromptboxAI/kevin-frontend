@@ -163,9 +163,28 @@ export default function StagingPage() {
     if (!data || autoFired.current || awaitingSets || cluster.isPending) return
     if (Date.now() < retryClusterAt.current) return
     const none = (data.groups?.length ?? 0) === 0
-    if (none && data.photo_count > 0 && reading === 0 && data.status !== 'processed') {
+    /*
+     * ⛔ GATED ON stillExtracting, NOT on `reading`.
+     *
+     * `reading` counts unlisted photos too -- `photo_count` minus everything
+     * the session names -- and before the FIRST cluster the session names
+     * nothing: groups is null and ungrouped_photos is empty. So a one-photo
+     * upload sat at `reading === 1` forever, waiting to be listed by the very
+     * clustering run this gate was blocking. Measured on a live session:
+     * status "uploading", photo_count 1, groups null, updated_at never moving.
+     *
+     * Firing early is the cheap mistake and it is already handled: the server
+     * answers 409 "extraction still in progress" and the handler re-arms this
+     * with a delay. Not firing is the expensive one -- nothing else ever
+     * starts.
+     */
+    const stillReading = stillExtracting.length > 0
+    if (none && data.photo_count > 0 && !stillReading && data.status !== 'processed') {
       autoFired.current = true
-      log('auto-clustering — upload landed, every photo read, no sets yet')
+      log('auto-clustering — no sets yet, nothing mid-extraction', {
+        photos: data.photo_count,
+        unlisted,
+      })
       cluster.mutate()
     }
   })

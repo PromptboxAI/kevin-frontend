@@ -703,7 +703,7 @@ export default function PhotoUpload({
                 {done
                   ? sentCount === 0
                     ? 'Nothing was stored'
-                    : `All ${fmtInt(sentCount)} photos uploaded`
+                    : `All ${fmtInt(sentCount)} photo${sentCount === 1 ? '' : 's'} uploaded`
                   : chunk && retrying
                     ? // A transient failure is being retried, not ignored: say so,
                       // or a backoff wait of a few seconds reads as a frozen upload.
