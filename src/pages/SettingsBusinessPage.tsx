@@ -30,6 +30,17 @@ import type { MeResponse } from '../lib/types'
  * and `PUT/DELETE /v1/me/logo` own the mark, so what is typed here is what
  * prints.
  *
+ * ⛔ ONE PROFILE PER ACCOUNT, and that is settled. Multi-business was raised
+ * again on 2026-10-04 — several letterhead profiles to pick between, the way
+ * Xactimate lets you choose a business when producing a document — and the
+ * owner declined it again: one profile, with the letterhead switched on or
+ * off per export, is enough and is not worth the build. The per-export toggle
+ * lives on the Export screen and on each row of Exports. Worth knowing before
+ * anyone reopens it: the ORIGINAL 2026-09-20 decision was argued from the
+ * .xlsx carrying no branding, which is an argument about the spreadsheet and
+ * never reached the PDF — so if it is reopened, it should be reopened on its
+ * own merits rather than on that reasoning.
+ *
  * ⛔ THIS IS NOT THE PER-CLAIM PREPARER. A claim carries its own
  * `estimator_name` / `business_name` recording who prepared THAT inventory,
  * and keeps them even after the person leaves the firm. This is the account's
