@@ -538,7 +538,18 @@ export default function StagingPage() {
               ['Photos', data?.photo_count ?? 0, null],
               ['Photo sets', groups.length, 'accent'],
               ['Multi-photo sets', multi.length, null],
-              ['You excluded', excluded.length, 'quiet'],
+              /*
+               * "Excluded", not "You excluded". The clusterer classifies sets
+               * as context on its own -- a 23-photo upload came back with
+               * three already set aside (a blurred frame, a crowded shot, one
+               * more) before the adjuster had touched anything. Telling them
+               * THEY excluded three sets sends them looking for a decision
+               * they never made, on the screen whose whole premise is that
+               * Kevin proposes and they decide. The session does not record
+               * who set a kind, so the honest label names the state and not
+               * the actor.
+               */
+              ['Excluded', excluded.length, 'quiet'],
               [
                 'Needs a note',
                 unreadable.length,
