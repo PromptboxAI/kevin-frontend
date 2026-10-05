@@ -145,7 +145,7 @@ export default function PaContentsSoftwarePage() {
             items={[
               {
                 t: 'Item identification',
-                d: 'Vision, OCR, model numbers and barcodes together — no single signal is trusted on its own, and a frame that cannot be read is flagged rather than guessed.',
+                d: 'Read from the photographs, with several independent signals weighed together — no single one is trusted on its own, and a frame that cannot be read is flagged rather than guessed.',
               },
               {
                 t: 'Multi-photo grouping',

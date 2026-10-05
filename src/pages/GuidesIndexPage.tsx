@@ -45,6 +45,16 @@ const GROUPS: { h: string; blurb: string; items: Entry[] }[] = [
     blurb: 'Method that holds up whether or not you use our software.',
     items: [
       {
+        to: '/guides/large-contents-inventory-500-items',
+        t: 'Building a 500+ item claim',
+        d: 'Where the hours go on a large inventory, and why photographs are not line items.',
+      },
+      {
+        to: '/guides/clothing-footwear-contents-claims',
+        t: 'Clothing and footwear',
+        d: 'A closet photo supports quantity, not identity — when to group and when to itemise.',
+      },
+      {
         to: '/guides/public-adjuster-contents-inventory',
         t: 'Contents inventory field guide',
         d: 'What belongs on a line, how specific a description has to be, and why several photographs describe one item.',
@@ -80,6 +90,21 @@ const GROUPS: { h: string; blurb: string; items: Entry[] }[] = [
     h: 'Valuation and depreciation',
     blurb: 'The arithmetic behind the two numbers on every line.',
     items: [
+      {
+        to: '/guides/exact-match-vs-like-kind-quality',
+        t: 'Exact match vs like kind and quality',
+        d: 'What a replacement has to preserve, and where a substitution stops being defensible.',
+      },
+      {
+        to: '/guides/high-value-contents-claims',
+        t: 'Documenting high-value property',
+        d: 'Where a small identification error costs the most, and which classes never auto-price.',
+      },
+      {
+        to: '/guides/collectibles-insurance-contents',
+        t: 'Pricing collectibles',
+        d: 'Edition, condition and completeness — and the markets where ordinary retail says nothing.',
+      },
       {
         to: '/guides/discontinued-items-insurance-claims',
         t: 'Pricing a discontinued item',

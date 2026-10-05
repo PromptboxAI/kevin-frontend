@@ -106,8 +106,8 @@ export default function PriceFasterGuidePage() {
             caption="Where the hours go, and what removes them"
             columns={['Bottleneck', 'By hand', 'Automated']}
             rows={[
-              ['Identification', 'Read the photo, type a description, hope it matches the product', 'Vision, OCR, model numbers and barcodes together; blank where unreadable'],
-              ['Finding the comparable', 'Search, open several retailers, compare variants', 'One query per item; wrong variants, bundles and duplicates discarded'],
+              ['Identification', 'Read the photo, type a description, hope it matches the product', 'Read from the photographs, with several signals weighed together; blank where unreadable'],
+              ['Finding the comparable', 'Search, open several retailers, compare variants', 'Researched per item, and priced from one listing rather than a blend'],
               ['Source links', 'Copy a URL per line, or skip it when short of time', 'Stored on the row automatically and printed in the export'],
               ['Categories', 'Chosen per line from memory', 'Carried on the line and used for the schedule'],
               ['Depreciation', 'Looked up per category and per age', 'Server-computed from class and age, to 100%'],

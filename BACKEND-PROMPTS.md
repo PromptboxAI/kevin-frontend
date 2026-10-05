@@ -14,9 +14,20 @@ nothing gets asked twice and nothing quietly falls off.
 
 ---
 
-## 16. Does the engine still route comps by retailer? The Platform screen says it does
+## 16. Does the engine still route comps by retailer? — NO. IT IS DISPLAY ORDER.
 
-**Status:** new, 2026-10-05. A question, not a request — one line answers it.
+**Status:** **answered 2026-10-05.** It is display ORDER, not routing: the
+lists say what order sources are shown in for a category, not where a comp is
+fetched from. **Rule 10 is intact** — one unified comp source, no per-retailer
+scrapers, nothing to reintroduce.
+
+So the screen was the problem, not the config. "Comp routing · 9 categories",
+on the one surface whose job is to answer "why did that line price like that?",
+was an answer and a wrong one: an admin reading it would have concluded a
+Furniture comp came from Wayfair because the table said so. Retitled **"Comp
+source order"** with a line underneath saying it is not where comps come from.
+
+**Original question follows.** A question, not a request — one line answers it.
 
 `/admin/platform` renders a **"Comp routing · 9 categories"** table straight
 from `GET /v1/depreciation-rules`: Furniture to Wayfair / West Elm / CB2 /
@@ -95,9 +106,36 @@ until there is a flow behind it.
 
 ---
 
-## 14. There is no class a mattress belongs in, so its depreciation is a coin flip
+## 14. A mattress depreciates on the wrong life — ANSWERED, AND WE ASKED FOR THE WRONG FIX
 
-**Status:** new, 2026-10-05. Owner found it: entered **10 years** on a mattress
+**Status:** **answered 2026-10-05, and our fix was wrong.**
+
+**Do not add a mattress line at 8-10 years** — the backend's answer, and it is
+right. The owner's schedule already files mattresses, mattress pads and pillows
+under **`Linens & Softgoods > All Other Linens & Softgoods` (10 years)**, and
+the backend now routes typed/imported items there. We asked for a new row
+because we could not find a mattress by searching for the word; it was in a
+line whose name does not contain it.
+
+**`rules` and `schedule` are not two competing truths**, which is the part we
+got wrong in the follow-up. The life applied follows the item's `category`: if
+that string equals a `schedule` line id, that line's life applies; otherwise
+`rules[category]` does. One resolution order, not two tables disagreeing.
+
+**What is still true, and is now the owner's call:** photographed items carry a
+CLASS name, so they take the class life — a photographed mattress is classed
+`Furniture` and depreciates on **15 years** (the 66.6% at age 10 that started
+this), while the same item typed in lands on the Linens line and depreciates on
+**10**. Same object, two answers, decided by how it got into the claim. The
+backend says the owner is deciding whether to move photographed items onto
+schedule lines; until he does, that gap is live.
+
+**Done on our side:** `/admin/platform` now shows BOTH lists with the
+resolution order stated between them, rather than the 87-line schedule alone —
+which could not answer "why did that line depreciate like that?" for any
+photographed item.
+
+**Original report follows.** Owner found it: entered **10 years** on a mattress
 and got **66.6%** back, and said the expected life looked too long.
 
 **He is right, and the arithmetic names the cause.** From the live

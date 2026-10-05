@@ -59,6 +59,11 @@ const LIVE = new Set<string>([
   '/guides/non-salvageable-contents-inventory',
   '/guides/discontinued-items-insurance-claims',
   '/guides/retail-vs-secondary-market-contents',
+  '/guides/exact-match-vs-like-kind-quality',
+  '/guides/high-value-contents-claims',
+  '/guides/collectibles-insurance-contents',
+  '/guides/clothing-footwear-contents-claims',
+  '/guides/large-contents-inventory-500-items',
   '/guides/best-contents-software-public-adjusters',
   '/case-studies/4000-contents-line-items-30-days',
 ])
@@ -249,6 +254,8 @@ export function MktFooter() {
           <MktLink to="/guides/item-level-photos-insurance-contents">Item-level photos</MktLink>
           <MktLink to="/guides/contents-inventory-after-house-fire">After a total fire loss</MktLink>
           <MktLink to="/guides/non-salvageable-contents-inventory">Non-salvageable contents</MktLink>
+          <MktLink to="/guides/large-contents-inventory-500-items">Large inventories</MktLink>
+          <MktLink to="/guides/clothing-footwear-contents-claims">Clothing and footwear</MktLink>
         </div>
         <div className="k-footx-col">
           <div className="k-footx-h">Pricing &amp; valuation</div>
@@ -259,6 +266,9 @@ export function MktFooter() {
           <MktLink to="/guides/discontinued-items-insurance-claims">Discontinued items</MktLink>
           <MktLink to="/guides/retail-vs-secondary-market-contents">Retail vs resale</MktLink>
           <MktLink to="/contents-claims/without-photos">Pricing without photos</MktLink>
+          <MktLink to="/guides/exact-match-vs-like-kind-quality">Exact match vs LKQ</MktLink>
+          <MktLink to="/guides/high-value-contents-claims">High-value contents</MktLink>
+          <MktLink to="/guides/collectibles-insurance-contents">Collectibles</MktLink>
           <MktLink to="/xactcontents-alternative">XactContents alternative</MktLink>
         </div>
         <div className="k-footx-col">

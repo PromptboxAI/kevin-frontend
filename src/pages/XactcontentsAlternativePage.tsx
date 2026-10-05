@@ -107,7 +107,7 @@ export default function XactcontentsAlternativePage() {
             rows={[
               ['Photo evidence', 'Hundreds of photographs ingest at once — a folder, a phone dump or a .zip, expanded in the browser.'],
               ['Grouping', 'Shots of one item taken seconds apart become one proposed set, which you merge, split or exclude.'],
-              ['Identification', 'Vision, OCR, model numbers and barcodes together; no single signal is trusted on its own.'],
+              ['Identification', 'Read from the photographs; several independent signals are weighed together and no single one is trusted on its own.'],
               ['Pricing', 'One query per item, priced from a single listing — a single representative listing.'],
               ['Source', 'That listing is stored on the row and prints into the export.'],
               ['Content class', 'Each line carries a class, which drives its depreciation and its place in the template.'],

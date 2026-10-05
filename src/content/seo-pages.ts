@@ -158,6 +158,36 @@ export const SEO_PAGES: Record<string, SeoEntry> = {
       "When retail replacement pricing fits and when the resale market is the honest source — plus why Kevin prices from active listings rather than completed sales.",
     image: 'og-default.png',
   },
+  '/guides/exact-match-vs-like-kind-quality': {
+    title: 'Exact Match vs Like Kind and Quality | Kevin',
+    description:
+      "What separates an exact replacement, a successor model and a like-kind substitute on a contents claim, and where each one stops being defensible.",
+    image: 'og-default.png',
+  },
+  '/guides/high-value-contents-claims': {
+    title: 'How to Document High-Value Contents | Kevin',
+    description:
+      "Where identity moves the price, the description is the argument: configuration, the right market, and which classes are never auto-priced.",
+    image: 'og-default.png',
+  },
+  '/guides/collectibles-insurance-contents': {
+    title: 'How to Price Collectibles in Contents Claims | Kevin',
+    description:
+      "Edition, condition and completeness decide a collectible, not the category. Which markets apply, and why graded cards are never auto-priced.",
+    image: 'og-default.png',
+  },
+  '/guides/clothing-footwear-contents-claims': {
+    title: 'Documenting Clothing and Footwear in Contents Claims | Kevin',
+    description:
+      "A closet photo supports quantity, not identity. When to group, when to itemise, and why age carries more weight on apparel than anywhere else.",
+    image: 'og-default.png',
+  },
+  '/guides/large-contents-inventory-500-items': {
+    title: 'How to Build a 500+ Item Contents Claim | Kevin',
+    description:
+      "Large claims are repetition, not difficulty. Where the hours go, why photographs are not line items, and how small error rates compound at scale.",
+    image: 'og-default.png',
+  },
   '/guides/best-contents-software-public-adjusters': {
     title: 'Best Contents Software for Public Adjusters | Kevin',
     description:

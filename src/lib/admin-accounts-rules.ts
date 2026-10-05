@@ -28,22 +28,18 @@ export type AdminAccount = {
 export type AdminAccountsResponse = {
   accounts: AdminAccount[]
   /**
-   * ⚠️ `count` IS NOT TREATED AS A TOTAL, deliberately.
+   * The total across ALL pages — confirmed by the backend 2026-10-05.
    *
-   * The live response is `{accounts, count, limit, offset}` -- no `total`.
-   * `count` could be the whole registry or just this page, and the two are
-   * indistinguishable while every account fits on one page. This codebase has
-   * already been bitten by exactly that ambiguity: `/v1/jobs/failed` returns a
-   * `count` that means THIS PAGE, which the System screen read as the total
-   * and reported "50 failed jobs" when there were 79 (see FAILED_JOBS_LIMIT in
-   * admin.ts).
-   *
-   * So paging falls back to "was the page full?" until the backend says which
-   * it is. That is never wrong -- it only costs one extra request at the end.
-   * Reading it as a total and being wrong hides accounts.
+   * Worth the confirmation rather than the assumption: `/v1/jobs/failed`
+   * returns a `count` that means THIS PAGE, and the System screen once read it
+   * as a total and reported "50 failed jobs" when there were 79 (see
+   * FAILED_JOBS_LIMIT in admin.ts). Same word, different meaning, one API.
    */
   count?: number | null
-  /** Not currently sent. If it appears, it is authoritative and paging uses it. */
+  /**
+   * Being added by the backend with the same value as `count`, expressly so
+   * nobody has to trust the name. Preferred when present.
+   */
   total?: number | null
 }
 
@@ -236,10 +232,23 @@ export function accountsQuery(opts: { q?: string; limit?: number; offset?: numbe
 }
 
 /**
- * Paging. The list endpoint is specified with `limit`/`offset` but `total` is
- * not promised, so fall back to "was the page full?" -- the same rule the
- * claim event list needed, for the same reason: paging on a `total` that is
- * null stops at the first page and silently hides the rest.
+ * How many accounts there are in all, from whichever field carries it.
+ * `total` is authoritative when present; `count` is the same number under an
+ * ambiguous name (backend, 2026-10-05). Null when neither was sent, and the
+ * caller falls back to the page heuristic rather than inventing a figure.
+ */
+export function totalFrom(r: Pick<AdminAccountsResponse, 'count' | 'total'> | undefined): number | null {
+  if (!r) return null
+  if (r.total != null) return r.total
+  if (r.count != null) return r.count
+  return null
+}
+
+/**
+ * Paging. Uses the total when there is one and falls back to "was the page
+ * full?" when there is not -- paging on a null total stops at the first page
+ * and silently hides the rest, which is the failure this shape exists to
+ * avoid. The fallback only ever costs one extra request at the end.
  */
 export function nextOffset(opts: {
   offset: number

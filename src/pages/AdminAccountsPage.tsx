@@ -19,6 +19,7 @@ import {
   sinceLabel,
   stateLabel,
   stateTone,
+  totalFrom,
 } from '../lib/admin-accounts-rules'
 
 /**
@@ -127,7 +128,7 @@ export default function AdminAccountsPage() {
   const accounts = useAdminAccounts(q, offset)
   const unavailable = unavailableFrom(accounts.error)
   const rows = useMemo(() => accounts.data?.accounts ?? [], [accounts.data])
-  const total = accounts.data?.total ?? null
+  const total = totalFrom(accounts.data)
   const more = nextOffset({ offset, limit: ACCOUNTS_PAGE, returned: rows.length, total })
 
   /* Counted over THIS PAGE and labelled as such. A figure headed "past due"

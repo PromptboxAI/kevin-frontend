@@ -26,6 +26,11 @@ import CarrierReviewGuidePage from './pages/CarrierReviewGuidePage'
 import NonSalvageableGuidePage from './pages/NonSalvageableGuidePage'
 import DiscontinuedItemsGuidePage from './pages/DiscontinuedItemsGuidePage'
 import RetailVsResaleGuidePage from './pages/RetailVsResaleGuidePage'
+import ExactVsLkqGuidePage from './pages/ExactVsLkqGuidePage'
+import HighValueGuidePage from './pages/HighValueGuidePage'
+import CollectiblesGuidePage from './pages/CollectiblesGuidePage'
+import ClothingFootwearGuidePage from './pages/ClothingFootwearGuidePage'
+import LargeInventoryGuidePage from './pages/LargeInventoryGuidePage'
 import BestContentsSoftwareGuidePage from './pages/BestContentsSoftwareGuidePage'
 import AboutPage from './pages/AboutPage'
 import ContactPage from './pages/ContactPage'
@@ -191,6 +196,11 @@ export default function App() {
         <Route path="/guides/non-salvageable-contents-inventory" element={<NonSalvageableGuidePage />} />
         <Route path="/guides/discontinued-items-insurance-claims" element={<DiscontinuedItemsGuidePage />} />
         <Route path="/guides/retail-vs-secondary-market-contents" element={<RetailVsResaleGuidePage />} />
+        <Route path="/guides/exact-match-vs-like-kind-quality" element={<ExactVsLkqGuidePage />} />
+        <Route path="/guides/high-value-contents-claims" element={<HighValueGuidePage />} />
+        <Route path="/guides/collectibles-insurance-contents" element={<CollectiblesGuidePage />} />
+        <Route path="/guides/clothing-footwear-contents-claims" element={<ClothingFootwearGuidePage />} />
+        <Route path="/guides/large-contents-inventory-500-items" element={<LargeInventoryGuidePage />} />
         <Route path="/guides/best-contents-software-public-adjusters" element={<BestContentsSoftwareGuidePage />} />
         <Route path="/for-estate-liquidators" element={<ForEstateLiquidatorsPage />} />
         <Route path="/done-for-you" element={<DoneForYouPage />} />

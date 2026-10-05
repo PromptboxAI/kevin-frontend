@@ -99,7 +99,7 @@ export default function CompareXactcontentsPage() {
               ['Primary purpose', 'Build, price, classify and document contents lines from evidence', 'Contents valuation within an estimating platform'],
               ['Photo intake', 'Hundreds at once: folder, phone dump or .zip expanded in the browser', 'Not its focus'],
               ['Multi-photo grouping', 'Shots of one item become one proposed set, confirmed by a person', 'Not its focus'],
-              ['Item identification', 'Vision, OCR, model numbers and barcodes together', 'Entered by the estimator'],
+              ['Item identification', 'Read from the photographs, with several independent signals weighed together', 'Entered by the estimator'],
               ['Replacement research', 'One query per item; priced from a single listing', 'Price list and catalogue driven'],
               ['Source URL on the line', 'Stored on the row and printed in the export', 'Not in this form'],
               ['Content classification', 'On every line, driving its depreciation', 'Native to the platform'],

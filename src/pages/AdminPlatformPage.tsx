@@ -11,8 +11,8 @@ import { fmtInt } from '../lib/format'
  * Screen 69 — Platform. What the engine believes, read from the engine.
  *
  * Two things drive every number an adjuster sees: the depreciation schedule
- * (class -> useful life, mode, ceiling) and comp routing (which sources are
- * tried for which class). Both are live reads — GET /v1/depreciation-rules and
+ * (class -> useful life, mode, ceiling) and the comp source list. Both are
+ * live reads — GET /v1/depreciation-rules and
  * GET /v1/sources — so this screen can be trusted when a customer asks why a
  * line depreciated the way it did.
  *
@@ -109,6 +109,31 @@ export default function AdminPlatformPage() {
       .sort(([a], [b]) => a.localeCompare(b))
   }, [rules.data, q])
 
+  /*
+   * THE 30 CLASSES, shown beside the 87 schedule lines rather than instead of
+   * them. The two are not competing truths and must not be presented as one
+   * list: the life applied to an item follows its `category` -- if that string
+   * is a schedule line id, that line's life applies; otherwise `rules[category]`
+   * does (backend, 2026-10-05).
+   *
+   * This matters because photographed items currently carry a CLASS name, so
+   * they take the class life. A photographed mattress is classed Furniture and
+   * depreciates on 15 years, while the same item typed in lands on
+   * "Linens & Softgoods > All Other Linens & Softgoods" and depreciates on 10.
+   * An admin asking "why did that line depreciate like that?" cannot answer it
+   * from the schedule table alone, which is why both are here.
+   */
+  const classes = useMemo(() => {
+    const entries = Object.entries(rules.data?.rules ?? {})
+    const needle = q.trim().toLowerCase()
+    const hits = needle
+      ? entries.filter(([name, r]) =>
+          `${name} ${r.pcs_code ?? ''}`.toLowerCase().includes(needle),
+        )
+      : entries
+    return hits.sort((a, b) => a[0].localeCompare(b[0]))
+  }, [rules.data, q])
+
   const routing = Object.entries(sources.data?.category_priority ?? {})
   const byKey = new Map((sources.data?.sources ?? []).map((s) => [s.key, s]))
   const manualLines = Object.values(rules.data?.schedule ?? {}).filter((l) => l.appraisal).length
@@ -130,7 +155,7 @@ export default function AdminPlatformPage() {
               Platform
             </h1>
             <p style={{ fontSize: 13, color: 'var(--k-fg-3)', margin: 0 }}>
-              The depreciation schedule and comp routing the engine is running right now.
+              The depreciation schedules and comp sources the engine is running right now.
             </p>
           </div>
           <Badge tone="quiet">Read-only</Badge>
@@ -171,7 +196,7 @@ export default function AdminPlatformPage() {
             <div className="k-adm-kpi-v">{fmtInt(sources.data?.sources?.length ?? 0)}</div>
             <div className="k-adm-kpi-d">
               <span style={{ color: 'var(--k-fg-3)' }}>
-                {fmtInt(routing.length)} routed categories
+                {fmtInt(routing.length)} categories order them
               </span>
             </div>
           </div>
@@ -243,7 +268,72 @@ export default function AdminPlatformPage() {
           </div>
         </Card>
 
-        <Card title={`Comp routing · ${fmtInt(routing.length)} categories`}>
+        <Card title={`Content classes · ${fmtInt(classes.length)}`}>
+          <p className="k-note" style={{ padding: '12px 16px 0', margin: 0 }}>
+            A second, shorter vocabulary — and the one a <strong>photographed</strong> item
+            currently gets. Which list applies follows the item’s category: if it names a
+            schedule line above, that line’s life is used; otherwise the class below is.{' '}
+            <strong>The two do not always agree</strong>, and neither is a summary of the other —
+            Furniture is one class here and several lines above, spanning 10 to 20 years.
+          </p>
+          <div className="k-set-card-body" style={{ padding: 0 }}>
+            {rules.isPending ? (
+              <p className="k-note" style={{ padding: '14px 16px' }}>
+                Reading…
+              </p>
+            ) : (
+              <div className="k-adm-sched">
+                <div className="k-adm-sched-hd">
+                  <span>Class</span>
+                  <span>Life</span>
+                  <span>Mode</span>
+                  <span>Ceiling</span>
+                  <span>Code</span>
+                </div>
+                {classes.map(([name, r]) => (
+                  <div key={name} className="k-adm-sched-row">
+                    <span className="k-adm-sched-name">
+                      {name}
+                      {r.manual ? <Badge tone="warn">appraisal</Badge> : null}
+                    </span>
+                    <span className="k-mono">
+                      {r.useful_life_years === null ? '—' : `${r.useful_life_years} y`}
+                    </span>
+                    <span style={{ color: 'var(--k-fg-3)' }}>
+                      {r.manual ? 'appraisal' : 'age_based'}
+                    </span>
+                    <span className="k-mono">—</span>
+                    <span className="k-mono" style={{ color: 'var(--k-fg-4)' }}>
+                      {r.pcs_code ?? '—'}
+                    </span>
+                  </div>
+                ))}
+                {classes.length === 0 ? (
+                  <p className="k-note" style={{ padding: '14px 16px' }}>
+                    Nothing matches “{q}”.
+                  </p>
+                ) : null}
+              </div>
+            )}
+          </div>
+        </Card>
+
+        {/*
+          * NOT ROUTING. The backend settled this on 2026-10-05: these lists are
+          * the order sources are DISPLAYED in for a category, not a routing
+          * table that decides where a comp is fetched from. Rule 10 is intact —
+          * there is one unified comp source and no per-retailer scrapers.
+          *
+          * The old title said "Comp routing", which on the one screen whose job
+          * is to answer "why did that line price like that?" was an answer, and
+          * a wrong one: an admin reading it would have believed a Furniture
+          * comp came from Wayfair because this table said so.
+          */}
+        <Card title={`Comp source order · ${fmtInt(routing.length)} categories`}>
+          <p className="k-note" style={{ padding: '12px 16px 0', margin: 0 }}>
+            The order sources are listed in for a category — not where a comp is fetched from.
+            Every comp comes from the one unified source regardless of what appears here.
+          </p>
           <div className="k-set-card-body" style={{ padding: 0 }}>
             {sources.isPending ? (
               <p className="k-note" style={{ padding: '14px 16px' }}>
