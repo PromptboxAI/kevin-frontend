@@ -14,6 +14,54 @@ nothing gets asked twice and nothing quietly falls off.
 
 ---
 
+## 14. There is no class a mattress belongs in, so its depreciation is a coin flip
+
+**Status:** new, 2026-10-05. Owner found it: entered **10 years** on a mattress
+and got **66.6%** back, and said the expected life looked too long.
+
+**He is right, and the arithmetic names the cause.** From the live
+`GET /v1/depreciation-rules` (30 classes):
+
+- `Furniture` -> `useful_life_years: 15`. 10/15 = **66.6%**. That is the number.
+- `Bedding & Linens` -> `useful_life_years: 5`. 10/5 = 200%, clamped to
+  **100%**, ACV **$0.00**.
+
+Those are the only two classes a mattress can land in, and nothing in the list
+is a mattress: no Mattresses, no Beds, no Bedroom. So the same item is either
+66.6% depreciated or worthless at ten years old, a spread of the entire
+valuation, decided by which of two wrong boxes it falls into.
+
+**It is not stable either, which is how we found it.** The SAME photo file
+(`loss/w480/mattress.jpg`) has been classed both ways by the live engine:
+
+| run | class | life | depr at age 10 |
+|---|---|---|---|
+| earlier QA claim `test-b-append` line 0018 | Bedding & Linens | 5 | 100% |
+| `retest-mattress-1` / `-2` (after build 464cc13) | Furniture | 15 | 66.6% |
+
+Build 464cc13 has pinned the identification, so runs are consistent *now* --
+both retest runs agree exactly (see the retest results we sent separately).
+But the two classes it has used sit on opposite ends of the schedule, and the
+pinning froze whichever one it happened to pick.
+
+**Two things we think are needed, and the second matters more:**
+
+1. **A mattress class with a life to match.** Industry useful life for a
+   mattress is about 8-10 years, which is neither 15 nor 5. Adding it is a
+   schedule row plus wherever the classifier's label set is defined.
+2. **A look at how many other items have no right box.** A mattress is not an
+   exotic item; it is in a large share of residential contents claims. If it
+   has no home in a 30-class schedule, the question is what else does not --
+   and the failure is silent, because a wrong class still returns a confident
+   percentage. Nothing in the payload says "this class is a poor fit".
+
+**What the frontend will not do about it:** anything. Per rule 20 the UI does
+not derive or correct a class, and per rule 13 it renders the percentage as it
+comes, including a clamped 100% and a $0.00 ACV. An adjuster can override the
+class by hand, and that is the only workaround we have.
+
+---
+
 ## 13. Sales tax rounds half-DOWN on a line and half-UP in the rollup, so the tax column does not foot
 
 **Status:** new, 2026-10-04. Found in an end-to-end test, claim
