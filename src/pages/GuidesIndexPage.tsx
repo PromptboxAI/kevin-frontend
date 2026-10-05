@@ -26,7 +26,7 @@ const GROUPS: { h: string; blurb: string; items: Entry[] }[] = [
       {
         to: '/methodology',
         t: 'How Kevin builds insurance contents line items',
-        d: 'Upload, extract, cluster, review, promote, price, depreciate, export — and where a person confirms the work.',
+        d: 'How a photograph becomes a priced, classified, depreciated line item — and where a person confirms the work.',
       },
       {
         to: '/insurance-contents-pricing-software',
@@ -164,7 +164,7 @@ export default function GuidesIndexPage() {
           crumbs={CRUMBS}
           h1="Guides"
           lede="How contents claims get built, priced and depreciated — written for the people who do it, with the product's real behaviour rather than its brochure."
-          updated="3 October 2026"
+          updated="5 October 2026"
         />
 
         {GROUPS.map((g) => (

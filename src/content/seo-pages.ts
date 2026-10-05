@@ -37,7 +37,7 @@ export const SEO_PAGES: Record<string, SeoEntry> = {
   '/': {
     title: 'Kevin — Photos in. Inventory out.',
     description:
-      'Drop your claim photos and Kevin builds a defensible, Xactimate-ready contents inventory: identified items, live retail comps, depreciation, and ACV — reviewed by you.',
+      'Drop your claim photos and Kevin builds a defensible, Xactimate-ready contents inventory: identified items, priced comps, depreciation and ACV.',
     image: 'og-landing.png',
   },
   /* ── SEO / AI-answer pages ───────────────────────────────────────────
@@ -47,7 +47,7 @@ export const SEO_PAGES: Record<string, SeoEntry> = {
   '/public-adjusters/ai-contents-inventory-software': {
     title: 'AI Contents Inventory Software for Public Adjusters | Kevin',
     description:
-      'Create insurance-ready contents line items faster with Kevin. Identify items, source replacement pricing, apply depreciation, and export carrier-ready contents worksheets.',
+      'Create insurance-ready contents line items faster: identify items, research replacement pricing, apply depreciation, export a carrier-ready worksheet.',
     image: 'og-default.png',
   },
   '/insurance-contents-pricing-software': {
@@ -59,19 +59,19 @@ export const SEO_PAGES: Record<string, SeoEntry> = {
   '/xactcontents-alternative': {
     title: 'XactContents Alternative for Faster Contents Claims | Kevin',
     description:
-      "Looking for a faster XactContents workflow? Kevin identifies items, researches replacement pricing, applies depreciation, and exports carrier-ready worksheets. Not affiliated with Verisk.",
+      "A faster XactContents workflow: Kevin identifies items, prices them, depreciates and exports in the XactContents template. Not affiliated with Verisk.",
     image: 'og-default.png',
   },
   '/methodology': {
     title: 'How Kevin Builds Insurance Contents Line Items | Kevin',
     description:
-      "Upload, extract, cluster, review, promote, price, depreciate, export — how Kevin turns photographs into insurance-ready contents line items, and where a person confirms the work.",
+      "How Kevin turns photographs into insurance-ready contents line items — what is automated, what a person confirms, and where the process deliberately stops.",
     image: 'og-default.png',
   },
   '/guides/how-to-price-contents-claims-faster': {
     title: 'How to Price Contents Claims Faster | Kevin',
     description:
-      "The biggest time savings come from automating identification, replacement-cost research, source documentation, classification and depreciation — while keeping human review.",
+      "The five bottlenecks on a large contents claim, which of them automation should take, and the one place it should stop and hand back to you.",
     image: 'og-default.png',
   },
   '/contents-claims/without-photos': {
@@ -81,13 +81,13 @@ export const SEO_PAGES: Record<string, SeoEntry> = {
     image: 'og-default.png',
   },
   '/guides/automate-replacement-cost-research': {
-    title: 'How to Automate Replacement Cost Research for Contents Claims | Kevin',
+    title: 'How to Automate Replacement-Cost Research | Kevin',
     description:
-      "Automation should search, filter and rank comparable listings — but item identity stays the gatekeeper. What a defensible search needs, and the bad matches to filter out.",
+      "Automation can search, filter and rank listings, but item identity stays the gatekeeper. What a defensible search needs, and the matches to filter out.",
     image: 'og-default.png',
   },
   '/guides/item-level-photos-insurance-contents': {
-    title: 'Why Item-Level Photos Matter in Insurance Contents Claims | Kevin',
+    title: 'Why Item-Level Photos Matter in Contents Claims | Kevin',
     description:
       "A room photo establishes that property was there; it rarely establishes what it was. What belongs in frame for a defensible contents line item.",
     image: 'og-default.png',
@@ -101,13 +101,13 @@ export const SEO_PAGES: Record<string, SeoEntry> = {
   '/guides/replacement-cost-comparable': {
     title: 'How to Find a Defensible Replacement Cost Comparable | Kevin',
     description:
-      "A defensible comparable matches the item’s identity and functional characteristics closely enough to represent the real replacement cost — and keeps the listing as evidence.",
+      "A defensible comparable matches the item on the characteristics that set its price, and keeps the listing behind it as evidence.",
     image: 'og-default.png',
   },
   '/compare/kevin-vs-xactcontents': {
     title: 'Kevin vs XactContents: Workflow Comparison | Kevin',
     description:
-      "Kevin and XactContents overlap in part of the personal-property valuation workflow but are not the same product. A row-by-row comparison, with no declared winner.",
+      "Kevin and XactContents overlap in part of the contents workflow but are not the same product. A row-by-row comparison, with no declared winner.",
     image: 'og-default.png',
   },
   '/guides': {
@@ -117,7 +117,7 @@ export const SEO_PAGES: Record<string, SeoEntry> = {
     image: 'og-default.png',
   },
   '/guides/contents-inventory-after-house-fire': {
-    title: 'How to Build a Contents Inventory After a Total House Fire | Kevin',
+    title: 'Building a Contents Inventory After a House Fire | Kevin',
     description:
       "Rebuild a contents inventory room by room after a total loss, using the evidence that survives: cloud photos, order histories, receipts and statements.",
     image: 'og-default.png',
@@ -137,7 +137,7 @@ export const SEO_PAGES: Record<string, SeoEntry> = {
   '/guides/what-carriers-look-for-contents-inventory': {
     title: 'What Adjusters Look for in a Contents Inventory | Kevin',
     description:
-      "The ten checks a desk adjuster applies to a contents schedule — identification, quantity, comparability, source, depreciation — and why consistency decides a large claim.",
+      "The ten checks a desk adjuster applies to a contents schedule, and why consistency across the schedule is what a large claim is judged on.",
     image: 'og-default.png',
   },
   '/guides/non-salvageable-contents-inventory': {
@@ -159,15 +159,15 @@ export const SEO_PAGES: Record<string, SeoEntry> = {
     image: 'og-default.png',
   },
   '/guides/best-contents-software-public-adjusters': {
-    title: 'Best Contents Software for Public Adjusters: What to Look For | Kevin',
+    title: 'Best Contents Software for Public Adjusters | Kevin',
     description:
       "Evaluation criteria rather than rankings: what to test in a trial, the four categories of tool, and the questions to put to any vendor.",
     image: 'og-default.png',
   },
   '/case-studies/4000-contents-line-items-30-days': {
-    title: 'Case Study: 4,000+ Insurance Contents Line Items in 30 Days | Kevin',
+    title: '4,000+ Contents Line Items in 30 Days | Kevin',
     description:
-      "How one practising adjuster produced more than four thousand carrier-facing contents line items through Kevin in a single month — and what a person still reviewed on every line.",
+      "How one practising adjuster produced more than four thousand carrier-facing contents line items in a single month, reviewing every line.",
     image: 'og-default.png',
   },
   '/pricing': {

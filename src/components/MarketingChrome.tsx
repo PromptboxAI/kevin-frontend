@@ -243,11 +243,23 @@ export function MktFooter() {
           <div className="k-footx-h">Guides</div>
           <MktLink to="/guides">All guides</MktLink>
           <MktLink to="/methodology">How Kevin works</MktLink>
+          <MktLink to="/guides/public-adjuster-contents-inventory">Contents inventory field guide</MktLink>
+          <MktLink to="/guides/what-carriers-look-for-contents-inventory">What a reviewer checks</MktLink>
+          <MktLink to="/guides/how-to-price-contents-claims-faster">Pricing claims faster</MktLink>
+          <MktLink to="/guides/item-level-photos-insurance-contents">Item-level photos</MktLink>
+          <MktLink to="/guides/contents-inventory-after-house-fire">After a total fire loss</MktLink>
+          <MktLink to="/guides/non-salvageable-contents-inventory">Non-salvageable contents</MktLink>
+        </div>
+        <div className="k-footx-col">
+          <div className="k-footx-h">Pricing &amp; valuation</div>
           <MktLink to="/insurance-contents-pricing-software">Contents pricing</MktLink>
           <MktLink to="/guides/insurance-contents-depreciation">Depreciation</MktLink>
           <MktLink to="/guides/rcv-vs-acv-personal-property">RCV vs ACV</MktLink>
-          <MktLink to="/xactcontents-alternative">XactContents alternative</MktLink>
+          <MktLink to="/guides/replacement-cost-comparable">Finding a comparable</MktLink>
+          <MktLink to="/guides/discontinued-items-insurance-claims">Discontinued items</MktLink>
+          <MktLink to="/guides/retail-vs-secondary-market-contents">Retail vs resale</MktLink>
           <MktLink to="/contents-claims/without-photos">Pricing without photos</MktLink>
+          <MktLink to="/xactcontents-alternative">XactContents alternative</MktLink>
         </div>
         <div className="k-footx-col">
           <div className="k-footx-h">Company</div>
