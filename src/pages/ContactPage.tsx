@@ -1,4 +1,5 @@
 import Seo from '../components/Seo'
+import { crumbJsonLd } from '../components/seo-kit'
 import CalendlyInline, { CALENDLY_URL } from '../components/CalendlyInline'
 import { I, Icon } from '../components/Icon'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
@@ -16,7 +17,7 @@ import { MktFooter, MktNav } from '../components/MarketingChrome'
 export default function ContactPage() {
   return (
     <div className="k-landing">
-      <Seo path="/contact" />
+      <Seo path="/contact" jsonLd={crumbJsonLd([{ to: '/contact', t: 'Contact' }])} />
       <MktNav />
       <main className="k-mkt-main">
         <section className="k-contact">

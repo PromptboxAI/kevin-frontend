@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import Seo from '../components/Seo'
+import { crumbJsonLd } from '../components/seo-kit'
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { I, Icon } from '../components/Icon'
 import KevinWordmark from '../components/KevinWordmark'
@@ -171,7 +172,34 @@ export default function DocsPage() {
 
   return (
     <div className="k-docs">
-      <Seo path={`/docs/${slug}`} title={DOC_TITLE(art.title)} description={art.summary} />
+      <Seo
+        path={`/docs/${slug}`}
+        title={DOC_TITLE(art.title)}
+        description={art.summary}
+        /* Every docs article had a title, a description and a card but NO
+           structured data at all -- 45 pages telling a crawler nothing about
+           what they were. TechArticle is the honest type for product
+           documentation, and the breadcrumb puts the article under /docs. */
+        jsonLd={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'TechArticle',
+            headline: art.title,
+            description: art.summary,
+            url: `https://www.kevin.co/docs/${slug}`,
+            isPartOf: {
+              '@type': 'WebSite',
+              name: 'Kevin',
+              url: 'https://www.kevin.co',
+            },
+            publisher: { '@type': 'Organization', name: 'Kevin' },
+          },
+          crumbJsonLd([
+            { to: '/docs', t: 'Docs' },
+            { to: `/docs/${slug}`, t: art.title },
+          ]),
+        ]}
+      />
       <header className="k-topbar">
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <KevinWordmark size={16} suffix to="/" />

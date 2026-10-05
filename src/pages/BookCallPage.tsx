@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import Seo from '../components/Seo'
+import { crumbJsonLd } from '../components/seo-kit'
 import CalendlyInline from '../components/CalendlyInline'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
 
@@ -38,7 +39,7 @@ const LINK: React.CSSProperties = {
 export default function BookCallPage() {
   return (
     <div className="k-landing">
-      <Seo path="/book-call" />
+      <Seo path="/book-call" jsonLd={crumbJsonLd([{ to: '/book-call', t: 'Book a call' }])} />
       <MktNav />
       <main className="k-mkt-main">
         <section style={{ maxWidth: 1060, margin: '0 auto', padding: '52px 40px 40px' }}>

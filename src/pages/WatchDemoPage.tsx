@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import Seo from '../components/Seo'
+import { crumbJsonLd } from '../components/seo-kit'
 import Badge from '../components/Badge'
 import { I, Icon } from '../components/Icon'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
@@ -85,7 +86,7 @@ const DEMO_STEPS: [string, string, string, string[]][] = [
 export default function WatchDemoPage() {
   return (
     <div className="k-landing">
-      <Seo path="/demo" />
+      <Seo path="/demo" jsonLd={crumbJsonLd([{ to: '/demo', t: 'Watch the demo' }])} />
       <MktNav />
       <main className="k-mkt-main">
         <section

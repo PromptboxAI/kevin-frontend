@@ -1,5 +1,6 @@
 import Badge from '../components/Badge'
 import Seo from '../components/Seo'
+import { crumbJsonLd } from '../components/seo-kit'
 import { I, Icon } from '../components/Icon'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
 
@@ -30,7 +31,7 @@ const TEAMS = [...new Set(ROLES.map((r) => r.team))]
 export default function CareersPage() {
   return (
     <div className="k-landing">
-      <Seo path="/careers" />
+      <Seo path="/careers" jsonLd={crumbJsonLd([{ to: '/careers', t: 'Careers' }])} />
       <MktNav />
       <main className="k-mkt-main">
         <section style={{ maxWidth: 920, margin: '0 auto', padding: '60px 40px 40px' }}>

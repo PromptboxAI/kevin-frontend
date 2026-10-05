@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import Seo from '../components/Seo'
+import { crumbJsonLd } from '../components/seo-kit'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
 
 /**
@@ -85,7 +86,7 @@ const EYEBROW: React.CSSProperties = {
 export default function AboutPage() {
   return (
     <div className="k-landing">
-      <Seo path="/about" />
+      <Seo path="/about" jsonLd={crumbJsonLd([{ to: '/about', t: 'About' }])} />
       <MktNav />
       <main className="k-mkt-main">
         <section className="k-about-hero">

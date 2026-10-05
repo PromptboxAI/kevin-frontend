@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Seo from '../components/Seo'
+import { crumbJsonLd } from '../components/seo-kit'
 import { useLocation } from 'react-router-dom'
 import { I, Icon } from '../components/Icon'
 import KevinWordmark from '../components/KevinWordmark'
@@ -256,7 +257,14 @@ export default function LegalPage({ initialTab = 'privacy' }: { initialTab?: Tab
     <div className="k-docs">
       {/* /security is its own route rendering its own sections, so it gets
           its own title and canonical. Every other path here is the legal hub. */}
-      <Seo path={pathname === '/security' ? '/security' : '/legal'} />
+      <Seo
+        path={pathname === '/security' ? '/security' : '/legal'}
+        jsonLd={crumbJsonLd([
+          pathname === '/security'
+            ? { to: '/security', t: 'Security' }
+            : { to: '/legal', t: 'Legal' },
+        ])}
+      />
       <header className="k-topbar">
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <KevinWordmark size={16} suffix to="/" />

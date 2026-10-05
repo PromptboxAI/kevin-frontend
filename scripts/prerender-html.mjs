@@ -108,10 +108,45 @@ async function inlineCritical(path, html) {
   }
 }
 
-for (const path of server.ROUTES) {
+// WARM THE LAZY ROUTES FIRST. DocsPage is code-split, so the first
+// renderToString that reaches it aborts to client rendering while the import
+// is still in flight -- and that cost exactly one page, silently:
+// /docs/quick-start shipped a 9KB empty-root shell while the other 44 docs
+// rendered at ~28KB, because by the second route the module was cached.
+// Rendering one docs route and discarding it, with a yield after, settles the
+// import before anything is written.
+if (server.DOC_ROUTES?.length) {
+  try {
+    server.render(server.DOC_ROUTES[0])
+    await new Promise((r) => setTimeout(r, 0))
+  } catch {
+    /* the real render below reports failures */
+  }
+}
+
+for (const path of [...server.ROUTES, ...server.DOC_ROUTES]) {
   const file = join(dist, path.replace(/^\//, ''), 'index.html')
   try {
-    const body = server.render(path).replace(LEADING_HOISTED, '')
+    // A lazy route aborts the FIRST time renderToString meets its unresolved
+    // module: React bails to client rendering and leaves a <template
+    // data-msg="Switched to client rendering..."> instead of markup. The
+    // import resolves while that render runs, so a second attempt succeeds.
+    //
+    // This cost us exactly one page and did so silently -- /docs/quick-start,
+    // the first docs route in the list, shipped a 9KB empty-root shell while
+    // the other 44 rendered at ~28KB. Retry rather than trust the first pass.
+    //
+    // The marker on its own is NOT a failure: a page can carry an aborted
+    // boundary and still render everything else, which is why a first pass at
+    // treating it as fatal skipped all 45. Only an empty body is.
+    let body = server.render(path).replace(LEADING_HOISTED, '')
+    if (!body.trim() || body.includes('Switched to client rendering')) {
+      // AWAIT between attempts. server.render is synchronous, so two calls
+      // back to back both see the lazy module still unresolved -- the import
+      // settles on a microtask. Yielding once lets it land before the retry.
+      await new Promise((r) => setTimeout(r, 0))
+      body = server.render(path).replace(LEADING_HOISTED, '')
+    }
     if (!body.trim()) throw new Error('rendered nothing')
     const html = await readFile(file, 'utf8')
     if (!html.includes(EMPTY_ROOT)) throw new Error('shell has no empty root')

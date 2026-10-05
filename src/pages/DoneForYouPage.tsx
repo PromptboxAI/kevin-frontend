@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import Seo from '../components/Seo'
+import { crumbJsonLd, softwareJsonLd } from '../components/seo-kit'
 import { I, Icon } from '../components/Icon'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
 import { DFY_BANDS, DFY_SETUP_FEE, quoteFor } from '../lib/dfy-pricing-rules'
@@ -94,7 +95,7 @@ const usd = (n: number) =>
 export default function DoneForYouPage() {
   return (
     <div className="k-landing k-dfy">
-      <Seo path="/done-for-you" />
+      <Seo path="/done-for-you" jsonLd={[softwareJsonLd, crumbJsonLd([{ to: '/done-for-you', t: 'Done-for-you claims' }])]} />
       <MktNav active="product" />
       <main className="k-mkt-main">
         <section

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import Seo from '../components/Seo'
+import { crumbJsonLd, softwareJsonLd } from '../components/seo-kit'
 import Badge from '../components/Badge'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
 import { MktShot } from './LandingPage'
@@ -145,7 +146,7 @@ function StockThumb({ id, alt, size }: { id: string; alt: string; size: number }
 export default function ForEstateLiquidatorsPage() {
   return (
     <div className="k-landing">
-      <Seo path="/for-estate-liquidators" />
+      <Seo path="/for-estate-liquidators" jsonLd={[softwareJsonLd, crumbJsonLd([{ to: '/for-estate-liquidators', t: 'For estate liquidators' }])]} />
       <MktNav active="liq" />
 
       <main className="k-mkt-main">

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import Seo from '../components/Seo'
+import { crumbJsonLd, softwareJsonLd } from '../components/seo-kit'
 import { I, Icon } from '../components/Icon'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
 import { MktShot } from './LandingPage'
@@ -63,7 +64,7 @@ const SURFACES: { n: string; t: string; img: string; body: string }[] = [
 export default function ProductPage() {
   return (
     <div className="k-landing">
-      <Seo path="/product" />
+      <Seo path="/product" jsonLd={[softwareJsonLd, crumbJsonLd([{ to: '/product', t: 'Product' }])]} />
       <MktNav active="product" />
       <main className="k-mkt-main">
         <section

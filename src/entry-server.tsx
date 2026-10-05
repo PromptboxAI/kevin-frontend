@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { StaticRouter } from 'react-router-dom'
 import App from './App'
 import { SEO_PAGES } from './content/seo-pages'
+import { DOC_NAV } from './content/docs-content.generated'
 
 /**
  * Build-time render of the marketing pages. NOT a server: nothing runs this in
@@ -49,3 +50,21 @@ export function render(path: string): string {
 export const ROUTES = Object.entries(SEO_PAGES)
   .filter(([path, entry]) => !entry.canonicalPath && path !== '/claims/sample')
   .map(([path]) => path)
+
+/**
+ * The docs articles, prerendered like everything else.
+ *
+ * They were getting a META SHELL from scripts/prerender-meta.mjs -- title,
+ * description, canonical and card -- inside an empty <div id="root">. So 45
+ * pages of real documentation shipped with no <h1> and no body text to a
+ * crawler that does not run JavaScript, which is most of the ones that matter
+ * for an answer engine. The content is bundled (docs-content.generated.ts is
+ * imported by the docs route), so rendering them costs nothing but the build
+ * time and makes them readable.
+ *
+ * Derived from DOC_NAV rather than typed out, so an article added to the docs
+ * source is prerendered without anyone remembering to add it here.
+ */
+export const DOC_ROUTES = DOC_NAV.flatMap((section) =>
+  section.items.map(([slug]) => `/docs/${slug}`),
+)
