@@ -73,6 +73,8 @@ const LandingFullPage = lazyRoute(() => import('./pages/LandingFullPage'))
 const ClaimsPage = lazyRoute(() => import('./pages/ClaimsPage'))
 const AdminSystemPage = lazyRoute(() => import('./pages/AdminSystemPage'))
 const AdminPlatformPage = lazyRoute(() => import('./pages/AdminPlatformPage'))
+const AdminAccountsPage = lazyRoute(() => import('./pages/AdminAccountsPage'))
+const AdminAccountDetailPage = lazyRoute(() => import('./pages/AdminAccountDetailPage'))
 const ExportsPage = lazyRoute(() => import('./pages/ExportsPage'))
 const ExportPage = lazyRoute(() => import('./pages/ExportPage'))
 const IntakePage = lazyRoute(() => import('./pages/IntakePage'))
@@ -450,6 +452,22 @@ export default function App() {
           element={
             <RequireAdmin>
               <AdminPlatformPage />
+            </RequireAdmin>
+          }
+        />
+        <Route
+          path="/admin/accounts"
+          element={
+            <RequireAdmin>
+              <AdminAccountsPage />
+            </RequireAdmin>
+          }
+        />
+        <Route
+          path="/admin/accounts/:userId"
+          element={
+            <RequireAdmin>
+              <AdminAccountDetailPage />
             </RequireAdmin>
           }
         />
