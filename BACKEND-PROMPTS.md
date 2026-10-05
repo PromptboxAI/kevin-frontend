@@ -39,9 +39,22 @@ whole job of that screen, so it should not answer it wrongly.
 
 ---
 
-## 15. Revenue needs ONE rollup endpoint — Stripe is the only source and nothing aggregates it
+## 15. Revenue needs ONE rollup endpoint — SHIPPED BEFORE WE SENT IT
 
-**Status:** new, 2026-10-05. Owner asked when the remaining admin screens get
+**Status:** **done, found live 2026-10-05.** `GET /v1/admin/revenue` exists and
+returns the shape below almost exactly: `mrr_cents`, `mrr_previous_cents`,
+`mrr_change_pct_mom`, `arr_run_rate_cents`, `mrr_by_plan[]`,
+`net_new_mrr_cents`, `new_count`, `churned_count`,
+`net_revenue_retention_pct`, `failed_payments[]`, `enterprise_contracts[]` and
+a `one_time` block — plus `stripe_mode`, which answers question 2 below by
+saying out loud that these are test-mode numbers. `GET /v1/admin/limits` came
+with it. Nothing to send; we are building the screen against it.
+
+The original ask is kept below because its two questions are still worth an
+answer, and because the "we asked for something that already existed" lesson is
+worth not repeating — check `openapi.json` before writing the next one.
+
+**Original status:** new, 2026-10-05. Owner asked when the remaining admin screens get
 built. Accounts and Support are waiting on `feat/admin-accounts`; Revenue is
 waiting on something that does not exist at all, so it is worth asking for now.
 
@@ -584,11 +597,33 @@ the tab is designed, and the item drawer already renders this exact shape.
 
 ---
 
-## 4. The admin panel needs to ACT on an account — §4.1 SHIPPED AND CONSUMED
+## 4. The admin panel needs to ACT on an account — §4.1 + §4.2 SHIPPED; §4.3–§4.5 OPEN
 
-**Status:** new, 2026-09-20. **§4.1 went live and we built against it the same
-day (2026-10-05).** `/admin/accounts` and `/admin/accounts/{user_id}` are now
-real screens reading real accounts. Two notes back:
+**Status:** new, 2026-09-20. **§4.1 AND §4.2 are both live, and §4.1 is already
+consumed (2026-10-05).** `/admin/accounts` and `/admin/accounts/{user_id}` are
+real screens reading real accounts.
+
+**We did not know §4.2 had shipped** — we checked `openapi.json`, saw three
+admin routes, and wrote a prompt asking for work that already existed. The live
+API now serves 95 paths and twelve admin ones. For the record, everything §4.2
+asked for is there, nested under the account rather than at `/admin/claims`,
+which is the right call since `claim_id` is only unique per owner:
+
+| §4.2 asked for | shipped as |
+|---|---|
+| their failed jobs | `GET /v1/admin/accounts/{user_id}/jobs/failed` |
+| read their claim | `GET /v1/admin/accounts/{user_id}/claims/{claim_id}` |
+| their claim items | `GET /v1/admin/accounts/{user_id}/claim_items` |
+| audit trail we do not own | `GET /v1/admin/accounts/{user_id}/claims/{claim_id}/events` |
+
+All verified answering 200 against a real account. Filters and paging are in
+the spec (`status`, `include_archived`, `room_id`, `unassigned`, `limit`,
+`offset`), so there is nothing we need to ask about them — we are building.
+
+**`/v1/admin/revenue` and `/v1/admin/limits` also landed**, which closes
+prompt 15 before it was sent; see that entry.
+
+Two notes back:
 
 - **Does `count` mean the whole registry or just this page?** The response is
   `{accounts, count, limit, offset}` with no `total`. We are NOT reading
@@ -603,8 +638,31 @@ real screens reading real accounts. Two notes back:
   the state they would have shown a 250 lifetime pool (rule 9b). Flagging only
   because it confirms the rule rather than contradicting it.
 
-§4.2 onward is still open and is what turns these screens from a view into a
-support tool.
+**What is actually left is §4.3–§4.5: there is no way to ACT.** Every admin
+route is a `GET` (the only non-GET under `/v1/admin` is the demo-preset pair).
+So the console can now diagnose completely and repair nothing — the owner can
+see that a customer's job died, read their claim, and read who changed what,
+then has to go and do something about it by hand.
+
+In the order they matter:
+
+1. **`POST /v1/admin/accounts/{user_id}/credits`** `{items, reason}` — grant
+   items after OUR failure burned their quota. This is the one that turns a
+   support email into a fix, and quota being append-only (rule 9c) means there
+   is no other way to make someone whole.
+2. **`POST …/claims/{claim_id}/reprice`** and **`…/unstick`** — re-run pricing
+   on someone else's stuck lines, and free a claim wedged in `processing`
+   because a worker died. Today only the scheduled reaper can do the second.
+3. **`PATCH …/accounts/{user_id}/plan`** — set plan / billing_state, including
+   `comped` and `internal`. Note `plan` is still constrained to
+   `('trial','pro')`, so this needs a migration; both states must stay excluded
+   from the revenue rollup by construction, which `/v1/admin/revenue` already
+   appears to do.
+4. **`POST …/suspend` / `…/restore`**, then **`…/delete`** (the cascade behind
+   "delete my account", currently an email to us).
+
+The two rules at the top of this section still hold: no impersonation, and
+every one of these audited and readable back through §4.2.
 
 
 Three admin screens are live and read real data: System (`/admin/system`),
