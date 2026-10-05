@@ -584,9 +584,28 @@ the tab is designed, and the item drawer already renders this exact shape.
 
 ---
 
-## 4. The admin panel needs to ACT on an account — SENT · §4.1 + §4.2 SCOPED
+## 4. The admin panel needs to ACT on an account — §4.1 SHIPPED AND CONSUMED
 
-**Status:** new, 2026-09-20. This supersedes prompt 2 — read this one first.
+**Status:** new, 2026-09-20. **§4.1 went live and we built against it the same
+day (2026-10-05).** `/admin/accounts` and `/admin/accounts/{user_id}` are now
+real screens reading real accounts. Two notes back:
+
+- **Does `count` mean the whole registry or just this page?** The response is
+  `{accounts, count, limit, offset}` with no `total`. We are NOT reading
+  `count` as a total, because `/v1/jobs/failed` returns a `count` that means
+  this page and the System screen once reported "50 failed jobs" when there
+  were 79. Paging falls back to "was the page full?" until you say. If `count`
+  is the registry total, say so and we will use it; if you would rather add
+  `total`, better still.
+- **The plan/billing_state split is real in live data and worth keeping.**
+  Three of the five accounts are `plan: "pro", billing_state: "trial"`. We size
+  the allowance off `plan`, so those correctly read 2,000/month; had we read
+  the state they would have shown a 250 lifetime pool (rule 9b). Flagging only
+  because it confirms the rule rather than contradicting it.
+
+§4.2 onward is still open and is what turns these screens from a view into a
+support tool.
+
 
 Three admin screens are live and read real data: System (`/admin/system`),
 Platform (`/admin/platform`) and, until it was deleted today, a "support tools"

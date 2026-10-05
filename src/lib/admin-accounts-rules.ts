@@ -27,6 +27,23 @@ export type AdminAccount = {
 
 export type AdminAccountsResponse = {
   accounts: AdminAccount[]
+  /**
+   * ⚠️ `count` IS NOT TREATED AS A TOTAL, deliberately.
+   *
+   * The live response is `{accounts, count, limit, offset}` -- no `total`.
+   * `count` could be the whole registry or just this page, and the two are
+   * indistinguishable while every account fits on one page. This codebase has
+   * already been bitten by exactly that ambiguity: `/v1/jobs/failed` returns a
+   * `count` that means THIS PAGE, which the System screen read as the total
+   * and reported "50 failed jobs" when there were 79 (see FAILED_JOBS_LIMIT in
+   * admin.ts).
+   *
+   * So paging falls back to "was the page full?" until the backend says which
+   * it is. That is never wrong -- it only costs one extra request at the end.
+   * Reading it as a total and being wrong hides accounts.
+   */
+  count?: number | null
+  /** Not currently sent. If it appears, it is authoritative and paging uses it. */
   total?: number | null
 }
 
