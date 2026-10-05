@@ -178,7 +178,7 @@ export default function BestContentsSoftwareGuidePage() {
             {
               to: '/methodology',
               t: 'How Kevin builds a line item',
-              d: 'The eight stages, and where a person confirms the work.',
+              d: 'How it runs, and where a person confirms the work.',
             },
             {
               to: '/compare/kevin-vs-xactcontents',

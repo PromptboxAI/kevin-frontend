@@ -185,7 +185,7 @@ export default function PriceFasterGuidePage() {
             {
               to: '/methodology',
               t: 'How Kevin builds a line item',
-              d: 'All eight stages, in the order you meet them.',
+              d: 'The whole workflow, in the order you meet it.',
             },
             {
               to: '/insurance-contents-pricing-software',

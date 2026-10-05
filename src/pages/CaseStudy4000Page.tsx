@@ -207,7 +207,7 @@ export default function CaseStudy4000Page() {
             {
               to: '/methodology',
               t: 'How Kevin builds a line item',
-              d: 'The eight stages behind every one of those lines.',
+              d: 'The process behind every one of those lines.',
             },
             {
               to: '/public-adjusters/ai-contents-inventory-software',

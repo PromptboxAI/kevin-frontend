@@ -208,7 +208,7 @@ export default function DepreciationGuidePage() {
             {
               to: '/methodology',
               t: 'How Kevin builds a line item',
-              d: 'Where depreciation sits in the eight stages.',
+              d: 'Where depreciation sits in the workflow.',
             },
             {
               to: '/insurance-contents-pricing-software',

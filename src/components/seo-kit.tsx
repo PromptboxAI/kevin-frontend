@@ -65,21 +65,24 @@ export function DirectAnswer({
 }
 
 /* ── 2 · the workflow, one diagram reused everywhere ────────────────────
-   The stage names are the product's own (rules 21-23): photos land in
-   STAGING, extraction and clustering propose sets, a person reviews, Process
-   PROMOTES the reviewed sets into claim items -- and quota is charged at
-   promotion, not at upload. Keeping the real names is the point: a visitor who
-   signs up should meet the same words. */
+   FOUR STEPS, NOT EIGHT (owner, 2026-10-05). This used to name the real
+   internal stages -- upload, extract, cluster, review, promote, price,
+   depreciate, export -- on the reasoning that a visitor who signs up should
+   meet the same vocabulary. The cost of that was a working description of
+   our process on four public pages, which is what the owner has been
+   trimming since 2026-10-03.
+
+   What a buyer needs is the SHAPE: photographs go in, a person reviews
+   before anything becomes a line, pricing and depreciation happen after
+   that, and a file comes out. The two facts worth keeping are kept: review
+   comes BEFORE pricing, and an item is charged when it becomes a line
+   rather than when a photo is uploaded. Neither is a recipe. */
 
 const STAGES: { n: string; t: string; d: string }[] = [
-  { n: '01', t: 'Upload', d: 'Photos land in staging. Nothing is a claim line yet.' },
-  { n: '02', t: 'Extract', d: 'Labels, OCR, model numbers and barcodes — no single signal is trusted on its own.' },
-  { n: '03', t: 'Cluster', d: 'Shots of one item are grouped by capture time and proximity into proposed sets.' },
-  { n: '04', t: 'Review', d: 'You merge, split, note or exclude sets before anything is identified or priced.' },
-  { n: '05', t: 'Promote', d: 'Reviewed sets become claim items. This is where an item counts against your allowance.' },
-  { n: '06', t: 'Price', d: 'Each line is priced from a current listing, with the source kept on the row.' },
-  { n: '07', t: 'Depreciate', d: 'Content class and age drive the schedule; the server computes it, never the page.' },
-  { n: '08', t: 'Export', d: 'Xactimate (Excel) · .xlsx · XactContents template, or PDF.' },
+  { n: '01', t: 'Photos in', d: 'Drop a folder, a phone dump or a whole .zip. Nothing is a claim line yet, and nothing is charged.' },
+  { n: '02', t: 'Reviewed', d: 'Shots of one item are proposed as one item. You confirm, merge or split before anything is priced — and a line counts against your allowance once it becomes a line, not when the photo lands.' },
+  { n: '03', t: 'Priced', d: 'Each line gets a price from a listing with the source kept on the row, a content class, and depreciation for its age.' },
+  { n: '04', t: 'Exported', d: 'Xactimate (Excel) · .xlsx in the XactContents template, or a room-by-room PDF.' },
 ]
 
 export function WorkflowDiagram({ compact = false }: { compact?: boolean }) {

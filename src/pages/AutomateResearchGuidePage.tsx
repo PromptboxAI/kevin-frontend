@@ -184,7 +184,7 @@ export default function AutomateResearchGuidePage() {
             {
               to: '/methodology',
               t: 'How Kevin builds a line item',
-              d: 'All eight stages, identification before pricing.',
+              d: 'How a photograph becomes a line, identification before pricing.',
             },
             {
               to: '/guides/item-level-photos-insurance-contents',

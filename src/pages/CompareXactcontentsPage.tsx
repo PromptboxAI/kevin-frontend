@@ -169,7 +169,7 @@ export default function CompareXactcontentsPage() {
             {
               to: '/methodology',
               t: 'How Kevin builds a line item',
-              d: 'All eight stages, and where a person confirms the work.',
+              d: 'How it runs, and where a person confirms the work.',
             },
             {
               to: '/pricing',

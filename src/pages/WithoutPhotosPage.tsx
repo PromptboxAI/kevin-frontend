@@ -170,7 +170,7 @@ export default function WithoutPhotosPage() {
               ['Evidence', 'The item itself, in frame', 'The description someone wrote'],
               ['Identification', 'Brand and model from badges, plates and barcodes', 'Only what the description states'],
               ['Grouping', 'Several shots become one line', 'Not applicable; a row is a line'],
-              ['Staging', 'Cluster, review, promote', 'Skipped entirely'],
+              ['Review step', 'Photographs are grouped and confirmed first', 'Skipped entirely'],
               ['Pricing', 'Priced from a listing, source on the row', 'Priced from a listing, source on the row'],
               ['Depreciation', 'Class and age', 'Class and age'],
               ['Export', 'Identical', 'Identical'],
@@ -205,7 +205,7 @@ export default function WithoutPhotosPage() {
             {
               to: '/methodology',
               t: 'How Kevin builds a line item',
-              d: 'The eight stages the photo-based route runs through.',
+              d: 'What the photo-based route runs through, and where a person confirms it.',
             },
             {
               to: '/insurance-contents-pricing-software',

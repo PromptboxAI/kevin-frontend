@@ -21,10 +21,12 @@ import {
  * page". It is the one an answer engine should cite when asked HOW this
  * works, so every stage is named exactly as the product names it.
  *
- * The stage names are not marketing words: staging, extract, cluster, review,
- * promote, price, depreciate, export are the real steps (rules 21-23), and a
- * visitor who signs up meets the same vocabulary. Three facts on this page are
- * easy to get subtly wrong and are load-bearing:
+ * REDUCED TO FOUR STEPS, 2026-10-05 (owner). The page used to name all eight
+ * internal stages on the reasoning that a visitor should meet the product's
+ * own vocabulary. That also published a working description of the process,
+ * which is what the owner has been trimming since 2026-10-03. The shape stays;
+ * the recipe goes. Three facts on this page are easy to get subtly wrong and
+ * are load-bearing:
  *
  *  - QUOTA IS CHARGED AT PROMOTION, not at upload. Photographs sitting in
  *    staging have produced no line items and cost nothing (rule 22e).
@@ -45,11 +47,11 @@ import {
 const FAQS: Faq[] = [
   {
     q: 'Does a photograph become a claim line automatically?',
-    a: 'No. Photographs land in staging, where they are grouped into proposed sets by capture time and proximity. Nothing is identified, priced or counted until you review those sets and press Process — that step is what promotes them into claim items.',
+    a: 'No. Photographs land in staging, where shots of one item are proposed as a single set. Nothing is identified, priced or counted until you have reviewed those sets and started processing — that is the step that turns them into claim items.',
   },
   {
     q: 'When does an item count against my allowance?',
-    a: 'At promotion, when a reviewed set becomes a claim item. Photographs sitting in staging cost nothing, and a photograph you exclude never becomes a line. Deleting an item afterwards does not restore the count, because the work of producing it has already been done.',
+    a: 'When a reviewed set becomes a claim item. Photographs sitting in staging cost nothing, and a photograph you exclude never becomes a line. Deleting an item afterwards does not restore the count, because the work of producing it has already been done.',
   },
   {
     q: 'What does Kevin do when the evidence is ambiguous?',
@@ -81,7 +83,7 @@ export default function MethodologyPage() {
         <SeoPageHead
           crumbs={CRUMBS}
           h1="How Kevin Turns Photographs Into Insurance-Ready Contents Line Items"
-          lede="Eight stages, in the order you meet them: upload, extract, cluster, review, promote, price, depreciate, export. A person confirms the grouping before anything becomes a claim item."
+          lede="Photographs in, a reviewed and priced inventory out. A person confirms what each item is before anything is priced, and nothing is charged until a photograph becomes a line."
           byline="Kevin Godfrey, Kevin"
           updated="3 October 2026"
         />
@@ -93,84 +95,58 @@ export default function MethodologyPage() {
           <p>
             The order matters more than any single step. Grouping happens before identification, so
             a wide shot and a model-plate close-up become one line instead of two. Review happens
-            before promotion, so nothing enters the claim that a person has not seen. Pricing
+            before anything becomes a line, so nothing enters the claim that a person has not
+            seen. Pricing
             happens after identification, because a price is only defensible once you know what the
             item is.
           </p>
         </DirectAnswer>
 
         <section className="k-seosec">
-          <h2>The eight stages</h2>
+          <h2>How it runs</h2>
           <WorkflowDiagram />
         </section>
 
         <section className="k-seosec">
-          <h2>Upload</h2>
+          <h2>Photos in</h2>
           <p>
-            Select the whole folder and click once. Kevin uploads in batches rather than one
-            enormous request, removes duplicates by content hash across the entire claim — not just
-            the current batch, so re-dropping yesterday's folder resolves to duplicates rather than
-            doubles — and expands a .zip in the browser without posting the archive. Photographs
-            land in <strong>staging</strong>. None of them is a claim line yet.
+            Select the whole folder and click once — a phone dump or a whole .zip works the same
+            way, and there is no total-size cap. Re-dropping yesterday’s folder resolves to
+            duplicates rather than doubling the claim, so a second drop appends rather than
+            overwrites. Photographs land in <strong>staging</strong>. None of them is a claim line
+            yet, and none of them has cost you anything.
           </p>
         </section>
 
         <section className="k-seosec">
-          <h2>Extract</h2>
+          <h2>Reviewed</h2>
           <p>
-            Each photograph is read for several independent signals: visual labels, text via OCR,
-            model-number patterns and barcodes. No single signal is trusted on its own. A barcode
-            that disagrees with the visible text is a reason to ask a person, not a reason to
-            overrule the picture.
-          </p>
-        </section>
-
-        <section className="k-seosec">
-          <h2>Cluster</h2>
-          <p>
-            Shots taken within seconds of each other, in the same place, are proposed as one set.
-            This step is deliberately <em>pre-identification</em>: the clusterer works from
-            capture metadata and knows nothing about what the item is. Staging shows you set numbers,
-            timestamps and filenames — never guessed item names, because a guess shown at this stage
-            would be read as a finding.
-          </p>
-        </section>
-
-        <section className="k-seosec">
-          <h2>Review</h2>
-          <p>
-            You merge sets that should be one item, split ones that should not, attach a note where
-            the photograph needs context, and exclude anything that is not contents. Excluded
+            Shots taken seconds apart, in the same place, are proposed as one item. This step is
+            deliberately <em>pre-identification</em>: staging shows you sets and timestamps, never a
+            guessed item name, because a guess shown at this stage would be read as a finding. You
+            merge sets that should be one item, split ones that should not, add a note where a
+            photograph needs context, and exclude anything that is not contents. Excluded
             photographs stay on the claim — in property claims evidence is excluded from the
-            worksheet, never deleted. Every one of these edits is saved as you make it.
+            worksheet, never deleted.
           </p>
-        </section>
-
-        <section className="k-seosec">
-          <h2>Promote</h2>
           <p>
-            Processing promotes the reviewed sets into claim items. <strong>This is the moment an
-            item counts against your allowance</strong> — not when photographs were uploaded, and
-            not for sets you excluded. If a batch would exceed what is left of your allowance, Kevin
-            processes up to the limit and tells you exactly how many were left, rather than failing
-            the whole upload; the remainder stays on the claim and runs when the allowance is
-            restored.
+            <strong>This is the moment an item counts against your allowance</strong> — not when
+            photographs were uploaded, and not for sets you excluded. If a batch would exceed what
+            is left, Kevin processes up to the limit and tells you exactly how many were left over,
+            rather than failing the whole upload; the remainder stays on the claim and runs when the
+            allowance is restored.
           </p>
         </section>
 
         <section className="k-seosec">
-          <h2>Price</h2>
+          <h2>Priced and depreciated</h2>
           <p>
-            One query per item against the Kevin Content Pricing Engine. Listings that are not the
-            same product are discarded, duplicates collapse, outliers are dropped, and the line is
-            priced from a single remaining listing — with that listing's
-            link stored on the row. Where retail cannot price an item, the resale market can, used
-            raw and labelled as resale. Where neither can, the cell arrives blank and editable.
+            Each item is priced against the Kevin Content Pricing Engine, from a single listing —
+            with that listing’s link stored on the row and printed in the export. Where retail
+            cannot price an item, the resale market can, used raw and labelled as resale so a
+            used-market price is never read as a new-replacement one. Where neither can, the cell
+            arrives blank and editable rather than guessed.
           </p>
-        </section>
-
-        <section className="k-seosec">
-          <h2>Depreciate</h2>
           <p>
             The content class gives the useful life; the age you enter gives the percentage. The
             schedule carries 31 categories and 87 sub-lines, so footwear, collectible media and
@@ -188,7 +164,7 @@ export default function MethodologyPage() {
         </section>
 
         <section className="k-seosec">
-          <h2>Export</h2>
+          <h2>Exported</h2>
           <ShotFigure
             src="/marketing/worksheet-review-2x.webp"
             alt="The finished worksheet: priced, classified and depreciated contents lines with totals for replacement cost, depreciation, tax and actual cash value"
@@ -252,7 +228,7 @@ export default function MethodologyPage() {
             {
               to: '/sample',
               t: 'A finished claim you can open',
-              d: 'The output of all eight stages, with real figures.',
+              d: 'The finished output, with real figures.',
             },
           ]}
         />
