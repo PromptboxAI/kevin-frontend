@@ -45,6 +45,21 @@ const GROUPS: { h: string; blurb: string; items: Entry[] }[] = [
     blurb: 'Method that holds up whether or not you use our software.',
     items: [
       {
+        to: '/guides/contents-claim-qa-checklist',
+        t: 'Contents claim QA checklist',
+        d: 'The pass to make before a schedule leaves your hands, grouped by what you are looking at.',
+      },
+      {
+        to: '/guides/desk-adjuster-contents-review',
+        t: 'How a desk review works',
+        d: 'Large schedules are sampled, not read line by line — and what makes a sample expand.',
+      },
+      {
+        to: '/guides/contents-line-items-rejected',
+        t: 'Why line items get questioned',
+        d: 'Identity, comparable and consistency problems — and why questioned rarely means denied.',
+      },
+      {
         to: '/guides/large-contents-inventory-500-items',
         t: 'Building a 500+ item claim',
         d: 'Where the hours go on a large inventory, and why photographs are not line items.',
@@ -90,6 +105,11 @@ const GROUPS: { h: string; blurb: string; items: Entry[] }[] = [
     h: 'Valuation and depreciation',
     blurb: 'The arithmetic behind the two numbers on every line.',
     items: [
+      {
+        to: '/guides/source-pricing-insurance-contents',
+        t: 'Documenting source pricing',
+        d: 'What a source has to establish, and why the URL is the least important part of it.',
+      },
       {
         to: '/guides/exact-match-vs-like-kind-quality',
         t: 'Exact match vs like kind and quality',
@@ -166,6 +186,11 @@ const GROUPS: { h: string; blurb: string; items: Entry[] }[] = [
         to: '/guides/best-contents-software-public-adjusters',
         t: 'What to look for in contents software',
         d: 'Evaluation criteria and the questions to put to any vendor, including us.',
+      },
+      {
+        to: '/contents-software-roi',
+        t: 'Contents software ROI calculator',
+        d: 'What your current process costs at your own volume and rate, on your assumptions.',
       },
       {
         to: '/case-studies/4000-contents-line-items-30-days',

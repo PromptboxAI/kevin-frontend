@@ -64,6 +64,11 @@ const LIVE = new Set<string>([
   '/guides/collectibles-insurance-contents',
   '/guides/clothing-footwear-contents-claims',
   '/guides/large-contents-inventory-500-items',
+  '/guides/contents-claim-qa-checklist',
+  '/guides/desk-adjuster-contents-review',
+  '/guides/contents-line-items-rejected',
+  '/guides/source-pricing-insurance-contents',
+  '/contents-software-roi',
   '/guides/best-contents-software-public-adjusters',
   '/case-studies/4000-contents-line-items-30-days',
 ])
@@ -255,6 +260,7 @@ export function MktFooter() {
           <MktLink to="/guides/contents-inventory-after-house-fire">After a total fire loss</MktLink>
           <MktLink to="/guides/non-salvageable-contents-inventory">Non-salvageable contents</MktLink>
           <MktLink to="/guides/large-contents-inventory-500-items">Large inventories</MktLink>
+          <MktLink to="/guides/contents-claim-qa-checklist">QA checklist</MktLink>
           <MktLink to="/guides/clothing-footwear-contents-claims">Clothing and footwear</MktLink>
         </div>
         <div className="k-footx-col">
@@ -269,6 +275,7 @@ export function MktFooter() {
           <MktLink to="/guides/exact-match-vs-like-kind-quality">Exact match vs LKQ</MktLink>
           <MktLink to="/guides/high-value-contents-claims">High-value contents</MktLink>
           <MktLink to="/guides/collectibles-insurance-contents">Collectibles</MktLink>
+          <MktLink to="/contents-software-roi">ROI calculator</MktLink>
           <MktLink to="/xactcontents-alternative">XactContents alternative</MktLink>
         </div>
         <div className="k-footx-col">

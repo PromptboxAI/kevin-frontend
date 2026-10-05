@@ -188,6 +188,36 @@ export const SEO_PAGES: Record<string, SeoEntry> = {
       "Large claims are repetition, not difficulty. Where the hours go, why photographs are not line items, and how small error rates compound at scale.",
     image: 'og-default.png',
   },
+  '/guides/contents-claim-qa-checklist': {
+    title: 'Contents Claim QA Checklist | Kevin',
+    description:
+      "The pass to make before a contents schedule is submitted: identity, quantity, comparables, sources, depreciation, totals and the exceptions worth your time.",
+    image: 'og-default.png',
+  },
+  '/guides/desk-adjuster-contents-review': {
+    title: 'How a Desk Review of a Contents Claim Works | Kevin',
+    description:
+      "Large schedules are sampled, not read line by line. What pulls more of a schedule into the sample, and what happens after a line is questioned.",
+    image: 'og-default.png',
+  },
+  '/guides/contents-line-items-rejected': {
+    title: 'Why Contents Line Items Get Questioned | Kevin',
+    description:
+      "Identity, comparable and consistency problems that get a line reduced — and why questioned rarely means denied.",
+    image: 'og-default.png',
+  },
+  '/guides/source-pricing-insurance-contents': {
+    title: 'How to Document Source Pricing for Contents Claims | Kevin',
+    description:
+      "What a replacement-cost source has to establish, matching the source to the property, and why quantity is the quiet error.",
+    image: 'og-default.png',
+  },
+  '/contents-software-roi': {
+    title: 'Contents Software ROI Calculator | Kevin',
+    description:
+      "Work out what your current contents process costs at your own volume and rate, and how many line items automation has to help with to pay for itself.",
+    image: 'og-default.png',
+  },
   '/guides/best-contents-software-public-adjusters': {
     title: 'Best Contents Software for Public Adjusters | Kevin',
     description:
