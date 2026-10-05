@@ -60,8 +60,8 @@
     /* ── Buttons ────────────────────────────────────────────────── */
     .k-btn {
       display: inline-flex; align-items: center; gap: 6px;
-      padding: 6px 11px; border-radius: 6px; border: 1px solid transparent;
-      background: var(--k-fg); color: var(--k-bg); font-size: 12.5px; font-weight: 500;
+      padding: 6px 11px; border-radius: 6px; border: 1px solid var(--k-accent);
+      background: var(--k-accent); color: #fff; font-size: 12.5px; font-weight: 500;
       cursor: pointer; transition: background 0.12s, transform 0.06s, box-shadow 0.12s;
       letter-spacing: -0.005em; line-height: 1;
       /* Buttons hold their label. As flex children they were `0 1 auto` with
@@ -69,11 +69,17 @@
          text mid-label instead of the row reflowing. */
       white-space: nowrap; flex: 0 0 auto;
     }
-    .k-btn:hover { background: oklch(0.30 0.025 252); }
+    .k-btn:hover { background: oklch(0.30 0.07 252); border-color: oklch(0.30 0.07 252); }
     .k-btn:active { transform: translateY(0.5px); }
     .k-btn--ghost { background: transparent; color: var(--k-fg-2); border-color: var(--k-line); }
     .k-btn--ghost:hover { background: var(--k-bg-2); color: var(--k-fg); border-color: var(--k-line-2); }
-    .k-btn--danger { color: var(--k-danger); }
+    /* `background` and `border-color` are stated here because the base is a
+       FILLED button. Before 2026-10-05 this rule set `color` alone, so a bare
+       `k-btn k-btn--danger` (ClaimRowMenu, ShareSheet) inherited the base's
+       near-black ink and rendered red-on-ink, then jumped to near-white on
+       hover -- the hover below is a 6%-alpha red that only reads over a pale
+       background, which is the giveaway that transparent was always meant. */
+    .k-btn--danger { background: transparent; color: var(--k-danger); border-color: var(--k-line); }
     .k-btn--danger:hover { color: var(--k-danger); background: oklch(0.58 0.19 25 / 0.06); }
     .k-btn--lg { padding: 11px 18px; font-size: 14px; border-radius: 8px; }
     /* One source of truth for disabled controls. Without this a gated button
@@ -84,7 +90,7 @@
        and icon buttons and wrong for the primary: it is white text on --k-fg,
        so a Download that disabled itself on click ("Preparing…") with the
        pointer still on it became white on white and vanished. */
-    .k-btn:disabled:hover { background: var(--k-fg); }
+    .k-btn:disabled:hover { background: var(--k-accent); }
     .k-btn--ghost:disabled:hover, .k-icon-btn:disabled:hover { background: transparent; }
     .k-btn--on:disabled:hover { background: var(--k-accent); }
 
@@ -6122,23 +6128,17 @@
     }
 
     /* ── marketing primary CTA ──────────────────────────────────────────
-       The primary button used --k-fg (near-black ink) and disappeared into a
-       page of black text. It is now --k-accent: OUR navy, the one the mid-page
-       CTA band and the step numerals already use.
-       Corrected 2026-10-03 -- a first pass invented a brighter indigo
-       (oklch 0.55 0.20 262) to chase the competitor's. That is exactly the
-       new colour outside the token set that CLAUDE.md forbids, and the owner
-       caught it. No --k-cta token: the accent already exists. */
-    .k-landing .k-btn:not(.k-btn--ghost):not(.k-btn--danger),
-    .k-mkt-main .k-btn:not(.k-btn--ghost):not(.k-btn--danger),
-    .k-req .k-btn:not(.k-btn--ghost):not(.k-btn--danger) {
-      background: var(--k-accent); border-color: var(--k-accent); color: #fff;
-    }
-    .k-landing .k-btn:not(.k-btn--ghost):not(.k-btn--danger):hover,
-    .k-mkt-main .k-btn:not(.k-btn--ghost):not(.k-btn--danger):hover,
-    .k-req .k-btn:not(.k-btn--ghost):not(.k-btn--danger):hover {
-      background: oklch(0.30 0.07 252); border-color: oklch(0.30 0.07 252);
-    }
+       GONE, and deliberately: this scoped the navy to .k-landing/.k-mkt-main/
+       .k-req while the app's primary stayed --k-fg (near-black ink). Owner,
+       2026-10-05: the app should match marketing, so the navy moved into the
+       .k-btn base rule at the top of this file and these three overrides
+       became a restatement of it. One primary button, one colour, and no
+       second place to change it.
+       History kept because it has been got wrong once: a first pass on
+       2026-10-03 invented a brighter indigo (oklch 0.55 0.20 262) to chase a
+       competitor's, which is exactly the colour-outside-the-token-set that
+       CLAUDE.md forbids, and the owner caught it. The accent already exists;
+       there is no --k-cta token. */
 
     /* ── marketing display face: DM Sans ─────────────────────────────────
        DRAFT, owner reviewing. Scoped to the marketing roots rather than
