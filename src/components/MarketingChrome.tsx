@@ -267,16 +267,19 @@ export function MktFooter() {
           <MktLink to="/careers">Careers</MktLink>
           <MktLink to="/contact">Contact</MktLink>
         </div>
-        <div className="k-footx-col">
-          <div className="k-footx-h">Legal</div>
-          <MktLink to="/legal">Privacy</MktLink>
-          <MktLink to="/legal#terms">Terms</MktLink>
-          <MktLink to="/security">Security</MktLink>
-        </div>
       </div>
+      {/* Legal sits in the base bar rather than in a column of its own. Three
+          short links beside three eight-link columns left a ragged second row
+          on a 968px screen, and the bottom bar is where a reader looks for
+          them anyway. */}
       <div className="k-footx-base">
         <span>Kevin.co, LLC · 34 E. Main St. Ste 347, Smithtown, NY 11787</span>
         <a href="mailto:kevin@kevin.co">kevin@kevin.co</a>
+        <span className="k-footx-legal">
+          <MktLink to="/legal">Privacy</MktLink>
+          <MktLink to="/legal#terms">Terms</MktLink>
+          <MktLink to="/security">Security</MktLink>
+        </span>
         <span>© 2026</span>
       </div>
     </footer>
