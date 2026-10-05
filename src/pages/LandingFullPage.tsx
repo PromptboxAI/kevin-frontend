@@ -64,7 +64,7 @@ export default function LandingFullPage() {
               below, so the hero was spending six lines to say what the page
               says twice more anyway. */}
           <p className="k-lede">
-            Bulk-ingest hundreds of photos and Kevin returns a complete, Xactimate-ready personal
+            Drop hundreds of photos and Kevin returns a complete, Xactimate-ready personal
             property inventory.
           </p>
           <div className="k-hero-actions">
