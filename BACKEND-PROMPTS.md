@@ -14,6 +14,74 @@ nothing gets asked twice and nothing quietly falls off.
 
 ---
 
+## 16. Does the engine still route comps by retailer? The Platform screen says it does
+
+**Status:** new, 2026-10-05. A question, not a request — one line answers it.
+
+`/admin/platform` renders a **"Comp routing · 9 categories"** table straight
+from `GET /v1/depreciation-rules`: Furniture to Wayfair / West Elm / CB2 /
+Pottery Barn, Jewelry to Blue Nile, Art to 1stDibs / LiveAuctioneers / eBay,
+everything else to Google Shopping / Amazon / Walmart / Target.
+
+Domain rule 10 says source-priority-by-retailer routing was **scrapped** when
+the backend consolidated onto one comp source, and that there are no per-store
+adapters. So one of two things is true:
+
+- the engine really does route by retailer, and rule 10 is out of date; or
+- that config is dead and the endpoint is still serving it, in which case an
+  admin reading the screen believes something false about how a price was
+  found.
+
+Which is it? If it is dead we will stop rendering it. Nothing customer-facing
+is affected either way — rule 10's vendor-naming ban covers customer surfaces
+and this screen is internal — but "why did that line price like that?" is the
+whole job of that screen, so it should not answer it wrongly.
+
+---
+
+## 15. Revenue needs ONE rollup endpoint — Stripe is the only source and nothing aggregates it
+
+**Status:** new, 2026-10-05. Owner asked when the remaining admin screens get
+built. Accounts and Support are waiting on `feat/admin-accounts`; Revenue is
+waiting on something that does not exist at all, so it is worth asking for now.
+
+**Where it stands.** The live API has 86 routes and the only billing ones are
+`/v1/billing/checkout`, `/v1/billing/credits/checkout`, `/v1/billing/portal`
+and `/v1/webhooks/stripe` — all customer-side. Stripe holds the truth and
+nothing rolls it up, so the Revenue screen has nothing to render.
+
+**Asking for:** `GET /v1/admin/revenue` (admin only), one response, all money
+in cents, so the screen does no arithmetic of its own:
+
+- `mrr_cents`, `mrr_change_pct_mom`, `arr_run_rate_cents`
+- `mrr_by_plan`: `[{plan, mrr_cents, account_count}]` — Pro and Enterprise
+- `net_new_mrr_cents` with `new_count` and `churned_count` for the period
+- `net_revenue_retention_pct`
+- `failed_payments`: `[{user_id, email, plan, amount_cents, failed_at,
+  attempt_count, next_retry_at}]` — the queue an owner acts on
+- `enterprise_contracts`: `[{user_id, account_name, annual_value_cents,
+  volume_label, renews_on, status}]`
+
+**Two things we need you to settle rather than guess at:**
+
+1. **Comped and Internal accounts must be excluded from every MRR, ARR, net-new
+   and NRR figure**, by construction rather than by a filter we remember to
+   apply. They carry `mrr: 0` in the design for exactly this reason. Please
+   confirm that is how the rollup treats them.
+2. **What one-time streams actually exist in Stripe today?** The design screen
+   shows a "Services & paywall · last 30 days" table listing done-for-you
+   engagements and $49 client-share unlocks. The DFY price has since changed
+   ($199 setup plus marginal per-line bands, rule 9) and we are not confident
+   the $49 share paywall is a real product rather than a stale mock. Credit
+   purchases at $0.75/item ARE real. Rather than us inventing the shape: tell
+   us which one-time charge types exist, and we will render those. Whatever
+   they are they stay OUT of MRR/ARR/NRR, which track subscriptions only.
+
+No write routes wanted here. "New invoice" on the Enterprise card stays static
+until there is a flow behind it.
+
+---
+
 ## 14. There is no class a mattress belongs in, so its depreciation is a coin flip
 
 **Status:** new, 2026-10-05. Owner found it: entered **10 years** on a mattress
