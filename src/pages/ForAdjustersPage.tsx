@@ -250,7 +250,7 @@ export default function ForAdjustersPage() {
         </section>
 
         {/* — Stat strip — */}
-        <section className="k-seg-stats" style={{ margin: '4px 0' }}>
+        <section className="k-seg-stats" style={{ margin: '36px 0 4px' }}>
           <div className="k-stat-card">
             <div className="k-stat-n">2m 41s</div>
             <div className="k-stat-l">Avg time to a complete inventory</div>
@@ -261,7 +261,7 @@ export default function ForAdjustersPage() {
             <div className="k-stat-l">Items prefilled with no edits needed</div>
             <div className="k-stat-s">Make, model, category, pricing</div>
           </div>
-          <div className="k-stat-card k-stat-card--accent">
+          <div className="k-stat-card">
             <div className="k-stat-n">3×</div>
             <div className="k-stat-l">More claims through in a week</div>
             <div className="k-stat-s">
@@ -277,7 +277,8 @@ export default function ForAdjustersPage() {
               style={{
                 fontFamily: 'var(--k-font-mono)',
                 fontSize: 11,
-                color: 'var(--k-fg-4)',
+                /* Teal, matching .k-proof-eyebrow and the hero pill. */
+                color: 'oklch(0.36 0.08 175)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.06em',
                 fontWeight: 600,
@@ -344,7 +345,8 @@ export default function ForAdjustersPage() {
               style={{
                 fontFamily: 'var(--k-font-mono)',
                 fontSize: 11,
-                color: 'var(--k-fg-4)',
+                /* Teal, matching .k-proof-eyebrow and the hero pill. */
+                color: 'oklch(0.36 0.08 175)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.06em',
                 fontWeight: 600,
@@ -384,7 +386,8 @@ export default function ForAdjustersPage() {
               style={{
                 fontFamily: 'var(--k-font-mono)',
                 fontSize: 11,
-                color: 'var(--k-fg-4)',
+                /* Teal, matching .k-proof-eyebrow and the hero pill. */
+                color: 'oklch(0.36 0.08 175)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.06em',
                 fontWeight: 600,
@@ -426,51 +429,6 @@ export default function ForAdjustersPage() {
           </div>
         </section>
 
-        {/* — Testimonial — */}
-        <section className="k-seg-quote" style={{ background: 'var(--k-accent)' }}>
-          <div className="k-seg-quote-inner">
-            <div
-              style={{
-                fontFamily: 'var(--k-font-display)',
-                fontStyle: 'italic',
-                fontSize: 32,
-                color: '#fff',
-                lineHeight: 1.3,
-                textWrap: 'balance',
-                maxWidth: 760,
-              }}
-            >
-              “Friday afternoon: 50 photos from a kitchen fire. Saturday morning at 9: the inventory
-              was on the carrier's desk. The old version of me would still be on row 80 by then.”
-            </div>
-            <div style={{ marginTop: 24, display: 'flex', alignItems: 'center', gap: 14 }}>
-              <span
-                style={{
-                  width: 46,
-                  height: 46,
-                  borderRadius: 99,
-                  overflow: 'hidden',
-                  flexShrink: 0,
-                  border: '2px solid rgba(255,255,255,0.25)',
-                }}
-              >
-                <img
-                  src="/marketing/kevin-godfrey.webp"
-                  width={500}
-                  height={500}
-                  alt="Kevin Godfrey"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                />
-              </span>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>Kevin Godfrey</div>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)' }}>
-                  Long Island Public Adjusters, LLC
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
 
         {/* — Why adjusters pick Kevin — */}
         <section className="k-seg-why">
@@ -479,7 +437,8 @@ export default function ForAdjustersPage() {
               style={{
                 fontFamily: 'var(--k-font-mono)',
                 fontSize: 11,
-                color: 'var(--k-fg-4)',
+                /* Teal, matching .k-proof-eyebrow and the hero pill. */
+                color: 'oklch(0.36 0.08 175)',
                 textTransform: 'uppercase',
                 letterSpacing: '0.06em',
                 fontWeight: 600,

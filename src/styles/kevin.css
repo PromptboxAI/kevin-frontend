@@ -6184,6 +6184,13 @@
       width: 148%; max-width: none;
     }
     .k-hero-shot img { display: block; width: 100%; height: auto; }
+    /* The segment hero sits on plain white with the ribbon close underneath,
+       where the homepage's deep 28/64px drop pooled into a grey wash below the
+       screenshot and read as a gradient rather than as a shadow (owner,
+       2026-10-05). Scoped here only -- the homepage keeps its own. */
+    .k-seg-hero-r .k-hero-shot {
+      box-shadow: 0 1px 3px oklch(0.2 0.02 250 / 0.05), 0 10px 24px oklch(0.2 0.02 250 / 0.07);
+    }
     @media (max-width: 1180px) {
       .k-hero-shot { width: 128%; }
     }
