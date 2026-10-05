@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import Seo from '../components/Seo'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
-import { CtaBand, SeoPageHead, crumbJsonLd } from '../components/seo-kit'
+import { CtaBand, SeoPageHead, crumbJsonLd, itemListJsonLd } from '../components/seo-kit'
 
 /**
  * /guides — the hub.
@@ -178,13 +178,21 @@ const GROUPS: { h: string; blurb: string; items: Entry[] }[] = [
 
 const CRUMBS = [{ to: '/guides', t: 'Guides' }]
 
+/** Stable anchor per section, so the jump row and the headings cannot drift. */
+const slug = (h: string) => h.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+
+const ALL = GROUPS.flatMap((g) => g.items)
+
 export default function GuidesIndexPage() {
   return (
     <div className="k-landing">
-      <Seo path="/guides" jsonLd={crumbJsonLd(CRUMBS)} />
+      <Seo
+        path="/guides"
+        jsonLd={[crumbJsonLd(CRUMBS), itemListJsonLd('Kevin contents claim guides', ALL)]}
+      />
       <MktNav />
 
-      <main className="k-mkt-main k-seopage">
+      <main className="k-mkt-main k-guidesx">
         <SeoPageHead
           crumbs={CRUMBS}
           h1="Guides"
@@ -192,11 +200,28 @@ export default function GuidesIndexPage() {
           updated="5 October 2026"
         />
 
-        {GROUPS.map((g) => (
-          <section key={g.h} className="k-seosec">
-            <h2>{g.h}</h2>
-            <p>{g.blurb}</p>
-            <ul className="k-rel-grid k-rel-grid--wide">
+        {/* Jump row. On a page of twenty-five entries the sections are the
+            navigation, and this also gives each one a real anchor to link at
+            from elsewhere. Plain anchors, so they work without JavaScript. */}
+        <nav className="k-guidesx-jump" aria-label="Sections">
+          {GROUPS.map((g) => (
+            <a key={g.h} href={`#${slug(g.h)}`}>
+              {g.h}
+              <span className="k-guidesx-jump-n">{g.items.length}</span>
+            </a>
+          ))}
+        </nav>
+
+        {GROUPS.map((g, i) => (
+          <section key={g.h} id={slug(g.h)} className="k-guidesx-sec">
+            <div className="k-guidesx-hd">
+              <span className="k-guidesx-n">{String(i + 1).padStart(2, '0')}</span>
+              <div>
+                <h2>{g.h}</h2>
+                <p>{g.blurb}</p>
+              </div>
+            </div>
+            <ul className="k-guidesx-grid">
               {g.items.map((r) => (
                 <li key={r.to}>
                   <Link className="k-rel-card" to={r.to}>

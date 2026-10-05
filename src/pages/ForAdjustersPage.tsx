@@ -2,6 +2,14 @@ import { Link } from 'react-router-dom'
 import Seo from '../components/Seo'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
 import { MktROISection, MktShot, MktSocialProof } from './LandingPage'
+import {
+  FaqList,
+  RelatedCards,
+  crumbJsonLd,
+  faqJsonLd,
+  softwareJsonLd,
+  type Faq,
+} from '../components/seo-kit'
 
 /**
  * For Adjusters — ported from design/components/segment-pages.jsx
@@ -13,14 +21,6 @@ import { MktROISection, MktShot, MktSocialProof } from './LandingPage'
  * ILLUSTRATIVE MARKETING, not claim data. $2,786.20 is the canonical demo
  * figure from design/components/data.jsx.
  */
-
-const HERO_ROWS: [string, string, string, string][] = [
-  ['20260805_142226.jpg', "Hot Wheels '70 Plymouth Road Runner", 'Toys & Games', '$12.99'],
-  ['20260805_144545.jpg', 'GUESS studded leather belt', 'Clothing — Adult', '$38.00'],
-  ['20260805_143757.jpg', 'Honeywell HPA300 HEPA filter', 'Small Appliances', '$47.72'],
-  ['20260805_144140.jpg', 'Studded dome handbag', 'Clothing — Adult', '$64.00'],
-  ['20260805_144556.jpg', 'Fiskars yellow-handle scissors', 'Kitchen & Housewares', '$9.97'],
-]
 
 const WORKFLOW: [string, string, string, string][] = [
   [
@@ -44,7 +44,7 @@ const WORKFLOW: [string, string, string, string][] = [
   [
     '04',
     'Export & send',
-    'Xactimate (Excel), CSV, or PDF. Audit log signed at export.',
+    'Xactimate (Excel) in the XactContents template, or PDF. Audit log signed at export.',
     'One click · validated',
   ],
 ]
@@ -88,7 +88,7 @@ const WHY: [string, string][] = [
   ],
   [
     'No carrier lock-in',
-    'Xactimate (Excel), CSV, and PDF. Bring your own carrier profiles or use our starter set.',
+    'Xactimate (Excel) in the XactContents template, and PDF. Bring your own carrier profiles or use our starter set.',
   ],
   [
     'No "contact sales" for basics',
@@ -128,10 +128,53 @@ function ItemThumb({ file, size }: { file: string; size: number }) {
   )
 }
 
+/**
+ * Structure brought over from the answer pages, 2026-10-05. This page had NO
+ * schema at all, no FAQ, and -- on a site that now carries twenty-five guides
+ * -- not one internal link into them. It is a high-intent commercial page and
+ * was the least machine-readable thing we publish.
+ *
+ * The answers are the same facts the guides carry, so they cannot drift into
+ * a separate story: metered trial, flat pricing, items as the metered
+ * dimension, blank rather than guessed, .xlsx with static values, no carrier
+ * submit.
+ */
+const ADJ_FAQS: Faq[] = [
+  {
+    q: 'How long does a contents claim take through Kevin?',
+    a: 'It depends on the claim — how many photographs, how much of the property is unusual, and how much needs your judgment. What changes is where the time goes: the repetitive part (grouping photographs, researching replacements, recording sources, applying depreciation) is handled, and your time moves to the exceptions.',
+  },
+  {
+    q: 'Does the export import into Xactimate?',
+    a: 'That is what the file is for. It is an Xactimate (Excel) .xlsx written in the XactContents template, with every derived cell as a computed number rather than a formula, because the importer breaks on formulas. There is also a room-by-room PDF for a client.',
+  },
+  {
+    q: 'Does Kevin submit to the carrier for me?',
+    a: 'No. Kevin writes a file you send — download it, share it or email it. There is no carrier-facing surface and nothing is pushed into carrier systems, so what reaches a carrier is always something you reviewed and sent.',
+  },
+  {
+    q: 'What happens when Kevin cannot identify an item?',
+    a: 'The line arrives with a blank, editable field rather than a confident guess. A plausible wrong description is more dangerous than a blank, because it survives review — so ambiguous items come back to you unpriced instead of invented.',
+  },
+  {
+    q: 'What does it cost?',
+    a: '$249 a month, flat — never per claim and never per seat. Claims are unlimited; line items are the metered dimension, with 2,000 included each month. The first 250 line items are free with no deadline, and a trial ends when the 250th item is produced rather than on a date.',
+  },
+  {
+    q: 'Do I still have to review everything?',
+    a: 'You should, and the workflow is built around it — you confirm the grouping before anything becomes a claim item, and jewelry, firearms, fine arts, furs, fine china and graded trading cards are never auto-priced at all. The point is to spend review where it matters rather than on typing.',
+  },
+]
+
+const ADJ_CRUMBS = [{ to: '/for-adjusters', t: 'For adjusters' }]
+
 export default function ForAdjustersPage() {
   return (
     <div className="k-landing">
-      <Seo path="/for-adjusters" />
+      <Seo
+        path="/for-adjusters"
+        jsonLd={[softwareJsonLd, faqJsonLd(ADJ_FAQS), crumbJsonLd(ADJ_CRUMBS)]}
+      />
       <MktNav active="adj" />
 
       <main className="k-mkt-main">
@@ -179,93 +222,30 @@ export default function ForAdjustersPage() {
               </Link>
             </div>
           </div>
+          {/* THE REAL PRODUCT, not a drawing of it. This was a hand-built
+              mock of a worksheet -- five rows composed in JSX -- which is the
+              same thing the owner rejected on the homepage ("why aren't we
+              using one that exists from our product page"). It also measured
+              500x300 against copy at 549x375, so the graphic was smaller than
+              the text it was meant to anchor.
+
+              Same asset and same bleed as the homepage hero: at the column's
+              own width the grid is unreadable, and cropping it would cut off
+              the money columns, which are the half that matters. */}
           <div className="k-seg-hero-r">
-            <div
-              style={{
-                background: 'var(--k-bg)',
-                border: '1px solid var(--k-line)',
-                borderRadius: 14,
-                boxShadow: 'var(--k-shadow)',
-                overflow: 'hidden',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '12px 16px',
-                  borderBottom: '1px solid var(--k-line)',
-                  background: 'var(--k-bg-2)',
-                }}
-              >
-                <span
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: 99,
-                    background: 'var(--k-ok)',
-                    flexShrink: 0,
-                  }}
-                />
-                <span style={{ fontSize: 12.5, fontWeight: 600 }}>Godfrey — Kitchen fire</span>
-                <span
-                  style={{
-                    fontSize: 11,
-                    color: 'var(--k-fg-4)',
-                    fontFamily: 'var(--k-font-mono)',
-                    marginLeft: 'auto',
-                  }}
-                >
-                  57 items · $2.8k RCV
-                </span>
-              </div>
-              <div style={{ padding: '4px 16px 10px' }}>
-                {HERO_ROWS.map(([file, desc, cat, price], i) => (
-                  <div
-                    key={file}
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: '30px 1fr auto',
-                      gap: 11,
-                      alignItems: 'center',
-                      padding: '9px 0',
-                      borderBottom: i < 4 ? '1px solid var(--k-line)' : 'none',
-                    }}
-                  >
-                    <ItemThumb file={file} size={30} />
-                    <div style={{ minWidth: 0 }}>
-                      <div
-                        style={{
-                          fontSize: 12.5,
-                          fontWeight: 500,
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                        }}
-                      >
-                        {desc}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 10.5,
-                          color: 'var(--k-fg-4)',
-                          fontFamily: 'var(--k-font-mono)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6,
-                        }}
-                      >
-                        {cat}
-                      </div>
-                    </div>
-                    <span className="k-mono" style={{ fontWeight: 600, fontSize: 12.5 }}>
-                      {price}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <figure className="k-hero-shot">
+              <img
+                src="/marketing/worksheet-review-2x.webp"
+                srcSet="/marketing/worksheet-review-720.webp 720w, /marketing/worksheet-review-1100.webp 1100w, /marketing/worksheet-review-2x.webp 1740w"
+                sizes="(max-width: 820px) calc(100vw - 40px), (max-width: 1080px) 128vw, 820px"
+                alt="Kevin's review worksheet: priced contents lines with room, quantity, description, make, model, content class, unit cost, sales tax, age, depreciation and actual cash value"
+                width={1740}
+                height={964}
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
+              />
+            </figure>
           </div>
         </section>
 
@@ -315,7 +295,7 @@ export default function ForAdjustersPage() {
                 lineHeight: 1.05,
               }}
             >
-              From driveway to Xactimate in one sitting.
+              From driveway to XactContents in one sitting.
             </h2>
           </div>
           <div className="k-seg-work-grid">
@@ -572,6 +552,38 @@ export default function ForAdjustersPage() {
             </Link>
           </div>
         </section>
+
+        <section className="k-seosec" style={{ maxWidth: 820, margin: '0 auto' }}>
+          <h2>Common questions</h2>
+          <FaqList items={ADJ_FAQS} />
+        </section>
+
+        <div style={{ maxWidth: 820, margin: '0 auto' }}>
+          <RelatedCards
+            items={[
+              {
+                to: '/guides/public-adjuster-contents-inventory',
+                t: 'Contents inventory field guide',
+                d: 'What belongs on a line, and how specific a description has to be to price.',
+              },
+              {
+                to: '/guides/large-contents-inventory-500-items',
+                t: 'Building a 500+ item claim',
+                d: 'Where the hours go on a large inventory, and why photographs are not line items.',
+              },
+              {
+                to: '/guides/what-carriers-look-for-contents-inventory',
+                t: 'What a reviewer looks for',
+                d: 'The ten checks a desk adjuster applies to a schedule.',
+              },
+              {
+                to: '/guides',
+                t: 'All guides',
+                d: 'Method, valuation and depreciation, written for the people doing the work.',
+              },
+            ]}
+          />
+        </div>
 
       </main>
 

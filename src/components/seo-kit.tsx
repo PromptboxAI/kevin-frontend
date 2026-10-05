@@ -347,6 +347,29 @@ export function SeoPageHead({
 }
 
 /** BreadcrumbList for the same crumbs the header renders. */
+/**
+ * ItemList for a hub page. A directory of links is exactly what this schema
+ * is for, and /guides had only a BreadcrumbList -- so the one page whose job
+ * is to enumerate the others was the one not telling an answer engine what it
+ * enumerated. Positions are 1-based and the order is the order on screen.
+ */
+export const itemListJsonLd = (
+  name: string,
+  items: { to: string; t: string; d: string }[],
+) => ({
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name,
+  numberOfItems: items.length,
+  itemListElement: items.map((it, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    name: it.t,
+    description: it.d,
+    url: `https://www.kevin.co${it.to}`,
+  })),
+})
+
 export const crumbJsonLd = (crumbs: { to: string; t: string }[]) => ({
   '@context': 'https://schema.org',
   '@type': 'BreadcrumbList',

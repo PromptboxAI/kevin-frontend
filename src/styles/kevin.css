@@ -6281,6 +6281,50 @@
       .k-demo-sec[style] + .k-demo-sec[style] { padding-top: 40px !important; }
     }
 
+    /* ── /guides hub ───────────────────────────────────────
+       A DIRECTORY, NOT AN ARTICLE. It sat in .k-seopage, whose 820px measure
+       exists for reading prose, and .k-rel-grid--wide forced one card per row
+       with !important -- so twenty-five entries read as a 3,400px wall of
+       near-identical boxes. A directory wants a wider frame and two columns.
+       Nothing here hides text or replaces it with an image: the cards are the
+       same crawlable links and descriptions, laid out so a person can scan
+       them. */
+    .k-guidesx { max-width: 1040px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+
+    .k-guidesx-jump { display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0 10px; }
+    .k-guidesx-jump a {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 7px 12px; border: 1px solid var(--k-line); border-radius: 999px;
+      font-size: 13px; font-weight: 600; color: var(--k-fg-2); text-decoration: none;
+      background: var(--k-bg); transition: border-color 0.12s, color 0.12s;
+    }
+    .k-guidesx-jump a:hover { border-color: var(--k-accent); color: var(--k-fg); }
+    .k-guidesx-jump-n {
+      font-family: var(--k-font-mono); font-size: 11px; color: var(--k-fg-4);
+    }
+
+    .k-guidesx-sec { padding: 40px 0 0; scroll-margin-top: 24px; }
+    .k-guidesx-hd { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 14px; align-items: start; }
+    .k-guidesx-n {
+      font-family: var(--k-font-mono); font-size: 12px; font-weight: 700;
+      color: var(--k-accent); padding-top: 6px;
+    }
+    .k-guidesx-hd h2 { margin: 0; }
+    .k-guidesx-hd p { margin: 4px 0 0; color: var(--k-fg-3); }
+    .k-guidesx-grid {
+      list-style: none; margin: 16px 0 0 48px; padding: 0;
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;
+    }
+
+    @media (max-width: 820px) {
+      .k-guidesx-sec { padding-top: 32px; }
+      .k-guidesx-grid { grid-template-columns: minmax(0, 1fr); margin-left: 0; }
+      .k-guidesx-hd { grid-template-columns: 26px minmax(0, 1fr); gap: 10px; }
+      /* 32px chips on a phone are under the 44px target the rest of the site
+         holds. Padding rather than a height, so the label still centres. */
+      .k-guidesx-jump a { padding: 12px 14px; }
+    }
+
     /* ── SEO / AI-answer pages (seo-kit.tsx) ─────────────────────────────
        Long-form reading pages: one measure, generous leading, real tables.
        Marketing-scoped like the rest — .k-seopage sits inside .k-landing. */
