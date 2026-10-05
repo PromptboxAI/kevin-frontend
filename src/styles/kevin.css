@@ -6288,6 +6288,31 @@
       .k-demo-sec[style] + .k-demo-sec[style] { padding-top: 40px !important; }
     }
 
+    /* ── useful-life reference table ──────────────────────────────
+       Eighty-seven rows in thirty-one small tables rather than one long one:
+       the category is the heading, so a reader scanning for "Furniture" finds
+       it without reading a category column eighty-seven times. Each table
+       keeps the shared .k-ctable-wrap, which is what stops a wide row pushing
+       the page on a phone. */
+    .k-sched-group { margin-top: 26px; }
+    .k-sched-cat {
+      font-family: var(--k-font-display); font-size: 19px; font-weight: 700;
+      letter-spacing: -0.015em; margin: 0 0 6px; color: var(--k-fg);
+    }
+    .k-sched-table tbody th { width: 46%; }
+    .k-sched-table td:nth-child(2) { white-space: nowrap; }
+    .k-sched-tag {
+      display: inline-block; margin-left: 8px; padding: 1px 7px; border-radius: 999px;
+      font-family: var(--k-font-mono); font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--k-warn-ink, var(--k-fg-2)); background: var(--k-bg-3);
+      vertical-align: middle;
+    }
+
+    @media (max-width: 820px) {
+      .k-sched-table tbody th { width: auto; }
+    }
+
     /* ── /contents-software-roi calculator ────────────────────────
        Plain number inputs rather than the homepage's sliders: a slider is good
        for a feel and bad for "my rate is 47.50". Every value here is the

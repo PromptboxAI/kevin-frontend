@@ -35,6 +35,7 @@ import QaChecklistGuidePage from './pages/QaChecklistGuidePage'
 import RejectedLinesGuidePage from './pages/RejectedLinesGuidePage'
 import SourcePricingGuidePage from './pages/SourcePricingGuidePage'
 import RoiCalculatorPage from './pages/RoiCalculatorPage'
+import UsefulLifeReferencePage from './pages/UsefulLifeReferencePage'
 import BestContentsSoftwareGuidePage from './pages/BestContentsSoftwareGuidePage'
 import AboutPage from './pages/AboutPage'
 import ContactPage from './pages/ContactPage'
@@ -217,6 +218,7 @@ export default function App() {
         <Route path="/guides/contents-line-items-rejected" element={<RejectedLinesGuidePage />} />
         <Route path="/guides/source-pricing-insurance-contents" element={<SourcePricingGuidePage />} />
         <Route path="/contents-software-roi" element={<RoiCalculatorPage />} />
+        <Route path="/guides/useful-life-by-content-class" element={<UsefulLifeReferencePage />} />
         <Route path="/guides/best-contents-software-public-adjusters" element={<BestContentsSoftwareGuidePage />} />
         <Route path="/for-estate-liquidators" element={<ForEstateLiquidatorsPage />} />
         <Route path="/done-for-you" element={<DoneForYouPage />} />

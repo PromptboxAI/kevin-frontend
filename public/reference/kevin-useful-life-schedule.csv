@@ -1,0 +1,88 @@
+Category,Item,Useful life (years),How it depreciates,Cap,Auto-priced,Note
+Appliances — Major,All Other Major Appliances,10,Straight line by age,,Yes,
+Appliances — Major,Refrigerator,14,Straight line by age,,Yes,
+Appliances — Small,All Other Small Appliances,10,Straight line by age,,Yes,
+Artwork,All Other Artwork Items,10,Straight line by age,,Yes,
+Artwork,Paintings & Tapestry,,Percentage of replacement cost,,No — appraisal class,"Schedule: use Replacement Cost -- holds value, does not depreciate."
+Automotive & Motorcycle Accessories,All Other Auto & Motorcycle Accessories,10,Straight line by age,,Yes,
+Automotive & Motorcycle Accessories,Automotive Working Parts,5,Straight line by age,,Yes,
+Automotive & Motorcycle Accessories,Trailers,20,Straight line by age,,Yes,
+"Books, Magazines & Periodicals",Paperback & Hardcover Books,,Flat rate (50%),,Yes,"Schedule: flat 50%, age-independent."
+"Books, Magazines & Periodicals",Text Book,5,Straight line by age,,Yes,
+Business Equipment & Goods,Business Equipment & Goods,,Does not depreciate,,Yes,"Schedule: N/A, 0% annual, 0% max -- does not depreciate under this schedule at all (it is not personal property)."
+"Cameras, Camcorders & Equipment",All Cameras & Camcorders,20,Straight line by age,,Yes,
+"Cameras, Camcorders & Equipment",Flashes & Accessories,10,Straight line by age,,Yes,
+Clothing & Accessories,All Other Clothing,8,Straight line by age,,Yes,
+Clothing & Accessories,Footwear — Non-Athletic,5,Straight line by age,,Yes,"DIVERGENCE from the published schedule (owner, repeatedly, 2026-09-09/10). The schedule files ALL footwear under 'Socks & Footwear' at 3 years. Three years is the ATHLETIC life -- it belongs to shoes that are run in -- and applying it to a Converse, a sandal or a $300 leather dress shoe is not defensible. Non-athletic footwear sits at 5. Only genuinely athletic footwear gets the 3-year Sporting Goods line."
+Clothing & Accessories,Furs,,Valued manually,,No — appraisal class,"DIVERGENCE from the published schedule, which has no Furs line and would file a mink under All Other Clothing at 8 years. Furs are appraisal-grade and carry policy sub-limits; we have never auto-priced them and Phase 4 must not start. Kept as an appraisal line so the gate follows the schedule id."
+Clothing & Accessories,Socks & Hosiery,3,Straight line by age,,Yes,
+Clothing & Accessories,Underwear & Nightwear,3,Straight line by age,,Yes,
+Computer & Related Goods,All Computer & Related Goods,4.5,Straight line by age,,Yes,
+Computer & Related Goods,"Printers, Peripherals & Accessories",10,Straight line by age,,Yes,
+Electronics,All Other Electronics,10,Straight line by age,,Yes,
+Electronics,Cellular Phone,5,Straight line by age,,Yes,
+Firearms,All Firearms,20,Straight line by age,,No — appraisal class,
+Furniture — Home & Office,All Other Furniture Items,20,Straight line by age,,Yes,
+Furniture — Home & Office,Children's Furniture,10,Straight line by age,,Yes,
+Furniture — Home & Office,Upholstered Furniture,10,Straight line by age,,Yes,
+Health & Personal Care,All Other Health Care,10,Straight line by age,,Yes,
+Health & Personal Care,Medicine,3,Straight line by age,,Yes,
+Hobbies & Collectibles,All Other Hobbies & Collectibles,20,Straight line by age,,Yes,"Schedule: 20 years, straight-line."
+Hobbies & Collectibles,Art Supplies,10,Straight line by age,,Yes,
+Hobbies & Collectibles,Collectible Coins / Numismatic Items,,Percentage of replacement cost,,Yes,Schedule: use Replacement Cost (indefinite life).
+Hobbies & Collectibles,Perishables (Marijuana),0.1667,Straight line by age,,Yes,"Schedule: 2 MONTHS, 600%/yr, 100% max. The shortest life in the whole schedule, and the only one measured in months -- which is why useful_life is a float."
+Hobbies & Collectibles,Sewing Machines,20,Straight line by age,,Yes,
+Hobbies & Collectibles,Smoking & Vaping Accessories,10,Straight line by age,,Yes,
+Hobbies & Collectibles,Trading Cards & Comic Books,,Percentage of replacement cost,,No — appraisal class,Schedule: use Replacement Cost.
+Housewares — Dining & Flat Ware,All Other Silver & Dining Ware,20,Straight line by age,,Yes,
+Housewares — Dining & Flat Ware,Fine China,,Percentage of replacement cost,,No — appraisal class,Schedule: use Replacement Cost.
+Housewares — Home Décor,All Other Houseware Items,10,Straight line by age,,Yes,
+Housewares — Home Décor,"Clocks, Mirrors & Fireplaces",20,Straight line by age,,Yes,
+Housewares — Home Décor,Figurines,,Flat rate (10%),,Yes,"Schedule: flat 10%, age-independent."
+Infant & Baby Related Goods,All Infant & Baby Related Goods,10,Straight line by age,,Yes,
+Jewelry & Watches,All Other Jewelry,,Percentage of replacement cost,,No — appraisal class,Schedule: use Replacement Cost.
+Jewelry & Watches,Costume Jewelry & Children's Watches,10,Straight line by age,,Yes,
+Jewelry & Watches,"Watches, Broaches, Pins & Cuff Links",20,Straight line by age,,Yes,
+Kitchenware,All Other Kitchenware,10,Straight line by age,,Yes,
+Kitchenware,Cutlery & Stainless Steel Kitchenware,20,Straight line by age,,Yes,
+Kitchenware,Miscellaneous Utensils,5,Straight line by age,,Yes,
+"Lawn, Garden & Patio","All Other Lawn, Garden & Patio",10,Straight line by age,,Yes,
+"Lawn, Garden & Patio",Fabric Cushions & Umbrellas,3,Straight line by age,,Yes,
+"Lawn, Garden & Patio",Gardening Clothing,8,Straight line by age,,Yes,
+"Lawn, Garden & Patio",Lawn Furniture,7,Straight line by age,,Yes,
+"Lawn, Garden & Patio",Power Mowers & Electric Yard Tools,7,Straight line by age,,Yes,
+Linens & Softgoods,All Other Linens & Softgoods,10,Straight line by age,,Yes,
+Linens & Softgoods,Kitchen Linens,5,Straight line by age,,Yes,
+Linens & Softgoods,Quilts,20,Straight line by age,,Yes,
+Linens & Softgoods,"Sheets, Pillow Cases & Towels",5,Straight line by age,,Yes,
+"Luggage, Bags & Accessories",All Other Luggage & Bags,20,Straight line by age,,Yes,
+"Luggage, Bags & Accessories",Handbags & Money Carriers,4,Straight line by age,,Yes,
+"Music, Movies & Media",Cassette Tapes,,Flat rate (50%),,Yes,Schedule: flat 50%.
+"Music, Movies & Media",CDs,,Flat rate (25%),,Yes,Schedule: flat 25%.
+"Music, Movies & Media",DVDs,8,Straight line by age,50%,Yes,"Schedule: 8 years, 12.5%/yr, 50% MAX -- the one line in the whole schedule that caps below 100%."
+Musical Instruments,All Other Instruments,20,Straight line by age,,Yes,
+Musical Instruments,Instrument Accessories,5,Straight line by age,,Yes,
+Musical Instruments,Instrument Parts & DJ Equipment,10,Straight line by age,,Yes,
+Office Supplies,All Other Office Supplies,10,Straight line by age,,Yes,
+Office Supplies,Safes & Vaults,50,Straight line by age,,Yes,
+Perishable — Non-perishable,Opened Cleaning Supplies,,Flat rate (50%),,Yes,Schedule: flat 50%.
+Perishable — Non-perishable,Unopened Cleaning Supplies,,Does not depreciate,,Yes,"Schedule: N/A, 0% annual, 0% max -- sealed stock is replaced at full cost."
+Personal Care & Beauty,All Other Personal Care,10,Straight line by age,,Yes,
+Personal Care & Beauty,Cosmetics,,Flat rate (50%),,Yes,Schedule: flat 50%.
+Personal Care & Beauty,Hair Brushes & Dental Care,5,Straight line by age,,Yes,
+Pet & Animal Supplies,All Pet & Animal Supplies,5,Straight line by age,,Yes,
+Sporting Goods,All Other Sporting Goods,10,Straight line by age,,Yes,
+Sporting Goods,Archery & Hunting,15,Straight line by age,,Yes,
+Sporting Goods,Athletic Shoes & Cleats,3,Straight line by age,,Yes,"Schedule: 3 years, 33.33%/yr, 100% max. The line that started this whole exercise (carrier dispute, 2026-09-09)."
+Sporting Goods,Billiard Table,14,Straight line by age,,Yes,
+Sporting Goods,Knives & Optics,20,Straight line by age,,Yes,
+Sporting Goods,Racquetball & Table Tennis Acces.,3,Straight line by age,,Yes,
+Sporting Goods,Roller/In-line Skates,7,Straight line by age,,Yes,
+Sporting Goods,Soccer & Tennis,5,Straight line by age,,Yes,
+Sporting Goods,Table Tennis Table & Ice Skates,6,Straight line by age,,Yes,
+Sporting Goods,Tennis Apparel,8,Straight line by age,,Yes,
+Tools,All Tools & Accessories,20,Straight line by age,,Yes,
+Toys & Games,All Other Toys,2,Straight line by age,,Yes,
+Toys & Games,Children's Furniture,10,Straight line by age,,Yes,
+Toys & Games,"Games, Video Games & Electronic Toys",5,Straight line by age,,Yes,
+Toys & Games,Outdoor Toys,5,Straight line by age,,Yes,

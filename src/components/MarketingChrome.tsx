@@ -69,6 +69,7 @@ const LIVE = new Set<string>([
   '/guides/contents-line-items-rejected',
   '/guides/source-pricing-insurance-contents',
   '/contents-software-roi',
+  '/guides/useful-life-by-content-class',
   '/guides/best-contents-software-public-adjusters',
   '/case-studies/4000-contents-line-items-30-days',
 ])
@@ -267,6 +268,7 @@ export function MktFooter() {
           <div className="k-footx-h">Pricing &amp; valuation</div>
           <MktLink to="/insurance-contents-pricing-software">Contents pricing</MktLink>
           <MktLink to="/guides/insurance-contents-depreciation">Depreciation</MktLink>
+          <MktLink to="/guides/useful-life-by-content-class">Useful life reference</MktLink>
           <MktLink to="/guides/rcv-vs-acv-personal-property">RCV vs ACV</MktLink>
           <MktLink to="/guides/replacement-cost-comparable">Finding a comparable</MktLink>
           <MktLink to="/guides/discontinued-items-insurance-claims">Discontinued items</MktLink>

@@ -221,6 +221,12 @@ export const SEO_PAGES: Record<string, SeoEntry> = {
       "Work out what your current contents process costs at your own volume and rate, and how many line items automation has to help with to pay for itself.",
     image: 'og-default.png',
   },
+  '/guides/useful-life-by-content-class': {
+    title: 'Useful Life by Content Class | Kevin',
+    description:
+      "The full depreciation schedule Kevin applies: 87 lines across 31 categories, with useful life and basis for each. Downloadable as a CSV.",
+    image: 'og-default.png',
+  },
   '/guides/best-contents-software-public-adjusters': {
     title: 'Best Contents Software for Public Adjusters | Kevin',
     description:

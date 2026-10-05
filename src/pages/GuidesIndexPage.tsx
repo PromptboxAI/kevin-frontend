@@ -131,6 +131,11 @@ const GROUPS: { h: string; blurb: string; items: Entry[] }[] = [
         d: 'Which market represents the item, why asking prices mislead, and what Kevin prices from.',
       },
       {
+        to: '/guides/useful-life-by-content-class',
+        t: 'Useful life by content class',
+        d: 'The full schedule Kevin applies — 87 lines, 31 categories — generated from the live engine.',
+      },
+      {
         to: '/guides/insurance-contents-depreciation',
         t: 'How contents depreciation works',
         d: 'Useful life by class, real schedule lines, and why depreciation runs all the way to 100%.',
