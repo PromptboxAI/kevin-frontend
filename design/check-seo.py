@@ -39,7 +39,13 @@ ORIGIN = 'https://www.kevin.co'
 # Pages that deliberately canonicalise somewhere else, so they are absent from
 # the sitemap on purpose. /sample redirects to the claim route; /docs points at
 # its first article.
-CROSS_CANONICAL = {'/sample', '/docs'}
+CROSS_CANONICAL = {
+    '/sample',
+    '/docs',
+    # Merged into the reviewer guide 2026-10-05 and redirected; the URL
+    # shipped, so it still resolves and canonicalises at the survivor.
+    '/guides/desk-adjuster-contents-review',
+}
 
 # The app shell, not a page.
 SKIP = {'/app'}

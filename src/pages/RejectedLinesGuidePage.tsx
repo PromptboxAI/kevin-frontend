@@ -191,9 +191,9 @@ export default function RejectedLinesGuidePage() {
               d: 'Catch these before the schedule leaves your hands.',
             },
             {
-              to: '/guides/desk-adjuster-contents-review',
-              t: 'How a desk review works',
-              d: 'Sampling, exceptions, and what makes a sample expand.',
+              to: '/guides/what-carriers-look-for-contents-inventory',
+              t: 'What a reviewer looks for',
+              d: 'The checks, how they are sampled at volume, and what happens after a flag.',
             },
             {
               to: '/guides/exact-match-vs-like-kind-quality',

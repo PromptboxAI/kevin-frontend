@@ -194,11 +194,14 @@ export const SEO_PAGES: Record<string, SeoEntry> = {
       "The pass to make before a contents schedule is submitted: identity, quantity, comparables, sources, depreciation, totals and the exceptions worth your time.",
     image: 'og-default.png',
   },
+  /* Merged into the reviewer guide and redirected; the entry stays so the
+     URL still resolves with a canonical pointing at the survivor. */
   '/guides/desk-adjuster-contents-review': {
     title: 'How a Desk Review of a Contents Claim Works | Kevin',
     description:
       "Large schedules are sampled, not read line by line. What pulls more of a schedule into the sample, and what happens after a line is questioned.",
     image: 'og-default.png',
+    canonicalPath: '/guides/what-carriers-look-for-contents-inventory',
   },
   '/guides/contents-line-items-rejected': {
     title: 'Why Contents Line Items Get Questioned | Kevin',

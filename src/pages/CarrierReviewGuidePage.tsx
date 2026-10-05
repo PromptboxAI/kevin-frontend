@@ -52,6 +52,14 @@ const FAQS: Faq[] = [
     a: 'They may, and on a large or contested schedule they often do — usually by sampling rather than line by line. The link lets a reviewer check both the product chosen and the price used, which is why a stored source is worth more than a price that was researched carefully and then not recorded.',
   },
   {
+    q: 'Does a reviewer read every line?',
+    a: 'On a small schedule, often. On a thousand-line schedule it is not realistic, so review tends to combine a pass over the shape of the whole thing, a closer look at the exceptions, and sampling within the rest. That mix is exactly why consistency matters more than perfection on any one row.',
+  },
+  {
+    q: 'What happens after a line is questioned?',
+    a: 'Usually a request rather than a refusal: a clarified model, a better comparable, support for a quantity, an age explained. What decides how expensive that is for you is whether the line can be answered from what is already on it, or has to be researched again months later.',
+  },
+  {
     q: 'What makes a contents schedule easier for a desk adjuster to review?',
     a: 'Descriptions specific enough to judge, quantities that make sense, evidence that supports the description, replacements that genuinely match, current pricing, depreciation applied the same way throughout, and a source on each priced line. A reviewer should never have to reverse-engineer how a number was reached.',
   },
@@ -78,7 +86,7 @@ export default function CarrierReviewGuidePage() {
         <SeoPageHead
           crumbs={CRUMBS}
           h1="What Does an Adjuster Look for When Reviewing a Contents Inventory?"
-          lede="A desk review is not an audit of the arithmetic. It is a test of whether each line is supported — and of whether the schedule treated line 900 the same way it treated line 9."
+          lede="A desk review is not an audit of the arithmetic. It is a test of whether each line is supported — what gets checked, how it is sampled at volume, and what happens when a line comes back."
           byline="Kevin Godfrey, Kevin"
           updated="4 October 2026"
         />
@@ -166,6 +174,58 @@ export default function CarrierReviewGuidePage() {
             This is the strongest argument for automating the repetitive part of a contents claim.
             Not speed — consistency. Software applies the same rule to line 900 that it applied to
             line 9, and leaves you the exceptions, which is where judgment was always supposed to go.
+          </p>
+        </section>
+
+        <section className="k-seosec">
+          <h2>How the checks get applied at volume</h2>
+          <p>
+            Nobody reads a thousand lines at equal depth, so the checks above are not run once over
+            everything. They are applied in layers, and knowing which layer a line falls into is
+            worth as much as knowing the criteria.
+          </p>
+          <ComparisonTable
+            caption="Roughly how a reviewer allocates attention"
+            columns={['Layer', 'What it looks at', 'What it costs']}
+            rows={[
+              ['The shape', 'Totals, item count against photo count, gaps, format', 'Minutes'],
+              ['The exceptions', 'High value, collectibles, discontinued, outliers, unpriced lines', 'Most of the time spent'],
+              ['The sample', 'Ordinary lines, in groups, to confirm the pattern holds', 'Expands when something does not fit'],
+            ]}
+          />
+          <EvidenceCallout>
+            <p>
+              <strong>One unexplained line costs more than its own value.</strong> A price far from
+              its neighbours, a quantity nothing supports, a class that does not match similar
+              property — each is a reason to look at the next ten lines, and then the ten after
+              those. Consistency is not a polish item; it is what keeps the review small.
+            </p>
+          </EvidenceCallout>
+        </section>
+
+        <section className="k-seosec">
+          <h2>Questioned is not rejected</h2>
+          <p>
+            Most flags are requests: a better description, a better comparable, support for a
+            quantity, a model or age clarified. Lines get removed when they cannot be answered, not
+            when they are challenged — and what decides that is whether the evidence travelled with
+            the line.
+          </p>
+          <ComparisonTable
+            caption="The same question, two files"
+            columns={['Reviewer asks', 'Source kept on the row', 'Source not kept']}
+            rows={[
+              ['Where did this price come from?', 'Open the link on the row', 'Re-research the item'],
+              ['Is this the right model?', 'Compare the listing to the description', 'Reconstruct from memory'],
+              ['Why this replacement?', 'The characteristics are on the line', 'Re-argue it from scratch'],
+              ['Is the price still current?', 'Re-price the row and send a version', 'Start the research again'],
+            ]}
+          />
+          <p>
+            Once a schedule has been sent it is a reference document, and the reviewer’s notes cite
+            line numbers — so renumbering on a revision breaks every reference in the
+            correspondence. In Kevin a later ingest appends and existing rows keep their numbers;
+            the next export is a new version, and the one already sent still opens as what was sent.
           </p>
         </section>
 

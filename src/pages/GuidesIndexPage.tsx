@@ -50,11 +50,6 @@ const GROUPS: { h: string; blurb: string; items: Entry[] }[] = [
         d: 'The pass to make before a schedule leaves your hands, grouped by what you are looking at.',
       },
       {
-        to: '/guides/desk-adjuster-contents-review',
-        t: 'How a desk review works',
-        d: 'Large schedules are sampled, not read line by line — and what makes a sample expand.',
-      },
-      {
         to: '/guides/contents-line-items-rejected',
         t: 'Why line items get questioned',
         d: 'Identity, comparable and consistency problems — and why questioned rarely means denied.',

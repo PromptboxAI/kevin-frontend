@@ -32,7 +32,6 @@ import CollectiblesGuidePage from './pages/CollectiblesGuidePage'
 import ClothingFootwearGuidePage from './pages/ClothingFootwearGuidePage'
 import LargeInventoryGuidePage from './pages/LargeInventoryGuidePage'
 import QaChecklistGuidePage from './pages/QaChecklistGuidePage'
-import DeskReviewGuidePage from './pages/DeskReviewGuidePage'
 import RejectedLinesGuidePage from './pages/RejectedLinesGuidePage'
 import SourcePricingGuidePage from './pages/SourcePricingGuidePage'
 import RoiCalculatorPage from './pages/RoiCalculatorPage'
@@ -207,7 +206,14 @@ export default function App() {
         <Route path="/guides/clothing-footwear-contents-claims" element={<ClothingFootwearGuidePage />} />
         <Route path="/guides/large-contents-inventory-500-items" element={<LargeInventoryGuidePage />} />
         <Route path="/guides/contents-claim-qa-checklist" element={<QaChecklistGuidePage />} />
-        <Route path="/guides/desk-adjuster-contents-review" element={<DeskReviewGuidePage />} />
+        {/* MERGED into the reviewer guide, 2026-10-05. The two pages answered
+            the same question and competed for it; the sampling, "questioned is
+            not rejected" and line-numbering material moved across. The URL
+            stays and redirects, because it shipped and may be linked. */}
+        <Route
+          path="/guides/desk-adjuster-contents-review"
+          element={<Navigate to="/guides/what-carriers-look-for-contents-inventory" replace />}
+        />
         <Route path="/guides/contents-line-items-rejected" element={<RejectedLinesGuidePage />} />
         <Route path="/guides/source-pricing-insurance-contents" element={<SourcePricingGuidePage />} />
         <Route path="/contents-software-roi" element={<RoiCalculatorPage />} />
