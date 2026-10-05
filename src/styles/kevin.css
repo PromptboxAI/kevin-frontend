@@ -6445,11 +6445,27 @@
     .k-sstrip-l { font-size: 14px; font-weight: 600; color: var(--k-fg-2); margin-top: 4px; }
     .k-sstrip-s { font-size: 12.5px; color: var(--k-fg-4); margin-top: 3px; line-height: 1.45; }
 
+    /* The base gradient was always identical to the homepage CTA's, but the
+       GLOW was not: .k-midcta-inner and .k-cta each carry a ::before with two
+       radial lights -- navy top-right and teal bottom-left -- and this band
+       had only the flat ramp under them, which is why it read as a solid
+       block beside them (owner, 2026-10-05). Same two lights, same values, no
+       new colour. */
     .k-seocta {
+      position: relative; overflow: hidden;
       margin-top: 64px; padding: 34px 32px; border-radius: 16px; text-align: center;
       background: linear-gradient(135deg, oklch(0.22 0.05 250) 0%, oklch(0.15 0.04 252) 100%);
       color: #fff;
     }
+    .k-seocta::before {
+      content: ''; position: absolute; inset: 0; pointer-events: none;
+      background:
+        radial-gradient(circle at 85% 18%, oklch(0.50 0.10 252 / 0.32) 0%, transparent 50%),
+        radial-gradient(circle at 12% 88%, oklch(0.66 0.13 175 / 0.16) 0%, transparent 45%);
+    }
+    /* The lights are drawn over the box, so the content has to sit above them
+       or the copy loses contrast against the brighter corner. */
+    .k-seocta-h, .k-seocta-s, .k-seocta-a { position: relative; z-index: 1; }
     .k-seocta-h { font-family: var(--k-font-display); font-weight: 700; font-size: 26px; line-height: 1.2; margin: 0 0 10px; }
     .k-seocta-s { font-size: 15.5px; line-height: 1.55; color: rgba(255,255,255,0.76); margin: 0 auto 20px; max-width: 54ch; }
     .k-seocta-a { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
