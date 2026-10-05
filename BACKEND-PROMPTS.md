@@ -31,6 +31,23 @@ is a mattress: no Mattresses, no Beds, no Bedroom. So the same item is either
 66.6% depreciated or worthless at ten years old, a spread of the entire
 valuation, decided by which of two wrong boxes it falls into.
 
+**The detailed schedule does not rescue it, and the two disagree.** The same
+response carries `schedule`, 87 PCS sub-lines across 30 categories (what
+/admin/platform renders). No mattress line there either; the nearest homes are
+
+| schedule line | life |
+|---|---|
+| `Furniture — Home & Office > All Other Furniture Items` | **20 y** |
+| `Furniture — Home & Office > Upholstered Furniture` | 10 y |
+| `Linens & Softgoods > Quilts` | 20 y |
+| `Linens & Softgoods > All Other Linens & Softgoods` | 10 y |
+
+A mattress falling to "All Other Furniture Items" depreciates on a **20-year**
+life -- further from the truth than the 15 the owner saw. And note that
+`rules["Furniture"]` is 15 while the Furniture sub-lines it stands for run 10
+to 20, so the single-word class is an average of sub-lines a mattress belongs
+to none of. Whichever vocabulary an item is tagged in changes its answer.
+
 **It is not stable either, which is how we found it.** The SAME photo file
 (`loss/w480/mattress.jpg`) has been classed both ways by the live engine:
 
@@ -46,9 +63,11 @@ pinning froze whichever one it happened to pick.
 
 **Two things we think are needed, and the second matters more:**
 
-1. **A mattress class with a life to match.** Industry useful life for a
-   mattress is about 8-10 years, which is neither 15 nor 5. Adding it is a
-   schedule row plus wherever the classifier's label set is defined.
+1. **A mattress line with a life to match, in BOTH vocabularies.** Industry
+   useful life for a mattress is about 8-10 years, which is none of 5, 15 or
+   20. It needs a `rules` class and a `schedule` sub-line (`Furniture — Home &
+   Office > Mattresses & Box Springs` would sit naturally), plus whatever the
+   classifier picks labels from.
 2. **A look at how many other items have no right box.** A mattress is not an
    exotic item; it is in a large share of residential contents claims. If it
    has no home in a 30-class schedule, the question is what else does not --
