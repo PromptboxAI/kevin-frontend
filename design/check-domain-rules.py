@@ -53,6 +53,15 @@ RULES = [
     # constraints on how this is worded anywhere"), and three surfaces carried
     # it -- /product, /landing-full and the watch-demo script. "prose" skips
     # comments: code that explains the engine to the next engineer is wanted.
+    # OWNER TRIM, 2026-10-03 onward: the public workflow is four steps and the
+    # extraction signals are not named. Both leaked twice after being removed --
+    # first in meta descriptions and a hub card, then on four pages that the
+    # stage-name grep missed because they enumerated the SIGNALS instead.
+    # "prose" skips comments; engineering notes about the engine are fine.
+    ("10", "the public workflow is four steps, and signals are not named",
+     r"upload,\s*extract|extract,\s*cluster|cluster,\s*review|promote,\s*price|"
+     r"depreciate,\s*export|eight\s+stages|\bOCR\b|model[- ]number\s+patterns|"
+     r"content\s+hash", "prose", "public"),
     ("10", "the comp-selection METHOD (internal only)",
      r"middle\s+(one|listing|price|comp)\b|middle\s+by\s+price|"
      r"median\s+of\s+(the\s+)?(comps?|listings?|prices?|offers?)|"
@@ -94,6 +103,11 @@ NEGATION_WINDOW = 60
 # trial, which rule 9b scrapped" needs 26 characters before it lands.
 NEGATION_WINDOW_AFTER = 48
 
+
+# Staff-only surfaces. The owner admin console is a BACK OFFICE -- founder and
+# staff run the business from it, and naming the pipeline's stages on an error
+# queue there is operations, not marketing. Rules marked "public" skip these.
+INTERNAL_SURFACES = ("admin-console.jsx", "admin-console-2.jsx")
 
 COMMENT_CONT = re.compile(r"^\s*(\*|//|#)")
 
@@ -183,7 +197,10 @@ def main():
         rx = re.compile(pat, re.I)
         prose_only = "prose" in opts
         hits = []
+        public_only = "public" in opts
         for p, lines in cache.items():
+            if public_only and os.path.basename(p) in INTERNAL_SURFACES:
+                continue
             skip = comments[p] if prose_only else ()
             for n, line in enumerate(lines, 1):
                 if n in skip:
