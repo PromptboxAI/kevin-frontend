@@ -14,6 +14,59 @@ nothing gets asked twice and nothing quietly falls off.
 
 ---
 
+## 17. `limit` is clamped silently, and three screens believed the number they asked for
+
+**Status:** new, 2026-10-06. Small change, and it would have turned a
+three-screen bug into a five-minute one.
+
+`GET /v1/claim_items` clamps the page size without saying so:
+
+```python
+# main.py, list_claim_items
+limit = max(1, min(limit, CLAIM_LIST_MAX_LIMIT))   # CLAIM_LIST_MAX_LIMIT = 100
+```
+
+A request for `limit=500` returns **200 OK** with 100 items and a `count` of
+161. Nothing in the response says it was reduced. It is indistinguishable from
+a complete answer unless the caller happens to compare `items.length` against
+`count` — and a caller who asked for 500 has no reason to think they should.
+
+**What it cost us.** Three screens asked for 500 and believed it:
+
+- **Photos tab** — builds its line-number map only when every item is present,
+  deliberately, so it never prints a wrong line number. Past 100 items that
+  guard could never be satisfied, so the map was empty: every tile read
+  "Photo 6237" instead of "Line 0045", and the grid could not be sorted into
+  worksheet order. Two separate fixes were shipped and silently defeated by
+  this before the cause was found.
+- **Claim overview** — rollups computed over the first 100 rows.
+- **Holdback recovery** — `recoveryTotals` sums `depreciation_amount` across
+  the lines it holds. On a 161-line claim it summed 100 of them, so the
+  withheld figure an adjuster reads before asking a carrier to release
+  depreciation was understated, with nothing on screen suggesting it.
+
+That last one is why this is worth your time: a money total quietly computed
+over part of a claim is wrong in the way nobody catches by looking at it.
+
+**Fixed our side** — one `fetchAllClaimItems` that pages at the real limit.
+Not asking you to raise the cap; 100 is sensible.
+
+**Asking for the clamp to be audible**, either way round:
+
+1. **`422` on an over-limit request**, saying the maximum. Loudest, and it
+   cannot be ignored. It would break any caller currently asking for more —
+   which is the point, since those callers are already wrong.
+2. **Or a flag on the response** — `limit_applied: 100`, or `truncated: true`
+   — so a caller can see the reduction without diffing two fields.
+
+Either is fine. What does not work is the current silence. Same question for
+any other list route that clamps: `/v1/claims`, `/v1/admin/accounts`,
+`/v1/claims/{id}/events`, `/v1/jobs/failed`. We have already been bitten once
+by `/v1/jobs/failed` returning a per-page `count` the System screen read as a
+total, reporting "50 failed jobs" when there were 79 — same family of bug.
+
+---
+
 ## 16. Does the engine still route comps by retailer? — NO. IT IS DISPLAY ORDER.
 
 **Status:** **answered 2026-10-05.** It is display ORDER, not routing: the
