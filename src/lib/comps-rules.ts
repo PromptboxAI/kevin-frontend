@@ -118,8 +118,21 @@ export function checkTotals(input: {
   hasMore: boolean
   /** Lines the server says are still being priced. */
   processing: number
+  /**
+   * Both reads have finished. FALSE while either is in flight — including the
+   * refetch-on-mount, which is where this got it wrong.
+   *
+   * The rows and the totals are separate cached queries. On load React Query
+   * serves both from cache instantly, and if they were cached at different
+   * moments the sums disagree for a few hundred milliseconds until the
+   * refetches land. The alert fired, then vanished. An alert that cries wolf
+   * on every page load is worth less than no alert, because the one time it
+   * matters nobody will believe it.
+   */
+  settled: boolean
 }): TotalsCheck {
   if (input.processing > 0) return { state: 'moving' }
+  if (!input.settled) return { state: 'partial' }
   if (input.hasMore) return { state: 'partial' }
   if (input.claimTotal == null) return { state: 'partial' }
   const sum = input.loadedRowTotals.reduce((a, n) => a + (Number.isFinite(n) ? n : 0), 0)

@@ -726,6 +726,9 @@ export default function WorksheetPage() {
     claimTotal: claim.data?.total_rcv,
     hasMore: Boolean(rows.hasNextPage),
     processing: stillPricing,
+    /* Nothing in flight, including the refetch-on-mount: cached rows and a
+       cached total from different moments disagree until both land. */
+    settled: !rows.isFetching && !claim.isFetching,
   })
 
   useEffect(() => {
