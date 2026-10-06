@@ -619,30 +619,7 @@ export default function WorksheetPage() {
    */
   const items = useMemo(() => numberRows(rows.data?.pages.flatMap((p) => p.items) ?? []), [rows.data])
 
-  /**
-   * `?item=` LANDS ON A ROW. The Photos tab has linked here with it for a
-   * while and this page never read it, so "Open line 0045" dropped you at the
-   * top of the worksheet to go looking -- on a 161-line claim, the same hunt
-   * the link existed to save.
-   *
-   * Reuses the reveal the Add item flow already does: scroll the row into the
-   * middle and focus its Description cell, which is the next thing to type on
-   * a line promoted from a photo.
-   *
-   * Waits for `items`, because the row cannot be scrolled to before it is
-   * rendered, and the grid now pulls every page rather than only the first.
-   */
-  const [params] = useSearchParams()
-  const wantedItem = Number(params.get('item')) || null
-  const landed = useRef<number | null>(null)
-  useEffect(() => {
-    if (!wantedItem || landed.current === wantedItem || items.length === 0) return
-    const el = document.querySelector<HTMLElement>(`[data-row-id="${wantedItem}"]`)
-    if (!el) return
-    landed.current = wantedItem
-    el.scrollIntoView({ block: 'center' })
-    el.querySelector<HTMLInputElement>('input[data-ws-cell]')?.focus()
-  }, [wantedItem, items.length])
+
 
   const visible = useMemo(() => {
     const term = search.trim().toLowerCase()
@@ -765,6 +742,51 @@ export default function WorksheetPage() {
   }, [countCheck, rows.hasNextPage])
 
   const rowH = ROW_H[density]
+
+  /**
+   * `?item=` LANDS ON A ROW -- by INDEX, not by querySelector.
+   *
+   * The Photos tab has linked here with this param for a while and the page
+   * never read it, so "Open line 0045" dropped you at the top of the worksheet
+   * to go hunting. The first fix looked the row up in the DOM and called
+   * scrollIntoView, which is wrong on a VIRTUALISED grid: a row outside the
+   * rendered window does not exist to query, so the landing only worked when
+   * the row happened to already be on screen -- and while the remaining pages
+   * were still arriving it produced a visible scroll to the wrong place first,
+   * then a correction. The owner saw exactly that.
+   *
+   * Setting scrollTop from the row's index works whether or not the row is
+   * rendered: the window follows the scroll position, so the row is drawn
+   * because we scrolled there, not the other way round.
+   *
+   * Waits for the LAST page, because an index into a half-loaded list points at
+   * the wrong row -- this grid's first page is the newest 100 (the API is
+   * newest-first), so until everything is in, index 0 is not line 1.
+   */
+  const [params] = useSearchParams()
+  const wantedItem = Number(params.get('item')) || null
+  const landed = useRef<number | null>(null)
+  useEffect(() => {
+    if (!wantedItem || landed.current === wantedItem) return
+    if (rows.hasNextPage || rows.isFetchingNextPage) return
+    const idx = visible.findIndex((r) => r.id === wantedItem)
+    if (idx < 0) return
+    landed.current = wantedItem
+    const el = scrollRef.current
+    if (!el) return
+    // Centre it, clamped by the browser to the scrollable range.
+    const top = Math.max(0, idx * rowH - el.clientHeight / 2 + rowH / 2)
+    el.scrollTop = top
+    setScrollTop(top)
+    // Focus once the window has drawn the row at that position.
+    requestAnimationFrame(() => {
+      document
+        .querySelector<HTMLElement>(`[data-row-id="${wantedItem}"]`)
+        ?.querySelector<HTMLInputElement>('input[data-ws-cell]')
+        ?.focus()
+    })
+  }, [wantedItem, visible, rowH, rows.hasNextPage, rows.isFetchingNextPage])
+
 
   useEffect(() => {
     const el = scrollRef.current
