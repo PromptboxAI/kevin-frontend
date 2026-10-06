@@ -72,7 +72,22 @@ export default function OverviewPage() {
   const items = useMemo(() => itemsPage?.items ?? [], [itemsPage])
   const photos = useMemo(() => photoPage?.photos ?? [], [photoPage])
 
-  const classes = useMemo(() => withTail(classBreakdown(items), CLASS_KEEP), [items])
+  /**
+   * Every class, and the twelve-plus-tail view of them.
+   *
+   * The tail row said "+ 12 more classes" and was a dead end -- it carried the
+   * right totals and no way to see what was in it, on the one card whose job is
+   * to say what the claim is made of. `all` is the full breakdown; `classes`
+   * stays the collapsed shape so the BAR keeps its twelve-colour ramp and does
+   * not grow a stripe per long-tail class, which at 30 classes is a band of
+   * indistinguishable slivers.
+   */
+  const all = useMemo(() => classBreakdown(items), [items])
+  const classes = useMemo(() => withTail(all, CLASS_KEEP), [all])
+  const [showAllClasses, setShowAllClasses] = useState(false)
+  /* The LIST expands; the bar above it does not. */
+  const listed = showAllClasses ? all : classes
+  const hiddenCount = all.length - CLASS_KEEP
   const top = useMemo(() => highestValue(items, 6), [items])
   const flags = useMemo(() => attention(items), [items])
   const pending = useMemo(() => pendingPhotos(photos), [photos])
@@ -340,7 +355,7 @@ export default function OverviewPage() {
               ) : null}
 
               <div className="k-class-list">
-                {classes.map((c, i) => (
+                {listed.map((c, i) => (
                   <div key={c.cls} className="k-class-row">
                     <span
                       className="k-class-dot"
@@ -372,6 +387,21 @@ export default function OverviewPage() {
                     </span>
                   </div>
                 ))}
+                {/* The tail row is a total, not a destination -- this is how
+                    you reach what is inside it. */}
+                {hiddenCount > 0 ? (
+                  <button
+                    type="button"
+                    className="k-link"
+                    style={{ fontSize: 12, marginTop: 8, alignSelf: 'flex-start' }}
+                    onClick={() => setShowAllClasses((v) => !v)}
+                  >
+                    {showAllClasses
+                      ? `Show top ${CLASS_KEEP} only`
+                      : `Show all ${all.length} classes`}
+                  </button>
+                ) : null}
+
                 {/* Only a successful read may say there are none. */}
                 {classes.length === 0 && itemsPage ? (
                   <p style={{ fontSize: 12, color: 'var(--k-fg-4)', padding: '4px 0' }}>
