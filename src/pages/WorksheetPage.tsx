@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { InfiniteData } from '@tanstack/react-query'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import Alert from '../components/Alert'
 import AppHeader from '../components/AppHeader'
 import PendingStagingAlert, { usePendingStaging } from '../components/PendingStagingAlert'
@@ -346,6 +346,8 @@ export default function WorksheetPage() {
   const [notice, setNotice] = useState<string | null>(null)
   const [confirmDel, setConfirmDel] = useState(false)
   const [newRowId, setNewRowId] = useState<number | null>(null)
+
+
   /** The dry-run estimate awaiting confirmation. Null = no modal. */
   const [retryPlan, setRetryPlan] = useState<RetryDeferredResponse | null>(null)
 
@@ -616,6 +618,31 @@ export default function WorksheetPage() {
    * active. See lib/rows.ts.
    */
   const items = useMemo(() => numberRows(rows.data?.pages.flatMap((p) => p.items) ?? []), [rows.data])
+
+  /**
+   * `?item=` LANDS ON A ROW. The Photos tab has linked here with it for a
+   * while and this page never read it, so "Open line 0045" dropped you at the
+   * top of the worksheet to go looking -- on a 161-line claim, the same hunt
+   * the link existed to save.
+   *
+   * Reuses the reveal the Add item flow already does: scroll the row into the
+   * middle and focus its Description cell, which is the next thing to type on
+   * a line promoted from a photo.
+   *
+   * Waits for `items`, because the row cannot be scrolled to before it is
+   * rendered, and the grid now pulls every page rather than only the first.
+   */
+  const [params] = useSearchParams()
+  const wantedItem = Number(params.get('item')) || null
+  const landed = useRef<number | null>(null)
+  useEffect(() => {
+    if (!wantedItem || landed.current === wantedItem || items.length === 0) return
+    const el = document.querySelector<HTMLElement>(`[data-row-id="${wantedItem}"]`)
+    if (!el) return
+    landed.current = wantedItem
+    el.scrollIntoView({ block: 'center' })
+    el.querySelector<HTMLInputElement>('input[data-ws-cell]')?.focus()
+  }, [wantedItem, items.length])
 
   const visible = useMemo(() => {
     const term = search.trim().toLowerCase()

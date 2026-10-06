@@ -9,7 +9,9 @@ import ClaimMissing from '../components/ClaimMissing'
 import ClaimTabs from '../components/ClaimTabs'
 import { I, Icon } from '../components/Icon'
 import { ApiError, api, retryUnlessMissing } from '../lib/api'
-import { detachItemPhotos } from '../lib/evidence'
+import { attachItemPhotos, detachItemPhotos } from '../lib/evidence'
+import { createBlankRow } from '../lib/mutations'
+import { getStaging, reclassifyGroup } from '../lib/staging'
 import { fmtConfidence, fmtUSD } from '../lib/format'
 import { getClaimPhotos } from '../lib/photos'
 import { numberRows } from '../lib/rows'
@@ -611,6 +613,7 @@ function PhotoDetail({
   onWorksheet: () => void
 }) {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const { ref, src, onError } = useThumb<HTMLDivElement>(photo.photo_id)
   const [notice, setNotice] = useState<string | null>(null)
   const bucket = bucketOf(photo)
@@ -657,6 +660,68 @@ function PhotoDetail({
       setSaving(false)
     }
   }
+
+  /**
+   * PROMOTE A STAGING PHOTO TO A LINE ITEM, without the trip to staging.
+   *
+   * It lands in exactly the state a `needs_manual` row lands in -- a blank line
+   * with the photo in the panel and every field an editable placeholder -- so
+   * there is no new concept here, only a second way into a state the adjuster
+   * already knows (owner's framing, and it is the right one).
+   *
+   * ORDER MATTERS, and the dangerous state must never be the resting one:
+   *
+   *   1. exclude the photo's set from staging, IF it is still live. A set left
+   *      as `item` in an unprocessed session would promote this photo a second
+   *      time, and two line items for one photo is a double-count on a
+   *      carrier-facing document.
+   *   2. create the row and attach the photo.
+   *
+   * If step 2 fails you are left with an excluded set -- visible in staging and
+   * reversible with one click. Done the other way round, a failure leaves a
+   * photo silently queued to be promoted twice, with nothing on screen saying
+   * so.
+   *
+   * The staging lookup is only needed because ClaimPhoto carries no group key
+   * (BACKEND-PROMPTS 18): there is no way to tell an already-excluded set from
+   * a live one without fetching the session.
+   *
+   * NO VISION. The attach route is explicit that it neither identifies nor
+   * re-values, and no endpoint runs Vision outside the staging pipeline. The
+   * row gets the picture; the description is the adjuster's, and pricing
+   * follows from it the way a written-import row prices.
+   */
+  const promote = useMutation({
+    mutationFn: async () => {
+      if (photo.session_id != null) {
+        const session = await getStaging(claimId).catch(() => null)
+        const group = session?.groups?.find((g) =>
+          g.photos.some((p) => p.id === photo.photo_id),
+        )
+        // Already context/duplicate -> promoting it again yields nothing, so
+        // there is nothing to guard against and nothing to change.
+        if (group && group.kind === 'item') {
+          await reclassifyGroup(claimId, group.group_key, 'context')
+        }
+      }
+      const created = await createBlankRow(claimId)
+      const rowId = created.item_ids?.[0]
+      if (rowId === undefined) throw new Error('No row was created')
+      await attachItemPhotos(rowId, [photo.photo_id])
+      return rowId
+    },
+    onSuccess: (rowId) => {
+      void queryClient.invalidateQueries({ queryKey: ['claim-photos', claimId] })
+      void queryClient.invalidateQueries({ queryKey: ['claim-items-flat', claimId] })
+      void queryClient.invalidateQueries({ queryKey: ['claim-items', claimId] })
+      void queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
+      // Straight to the row, with the description waiting -- the next thing to
+      // do is type it, and it is on another screen.
+      navigate(`/claims/${encodeURIComponent(claimId)}?item=${rowId}`)
+    },
+    onError: () =>
+      setNotice('Could not make a line item from that photo. Nothing was changed.'),
+  })
 
   const unlink = useMutation({
     mutationFn: () => detachItemPhotos(item!.id, [photo.photo_id]),
@@ -829,7 +894,19 @@ function PhotoDetail({
           <button type="button" className="k-btn" onClick={onWorksheet}>
             Open line {lineNo ? String(lineNo).padStart(4, '0') : ''}
           </button>
-        ) : null}
+        ) : (
+          /* The resolution for a photo that produced nothing, done here rather
+             than by sending someone to staging to hunt for its set. */
+          <button
+            type="button"
+            className="k-btn"
+            disabled={promote.isPending}
+            title="Creates a blank worksheet line with this photo on it, for you to describe and price"
+            onClick={() => promote.mutate()}
+          >
+            {promote.isPending ? 'Creating…' : 'Make this a line item'}
+          </button>
+        )}
 
         {/* SAVE. The panel could show you a photo and gave you no way to keep
             it; an adjuster emailing one shot to a carrier had to screenshot it. */}
