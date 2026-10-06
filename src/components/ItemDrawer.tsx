@@ -620,7 +620,14 @@ export default function ItemDrawer({
 
                 {/* The audit trail. Lazy: nothing is fetched until asked, and
                     most rows are never asked about. */}
-                <ItemEvidence item={data} claimStatus={claim.data?.status} />
+                <ItemEvidence
+                  item={data}
+                  claimStatus={claim.data?.status}
+                  onShowPhoto={(photoId) => {
+                    const i = photos.findIndex((p) => p.photo_id === photoId)
+                    if (i >= 0) setPhotoIndex(i)
+                  }}
+                />
                 <ItemHistory rowId={rowId} />
               </div>
             </>

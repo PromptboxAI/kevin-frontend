@@ -30,9 +30,20 @@ import type { ClaimItemDetail } from '../lib/types'
 export default function ItemEvidence({
   item,
   claimStatus,
+  onShowPhoto,
 }: {
   item: ClaimItemDetail
   claimStatus: string | undefined
+  /**
+   * Show this photo in the drawer's viewer at the top.
+   *
+   * These rows listed every shot backing the line -- the point of merging two
+   * photos into one item -- and the only thing you could do with one was
+   * Unlink it. The pager above is easy to miss on a two-photo set, so an
+   * adjuster who merged a wide shot with a model plate could see that the
+   * plate was attached and never get a look at it.
+   */
+  onShowPhoto?: (photoId: number) => void
 }) {
   const queryClient = useQueryClient()
   const photoRef = useRef<HTMLInputElement>(null)
@@ -118,9 +129,21 @@ export default function ItemEvidence({
               <span className="k-hist-actor k-hist-actor--sys">
                 {p.is_primary ? 'Thumbnail' : 'Photo'}
               </span>
-              <span className="k-hist-what">
-                {p.room ?? p.note ?? `Photo ${p.photo_id}`}
-              </span>
+              {onShowPhoto ? (
+                <button
+                  type="button"
+                  className="k-hist-what k-link"
+                  style={{ textAlign: 'left' }}
+                  title="Show this photo above"
+                  onClick={() => onShowPhoto(p.photo_id)}
+                >
+                  {p.room ?? p.note ?? `Photo ${p.photo_id}`}
+                </button>
+              ) : (
+                <span className="k-hist-what">
+                  {p.room ?? p.note ?? `Photo ${p.photo_id}`}
+                </span>
+              )}
               {/* "Remove" beside a claim's only evidence reads as destruction,
                   so the word and the tooltip both say what it really does. */}
               <button
