@@ -73,8 +73,15 @@ export function stateFacets(photos: ClaimPhoto[]): PhotoStateFacet[] {
     },
     {
       key: 'pending',
-      label: 'Waiting in staging',
-      blurb: 'Uploaded, never processed — no line item exists yet.',
+      label: 'In staging',
+      /*
+       * NOT "never processed". A photo whose set was EXCLUDED keeps
+       * state 'staged' and status 'clustered' forever -- byte-identical to a
+       * session nobody has processed -- because ClaimPhoto carries no group
+       * kind (BACKEND-PROMPTS 18). So the tab cannot tell "waiting its turn"
+       * from "deliberately set aside", and used to assert the first.
+       */
+      blurb: 'No line item from these — either not processed yet, or set aside in staging.',
       n: n('pending'),
     },
     {

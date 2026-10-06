@@ -461,7 +461,7 @@ function PhotoTile({
   const caption = item
     ? itemTitle(item, lineNo)
     : bucket === 'pending'
-      ? 'Waiting in staging — not processed yet'
+      ? 'In staging — no line item from it'
       : 'Backs no line item'
 
   return (
@@ -766,8 +766,10 @@ function PhotoDetail({
             </>
           ) : bucket === 'pending' ? (
             <div style={{ fontSize: 12, color: 'var(--k-fg-3)', lineHeight: 1.55 }}>
-              Uploaded but never processed, so it has produced no line item and
-              adds nothing to the claim total.
+              This photo is in a staging session and has produced no line item, so it adds
+              nothing to the claim total. That is either because the session has not been
+              processed yet, or because its set was set aside as a context shot or a duplicate —
+              open staging to see which, and to change it.
               <div style={{ marginTop: 8 }}>
                 {/* Carries the photo id so staging can scroll to ITS set and
                     mark it. "Open staging" landed you at the top of a

@@ -14,6 +14,44 @@ nothing gets asked twice and nothing quietly falls off.
 
 ---
 
+## 18. `ClaimPhoto` cannot say whether a photo was SET ASIDE or just not processed
+
+**Status:** new, 2026-10-06. One field.
+
+`GET /v1/claims/{id}/photos` returns `state` (attached · staged · unattached)
+and `status` (uploaded · extracted · clustered · promoted). Neither says what
+happened to the photo's SET.
+
+A photo whose set an adjuster excluded — reclassified `context` or `duplicate`
+— keeps `state: "staged"`, `status: "clustered"` after processing, because an
+excluded set promotes to zero line items. That is **byte-identical** to a photo
+in a session nobody has processed yet. Two very different situations, one
+payload.
+
+So the Photos tab was captioning deliberately-excluded photos *"Waiting in
+staging — not processed yet"*, which is wrong twice: they are not waiting, and
+there is nothing left to process. The owner found it by opening staging and
+seeing the same photos greyed out and marked excluded. We have changed the copy
+to cover both cases rather than assert the wrong one, but it now says less than
+it should, because it is all we can honestly say.
+
+**Asking for the set's classification on the photo**, whichever shape suits:
+
+- `group_kind: "item" | "context" | "duplicate" | null` (null when it is not in
+  a set), or
+- a derived `excluded: true` alongside the existing `status`.
+
+Either lets the tab say *"Set aside as a duplicate"* versus *"Not processed
+yet"*, and lets it offer the right action for each.
+
+**Not asking for `reason` on this payload.** It can carry an item name, and the
+Photos tab is post-Vision so it could legitimately show one — but staging
+cannot (rule 23), and one field that is safe on one screen and not on another
+is how it ends up on the wrong one. The kind is a classification, not an
+identity, and it is all the tab needs.
+
+---
+
 ## 17. `limit` is clamped silently, and three screens believed the number they asked for
 
 **Status:** new, 2026-10-06. Small change, and it would have turned a

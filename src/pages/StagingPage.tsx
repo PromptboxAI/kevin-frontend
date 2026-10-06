@@ -1311,7 +1311,16 @@ function SetCard({
             {selected ? <Icon d={I.check} size={12} /> : null}
           </button>
         ) : null}
-        {isCtx ? <span className="k-stageset-ctxtag">Excluded</span> : null}
+        {/* WHICH kind, not just "excluded". `kind` is a classification, not
+            an identity, so naming it does not breach rule 23 the way `reason`
+            would -- reason can carry an item name, which is why it is not
+            rendered on this pre-Vision screen. Two sets greyed out for
+            different causes used to read identically. */}
+        {isCtx ? (
+          <span className="k-stageset-ctxtag">
+            {group.kind === 'duplicate' ? 'Duplicate' : 'Context shot'}
+          </span>
+        ) : null}
       </div>
 
       <div className="k-stageset-body">
