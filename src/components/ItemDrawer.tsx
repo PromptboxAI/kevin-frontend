@@ -149,6 +149,39 @@ export default function ItemDrawer({
     mutationFn: (body: Record<string, string | null>) => editDisplayLine(rowId, body),
     onSuccess: refresh,
   })
+
+  /**
+   * Take the price FROM a comp, and take its link with it.
+   *
+   * The engine picks one listing; when it picks the wrong one — a speaker
+   * priced off a page of cleats — the adjuster could see the right listing
+   * sitting in the panel and had no way to say "that one". Typing the number
+   * in by hand worked, but left the line pointing at the listing it came from
+   * being wrong about, or at nothing.
+   *
+   * Two calls because the API has two: the price is an override, the proof URL
+   * is a display field.
+   */
+  const useComp = (comp: Comp) => {
+    const price = Number(comp.price)
+    if (!Number.isFinite(price) || price < 0) return
+    override.mutate({ rcv: price })
+    editLine.mutate({ manual_source_url: comp.link ?? null })
+  }
+
+  /**
+   * A HAND-TYPED price clears the source link — but only when it is genuinely
+   * a new number. The owner's rule, and it is the right one: if what you typed
+   * happens to be a listing's price, that listing still substantiates it, and
+   * silently dropping the link would cost the line its proof. If it matches
+   * nothing on the page, the old link no longer describes the price and
+   * keeping it would be a false citation.
+   */
+  const sourceForTypedPrice = (rcv: number): string | null => {
+    const comps = data?.alternative_sources ?? []
+    const i = citedCompIndex(rcv, comps)
+    return i == null ? null : (comps[i]?.link ?? null)
+  }
   const override = useMutation({
     mutationFn: (body: {
       quantity?: number
@@ -353,7 +386,14 @@ export default function ItemDrawer({
                     money
                     onCommit={(next) => {
                       const rcv = Number(next)
-                      if (Number.isFinite(rcv) && rcv >= 0) override.mutate({ rcv })
+                      if (!Number.isFinite(rcv) || rcv < 0) return
+                      override.mutate({ rcv })
+                      // Keep the link when the number IS one of the listings;
+                      // drop it when the price came from nowhere on this page.
+                      const url = sourceForTypedPrice(rcv)
+                      if (url !== (data.manual_source_url ?? null)) {
+                        editLine.mutate({ manual_source_url: url })
+                      }
                     }}
                   />
                 </div>
@@ -495,6 +535,8 @@ export default function ItemDrawer({
                             comp={comp}
                             preferred={index === 0}
                             cited={index === cited}
+                            busy={repricing || override.isPending || editLine.isPending}
+                            onUse={index === cited ? undefined : () => useComp(comp)}
                           />
                         ))}
                       </div>
@@ -634,6 +676,8 @@ function CompRow({
   comp,
   preferred,
   cited,
+  busy,
+  onUse,
 }: {
   comp: Comp
   /**
@@ -649,6 +693,9 @@ function CompRow({
   preferred: boolean
   /** This comp's price IS the unit cost, so it is the listing being cited. */
   cited?: boolean
+  busy?: boolean
+  /** Absent on the cited comp -- it is already the price. */
+  onUse?: () => void
 }) {
   const body = (
     <>
@@ -666,12 +713,43 @@ function CompRow({
     </>
   )
 
+  /*
+   * The row stays a LINK where it was one -- opening the listing is still the
+   * first thing anyone does with a comp -- and "Use this price" sits beside it
+   * rather than swallowing the row, so neither action is hidden behind the
+   * other. Priceless comps get no button: there is nothing to take.
+   */
+  const use =
+    onUse && Number.isFinite(Number(comp.price)) ? (
+      <button
+        type="button"
+        className="k-btn k-btn--sm k-btn--ghost k-comp-use"
+        disabled={busy}
+        title="Price this line from this listing, and cite it as the source"
+        onClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          onUse()
+        }}
+      >
+        Use this price
+      </button>
+    ) : null
+
   if (preferred && comp.link) {
     return (
-      <a className="k-insp-alt" href={comp.link} target="_blank" rel="noreferrer noopener">
-        {body}
-      </a>
+      <div className="k-insp-alt-row">
+        <a className="k-insp-alt" href={comp.link} target="_blank" rel="noreferrer noopener">
+          {body}
+        </a>
+        {use}
+      </div>
     )
   }
-  return <div className="k-insp-alt k-insp-alt--flat">{body}</div>
+  return (
+    <div className="k-insp-alt-row">
+      <div className="k-insp-alt k-insp-alt--flat">{body}</div>
+      {use}
+    </div>
+  )
 }

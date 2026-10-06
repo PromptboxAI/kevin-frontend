@@ -47,6 +47,7 @@ import type {
   RetryDeferredResponse,
 } from '../lib/mutations'
 import { numberRows, rowInvariant, windowRange } from '../lib/rows'
+import { checkTotals } from '../lib/comps-rules'
 import { listProposals } from '../lib/proposals'
 import { assignRoom, listRooms, setRoomArea } from '../lib/rooms'
 import { assignPlan, assignSummary, planTextChunks } from '../lib/room-rules'
@@ -714,6 +715,19 @@ export default function WorksheetPage() {
 
   const countCheck = rowInvariant(items, total)
 
+  /**
+   * Do the rows and the totals bar agree? They come from different endpoints
+   * and drifted silently for ten minutes once, with prices in the grid and a
+   * total that had not moved. This answers yes/no and NEVER prints a figure of
+   * its own -- the money chain stays server-owned.
+   */
+  const totalsCheck = checkTotals({
+    loadedRowTotals: items.map((i) => i.rcv_total_incl ?? 0),
+    claimTotal: claim.data?.total_rcv,
+    hasMore: Boolean(rows.hasNextPage),
+    processing: stillPricing,
+  })
+
   useEffect(() => {
     if (!rows.hasNextPage && !countCheck.ok) {
       console.warn('[worksheet] row count invariant failed', countCheck)
@@ -867,6 +881,36 @@ export default function WorksheetPage() {
             Rows reading <strong>0.00</strong> have not been priced yet, and the totals below will
             keep rising until this finishes. Nothing is wrong with them — but an export taken now
             is a snapshot of a half-built inventory.
+          </Alert>
+        ) : null}
+
+        {/*
+          * The rows and the totals disagree by more than rounding. Says which
+          * is which and offers the one action that settles it -- deliberately
+          * no number, because quoting our own sum here would be the frontend
+          * contradicting the server about money.
+          */}
+        {totalsCheck.state === 'stale' ? (
+          <Alert
+            tone="wait"
+            title="The totals below are behind the lines above"
+            action={
+              <button
+                type="button"
+                className="k-btn k-btn--sm k-btn--ghost"
+                disabled={rows.isFetching || claim.isFetching}
+                onClick={() => {
+                  void queryClient.invalidateQueries({ queryKey: ['claim-items', claimId] })
+                  void queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
+                }}
+              >
+                Refresh
+              </button>
+            }
+          >
+            The line prices and the claim totals are read separately, and right now they do not
+            agree. Trust the lines. If refreshing does not settle it, the totals are stale on the
+            server and the export would carry the same figure — tell us before sending it.
           </Alert>
         ) : null}
 
