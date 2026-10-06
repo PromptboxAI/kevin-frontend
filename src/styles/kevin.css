@@ -1145,8 +1145,21 @@
       max-height: 260px; overflow: hidden;
     }
     .k-insp-photo > div { max-height: 232px; }
-    /* On short windows the photo turns the form into a porthole — drop it. */
-    @media (max-height: 760px) { .k-insp-photo { display: none; } }
+    /* On short windows the big image turns the form into a porthole, so it
+       goes -- but the STRIP stays. Which photos back a line is information, not
+       decoration: on a laptop the whole block used to vanish and a two-photo
+       item looked like a one-photo item. The block keeps its padding and the
+       tiles, and loses only the thing that was eating the height. */
+    @media (max-height: 760px) {
+      .k-insp-photo { max-height: none; padding: 10px 18px 8px; }
+      .k-insp-photo > .k-insp-img,
+      .k-insp-photo > .k-insp-img--empty,
+      .k-insp-photo > .k-insp-photonav { display: none; }
+      /* With no image above it the strip needs no separating gap. */
+      .k-insp-photo > .k-insp-strip { padding-top: 0; }
+      /* Nothing to show at all -- a single photo and no image is an empty bar. */
+      .k-insp-photo:not(:has(.k-insp-strip)) { display: none; }
+    }
 
     /* ── The photo strip ─────────────────────────────────────────────────
        A line item is often TWO photos -- the wide shot and the model plate --

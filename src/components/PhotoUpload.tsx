@@ -476,11 +476,18 @@ export default function PhotoUpload({
           to find this without it crowding the drop target. */}
       {claimId ? (
         <div className="k-dropzone-import">
-          No photos? Kevin can build the inventory from a written list instead —{' '}
-          <a href={`/claims/${claimId}/import`} className="k-link">
-            import a PDF, CSV or Excel file
-          </a>
-          . Each row prices the same way a photographed item does.
+          {/* Two lines, because it was one long sentence carrying three
+              separate facts -- that there is another way in, which formats it
+              takes, and that those rows price identically. Nobody read past
+              the dash. */}
+          <strong className="k-dropzone-import-t">No photos?</strong>
+          <span className="k-dropzone-import-b">
+            Kevin can build the inventory from a written list instead —{' '}
+            <a href={`/claims/${claimId}/import`} className="k-link">
+              import a PDF, CSV or Excel file
+            </a>
+            . Each row prices exactly the way a photographed item does.
+          </span>
         </div>
       ) : null}
 
