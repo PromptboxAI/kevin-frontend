@@ -714,6 +714,41 @@ export default function StagingPage() {
                 {loose.length > 0 && reading > 0
                   ? ` ${reading} more ${reading === 1 ? 'is' : 'are'} still processing.`
                   : ''}
+
+                {/*
+                  * HOW FAR IN. "209 photos are still processing" with nothing
+                  * moving is indistinguishable from a frozen page, and reading
+                  * a 1.3 GB drop takes minutes. The numbers were already here
+                  * -- photo_count against the ones the session has listed --
+                  * they just were not shown.
+                  */}
+                {reading > 0 && (data?.photo_count ?? 0) > 0 ? (
+                  <span style={{ display: 'block', marginTop: 8, maxWidth: 380 }}>
+                    <span className="k-progress" style={{ display: 'block', width: '100%' }}>
+                      <span
+                        className="k-progress-bar k-progress-bar--live"
+                        style={{
+                          display: 'block',
+                          width: `${Math.round(
+                            ((( data?.photo_count ?? 0) - reading) / (data?.photo_count ?? 1)) * 100,
+                          )}%`,
+                        }}
+                      />
+                    </span>
+                    <span
+                      style={{
+                        display: 'block',
+                        marginTop: 4,
+                        fontSize: 11,
+                        color: 'var(--k-fg-4)',
+                        fontFamily: 'var(--k-font-mono)',
+                      }}
+                    >
+                      {fmtInt((data?.photo_count ?? 0) - reading)} of{' '}
+                      {fmtInt(data?.photo_count ?? 0)} read
+                    </span>
+                  </span>
+                ) : null}
               </span>
               <div style={{ flex: 1 }} />
               {loose.length > 0 ? (
@@ -737,8 +772,28 @@ export default function StagingPage() {
           {clustering && groups.length === 0 ? (
             <div className="k-stage-grouping">
               <span className="k-paused-dot" aria-hidden="true" />
-              Grouping {fmtInt(data?.photo_count ?? 0)}{' '}
-              {(data?.photo_count ?? 0) === 1 ? 'photo' : 'photos'} by capture time…
+              <span>
+                Grouping {fmtInt(data?.photo_count ?? 0)}{' '}
+                {(data?.photo_count ?? 0) === 1 ? 'photo' : 'photos'} by capture time…
+                {/* A blinking dot says "alive", not "how long". Clustering has
+                    no per-photo progress to report -- it is one server pass --
+                    so the bar is indeterminate and says so by moving rather
+                    than by filling to a number we do not have. */}
+                <span style={{ display: 'block', marginTop: 8, maxWidth: 320 }}>
+                  <span
+                    className="k-progress k-progress--busy"
+                    style={{ display: 'block', width: '100%' }}
+                  >
+                    <span className="k-progress-bar" />
+                  </span>
+                </span>
+                <span
+                  style={{ display: 'block', marginTop: 6, fontSize: 11.5, color: 'var(--k-fg-4)' }}
+                >
+                  No photo is uploaded or priced by this step — it only decides which shots belong
+                  together. You can change every grouping it proposes.
+                </span>
+              </span>
             </div>
           ) : null}
 
@@ -908,6 +963,45 @@ export default function StagingPage() {
           onIndex={(i) => setLightbox({ key: lightboxSet.group_key, i })}
           onClose={() => setLightbox(null)}
         />
+      ) : null}
+
+      {/*
+        * HANDING OFF. Between clicking Process and landing on the processing
+        * screen the button went grey and the page did nothing -- and on a
+        * 160-set session that POST takes real seconds, so it read as a dead
+        * button. This covers the gap, says what is happening and what it
+        * costs, and cannot be dismissed: clicking away would leave someone
+        * looking at a staging grid that is already being promoted.
+        */}
+      {process.isPending ? (
+        <div className="k-stage-noteover" style={{ cursor: 'progress' }}>
+          <div className="k-notemodal" style={{ textAlign: 'center' }}>
+            <div style={{ padding: '26px 24px 24px' }}>
+              <div style={{ maxWidth: 220, margin: '0 auto 14px' }}>
+                <span className="k-progress k-progress--busy" style={{ display: 'block' }}>
+                  <span className="k-progress-bar" />
+                </span>
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 600 }}>
+                Sending {fmtInt(itemSets.length)}{' '}
+                {itemSets.length === 1 ? 'set' : 'sets'} to be identified
+              </div>
+              <p
+                style={{
+                  fontSize: 12.5,
+                  color: 'var(--k-fg-3)',
+                  lineHeight: 1.55,
+                  margin: '8px auto 0',
+                  maxWidth: 360,
+                }}
+              >
+                Kevin is reading each set and pricing what it finds. This takes a few seconds to
+                start, then runs on its own — you will land on a screen that tracks it, and you can
+                leave that screen without stopping the work.
+              </p>
+            </div>
+          </div>
+        </div>
       ) : null}
 
       {confirmNoteLoss ? (
