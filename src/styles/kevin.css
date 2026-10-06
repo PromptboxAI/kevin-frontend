@@ -4169,6 +4169,19 @@
        ✕ on every thumbnail is a wall of destructive-looking affordances, and
        pulling a photo out is an exception, not the main action. Focus keeps it
        reachable by keyboard. */
+    /* The set someone was sent here to find. Pulses twice and stops: a
+       permanent outline would read as a selection they had made. */
+    .k-stageset--found {
+      outline: 2px solid var(--k-accent); outline-offset: 2px; border-radius: 10px;
+      animation: k-found-pulse 1.3s ease-out 2;
+    }
+    @keyframes k-found-pulse {
+      0% { box-shadow: 0 0 0 0 var(--k-accent-soft); }
+      70% { box-shadow: 0 0 0 10px transparent; }
+      100% { box-shadow: 0 0 0 0 transparent; }
+    }
+    @media (prefers-reduced-motion: reduce) { .k-stageset--found { animation: none; } }
+
     .k-stageset-frame-wrap { position: relative; flex: 1 1 0; min-width: 0; display: flex; }
     .k-stageset-frame-wrap > .k-stageset-frame { flex: 1 1 0; }
     .k-stage-eject {

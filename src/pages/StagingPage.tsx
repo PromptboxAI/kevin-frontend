@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import Alert from '../components/Alert'
 import AppHeader from '../components/AppHeader'
 import Badge from '../components/Badge'
@@ -77,6 +77,11 @@ const FILL_IMG: React.CSSProperties = {
 
 export default function StagingPage() {
   const { claimId = '' } = useParams()
+  const [search] = useSearchParams()
+  /** Where the adjuster came from, so Back returns there rather than guessing. */
+  const cameFromPhotos = search.get('from') === 'photos'
+  /** A specific photo to find in the grid, from the Photos tab's deep link. */
+  const findPhotoId = Number(search.get('photo')) || null
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
@@ -378,6 +383,36 @@ export default function StagingPage() {
     onError: fail('other', 'Processing'),
   })
 
+  /**
+   * ARRIVING FROM THE PHOTOS TAB, pointed at one photo.
+   *
+   * "Open staging" used to land on the top of the grid: on a 200-set session
+   * that means scrolling to find the set you had just been looking at, with
+   * nothing marking it when you got there. The card already carries
+   * `data-set={group.group_key}`, so the set holding that photo can be scrolled
+   * to and outlined.
+   *
+   * Runs once per arrival and only after the sets exist -- clustering may still
+   * be running when the page opens.
+   */
+  const foundSet = findPhotoId
+    ? groups.find((g) => g.photos.some((p) => p.id === findPhotoId))
+    : undefined
+  const foundKey = foundSet?.group_key ?? null
+  const scrolledTo = useRef<string | null>(null)
+  useEffect(() => {
+    if (!foundKey || scrolledTo.current === foundKey) return
+    const el = document.querySelector(`[data-set="${CSS.escape(foundKey)}"]`)
+    if (!(el instanceof HTMLElement)) return
+    scrolledTo.current = foundKey
+    el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    el.classList.add('k-stageset--found')
+    // Long enough to catch the eye after a smooth scroll, then out of the way:
+    // a permanent outline would read as a selection the adjuster had made.
+    const t = setTimeout(() => el.classList.remove('k-stageset--found'), 2600)
+    return () => clearTimeout(t)
+  }, [foundKey])
+
   const itemSets = groups.filter((g) => g.kind === 'item')
   const excluded = groups.filter((g) => g.kind === 'context')
   const duplicates = groups.filter((g) => g.kind === 'duplicate')
@@ -461,8 +496,21 @@ export default function StagingPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
           <div>
             {/* Staging's parent is the upload, not the worksheet. */}
-            <Link to={`/claims/${encodeURIComponent(claimId)}/add-photos`} className="k-crumb" title="Back to upload">
-              <Icon d={I.chevleft} size={13} /> Back to upload
+            {/* Back goes where you CAME FROM. This always pointed at
+                add-photos, which is right when staging follows an upload and
+                wrong when you arrived from the Photos tab chasing one excluded
+                set -- it sent you to a drop zone and lost your place. */}
+            <Link
+              to={
+                cameFromPhotos
+                  ? `/claims/${encodeURIComponent(claimId)}/photos`
+                  : `/claims/${encodeURIComponent(claimId)}/add-photos`
+              }
+              className="k-crumb"
+              title={cameFromPhotos ? 'Back to the claim photos' : 'Back to upload'}
+            >
+              <Icon d={I.chevleft} size={13} />{' '}
+              {cameFromPhotos ? 'Back to photos' : 'Back to upload'}
             </Link>
             <h1 style={H1}>Group &amp; stage photos</h1>
 

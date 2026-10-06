@@ -770,8 +770,14 @@ function PhotoDetail({
               Uploaded but never processed, so it has produced no line item and
               adds nothing to the claim total.
               <div style={{ marginTop: 8 }}>
-                <Link className="k-link" to={`/claims/${claimId}/staging`}>
-                  Open staging <Icon d={I.chevright} size={11} />
+                {/* Carries the photo id so staging can scroll to ITS set and
+                    mark it. "Open staging" landed you at the top of a
+                    200-set grid to go hunting for the one you came from. */}
+                <Link
+                  className="k-link"
+                  to={`/claims/${claimId}/staging?photo=${photo.photo_id}&from=photos`}
+                >
+                  Find it in staging <Icon d={I.chevright} size={11} />
                 </Link>
               </div>
             </div>
