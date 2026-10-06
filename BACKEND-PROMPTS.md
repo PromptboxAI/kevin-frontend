@@ -14,6 +14,55 @@ nothing gets asked twice and nothing quietly falls off.
 
 ---
 
+## 19. Identify a photo Vision never saw — NOT a second look at one it did
+
+**Status:** new, 2026-10-06. Owner's request, and the framing matters because
+it looks like something rule 23 forbids and is not.
+
+**Rule 23 is not in question.** *"A misidentification after the run is
+corrected by editing the worksheet row, NOT by a second Vision call."* We are
+not asking to overturn that and would argue against it: re-running Vision on an
+item it has already read, hoping for a different answer, is a slot machine.
+
+**The case here is a photo Vision NEVER RAN ON.** A set reclassified `context`
+or `duplicate` promotes to zero line items, so its photos are never identified
+at all. There is no identification to correct, because there is none.
+
+**What an adjuster can do today**, now that the Photos tab can promote one of
+these to a line (shipped our side): the photo becomes a blank row, they type a
+description, and `…/reprice` prices from that text. It works. But the
+description is a human's guess from a thumbnail, and
+`/v1/claim_items/{row_id}/reprice` is explicit that *"the worker skips
+Vision/Lens and runs that text through the SAME SerpApi"* — so the one thing
+that reads a model plate off the box never gets a look at the box. On a
+3-Leg Neodymium Midrange Speaker the difference between Vision's reading and
+"speaker" is the difference between a priced line and a manual one.
+
+**Asking for:** `POST /v1/claim_items/{row_id}/identify` — run the same Vision
+pass `/staging/process` runs, over the photos already attached to that row,
+filling `description` / `make_mfr` / `model_number` / `category` and pricing
+from the result.
+
+**Three things we would build it against, offered so you do not have to ask:**
+
+1. **Make it rule-23-safe BY CONSTRUCTION, not by policy.** Refuse (409) when
+   the row already carries a Vision-derived identification. Then the endpoint
+   can only ever act where Vision has not run, and no future screen can quietly
+   turn it into a re-roll button. We would rather have the narrow route than a
+   general one with a convention attached.
+2. **Charge it.** It is Vision plus the usual two vendor searches, so it costs
+   what an item costs and should consume quota exactly like one (rule 9c:
+   the counter records items produced). We will render the cost before the
+   click.
+3. **One row at a time.** No batch. A bulk re-identify over a claim is how an
+   accidental click spends a hundred items of someone's allowance.
+
+**Not blocking.** The promote-and-describe path works and shipped today; this
+makes it good rather than possible. If the answer is no, say so and we will
+stop designing around it — the current flow is honest, just worse.
+
+---
+
 ## 18. `ClaimPhoto` cannot say whether a photo was SET ASIDE or just not processed
 
 **Status:** new, 2026-10-06. One field.
