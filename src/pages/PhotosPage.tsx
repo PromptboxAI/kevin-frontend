@@ -1,3 +1,4 @@
+import { fetchAllClaimItems } from '../lib/claim-items-all'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -25,7 +26,6 @@ import { useThumb } from '../lib/thumbnails'
 import type {
   ClaimItem,
   ClaimItemDetail,
-  ClaimItemListResponse,
   ClaimSummary,
 } from '../lib/types'
 
@@ -67,10 +67,9 @@ export default function PhotosPage() {
    */
   const { data: itemsPage } = useQuery({
     queryKey: ['claim-items-flat', claimId],
-    queryFn: () =>
-      api.get<ClaimItemListResponse>(
-        `/v1/claim_items?claim_id=${encodeURIComponent(claimId)}&limit=500`,
-      ),
+    /* Paged, because `limit` is capped at 100 server-side -- see
+       fetchAllClaimItems for what that silently broke here. */
+    queryFn: () => fetchAllClaimItems(claimId),
     enabled: !!claimId,
   })
 

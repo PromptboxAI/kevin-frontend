@@ -1,3 +1,4 @@
+import { fetchAllClaimItems } from '../lib/claim-items-all'
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
@@ -20,7 +21,7 @@ import {
   stateFacets,
   withTail,
 } from '../lib/photo-rules'
-import type { ClaimItemListResponse, ClaimSummary } from '../lib/types'
+import type { ClaimSummary } from '../lib/types'
 
 /**
  * Screen 12 -- the claim's landing page, before the worksheet.
@@ -56,10 +57,9 @@ export default function OverviewPage() {
     isFetching: itemsFetching,
   } = useQuery({
     queryKey: ['claim-items-flat', claimId],
-    queryFn: () =>
-      api.get<ClaimItemListResponse>(
-        `/v1/claim_items?claim_id=${encodeURIComponent(claimId)}&limit=500`,
-      ),
+    /* Paged: `limit` is capped at 100 server-side, so this used to see only
+       the first hundred lines of a longer claim. */
+    queryFn: () => fetchAllClaimItems(claimId),
     enabled: !!claimId,
   })
 
