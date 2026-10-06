@@ -1,6 +1,6 @@
 import ItemHistory from './ItemHistory'
 import ItemEvidence from './ItemEvidence'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Badge from './Badge'
 import EditableCell from './EditableCell'
@@ -128,6 +128,21 @@ export default function ItemDrawer({
     thumbs.data?.thumbnails.find((t) => t.id === photoId)?.image_url ?? null
 
   const current = photos[photoIndex]
+
+  /**
+   * Keep the selected tile on screen. A nine-photo set scrolls, and selecting
+   * a photo from the evidence list at the bottom can land on a tile that is
+   * out of view -- the big image would change with nothing in the strip
+   * appearing to move. `nearest` so it never yanks a strip that is already
+   * showing the tile.
+   */
+  const stripRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const tile = stripRef.current?.children[photoIndex]
+    if (tile instanceof HTMLElement) {
+      tile.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+    }
+  }, [photoIndex])
   // photos[0] is always the same frame as image_url, so fall back to it.
   const imageSrc = current ? (thumbFor(current.photo_id) ?? data?.image_url) : data?.image_url
 
@@ -265,30 +280,89 @@ export default function ItemDrawer({
                   <div className="k-insp-img k-insp-img--empty">No photo</div>
                 )}
 
+                {/*
+                  * A STRIP, not just arrows. Merging a wide shot with a model
+                  * plate is the normal way to build one line, so "there is
+                  * another photo" has to be visible rather than discoverable:
+                  * a `1 / 2` between two chevrons is easy to read as a page
+                  * counter for something else entirely, and people went
+                  * looking in the evidence list at the bottom instead.
+                  *
+                  * The arrows stay for keyboard and for long sets, and the
+                  * strip scrolls rather than shrinking the tiles -- a 9-photo
+                  * set with 12px thumbnails would show nothing useful.
+                  */}
                 {photos.length > 1 ? (
-                  <div className="k-insp-photonav">
-                    <button
-                      type="button"
-                      className="k-btn k-btn--ghost"
-                      disabled={photoIndex === 0}
-                      onClick={() => setPhotoIndex(photoIndex - 1)}
+                  <>
+                    <div className="k-insp-photonav">
+                      <button
+                        type="button"
+                        className="k-btn k-btn--ghost"
+                        disabled={photoIndex === 0}
+                        aria-label="Previous photo"
+                        onClick={() => setPhotoIndex(photoIndex - 1)}
+                      >
+                        ‹
+                      </button>
+                      <span className="k-insp-hint">
+                        {photoIndex + 1} / {photos.length}
+                        {current?.is_primary ? ' · primary' : ''}
+                        {current?.note ? ` · ${current.note}` : ''}
+                      </span>
+                      <button
+                        type="button"
+                        className="k-btn k-btn--ghost"
+                        disabled={photoIndex >= photos.length - 1}
+                        aria-label="Next photo"
+                        onClick={() => setPhotoIndex(photoIndex + 1)}
+                      >
+                        ›
+                      </button>
+                    </div>
+
+                    <div
+                      ref={stripRef}
+                      className="k-insp-strip"
+                      role="tablist"
+                      aria-label={`${photos.length} photos on this line`}
+                      onKeyDown={(e) => {
+                        if (e.key === 'ArrowLeft' && photoIndex > 0) {
+                          e.preventDefault()
+                          setPhotoIndex(photoIndex - 1)
+                        }
+                        if (e.key === 'ArrowRight' && photoIndex < photos.length - 1) {
+                          e.preventDefault()
+                          setPhotoIndex(photoIndex + 1)
+                        }
+                      }}
                     >
-                      ‹
-                    </button>
-                    <span className="k-insp-hint">
-                      {photoIndex + 1} / {photos.length}
-                      {current?.is_primary ? ' · primary' : ''}
-                      {current?.note ? ` · ${current.note}` : ''}
-                    </span>
-                    <button
-                      type="button"
-                      className="k-btn k-btn--ghost"
-                      disabled={photoIndex >= photos.length - 1}
-                      onClick={() => setPhotoIndex(photoIndex + 1)}
-                    >
-                      ›
-                    </button>
-                  </div>
+                      {photos.map((p, i) => {
+                        const thumb = thumbFor(p.photo_id)
+                        const on = i === photoIndex
+                        return (
+                          <button
+                            key={p.photo_id}
+                            type="button"
+                            role="tab"
+                            aria-selected={on}
+                            tabIndex={on ? 0 : -1}
+                            className={`k-insp-thumb${on ? ' k-insp-thumb--on' : ''}`}
+                            title={p.note ?? (p.is_primary ? 'Primary photo' : `Photo ${i + 1}`)}
+                            onClick={() => setPhotoIndex(i)}
+                          >
+                            {thumb ? (
+                              <img src={thumb} alt="" loading="lazy" decoding="async" />
+                            ) : (
+                              /* The strip keeps its shape while URLs mint, so
+                                 the row does not reflow under the cursor. */
+                              <span className="k-insp-thumb-skel" aria-hidden="true" />
+                            )}
+                            {p.is_primary ? <span className="k-insp-thumb-pin" /> : null}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </>
                 ) : null}
               </div>
 
