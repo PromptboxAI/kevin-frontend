@@ -14,7 +14,6 @@ import { getClaimPhotos } from '../lib/photos'
 import { numberRows } from '../lib/rows'
 import {
   bucketOf,
-  frameIndex,
   framesPerItem,
   indexItems,
   itemForPhoto,
@@ -395,10 +394,17 @@ export default function PhotosPage() {
             photo={focus}
             item={focusItem}
             lineNo={focus.item_id == null ? undefined : lineNos.get(focus.item_id)}
-            frameNo={frameIndex(photos, focus)}
-            frameCount={focus.item_id == null ? 0 : (frames.get(focus.item_id) ?? 0)}
+            /* Every frame of the same line, so the panel can page through a
+               merged set instead of naming one it cannot reach. */
+            siblings={
+              focus.item_id == null
+                ? [focus]
+                : photos.filter((p) => p.item_id === focus.item_id)
+            }
+            onSelectPhoto={(id) => setFocused(id)}
             claimId={claimId}
             onFull={() => setFull(true)}
+            onClose={() => setFocused(null)}
             onWorksheet={() => navigate(`/claims/${claimId}?item=${focus.item_id}`)}
           />
         ) : null}
@@ -543,23 +549,38 @@ function PhotoTile({
 
 // --------------------------------------------------------------------------
 
+/**
+ * The photo panel, rebuilt around what an adjuster actually does here
+ * (owner, 2026-10-06): see the picture, see which LINE it is, page through the
+ * other frames of a merged set, jump to that line on the worksheet, save the
+ * file, and close the thing.
+ *
+ * What came out, and why: a "State" row reading "Backs a line", and a "Batch"
+ * row reading "Session 86". Both are our vocabulary for our own plumbing. The
+ * state is already said in words at the top of the panel, and the session id
+ * identifies an upload batch an adjuster never refers to. The owner's verdict
+ * was blunt and right -- "not what a front end person needs to see".
+ */
 function PhotoDetail({
   photo,
   item,
   lineNo,
-  frameNo,
-  frameCount,
+  siblings,
+  onSelectPhoto,
   claimId,
   onFull,
+  onClose,
   onWorksheet,
 }: {
   photo: ClaimPhoto
   item: ClaimItem | null
   lineNo?: number
-  frameNo: number
-  frameCount: number
+  /** Every photo backing the same line, in order. At least this one. */
+  siblings: ClaimPhoto[]
+  onSelectPhoto: (photoId: number) => void
   claimId: string
   onFull: () => void
+  onClose: () => void
   onWorksheet: () => void
 }) {
   const queryClient = useQueryClient()
@@ -577,6 +598,39 @@ function PhotoDetail({
    * "Delete photo" button and its "deleting is permanent" copy would describe
    * something the API does not do.
    */
+  const [saving, setSaving] = useState(false)
+
+  /**
+   * Fetch the signed URL and hand the bytes to the browser.
+   *
+   * Through fetch rather than an <a download>: the URL is cross-origin signed
+   * storage, where the download attribute is ignored and the browser navigates
+   * to the image instead -- which on this screen means losing the claim.
+   */
+  const savePhoto = async () => {
+    if (!src) return
+    setSaving(true)
+    try {
+      const res = await fetch(src)
+      if (!res.ok) throw new Error(String(res.status))
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = lineNo
+        ? `line-${String(lineNo).padStart(4, '0')}-photo-${photo.photo_id}.jpg`
+        : `photo-${photo.photo_id}.jpg`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch {
+      setNotice('Could not save that photo — try opening it larger and saving from there.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const unlink = useMutation({
     mutationFn: () => detachItemPhotos(item!.id, [photo.photo_id]),
     onSuccess: () => {
@@ -591,8 +645,11 @@ function PhotoDetail({
     <aside className="k-photos-detail">
       <div className="k-exp-det-hd">
         <div style={{ minWidth: 0 }}>
+          {/* The LINE leads. The photo id is support's handle, not the
+              adjuster's, and it was the first thing on the panel. */}
           <div className="k-mono" style={{ fontSize: 11, color: 'var(--k-fg-4)' }}>
-            Photo {photo.photo_id}
+            {lineNo ? `Line ${String(lineNo).padStart(4, '0')}` : `Photo ${photo.photo_id}`}
+            {photo.room ? ` · ${photo.room}` : ''}
           </div>
           <div style={{ fontSize: 14, fontWeight: 600, marginTop: 2 }}>
             {item
@@ -601,19 +658,22 @@ function PhotoDetail({
                 ? 'Not processed yet'
                 : 'Backs no line item'}
           </div>
-          <div style={{ fontSize: 11.5, color: 'var(--k-fg-3)', marginTop: 2 }}>
-            {photo.room ?? 'No room set'}
-          </div>
         </div>
-        <button
-          type="button"
-          className="k-icon-btn"
-          onClick={onFull}
-          title="Open larger"
-          disabled={!src}
-        >
-          <Icon d={I.expand} size={13} />
-        </button>
+        <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+          <button
+            type="button"
+            className="k-icon-btn"
+            onClick={onFull}
+            title="Open larger"
+            disabled={!src}
+          >
+            <Icon d={I.expand} size={13} />
+          </button>
+          {/* It could not be dismissed at all. */}
+          <button type="button" className="k-icon-btn" onClick={onClose} title="Close" aria-label="Close">
+            <Icon d={I.close} size={13} />
+          </button>
+        </div>
       </div>
 
       <div ref={ref} style={{ padding: 14, borderBottom: '1px solid var(--k-line)' }}>
@@ -627,44 +687,48 @@ function PhotoDetail({
         ) : (
           <div style={{ width: '100%', aspectRatio: '4/3', borderRadius: 8, background: 'var(--k-bg-3)' }} />
         )}
+
+        {/* The merged frames, reachable. This said "Frame 1 of 2" and gave no
+            way to see frame 2 -- the exact thing merging two photos is for. */}
+        {siblings.length > 1 ? (
+          <div className="k-insp-strip" style={{ marginTop: 10 }}>
+            {siblings.map((sib, i) => (
+              <PanelThumb
+                key={sib.photo_id}
+                photo={sib}
+                n={i + 1}
+                on={sib.photo_id === photo.photo_id}
+                onPick={() => onSelectPhoto(sib.photo_id)}
+              />
+            ))}
+          </div>
+        ) : null}
       </div>
 
       <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {/* The design's meta grid listed Captured / Device / GPS / Confidence.
-            The first three have no field on this payload -- and printing three
-            em dashes is a worse answer than printing what is actually known. */}
-        <div className="k-exp-meta">
-          <div>
-            <span>State</span>
-            <span style={{ fontSize: 11.5 }}>
-              {bucket === 'attached'
-                ? 'Backs a line'
-                : bucket === 'pending'
-                  ? 'Waiting in staging'
-                  : 'Backing nothing'}
-            </span>
+        {/* GONE: "State: Backs a line" restated the sentence directly above it,
+            and "Batch: Session 86" named an upload batch nobody refers to.
+            Confidence stays -- it is about the identification, which is a thing
+            an adjuster acts on. */}
+        {item?.confidence != null || siblings.length > 1 ? (
+          <div className="k-exp-meta">
+            {siblings.length > 1 ? (
+              <div>
+                <span>Frame</span>
+                <span className="k-mono">
+                  {siblings.findIndex((p) => p.photo_id === photo.photo_id) + 1} of{' '}
+                  {siblings.length}
+                </span>
+              </div>
+            ) : null}
+            {item?.confidence != null ? (
+              <div>
+                <span>Confidence</span>
+                <span style={{ fontSize: 11.5 }}>{fmtConfidence(item.confidence)}</span>
+              </div>
+            ) : null}
           </div>
-          {frameCount > 1 ? (
-            <div>
-              <span>Frame</span>
-              <span className="k-mono">
-                {frameNo} of {frameCount}
-              </span>
-            </div>
-          ) : null}
-          {photo.session_id != null ? (
-            <div>
-              <span>Batch</span>
-              <span className="k-mono">Session {photo.session_id}</span>
-            </div>
-          ) : null}
-          {item?.confidence != null ? (
-            <div>
-              <span>Confidence</span>
-              <span style={{ fontSize: 11.5 }}>{fmtConfidence(item.confidence)}</span>
-            </div>
-          ) : null}
-        </div>
+        ) : null}
 
         {photo.note ? (
           <div>
@@ -725,20 +789,80 @@ function PhotoDetail({
         ) : null}
       </div>
 
-      {item ? (
-        <div className="k-exp-det-foot">
+      <div className="k-exp-det-foot" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {item ? (
+          <button type="button" className="k-btn" onClick={onWorksheet}>
+            Open line {lineNo ? String(lineNo).padStart(4, '0') : ''}
+          </button>
+        ) : null}
+
+        {/* SAVE. The panel could show you a photo and gave you no way to keep
+            it; an adjuster emailing one shot to a carrier had to screenshot it. */}
+        <button
+          type="button"
+          className="k-btn k-btn--ghost"
+          disabled={!src || saving}
+          title="Download this photo"
+          onClick={() => void savePhoto()}
+        >
+          {saving ? 'Saving…' : 'Save photo'}
+        </button>
+
+        {item ? (
+          /*
+           * "Unlink from this line" named a relationship, not an outcome, and
+           * did not say which line. There is no endpoint that DELETES a
+           * promoted photo and that is deliberate -- in a property claim
+           * evidence is excluded from the worksheet, never destroyed (rule 22)
+           * -- so the honest label is what it does: takes the photo off this
+           * line, leaves it on the claim.
+           */
           <button
             type="button"
-            className="k-btn k-btn--ghost"
+            className="k-btn k-btn--ghost k-btn--danger"
             disabled={unlink.isPending}
-            title="Unpoints it from this line. The photo stays on the claim."
+            title="The photo stays on the claim and can be pointed at another line later. Nothing is deleted."
             onClick={() => unlink.mutate()}
           >
-            <Icon d={I.close} size={12} /> {unlink.isPending ? 'Unlinking…' : 'Unlink from this line'}
+            {unlink.isPending
+              ? 'Removing…'
+              : `Remove from line ${lineNo ? String(lineNo).padStart(4, '0') : ''}`}
           </button>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
     </aside>
+  )
+}
+
+/** One frame in the panel's strip. Its own component so each tile can observe
+ *  and sign its own thumbnail. */
+function PanelThumb({
+  photo,
+  n,
+  on,
+  onPick,
+}: {
+  photo: ClaimPhoto
+  n: number
+  on: boolean
+  onPick: () => void
+}) {
+  const { ref, src, onError } = useThumb<HTMLButtonElement>(photo.photo_id)
+  return (
+    <button
+      ref={ref}
+      type="button"
+      className={`k-insp-thumb${on ? ' k-insp-thumb--on' : ''}`}
+      title={`Frame ${n}`}
+      aria-label={`Show frame ${n}`}
+      onClick={onPick}
+    >
+      {src ? (
+        <img src={src} onError={onError} alt="" loading="lazy" decoding="async" />
+      ) : (
+        <span className="k-insp-thumb-skel" aria-hidden="true" />
+      )}
+    </button>
   )
 }
 

@@ -139,11 +139,10 @@ export function framesPerItem(photos: ClaimPhoto[]): Map<number, number> {
   return counts
 }
 
-export function frameIndex(photos: ClaimPhoto[], photo: ClaimPhoto): number {
-  if (photo.item_id == null) return 1
-  const siblings = photos.filter((p) => p.item_id === photo.item_id)
-  return siblings.findIndex((p) => p.photo_id === photo.photo_id) + 1
-}
+/* `frameIndex` lived here and is gone. It took the whole photo list to work
+   out one photo's position among its siblings; the panel now holds that
+   sibling list anyway -- it has to, to render the strip -- so it reads the
+   index straight off it. */
 
 // --------------------------------------------------------------------------
 // Overview rollups
