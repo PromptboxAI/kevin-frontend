@@ -47,24 +47,56 @@ export function numberRows(items: ClaimItem[]): NumberedItem[] {
 }
 
 /**
- * The worksheet's counting invariant: when nothing is filtered, the API's
- * `count`, the number of rows in the grid, and the highest line number must
- * all agree. A disagreement means rows are being counted that are not being
- * rendered as lines -- deleted rows still in the array, or an aborted create
- * that left a row behind -- and the footer would claim more lines than exist.
+ * The worksheet's counting invariant.
+ *
+ * ⚠️ A GAP IN THE NUMBERS IS NOT A FAULT. This used to require
+ * `maxLineNo === items.length` and a strict 1..N run, which was right while
+ * the number was the row's POSITION. It stopped being right the moment the
+ * server started sending `line_no`: that number is assigned at creation and
+ * never reused, so deleting a row leaves a hole by design -- see numberRows
+ * above, and rule 22(b), which exists precisely so an export already sent to a
+ * carrier keeps citing the same items.
+ *
+ * The result was a red "count mismatch" in the footer of every claim anyone
+ * had ever deleted anything from, reporting 160 of 160 rows as a mismatch
+ * because the highest line was 161. A warning that fires on correct data
+ * teaches people to ignore warnings.
+ *
+ * What is still worth asserting, because each one would really be a bug:
+ *
+ * - the grid renders as many rows as the API counted;
+ * - no line number appears twice (a duplicate on an exported schedule points
+ *   two carriers at different items with the same number);
+ * - the numbers ascend with the rows, so the grid is in line order.
+ *
+ * Contiguity is still checked under the INDEX fallback, where numbers are 1..N
+ * by construction and a break would mean numberRows itself had gone wrong.
  */
 export function rowInvariant(items: NumberedItem[], apiCount: number) {
   const maxLineNo = items.reduce((max, r) => Math.max(max, r.lineNo), 0)
   const lineNos = items.map((r) => r.lineNo)
   const duplicates = lineNos.length !== new Set(lineNos).size
-  const contiguous = lineNos.every((n, i) => n === i + 1)
+  const ascending = lineNos.every((n, i) => i === 0 || n > lineNos[i - 1])
+
+  /** Server numbering is in use when every row carries its own `line_no`. */
+  const serverNumbered =
+    items.length > 0 &&
+    items.every((item) => typeof item.line_no === 'number' && Number.isFinite(item.line_no))
+
+  // Only meaningful under the fallback; gaps are expected and correct otherwise.
+  const contiguous = serverNumbered || lineNos.every((n, i) => n === i + 1)
+
   return {
-    ok: items.length === apiCount && maxLineNo === items.length && !duplicates && contiguous,
+    ok: items.length === apiCount && !duplicates && ascending && contiguous,
     rendered: items.length,
     apiCount,
     maxLineNo,
     duplicates,
+    ascending,
     contiguous,
+    serverNumbered,
+    /** True when numbers skip -- normal after a delete, and NOT a fault. */
+    hasGaps: serverNumbered && maxLineNo > items.length,
   }
 }
 

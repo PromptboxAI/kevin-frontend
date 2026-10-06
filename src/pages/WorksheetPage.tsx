@@ -1444,11 +1444,23 @@ export default function WorksheetPage() {
               {saving ? 'Saving…' : 'All changes saved'}
               {/* The count comes from the rows actually rendered, never from the
                   API total alone -- a disagreement means rows are counted that
-                  are not lines, and it is surfaced rather than papered over. */}
+                  are not lines, and it is surfaced rather than papered over.
+                  A GAP in the numbering is not one of those: line numbers are
+                  never reused, so a delete leaves a hole by design (rule 22b).
+                  It is said plainly in grey rather than shouted in red. */}
               {!countCheck.ok && !rows.hasNextPage ? (
                 <span className="k-error">
-                  {' · '}count mismatch: API reports {fmtInt(countCheck.apiCount)}, grid holds{' '}
-                  {fmtInt(countCheck.rendered)} (highest line {fmtInt(countCheck.maxLineNo)})
+                  {' · '}
+                  {countCheck.rendered !== countCheck.apiCount
+                    ? `count mismatch: API reports ${fmtInt(countCheck.apiCount)}, grid holds ${fmtInt(countCheck.rendered)}`
+                    : countCheck.duplicates
+                      ? 'two lines share a number — do not export until this is resolved'
+                      : 'lines are out of order'}
+                </span>
+              ) : countCheck.hasGaps && !rows.hasNextPage ? (
+                <span style={{ color: 'var(--k-fg-4)' }}>
+                  {' · '}numbered to {fmtInt(countCheck.maxLineNo)} — numbers are not reused after a
+                  delete
                 </span>
               ) : null}
             </span>
