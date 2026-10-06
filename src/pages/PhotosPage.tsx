@@ -75,13 +75,28 @@ export default function PhotosPage() {
     enabled: !!claimId,
   })
 
-  const photos = useMemo(() => data?.photos ?? [], [data])
+  const photosRaw = useMemo(() => data?.photos ?? [], [data])
   const items = useMemo(() => itemsPage?.items ?? [], [itemsPage])
   const byId = useMemo(() => indexItems(items), [items])
   /**
    * The worksheet's own line numbers (numberRows), so an unidentified item is
    * "Line 40" here exactly when it is #40 there. Only when every item came
    * back: numbering a partial page would give the wrong numbers.
+   */
+  /**
+   * IN WORKSHEET ORDER. The API returns photos in its own order, which matched
+   * neither the worksheet nor the export, so the same claim read three
+   * different ways depending on which screen you were on and an adjuster could
+   * not check one against another.
+   *
+   * Sorted by the line each photo backs, then by photo id so the frames of one
+   * merged item stay in the order they were shot. Photos backing no line --
+   * still in staging, or excluded -- collect at the end rather than
+   * interleaving: they have no place in a numbered walk-through, and burying
+   * them mid-grid is how they get missed.
+   *
+   * Declared AFTER lineNos below in source order would be a use-before-define,
+   * so it reads the map lazily inside the memo.
    */
   const lineNos = useMemo(
     () =>
@@ -90,6 +105,18 @@ export default function PhotosPage() {
         : new Map<number, number>(),
     [items, itemsPage?.count],
   )
+
+  const photos = useMemo(() => {
+    const key = (p: ClaimPhoto): number =>
+      p.item_id == null ? Number.POSITIVE_INFINITY : (lineNos.get(p.item_id) ?? Number.POSITIVE_INFINITY)
+    return [...photosRaw].sort((a, b) => {
+      const ka = key(a)
+      const kb = key(b)
+      if (ka !== kb) return ka - kb
+      return a.photo_id - b.photo_id
+    })
+  }, [photosRaw, lineNos])
+
   const frames = useMemo(() => framesPerItem(photos), [photos])
 
   const facets = useMemo(() => stateFacets(photos), [photos])
@@ -423,7 +450,7 @@ function PhotoTile({
   on: boolean
   onOpen: () => void
 }) {
-  const { ref, src } = useThumb<HTMLButtonElement>(photo.photo_id)
+  const { ref, src, onError } = useThumb<HTMLButtonElement>(photo.photo_id)
 
   const bucket = bucketOf(photo)
   const caption = item
@@ -438,7 +465,12 @@ function PhotoTile({
         {src ? (
           <img
             src={src}
-            alt={caption}
+            onError={onError}
+            /* The caption is this tile's STATUS ("Backs no line item"), which
+               as alt text described the tile rather than the picture -- and on
+               a broken image it was all you saw. A thumbnail beside its own
+               caption adds nothing for a screen reader. */
+            alt=""
             style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', display: 'block' }}
           />
         ) : (
@@ -480,8 +512,17 @@ function PhotoTile({
             whiteSpace: 'nowrap',
           }}
         >
-          {/* The payload carries no filename, so the id is the identifier. */}
-          {photo.room ? `${photo.room} · ` : ''}Photo {photo.photo_id}
+          {/*
+            * LEAD WITH THE LINE NUMBER. This said "Photo 6237", a database id
+            * that appears on no other screen and matches nothing the adjuster
+            * can look up -- the payload carries no filename, so the id was
+            * reached for as the only identifier available. But a photo's
+            * identity here is the line it backs, which IS on the worksheet and
+            * IS on the export. The id stays, in brackets, because support asks
+            * for it; it just stops being the headline.
+            */}
+          {photo.room ? `${photo.room} · ` : ''}
+          {lineNo ? `Line ${String(lineNo).padStart(4, '0')}` : `Photo ${photo.photo_id}`}
         </div>
         <div
           style={{
@@ -522,7 +563,7 @@ function PhotoDetail({
   onWorksheet: () => void
 }) {
   const queryClient = useQueryClient()
-  const { ref, src } = useThumb<HTMLDivElement>(photo.photo_id)
+  const { ref, src, onError } = useThumb<HTMLDivElement>(photo.photo_id)
   const [notice, setNotice] = useState<string | null>(null)
   const bucket = bucketOf(photo)
 
@@ -579,6 +620,7 @@ function PhotoDetail({
         {src ? (
           <img
             src={src}
+            onError={onError}
             alt=""
             style={{ width: '100%', borderRadius: 8, display: 'block', background: 'var(--k-bg-3)' }}
           />
@@ -713,7 +755,7 @@ function FullView({
   onGo: (id: number) => void
   onClose: () => void
 }) {
-  const { ref, src } = useThumb<HTMLDivElement>(photo.photo_id)
+  const { ref, src, onError } = useThumb<HTMLDivElement>(photo.photo_id)
   const i = list.findIndex((p) => p.photo_id === photo.photo_id)
 
   /**
@@ -786,8 +828,16 @@ function FullView({
           </button>
         </div>
         <div ref={ref} style={{ minHeight: 0, display: 'grid' }}>
+          {/* `original` is the item detail's own signed URL and expires the
+              same way, so a failure here re-signs the thumbnail and falls back
+              to it rather than leaving the lightbox blank. */}
           {original ?? src ? (
-            <img src={original ?? src ?? undefined} alt="" className="k-photo-full-img" />
+            <img
+              src={original ?? src ?? undefined}
+              onError={onError}
+              alt=""
+              className="k-photo-full-img"
+            />
           ) : null}
         </div>
       </div>

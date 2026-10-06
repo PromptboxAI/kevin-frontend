@@ -1071,7 +1071,7 @@ function Frame({
   /** Only on sets of more than one: pulls this photo into a set of its own. */
   onEject?: () => void
 }) {
-  const { ref, src } = useThumb<HTMLButtonElement>(photo.id)
+  const { ref, src, onError } = useThumb<HTMLButtonElement>(photo.id)
   return (
     <span className="k-stageset-frame-wrap">
       <button
@@ -1082,7 +1082,7 @@ function Frame({
         title={photo.note ? `${photo.note} — click to open` : 'Click to open'}
       >
         {src ? (
-          <img src={src} alt="" style={FILL_IMG} loading="lazy" decoding="async" />
+          <img src={src} onError={onError} alt="" style={FILL_IMG} loading="lazy" decoding="async" />
         ) : (
           <span className="k-stageset-skel" aria-label="Loading thumbnail" />
         )}
@@ -1326,13 +1326,13 @@ function LooseCard({
   selected: boolean
   onToggle: () => void
 }) {
-  const { ref, src } = useThumb<HTMLDivElement>(photo.id)
+  const { ref, src, onError } = useThumb<HTMLDivElement>(photo.id)
   return (
     <div className={'k-stageset k-stageset--loose' + (selected ? ' k-stageset--sel' : '')}>
       <div className="k-stageset-media" ref={ref}>
         <span className="k-stageset-frame">
           {src ? (
-            <img src={src} alt="" style={FILL_IMG} loading="lazy" decoding="async" />
+            <img src={src} onError={onError} alt="" style={FILL_IMG} loading="lazy" decoding="async" />
           ) : (
             <span className="k-stageset-skel" />
           )}
@@ -1482,7 +1482,7 @@ function Lightbox({
   onClose: () => void
 }) {
   const photo = group.photos[i]
-  const { ref, src } = useThumb<HTMLDivElement>(photo.id)
+  const { ref, src, onError } = useThumb<HTMLDivElement>(photo.id)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -1510,7 +1510,7 @@ function Lightbox({
 
         <div className="k-stage-lb-img" ref={ref}>
           {src ? (
-            <img src={src} alt="Raw capture" style={{ ...FILL_IMG, objectFit: 'contain' }} />
+            <img src={src} onError={onError} alt="Raw capture" style={{ ...FILL_IMG, objectFit: 'contain' }} />
           ) : (
             <span className="k-stageset-skel" />
           )}
