@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Badge from './Badge'
 import { I, Icon } from './Icon'
 import { ApiError } from '../lib/api'
@@ -18,6 +18,13 @@ import { hasDirectory, walkEntries } from '../lib/drop-walk'
 import type { WalkEntry } from '../lib/drop-walk'
 import type { RejectReason } from '../lib/upload'
 import { expandZip, keepPhotos } from '../lib/zip'
+import {
+  byteFraction,
+  bytesPerSecond,
+  etaSeconds,
+  fmtEta,
+  fmtRate,
+} from '../lib/upload-eta-rules'
 import type { ZipProgress } from '../lib/zip'
 
 const MAX_PHOTO_MB = 15
@@ -71,6 +78,23 @@ export default function PhotoUpload({
   const [junk, setJunk] = useState(0)
   const [expanding, setExpanding] = useState<ZipProgress | null>(null)
   const [zipError, setZipError] = useState<string | null>(null)
+  /** The archive we last tried, so a failed read offers Try again rather than
+   *  making someone find the file in the picker a second time. */
+  const [lastZip, setLastZip] = useState<File | null>(null)
+  /**
+   * The ETA clock, both halves in STATE rather than refs.
+   *
+   * `startedAt` is when this upload began moving — null between uploads, so a
+   * stopped-and-restarted run never inherits a stale rate. `now` ticks once a
+   * second while sending so the estimate counts down instead of freezing
+   * between acknowledgements.
+   *
+   * Reading a ref or calling Date.now() during render is impure and the
+   * compiler is right to object: the value would not participate in rendering
+   * and the countdown could silently stop updating.
+   */
+  const [startedAt, setStartedAt] = useState<number | null>(null)
+  const [now, setNow] = useState(() => Date.now())
 
   const [sending, setSending] = useState(false)
   const [chunk, setChunk] = useState<{ index: number; total: number } | null>(null)
@@ -100,6 +124,20 @@ export default function PhotoUpload({
     .reduce((a, r) => a + r.file.size, 0)
   const pct = sendable.length ? Math.round((sentCount / sendable.length) * 100) : 0
 
+  const elapsedMs = startedAt ? Math.max(now - startedAt, 0) : 0
+  const progress = { sentBytes, totalBytes, elapsedMs }
+  const eta = sending ? fmtEta(etaSeconds(progress)) : null
+  const rate = sending ? fmtRate(bytesPerSecond(progress)) : null
+  const byteFrac = byteFraction(progress)
+
+  useEffect(() => {
+    if (!sending) return
+    // startUpload seeds `now` before flipping `sending`, so the effect only
+    // has to keep the clock running -- no synchronous setState on mount.
+    const t = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [sending])
+
   const take = (files: File[], droppedJunk = 0) => {
     setError(null)
     setDone(false)
@@ -121,6 +159,7 @@ export default function PhotoUpload({
 
   const takeZip = async (file: File) => {
     setZipError(null)
+    setLastZip(file)
     try {
       const { files, junk: dropped } = await expandZip(file, setExpanding)
       take(files, dropped)
@@ -140,6 +179,8 @@ export default function PhotoUpload({
 
   const startUpload = async () => {
     if (!claimId && !ensureClaim) return
+    setStartedAt(Date.now())
+    setNow(Date.now())
     setSending(true)
     setError(null)
     pausedRef.current = false
@@ -264,6 +305,12 @@ export default function PhotoUpload({
     setDone(false)
     setShortAcks(0)
     setError(null)
+    /* Clear meant "clear", but left a zip error and a half-finished "Reading
+       …" line on screen, so a failed archive stayed accusing after the queue
+       it belonged to was gone. */
+    setZipError(null)
+    setExpanding(null)
+    setLastZip(null)
   }
 
   return (
@@ -369,8 +416,22 @@ export default function PhotoUpload({
             style={{ display: 'none' }}
             onChange={(e) => {
               const f = e.target.files?.[0]
-              if (f) void takeZip(f)
-              e.target.value = ''
+              /**
+               * The input is cleared only AFTER the read finishes. It used to
+               * be cleared synchronously while expandZip was still awaiting on
+               * the same File, which releases the picker's hold on it mid-read
+               * -- and on a large archive the read is still going. Clearing is
+               * only here so that picking the SAME file twice fires `change`
+               * again, and that still works from the finally.
+               */
+              if (f) {
+                const input = e.currentTarget
+                void takeZip(f).finally(() => {
+                  input.value = ''
+                })
+              } else {
+                e.target.value = ''
+              }
             }}
           />
 
@@ -415,11 +476,11 @@ export default function PhotoUpload({
           to find this without it crowding the drop target. */}
       {claimId ? (
         <div className="k-dropzone-import">
-          No photos?{' '}
+          No photos? Kevin can build the inventory from a written list instead —{' '}
           <a href={`/claims/${claimId}/import`} className="k-link">
-            Import a typed or exported list
-          </a>{' '}
-          — PDF, CSV or Excel.
+            import a PDF, CSV or Excel file
+          </a>
+          . Each row prices the same way a photographed item does.
         </div>
       ) : null}
 
@@ -520,6 +581,15 @@ export default function PhotoUpload({
                 <Icon d={I.warn} size={14} />
                 <span className="k-reject-t">That .zip could not be opened</span>
                 <div style={{ flex: 1 }} />
+                {lastZip ? (
+                  <button
+                    type="button"
+                    className="k-btn k-btn--sm k-btn--ghost"
+                    onClick={() => void takeZip(lastZip)}
+                  >
+                    Try again
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   className="k-btn k-btn--sm k-btn--ghost"
@@ -529,7 +599,7 @@ export default function PhotoUpload({
                 </button>
               </div>
               <div className="k-reject-ft">
-                {zipError} — try re-creating the archive, or drop the photos in directly.
+                {zipError} — try again, re-create the archive, or drop the photos in directly.
               </div>
             </div>
           ) : null}
@@ -537,11 +607,31 @@ export default function PhotoUpload({
           {expanding ? (
             <div className="k-skipline">
               <Icon d={I.box} size={13} />
-              <span>
+              <span style={{ flex: 1, minWidth: 0 }}>
                 Reading <strong style={{ color: 'var(--k-fg-3)' }}>{expanding.name}</strong> in your
                 browser
-                {expanding.total ? ` — ${expanding.read} of ${expanding.total}` : '…'}. Nothing is
-                uploaded until it finishes.
+                {expanding.total ? ` — ${fmtInt(expanding.read)} of ${fmtInt(expanding.total)}` : '…'}
+                . Nothing is uploaded until it finishes.
+                {/* A moving bar, because unpacking a large archive takes
+                    minutes during which every other part of this screen is
+                    still and the queue is empty. Determinate once the entry
+                    count is known, indeterminate before that. */}
+                <span style={{ display: 'block', marginTop: 6, maxWidth: 320 }}>
+                  <span
+                    className={`k-progress${expanding.total ? '' : ' k-progress--busy'}`}
+                    style={{ display: 'block', width: '100%' }}
+                  >
+                    <span
+                      className="k-progress-bar k-progress-bar--live"
+                      style={{
+                        display: 'block',
+                        width: expanding.total
+                          ? `${Math.round((expanding.read / expanding.total) * 100)}%`
+                          : undefined,
+                      }}
+                    />
+                  </span>
+                </span>
               </span>
             </div>
           ) : null}
@@ -650,9 +740,14 @@ export default function PhotoUpload({
                   {fmtMB(r.file.size)}
                 </span>
                 <div style={{ width: 210, display: 'flex', justifyContent: 'flex-end' }}>
+                  {/* "Uploaded". It said "Hashed · uploaded", which named an
+                      implementation detail nobody outside this codebase knows
+                      -- the content hash that makes a re-drop resolve to a
+                      duplicate. The adjuster's question is whether the photo
+                      is safely on the claim. */}
                   {r.status === 'done' ? (
                     <Badge tone="ok" dot>
-                      Hashed · uploaded
+                      Uploaded
                     </Badge>
                   ) : null}
                   {r.status === 'dup' ? (
@@ -660,22 +755,27 @@ export default function PhotoUpload({
                       Already stored
                     </Badge>
                   ) : null}
-                  {r.status === 'queued' ? <Badge tone="quiet">Ready to send</Badge> : null}
+                  {r.status === 'queued' ? <Badge tone="quiet">Ready to upload</Badge> : null}
                   {r.status === 'skip' ? <Badge tone="quiet">{r.why}</Badge> : null}
                   {r.status === 'fail' ? <Badge tone="warn">{r.why}</Badge> : null}
                   {r.status === 'up' ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div className="k-progress" style={{ width: 130 }}>
-                        <div className="k-progress-bar" style={{ width: '60%' }} />
+                      {/* INDETERMINATE, and that is the honest shape: photos
+                          upload in batches, so there is no per-file byte
+                          progress to report. The bar was a static 60% fill on
+                          every row, which looked like identical stalled
+                          progress -- worse than no bar. This one moves. */}
+                      <div className="k-progress k-progress--busy" style={{ width: 130 }}>
+                        <div className="k-progress-bar" />
                       </div>
                       <span
                         style={{
                           fontFamily: 'var(--k-font-mono)',
                           fontSize: 11,
-                          color: 'var(--k-fg-3)',
+                          color: 'var(--k-ok-fg, var(--k-fg-3))',
                         }}
                       >
-                        sending
+                        Uploading
                       </span>
                     </div>
                   ) : null}
@@ -711,10 +811,10 @@ export default function PhotoUpload({
                     : chunk
                       ? `Uploading ${fmtInt(sendable.length)} ${sendable.length === 1 ? 'photo' : 'photos'}`
                       : sendable.length === 0
-                        ? 'Nothing can be sent'
+                        ? 'Nothing can be uploaded'
                         : sentCount > 0 && pendingCount > 0
                           ? // After a stopped upload: what the next click actually sends.
-                            `${fmtInt(pendingCount)} ${pendingCount === 1 ? 'photo' : 'photos'} still to send`
+                            `${fmtInt(pendingCount)} ${pendingCount === 1 ? 'photo' : 'photos'} still to upload`
                           : `${fmtInt(sendable.length)} ${sendable.length === 1 ? 'photo' : 'photos'} ready`}
               </div>
               <div style={{ fontSize: 11.5, color: 'var(--k-fg-4)', marginTop: 2 }}>
@@ -723,12 +823,52 @@ export default function PhotoUpload({
                     ? `Every photo was rejected — ${fmtInt(skipped.length)} unreadable, ${fmtInt(oversize.length)} over the limit`
                     : 'Kevin is reading them now.'
                   : sending
-                    ? `${fmtInt(sentCount)} of ${fmtInt(sendable.length)} sent`
+                    ? `${fmtInt(sentCount)} of ${fmtInt(sendable.length)} uploaded`
                     : oversize.length
                       ? `${oversize.length} over the size limit won't be sent`
                       : 'Kevin starts as soon as the upload finishes'}
                 {junk ? ` · ${junk} non-image skipped` : ''}
               </div>
+
+              {/*
+                * THE OVERALL BAR, measured in BYTES.
+                *
+                * The ring to the left counts FILES and the two legitimately
+                * disagree: 900 of 1000 small photos can be a third of the
+                * payload. Bytes are what the time remaining is derived from,
+                * so bytes are what this shows.
+                *
+                * Before there is enough evidence for an estimate it says
+                * "estimating…" rather than a number that would be revised by
+                * an order of magnitude a few seconds later.
+                */}
+              {sending ? (
+                <div style={{ marginTop: 8, minWidth: 240 }}>
+                  <div className="k-progress" style={{ width: '100%' }}>
+                    <div
+                      className="k-progress-bar k-progress-bar--live"
+                      style={{ width: `${Math.round(byteFrac * 100)}%` }}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      gap: 10,
+                      marginTop: 4,
+                      fontSize: 11,
+                      color: 'var(--k-fg-4)',
+                      fontFamily: 'var(--k-font-mono)',
+                    }}
+                  >
+                    <span>
+                      {fmtMB(sentBytes)} of {fmtMB(totalBytes)}
+                      {rate ? ` · ${rate}` : ''}
+                    </span>
+                    <span>{eta ?? 'estimating…'}</span>
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             <div style={{ flex: 1 }} />

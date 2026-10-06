@@ -19,6 +19,7 @@ import {
   hasPricingNote,
   authoredNotesLostOnMerge,
   authoredNoteLostOnSplit,
+  orderGroups,
   pendingPhotos,
   photoFilenames,
   processStaging,
@@ -120,7 +121,10 @@ export default function StagingPage() {
    * it reported "1 photo set" for a session with 0 photos.
    */
   const groups = useMemo(
-    () => (data?.groups ?? []).filter((g) => g.photos.length > 0),
+    /* Ordered by earliest capture, NOT by the server's key order: a merge
+       mints a new group_key, which sent a freshly merged set to the end of the
+       grid and broke the walk-through order the adjuster shot in. */
+    () => orderGroups((data?.groups ?? []).filter((g) => g.photos.length > 0)),
     [data],
   )
   const unassigned = data?.ungrouped_photos ?? []
@@ -262,6 +266,29 @@ export default function StagingPage() {
       applySession(next)
     },
     onError: fail('merge', 'Merge'),
+  })
+
+  /**
+   * Pull ONE photo out of a set, leaving the rest merged.
+   *
+   * Splitting was all-or-nothing: a set of three with one wrong photo had to
+   * be blown apart and the two correct ones merged back by hand. The merge
+   * endpoint already does this -- given bare `photo_ids` it mints a new set
+   * from exactly those photos and prunes them from wherever they were -- so
+   * "merge this one photo into a set of its own" IS the eject.
+   *
+   * `kind: 'item'` explicitly: the default would silently convert it, and a
+   * photo pulled out of a context set should become its own candidate item,
+   * which is the reason anyone pulls one out.
+   */
+  const eject = useMutation({
+    mutationFn: (photoId: number) =>
+      mergeGroups(claimId, { photo_ids: [photoId], kind: 'item' }),
+    onSuccess: (next) => {
+      log('ejected one photo into its own set')
+      applySession(next)
+    },
+    onError: fail('merge', 'Removing that photo from its set'),
   })
 
   const split = useMutation({
@@ -685,6 +712,7 @@ export default function StagingPage() {
               }
               onOpen={(i) => setLightbox({ key: group.group_key, i })}
               onNote={() => setNoteFor(group.group_key)}
+              onEject={(photoId) => eject.mutate(photoId)}
               onSplit={() => {
                 if (authoredNoteLostOnSplit(group))
                   setConfirmNoteLoss({ kind: 'split', key: group.group_key })
@@ -1034,28 +1062,47 @@ function Frame({
   n,
   showN,
   onOpen,
+  onEject,
 }: {
   photo: StagingPhoto
   n: number
   showN: boolean
   onOpen: () => void
+  /** Only on sets of more than one: pulls this photo into a set of its own. */
+  onEject?: () => void
 }) {
   const { ref, src } = useThumb<HTMLButtonElement>(photo.id)
   return (
-    <button
-      type="button"
-      className="k-stageset-frame"
-      ref={ref}
-      onClick={onOpen}
-      title={photo.note ? `${photo.note} — click to open` : 'Click to open'}
-    >
-      {src ? (
-        <img src={src} alt="" style={FILL_IMG} loading="lazy" decoding="async" />
-      ) : (
-        <span className="k-stageset-skel" aria-label="Loading thumbnail" />
-      )}
-      {showN ? <span className="k-stage-frame-n">{n}</span> : null}
-    </button>
+    <span className="k-stageset-frame-wrap">
+      <button
+        type="button"
+        className="k-stageset-frame"
+        ref={ref}
+        onClick={onOpen}
+        title={photo.note ? `${photo.note} — click to open` : 'Click to open'}
+      >
+        {src ? (
+          <img src={src} alt="" style={FILL_IMG} loading="lazy" decoding="async" />
+        ) : (
+          <span className="k-stageset-skel" aria-label="Loading thumbnail" />
+        )}
+        {showN ? <span className="k-stage-frame-n">{n}</span> : null}
+      </button>
+      {onEject ? (
+        <button
+          type="button"
+          className="k-stage-eject"
+          title="This photo does not belong with the others — move it to its own set"
+          aria-label="Move this photo to its own set"
+          onClick={(e) => {
+            e.stopPropagation()
+            onEject()
+          }}
+        >
+          <Icon d={I.close} size={10} />
+        </button>
+      ) : null}
+    </span>
   )
 }
 
@@ -1072,6 +1119,7 @@ function SetCard({
   onSplit,
   onToggleKind,
   onDelete,
+  onEject,
 }: {
   group: StagingGroup
   si: number
@@ -1085,6 +1133,7 @@ function SetCard({
   onSplit: () => void
   onToggleKind: () => void
   onDelete: () => void
+  onEject: (photoId: number) => void
 }) {
   const isCtx = group.kind !== 'item'
   const cls = [
@@ -1106,6 +1155,7 @@ function SetCard({
             n={i + 1}
             showN={group.photos.length > 1}
             onOpen={() => onOpen(i)}
+            onEject={group.photos.length > 1 ? () => onEject(photo.id) : undefined}
           />
         ))}
         {selectable ? (

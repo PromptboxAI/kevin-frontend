@@ -421,6 +421,19 @@ export default function ItemDrawer({
                   ) : (
                     <>
                       <div className="k-insp-static">{data.query || '—'}</div>
+                      {/*
+                        * SAY WHAT THIS STRING IS. It is often a part number
+                        * read off a box -- "BSD.SP.MR.NEO.4.CC.4O" -- which
+                        * means nothing to the person reading it, and when the
+                        * comps come back wrong that string is the reason.
+                        * Without this line the field looks like a diagnostic
+                        * to ignore rather than the one input that re-prices
+                        * the line.
+                        */}
+                      <span className="k-insp-hint">
+                        The exact text Kevin searched for these comps. If the comps below are for
+                        the wrong thing, this is usually why — edit it and re-price.
+                      </span>
                       <span className="k-insp-hint">
                         {data.confidence !== null
                           ? `Confidence ${fmtConfidence(data.confidence)}`

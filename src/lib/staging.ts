@@ -24,6 +24,8 @@ export {
   clusterBlockedReason,
   remainderBlockedReason,
   thumbnailBatches,
+  orderGroups,
+  groupOrderKey,
 } from './staging-rules'
 
 import type { GroupKind, StagingSessionFull } from './staging-rules'

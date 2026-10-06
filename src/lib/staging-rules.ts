@@ -210,3 +210,45 @@ export function thumbnailBatches(ids: number[]): number[][] {
   return batches
 }
 
+
+/**
+ * A set's place in the shoot, so the grid reads in the order the adjuster
+ * walked the property.
+ *
+ * WHY THIS EXISTS: a merge mints a NEW group_key and the server returns groups
+ * in key order, so merging the first two photos of a 200-photo session sent
+ * that set to the very end of the grid. On site the adjuster shot room by room;
+ * losing that order means they cannot retrace their own steps, and the set they
+ * just acted on vanishes from under the cursor.
+ *
+ * Sorted by the EARLIEST capture time among the members, because that is the
+ * moment the adjuster was standing in front of the thing. A set keeps its place
+ * when photos are added to it, and a merge lands where its first photo already
+ * was.
+ */
+export function groupOrderKey(group: Pick<StagingGroup, 'photos'>): [number, number] {
+  let time = Number.POSITIVE_INFINITY
+  let id = Number.POSITIVE_INFINITY
+  for (const p of group.photos) {
+    const t = p.taken_at ? Date.parse(p.taken_at) : Number.NaN
+    if (!Number.isNaN(t) && t < time) time = t
+    if (p.id < id) id = p.id
+  }
+  /*
+   * `id` is the tiebreak AND the fallback. Photo ids ascend with upload order,
+   * which on a folder drop is filename order -- close enough to capture order
+   * to be useful, and the only thing left when EXIF carries no timestamp
+   * (screenshots, scans, anything stripped by a messaging app).
+   */
+  return [time, id]
+}
+
+/** Stable shoot order. Does not mutate the input. */
+export function orderGroups<T extends Pick<StagingGroup, 'photos'>>(groups: T[]): T[] {
+  return [...groups].sort((a, b) => {
+    const [at, ai] = groupOrderKey(a)
+    const [bt, bi] = groupOrderKey(b)
+    if (at !== bt) return at - bt
+    return ai - bi
+  })
+}

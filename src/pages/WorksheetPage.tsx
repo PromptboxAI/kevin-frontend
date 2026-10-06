@@ -238,11 +238,40 @@ export default function WorksheetPage() {
   const pendingProposals =
     proposals.data?.proposals.filter((p) => p.status === 'pending').length ?? 0
 
+  /**
+   * Whether pricing is in flight, in a ref so the rows query (declared above
+   * the claim query) can read it without a use-before-declaration. Kept in
+   * sync by the effect below rather than being derived twice.
+   */
+  const pricingRef = useRef(false)
+
   const claim = useQuery({
     queryKey: ['claim', claimId],
     queryFn: () => api.get<ClaimSummary>(`/v1/claims/${encodeURIComponent(claimId)}`),
     retry: retryUnlessMissing,
+    /* Poll WHILE pricing is in flight. The worksheet is reachable the moment
+       the first line lands, so without this it shows a frozen snapshot: rows
+       at 0.00 that never fill in, and a total that never moves, on a claim
+       that is in fact still working. */
+    refetchInterval: (q) =>
+      (q.state.data?.status_counts?.processing ?? 0) > 0 ? 5000 : false,
+    refetchIntervalInBackground: false,
   })
+
+  /**
+   * HOW MUCH IS STILL COMING.
+   *
+   * The adjuster lands here mid-run and sees a long tail of 0.00 rows and a
+   * total far below what the claim is worth. Nothing on the page said whether
+   * those lines were still being priced or had simply failed -- and the
+   * difference decides whether they wait or start typing prices in by hand.
+   * Worse, the export buttons are live (rule 16, deliberately), so a half-priced
+   * claim can leave for a carrier looking finished.
+   */
+  const counts = claim.data?.status_counts
+  const stillPricing = counts?.processing ?? 0
+  const pricedSoFar = (counts?.completed ?? 0) + (counts?.needs_manual ?? 0) + (counts?.overridden ?? 0)
+
 
   /**
    * One continuous grid, as the design specifies -- no Previous/Next. Pages are
@@ -252,6 +281,23 @@ export default function WorksheetPage() {
   const rows = useInfiniteQuery({
     queryKey: ['claim-items', claimId, status],
     initialPageParam: 0,
+    /**
+     * REFETCH WHILE PRICING IS RUNNING.
+     *
+     * The price lands on the server line by line, but the grid fetched once on
+     * mount — so a row sat blank for minutes while the item drawer, which
+     * fetches that item on open, showed the price perfectly well. Same claim,
+     * two answers, and the one the adjuster is working in was the stale one.
+     *
+     * Polling the claim summary alone was not enough: that moved the banner and
+     * the totals while every Unit Cost cell stayed empty. The rows are what
+     * people read, so the rows have to refresh too.
+     *
+     * Ten seconds, not five: this refetches every page loaded so far, and the
+     * summary beside it already updates on the faster clock.
+     */
+    refetchInterval: () => (pricingRef.current ? 10_000 : false),
+    refetchIntervalInBackground: false,
     queryFn: ({ pageParam }) =>
       api.get<ClaimItemListResponse>(
         `/v1/claim_items?claim_id=${encodeURIComponent(claimId)}&limit=${PAGE_SIZE}&offset=${pageParam}` +
@@ -280,6 +326,20 @@ export default function WorksheetPage() {
   })
 
   const queryClient = useQueryClient()
+  /* When the last line lands, pull the rows again -- the grid is a separate
+     query and would otherwise keep showing the prices it fetched mid-run. */
+  const wasPricing = useRef(false)
+  useEffect(() => {
+    pricingRef.current = stillPricing > 0
+    if (stillPricing > 0) {
+      wasPricing.current = true
+      return
+    }
+    if (wasPricing.current) {
+      wasPricing.current = false
+      void queryClient.invalidateQueries({ queryKey: ['claim-items', claimId] })
+    }
+  }, [stillPricing, claimId, queryClient])
   /** id -> the single field awaiting the server. Siblings keep their values. */
   const [pending, setPending] = useState<Map<number, string>>(new Map())
   const [notice, setNotice] = useState<string | null>(null)
@@ -786,6 +846,30 @@ export default function WorksheetPage() {
           </div>
         </div>
 
+        {/*
+          * Still pricing. Not dismissible: the thing it is warning about --
+          * a total that is not the claim's total yet -- is still true after
+          * you close it, and the export buttons beside it stay live.
+          */}
+        {stillPricing > 0 ? (
+          <Alert
+            tone="info"
+            title={`Kevin is still pricing — ${fmtInt(stillPricing)} of ${fmtInt(stillPricing + pricedSoFar)} lines to go`}
+            action={
+              <Link
+                className="k-btn k-btn--sm k-btn--ghost"
+                to={`/claims/${encodeURIComponent(claimId)}/processing`}
+              >
+                Watch progress →
+              </Link>
+            }
+          >
+            Rows reading <strong>0.00</strong> have not been priced yet, and the totals below will
+            keep rising until this finishes. Nothing is wrong with them — but an export taken now
+            is a snapshot of a half-built inventory.
+          </Alert>
+        ) : null}
+
         {/* Claim-level totals are the server's rollups, read verbatim. */}
         <div className="k-totals">
           <div>
@@ -953,6 +1037,31 @@ export default function WorksheetPage() {
               marketing page, under a banner inviting people to try things.
               Editing the existing lines is what the demo is for and that
               still works; a blank row teaches nobody anything. */}
+          {/*
+            * ALWAYS AVAILABLE, not just while pricing.
+            *
+            * The automatic refresh only runs while the server says lines are
+            * still processing. If that count is already zero and the grid is
+            * nonetheless behind -- which is exactly the state where a Unit Cost
+            * reads blank in the row and 39.57 in the item drawer -- nothing
+            * else would ever ask again, and the adjuster is left staring at a
+            * number they cannot trust with no way to challenge it.
+            *
+            * One click, both queries, no guessing about which one is stale.
+            */}
+          <button
+            type="button"
+            className="k-btn k-btn--ghost"
+            disabled={rows.isFetching || claim.isFetching}
+            title="Fetch the latest prices and totals from the server"
+            onClick={() => {
+              void queryClient.invalidateQueries({ queryKey: ['claim-items', claimId] })
+              void queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
+            }}
+          >
+            {rows.isFetching || claim.isFetching ? 'Refreshing…' : 'Refresh'}
+          </button>
+
           {isSample ? null : (
             <button
               type="button"

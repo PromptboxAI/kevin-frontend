@@ -52,7 +52,15 @@ export default function AddPhotosPage() {
           <Link to={`/claims/${encodeURIComponent(claimId)}`} className="k-crumb" title="Back to the worksheet">
             <Icon d={I.chevleft} size={13} /> Back to {name}
           </Link>
-          <h1 style={H1}>Add photos</h1>
+          {/* "03" continues the new-claim form's 01/02. Those read as steps in
+              a flow rather than sections of a page, so landing on an unnumbered
+              screen left people asking which step they were on. Staging and
+              processing are deliberately NOT numbered: they are Kevin working
+              and the adjuster reviewing, not more of the form. */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span className="k-step-num">03</span>
+            <h1 style={{ ...H1, margin: 0 }}>Add photos</h1>
+          </div>
         </div>
 
         <section className="k-intake-section" style={{ marginTop: 24 }}>

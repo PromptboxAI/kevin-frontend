@@ -116,8 +116,16 @@ export default function IntakePage() {
   const { dir, savePerson, saveCompany } = useDirectory()
   const [estimatorId, setEstimatorId] = useState('')
   const [companyId, setCompanyId] = useState('')
-  const [personModal, setPersonModal] = useState(false)
-  const [companyModal, setCompanyModal] = useState(false)
+  /**
+   * `'new'` opens an empty modal; a record opens it populated for editing.
+   * It was a boolean, which made the directory write-once: an estimator saved
+   * without a license number could never get one, because nothing reopened the
+   * form. The modals have always taken an optional record (DirectoryModals
+   * titles itself "Edit person" when given one) -- there was simply no way to
+   * hand them one.
+   */
+  const [personModal, setPersonModal] = useState<'new' | Person | null>(null)
+  const [companyModal, setCompanyModal] = useState<'new' | Company | null>(null)
   const estimator = dir.people.find((x) => x.id === estimatorId) ?? null
   const company = dir.companies.find((x) => x.id === companyId) ?? null
   const estimatorName = estimator?.name ?? ''
@@ -201,6 +209,27 @@ export default function IntakePage() {
     !alreadyInvalid &&
     !taxUnconfirmed
 
+  /**
+   * WHAT is blocking, not a restatement of the rules -- read straight off the
+   * same flags `canSubmit` is built from so the two cannot disagree. A
+   * disabled button with no reason beside it is a dead end.
+   */
+  const blocker = !canSubmit
+    ? claimId === ''
+      ? 'Add a project name to continue.'
+      : !idValid
+        ? 'That project name is already taken.'
+        : dateInvalid
+          ? 'Check the date of loss.'
+          : ppLimitInvalid
+            ? 'Check the personal property limit.'
+            : alreadyInvalid
+              ? 'Check the amount already claimed.'
+              : taxUnconfirmed
+                ? 'Enter the loss ZIP so Kevin can resolve the sales tax rate.'
+                : 'Some details still need attention.'
+    : null
+
   const create = useMutation({
     mutationFn: async () => {
       /**
@@ -266,6 +295,38 @@ export default function IntakePage() {
       ),
   })
 
+  /**
+   * The primary action, rendered at the TOP and again at the BOTTOM.
+   *
+   * It was top-only, which on a form this long meant finishing step 2 and then
+   * scrolling back up past everything you had just filled in to leave the page.
+   * One definition rather than two copies, so the disabled rule and the label
+   * cannot drift apart.
+   */
+  const actions = (
+    <div style={{ display: 'flex', gap: 8 }}>
+      <Link to="/claims" className="k-btn k-btn--ghost">
+        Cancel
+      </Link>
+      <button
+        type="button"
+        className="k-btn"
+        disabled={!canSubmit || create.isPending}
+        title={created ? 'Drop the photos below' : 'Creates the claim, then opens upload'}
+        onClick={() => {
+          if (created) {
+            navigate(`/claims/${encodeURIComponent(created)}/add-photos`)
+            return
+          }
+          setError(null)
+          create.mutate()
+        }}
+      >
+        {create.isPending ? 'Creating…' : 'Continue → Upload photos'}
+      </button>
+    </div>
+  )
+
   return (
     <div className="k-intake">
       <AppHeader />
@@ -283,27 +344,7 @@ export default function IntakePage() {
 
           {/* Creating the claim and moving to photos is ONE action -- a separate
               "Create claim" button is not the flow. */}
-          <div style={{ display: 'flex', gap: 8 }}>
-            <Link to="/claims" className="k-btn k-btn--ghost">
-              Cancel
-            </Link>
-            <button
-              type="button"
-              className="k-btn"
-              disabled={!canSubmit || create.isPending}
-              title={created ? 'Drop the photos below' : 'Creates the claim, then opens upload'}
-              onClick={() => {
-                if (created) {
-                  navigate(`/claims/${encodeURIComponent(created)}/add-photos`)
-                  return
-                }
-                setError(null)
-                create.mutate()
-              }}
-            >
-              {create.isPending ? 'Creating…' : 'Continue → Upload photos'}
-            </button>
-          </div>
+          {actions}
         </div>
 
         <section className="k-intake-section">
@@ -503,13 +544,15 @@ export default function IntakePage() {
               value={estimator ? personLabel(estimator) : ''}
               options={dir.people.map(personLabel)}
               addLabel="+ Add a person…"
-              onAdd={() => setPersonModal(true)}
+              onAdd={() => setPersonModal('new')}
               width={280}
               onChange={(label) => {
                 const match = dir.people.find((x) => personLabel(x) === label)
                 setEstimatorId(match?.id ?? '')
               }}
-              hint="Prints on the export as the preparer"
+              hint={
+                estimator ? undefined : 'Prints on the export as the preparer'
+              }
             >
               <option value="">— None —</option>
               {dir.people.map((x) => (
@@ -517,21 +560,35 @@ export default function IntakePage() {
                   {personLabel(x)}
                 </option>
               ))}
-              <option value="__add">+ Add a person…</option>
+              {/* NO `__add` option here: IntakeSelect appends one itself from
+                  `addLabel`. Passing both put "+ Add a person…" in the list
+                  twice. Same for the company picker below. */}
             </IntakeSelect>
+            {estimator ? (
+              <button
+                type="button"
+                className="k-link"
+                style={{ alignSelf: 'end', paddingBottom: 9, fontSize: 12 }}
+                onClick={() => setPersonModal(estimator)}
+              >
+                Edit {estimator.name}
+              </button>
+            ) : null}
 
             <IntakeSelect
               label="Company header"
               value={company ? companyLabel(company) : ''}
               options={dir.companies.map(companyLabel)}
               addLabel="+ Add a company…"
-              onAdd={() => setCompanyModal(true)}
+              onAdd={() => setCompanyModal('new')}
               width={320}
               onChange={(label) => {
                 const match = dir.companies.find((x) => companyLabel(x) === label)
                 setCompanyId(match?.id ?? '')
               }}
-              hint="Your letterhead on the inventory PDF and share links"
+              hint={
+                company ? undefined : 'Your letterhead on the inventory PDF and share links'
+              }
             >
               <option value="">— None —</option>
               {dir.companies.map((x) => (
@@ -539,8 +596,17 @@ export default function IntakePage() {
                   {companyLabel(x)}
                 </option>
               ))}
-              <option value="__add">+ Add a company…</option>
             </IntakeSelect>
+            {company ? (
+              <button
+                type="button"
+                className="k-link"
+                style={{ alignSelf: 'end', paddingBottom: 9, fontSize: 12 }}
+                onClick={() => setCompanyModal(company)}
+              >
+                Edit {company.name}
+              </button>
+            ) : null}
 
             {company ? (
               <div className="k-intake-letterhead">
@@ -555,26 +621,44 @@ export default function IntakePage() {
           </div>
         </section>
 
+        {/* Same action as the header's, at the end of the form the person has
+            just worked through. */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            alignItems: 'center',
+            gap: 12,
+            paddingTop: 4,
+          }}
+        >
+          {blocker ? (
+            <span style={{ fontSize: 12, color: 'var(--k-fg-3)' }}>{blocker}</span>
+          ) : null}
+          {actions}
+        </div>
       </div>
 
       {personModal ? (
         <PersonModal
-          onClose={() => setPersonModal(false)}
+          person={personModal === 'new' ? undefined : personModal}
+          onClose={() => setPersonModal(null)}
           onSave={(person: Person) => {
             savePerson(person)
             setEstimatorId(person.id)
-            setPersonModal(false)
+            setPersonModal(null)
           }}
         />
       ) : null}
 
       {companyModal ? (
         <CompanyModal
-          onClose={() => setCompanyModal(false)}
+          company={companyModal === 'new' ? undefined : companyModal}
+          onClose={() => setCompanyModal(null)}
           onSave={(next: Company) => {
             saveCompany(next)
             setCompanyId(next.id)
-            setCompanyModal(false)
+            setCompanyModal(null)
           }}
         />
       ) : null}
