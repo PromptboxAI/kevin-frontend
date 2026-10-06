@@ -752,6 +752,33 @@ export default function WorksheetPage() {
     return () => observer.disconnect()
   }, [rows.data])
 
+  /**
+   * PULL EVERY PAGE, without waiting for a scroll.
+   *
+   * `/v1/claim_items` returns NEWEST FIRST (`order("created_at", desc=True)`)
+   * and `numberRows` sorts ascending for display. So page one is the newest
+   * 100 rows, which on a 161-line claim are lines 62-161: the worksheet opened
+   * with 0061 at the top and NOTHING ABOVE IT. Lines 1-60 sat on page two,
+   * which only loaded on scrolling DOWN -- and an adjuster looking for line 1
+   * scrolls up, where there is nothing to trigger.
+   *
+   * Infinite scroll assumes the first page is the start of the list. Here it is
+   * the end of it, so the assumption is simply wrong on this screen. Until the
+   * route takes an order parameter, the honest fix is to stop pretending the
+   * grid is paged: fetch the rest immediately, in the background, so the top
+   * fills in on its own.
+   *
+   * The scroll trigger below stays as the backstop for very long claims, where
+   * these fetches are still arriving while someone is already reading.
+   */
+  const { hasNextPage, isFetchingNextPage, fetchNextPage } = rows
+  const pagesLoaded = rows.data?.pages.length ?? 0
+  useEffect(() => {
+    if (hasNextPage && !isFetchingNextPage) void fetchNextPage()
+    // `pagesLoaded` is what re-runs this after each page lands, walking the
+    // claim to the end one request at a time.
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage, pagesLoaded])
+
   const onScroll = (e: React.UIEvent<HTMLElement>) => {
     const el = e.currentTarget
     setScrollTop(el.scrollTop)
