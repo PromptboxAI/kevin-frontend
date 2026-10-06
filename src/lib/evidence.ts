@@ -71,6 +71,23 @@ export function attachItemPhoto(rowId: number, file: File) {
 }
 
 /**
+ * Point photos ALREADY on the claim at a line item.
+ *
+ * The reuse half of delete-keeps-photos: a photo whose set was set aside in
+ * staging, or whose item was deleted, is still on the claim and can be pointed
+ * at a row. Ineligible ids are skipped rather than erroring, so a stale
+ * selection does not fail the batch.
+ *
+ * No Vision and no re-valuation -- the server is explicit about that. The row
+ * gets the picture; the description and the price are the adjuster's.
+ */
+export function attachItemPhotos(rowId: number, photoIds: number[]) {
+  return api.post<AttachPhotosAck>(`/v1/claim_items/${rowId}/photos`, {
+    json: { photo_ids: photoIds },
+  })
+}
+
+/**
  * Unpoint photos WITHOUT deleting them.
  *
  * The undo for a mis-attach, never a delete: tidying a gallery must not blank

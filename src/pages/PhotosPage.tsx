@@ -116,6 +116,26 @@ export default function PhotosPage() {
   }, [photosRaw, lineNos])
 
   const frames = useMemo(() => framesPerItem(photos), [photos])
+  /**
+   * Which frame each photo is, within its line.
+   *
+   * This tab is a gallery of PHOTOS, so a line merged from two shots gets two
+   * tiles -- correct, and the counts depend on it, but two tiles both reading
+   * "Line 0003" look like the same thing listed twice. Numbering them says
+   * they are two frames of one line, which is what they are. Built off the
+   * already-sorted list, so frame 1 is the earliest shot.
+   */
+  const frameNos = useMemo(() => {
+    const seen = new Map<number, number>()
+    const out = new Map<number, number>()
+    for (const p of photos) {
+      if (p.item_id == null) continue
+      const n = (seen.get(p.item_id) ?? 0) + 1
+      seen.set(p.item_id, n)
+      out.set(p.photo_id, n)
+    }
+    return out
+  }, [photos])
 
   const facets = useMemo(() => stateFacets(photos), [photos])
   const rooms = useMemo(() => roomBuckets(photos), [photos])
@@ -374,6 +394,7 @@ export default function PhotosPage() {
                   item={itemForPhoto(p, byId)}
                   lineNo={p.item_id == null ? undefined : lineNos.get(p.item_id)}
                   frames={p.item_id == null ? 0 : (frames.get(p.item_id) ?? 0)}
+                  frameNo={frameNos.get(p.photo_id)}
                   on={p.photo_id === focused}
                   onOpen={() => setFocused(p.photo_id)}
                 />
@@ -445,6 +466,7 @@ function PhotoTile({
   item,
   lineNo,
   frames,
+  frameNo,
   on,
   onOpen,
 }: {
@@ -452,6 +474,8 @@ function PhotoTile({
   item: ClaimItem | null
   lineNo?: number
   frames: number
+  /** Which shot of its line this is, when the line has more than one. */
+  frameNo?: number
   on: boolean
   onOpen: () => void
 }) {
@@ -487,7 +511,11 @@ function PhotoTile({
         <div className="k-photo-tl">
           {/* Amber is reserved for special limits (rule 6), and this payload
               carries no such flag -- so nothing here is amber. */}
-          {frames > 1 ? <Badge tone="quiet">{frames} frames</Badge> : null}
+          {frames > 1 ? (
+            <Badge tone="quiet">
+              {frameNo ? `Frame ${frameNo} of ${frames}` : `${frames} frames`}
+            </Badge>
+          ) : null}
           {bucket === 'pending' ? <Badge tone="quiet">Staging</Badge> : null}
         </div>
         <div className="k-photo-bl">
