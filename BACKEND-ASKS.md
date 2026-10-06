@@ -603,7 +603,50 @@ split is the only shape that needs client-side syncing.
 Not blocking — shipped and tested as-is.
 
 
-## 29. Line numbers are positions, so a delete renumbers a sent schedule
+## 29. Line numbers are positions, so a delete renumbers a sent schedule — DONE
+
+**Status: SHIPPED by the backend as migration `0062_line_no.sql`, which names
+this ask and settles it the way the owner decided — numbers are assigned at
+creation and never move.** Verified in the live schema and in the export on
+2026-10-06; nothing further is wanted from them.
+
+What landed, and it is worth reading because it answers the question better
+than this ask framed it:
+
+- A counter on the CLAIM (`claims.next_line_no`), monotonic, deliberately NOT
+  `max(line_no) + 1` — max+1 reissues a number the moment the highest line is
+  deleted, which is the exact failure this exists to prevent.
+- Assignment by a `before insert` TRIGGER rather than application code, because
+  `claim_items` is inserted from five places in `main.py` plus the worker's
+  promote path, and "assigned at creation" has to mean every creation. The
+  `update … returning` also takes a row lock, so concurrent bulk inserts from
+  the workers serialise instead of racing, and a unique index makes any race
+  that escapes that loud rather than silently duplicating a citation.
+- The export reads it: `_item_row(it, tax_rate, it.get("line_no") or n)`,
+  falling back to position only while `line_no` is null.
+- Legacy rows with a null `created_by` keep a null `line_no` and both sides
+  fall back to position, which is what let it land without a flag day.
+
+**A gap in the numbers is now the correct state**, and the frontend had not
+caught up: `rowInvariant` still demanded a strict 1..N run, so every claim
+anyone had deleted an item from footed a red *"count mismatch: API reports 160,
+grid holds 160 (highest line 161)"* on correct data. Fixed our side 2026-10-06.
+
+**One difference left, and it is almost certainly unreachable — flagging it
+rather than asking for anything.** The two fallbacks are not the same shape:
+the export falls back PER ROW (`line_no or position`), while `numberRows` is
+ALL-OR-NOTHING (it uses `line_no` only when every row has one, else position
+for all). On a claim holding a mix of numbered and null rows the worksheet and
+the .xlsx would number the same items differently. The backfill set `line_no`
+for every row with a `created_by`, and ownerless rows are whole legacy claims
+rather than stragglers inside a live one, so a mixed claim should not exist. We
+kept all-or-nothing deliberately: mingling two schemes can repeat a number,
+which on an exported schedule is worse than being uniformly wrong. If you ever
+see a claim with both, tell us and we will match the per-row shape.
+
+---
+
+**The original ask follows, for the record.**
 
 Rule 22(b) says line numbers are never reassigned, because *"an export already
 sent to a carrier cites those numbers."* Nothing currently persists one.

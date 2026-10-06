@@ -12,13 +12,18 @@ export type NumberedItem = ClaimItem & { lineNo: number }
  * slices rows that already know their number, and the renderer never computes
  * one.
  *
- * It is NOT permanent, and cannot be from here: the number is this row's
- * POSITION, so deleting an earlier row shifts every row beneath it up by one.
- * The export does exactly the same thing (`enumerate(items, start=1)` in
- * services/export.py), and nothing persists a line number, so a schedule
- * already sent to a carrier can end up citing numbers that no longer point at
- * the same items. The delete confirmation says so on an exported claim; ask 29
- * is the durable fix.
+ * THE NUMBER IS PERSISTED NOW, and this paragraph used to say the opposite.
+ * It described the world before migration 0062: both sides derived the number
+ * from POSITION, so deleting a row shifted every row beneath it and a schedule
+ * already sent to a carrier started citing different items. That was ask 29,
+ * the backend shipped it, and `claims.next_line_no` plus an insert trigger now
+ * assign a number at creation that is never reused or renumbered.
+ *
+ * The export reads the same column (`it.get("line_no") or n` in
+ * services/export.py), so the two surfaces agree. Left here corrected rather
+ * than deleted because the stale version sent someone back to re-raise an ask
+ * that had already been built -- if this ever reads as out of date again,
+ * check the schema before writing a prompt.
  *
  * Order is by `id` ascending because GET /v1/claim_items is newest-first: a
  * row added today must APPEND, not land at the top and renumber everything
@@ -36,6 +41,13 @@ export function numberRows(items: ClaimItem[]): NumberedItem[] {
    * not -- would mingle two numbering schemes and could repeat a number, which
    * is worse on an exported schedule than being uniformly wrong. So the
    * fallback only lifts when EVERY row carries one.
+   *
+   * NOTE this is a different shape from the export, which falls back PER ROW.
+   * On a claim holding both numbered and null rows the two would disagree. The
+   * 0062 backfill numbered every row with a `created_by`, and ownerless rows
+   * are whole legacy claims rather than stragglers inside a live one, so such
+   * a claim should not exist -- but if one turns up, this is the line to
+   * change (BACKEND-ASKS 29).
    */
   const numbered = sorted.every(
     (item) => typeof item.line_no === 'number' && Number.isFinite(item.line_no),
