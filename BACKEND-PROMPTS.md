@@ -14,6 +14,79 @@ nothing gets asked twice and nothing quietly falls off.
 
 ---
 
+## 20. The photo packet numbers lines by POSITION — 0062 did not reach it
+
+**Status:** new, 2026-10-06. Same bug as ask 29, in the one file the fix
+missed. Verified against a live claim.
+
+`services/photo_packet.py`:
+
+```python
+line_no: int              # exactly the worksheet's "#" for this item
+...
+for line_no, item in enumerate(items, start=1):
+```
+
+That comment is no longer true. Since migration 0062 the worksheet and the
+export's main table both use the STORED `line_no` — the table correctly reads
+`_item_row(it, tax_rate, it.get("line_no") or n)` — while the photo packet
+still numbers by position.
+
+**On a live claim right now** (`robyn-beck-contents`, 160 items, an item
+deleted so the numbers run to 161 with a gap): the worksheet and the .xlsx say
+one thing, and every photo caption from the gap onward is one lower. The
+caption exists for exactly one reason, and the docstring says so — *"so a
+reader can go from any photo to its line and back"* — which is the thing it
+stops doing the moment anything is deleted.
+
+**Fix is the one line the table already uses:** take `item["line_no"]` and fall
+back to position only when it is null.
+
+Carrier-facing, and silent: nothing on the document says the numbers mean two
+different things.
+
+---
+
+## 21. Merge quality — the clusterer leaves half the pairs unmerged
+
+**Status:** new, 2026-10-06. Owner's report, now with numbers rather than a
+feeling.
+
+The owner's words: a wide shot of a TV and the next shot of its make and model
+come back as two separate line items, *"almost 50/50"*.
+
+**Measured on `robyn-beck-contents`** — 208 photos, 205 backing a line, 160
+lines:
+
+| photos on a line | lines |
+|---|---|
+| 1 | 119 |
+| 2 | 37 |
+| 3 | 4 |
+
+So 41 lines are multi-photo and 119 are single. We cannot tell you from here
+how many of those 119 *should* have been merged — that needs eyes on the
+photos, and it is your clusterer's call — but the owner reviewing them puts it
+near half, and a wide-shot/model-plate pair is the single most common capture
+habit on a pack-out.
+
+**Why it costs more than a tidy grid.** An unmerged model plate becomes its own
+line item. That is a line the adjuster deletes (or worse, does not), a
+duplicate of an item already counted, and — since the plate is a close-up of
+text — usually one that prices badly or not at all. It also spends an item of
+quota, at roughly $0.08 and a slot against the 2,000.
+
+**What would help us help you:** the clustering gate is timestamp plus EXIF
+proximity, and we surface none of its inputs. If the session payload carried
+the gap that was measured between adjacent sets, we could show it in staging
+and the owner could tell you where the threshold is landing wrong, with
+examples, instead of describing it.
+
+Not asking for a specific threshold change — you have the data and we do not.
+Flagging that the current one is visibly loose at the owner's capture style.
+
+---
+
 ## 19. Identify a photo Vision never saw — NOT a second look at one it did
 
 **Status:** new, 2026-10-06. Owner's request, and the framing matters because

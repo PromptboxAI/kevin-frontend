@@ -145,6 +145,21 @@ export default function WorksheetPage() {
   const [selected, setSelected] = useState<Set<number>>(new Set())
   /** null = every room; 'none' = the Unassigned bucket; a number = one room. */
   const [roomFilter, setRoomFilter] = useState<number | null | 'none'>(null)
+  /**
+   * Rows with NO DESCRIPTION — the ones that cannot price until a human types
+   * something, as distinct from the ones that merely have no price.
+   *
+   * On a real 160-line claim 21 came back blank (`manual_reason:
+   * "no_description"`) and the only way to find them was to scroll looking for
+   * empty cells. "Unpriced" does not isolate them: a Jewelry line is unpriced
+   * because it is appraisal-only and needs a FIGURE, while these need a
+   * DESCRIPTION first and can then price themselves.
+   *
+   * A filter and not a badge, deliberately: rule 12 keeps the grid free of
+   * needs_manual badges, and a blank cell is a thing to type into rather than
+   * an error to mark up.
+   */
+  const [needsDesc, setNeedsDesc] = useState(false)
   /** Shared cache key with RoomsPopover -- one fetch feeds both. */
   const rooms = useQuery({
     queryKey: ['rooms', claimId],
@@ -626,13 +641,14 @@ export default function WorksheetPage() {
     let out = items
     if (roomFilter === 'none') out = out.filter((item) => item.room_id == null)
     else if (roomFilter != null) out = out.filter((item) => item.room_id === roomFilter)
+    if (needsDesc) out = out.filter((item) => !(item.description ?? '').trim())
     if (!term) return out
     return out.filter((item) =>
       [item.description, item.make_mfr, item.category, item.model_number, item.room_area]
         .filter(Boolean)
         .some((field) => String(field).toLowerCase().includes(term)),
     )
-  }, [items, search, roomFilter])
+  }, [items, search, roomFilter, needsDesc])
 
   /** Group headers aggregate the rows' own flags -- never re-derived from cat. */
   const groups = useMemo(() => {
@@ -663,7 +679,13 @@ export default function WorksheetPage() {
       navigate(`/claims/${encodeURIComponent(claimId)}/staging`, { replace: true })
     }
   }, [staged.waiting, nothingProcessed, claimId, navigate])
-  const filterCount = status ? 1 : 0
+  const filterCount = (status ? 1 : 0) + (needsDesc ? 1 : 0)
+  /** How many rows are waiting on a description, for the filter's own label.
+   *  NOT `undescribed` -- that name is already an import from deferred-rules. */
+  const blankDescCount = useMemo(
+    () => items.filter((i) => !(i.description ?? '').trim()).length,
+    [items],
+  )
 
   const toggle = (id: number) =>
     setSelected((prev) => {
@@ -1071,7 +1093,10 @@ export default function WorksheetPage() {
                       type="button"
                       className="k-link"
                       style={{ fontSize: 11 }}
-                      onClick={() => setStatus('')}
+                      onClick={() => {
+                        setStatus('')
+                        setNeedsDesc(false)
+                      }}
                     >
                       Clear
                     </button>
@@ -1092,6 +1117,37 @@ export default function WorksheetPage() {
                       {value === status ? <Icon d={I.check} size={12} stroke={2.5} /> : null}
                     </button>
                   ))}
+
+                  {/* Separate from the status list because it is not a status:
+                      it cuts across them, and it is the one an adjuster uses to
+                      find the work only they can do. */}
+                  {blankDescCount > 0 ? (
+                    <>
+                      <div
+                        style={{
+                          borderTop: '1px solid var(--k-line)',
+                          margin: '6px 0',
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className={`k-menu-item ${needsDesc ? 'k-menu-item--on' : ''}`}
+                        title="Lines Kevin could not describe — type one and they price themselves"
+                        onClick={() => {
+                          setNeedsDesc((v) => !v)
+                          setFilterOpen(false)
+                        }}
+                      >
+                        Needs a description
+                        <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span className="k-mono" style={{ fontSize: 11, color: 'var(--k-fg-4)' }}>
+                            {fmtInt(blankDescCount)}
+                          </span>
+                          {needsDesc ? <Icon d={I.check} size={12} stroke={2.5} /> : null}
+                        </span>
+                      </button>
+                    </>
+                  ) : null}
                 </div>
               </div>
             ) : null}
