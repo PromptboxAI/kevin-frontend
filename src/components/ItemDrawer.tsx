@@ -191,8 +191,23 @@ export default function ItemDrawer({
   const useComp = (comp: Comp) => {
     const price = Number(comp.price)
     if (!Number.isFinite(price) || price < 0) return
+    const link = isMerchantLink(comp.link) ? (comp.link ?? null) : null
     override.mutate({ rcv: price })
-    editLine.mutate({ manual_source_url: isMerchantLink(comp.link) ? (comp.link ?? null) : null })
+    editLine.mutate({ manual_source_url: link })
+    /*
+     * SAY IT, do not just do it. Only one comp per line has its real merchant
+     * URL resolved -- the rest carry a Google redirect that never lands on a
+     * listing -- so taking a price from one of the others leaves the line with
+     * no source link. Dropping it silently looks like the link was lost; the
+     * adjuster needs to know the price moved and the proof did not, because on
+     * a carrier-facing line that is the difference between substantiated and
+     * asserted. The route that would carry the link across is ask 23.
+     */
+    setNotice(
+      link
+        ? null
+        : 'Price taken from this listing. Its link could not come with it — only the listing the price originally came from has a resolved merchant URL, and the others point back at Google. Paste a link in Source if you need this line substantiated.',
+    )
   }
 
   /**

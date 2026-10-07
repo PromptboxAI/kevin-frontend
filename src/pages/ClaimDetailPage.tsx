@@ -25,7 +25,7 @@ import {
   splitAddress,
   splitInsured,
   validateClaimForm,
-} from '../lib/claim-detail-rules'
+ zipOf} from '../lib/claim-detail-rules'
 import type { ClaimDetailForm } from '../lib/claim-detail-rules'
 import type { ClaimSummary } from '../lib/types'
 
@@ -125,6 +125,37 @@ export default function ClaimDetailPage() {
   const currentTaxLabel =
     taxPlan.options.find((o) => o.rate != null && String(o.rate) === edited.tax_rate)?.label ??
     (edited.tax_rate ? `${edited.tax_rate}% · on this claim` : '')
+
+  /*
+   * THE ZIP OWNS THE RATE, and this screen was the only one that did not act
+   * on that.
+   *
+   * Intake defaults to the resolved option for the ZIP; here the lookup filled
+   * the dropdown and left `tax_rate` exactly as it was, so typing a ZIP in
+   * looked like it had worked and saved nothing. Every money column is
+   * computed on read from the claim's `tax_rate` (FRONTEND.md: "all computed
+   * on read"), so the consequence showed up a screen away -- the worksheet's
+   * Tax column stayed blank on every line.
+   *
+   * Only once the ADJUSTER has changed the ZIP. Adopting a rate on mere page
+   * load would rewrite the rate on a claim that may already have been exported
+   * to a carrier, which is a silent change to money nobody asked for.
+   */
+  const originalZip = zipOf(original.loss_address)
+  const rateKey = taxPlan.options.map((o) => o.rate ?? '').join('|')
+  useEffect(() => {
+    if (!addr.zip || addr.zip === originalZip || taxLookup.isFetching) return
+    const first = taxPlan.options[0]
+    if (first?.rate == null) return
+    // An ambiguous ZIP offers a choice and no default -- let them pick.
+    if (taxPlan.needsChoice) return
+    const already = taxPlan.options.some(
+      (o) => o.rate != null && String(o.rate) === form.tax_rate,
+    )
+    if (already) return
+    setForm((f) => ({ ...f, tax_rate: String(first.rate) }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addr.zip, originalZip, taxLookup.isFetching, rateKey, taxPlan.needsChoice, form.tax_rate])
 
   const estimator = dir.people.find((p) => personLabel(p) === form.estimator_name) ?? null
   const company = dir.companies.find((c) => companyLabel(c) === form.business_name) ?? null
