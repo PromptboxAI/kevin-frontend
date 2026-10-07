@@ -96,6 +96,7 @@ const StagingPage = lazyRoute(() => import('./pages/StagingPage'))
 const ProcessingPage = lazyRoute(() => import('./pages/ProcessingPage'))
 const ImportPage = lazyRoute(() => import('./pages/ImportPage'))
 const OverviewPage = lazyRoute(() => import('./pages/OverviewPage'))
+const ClaimDetailPage = lazyRoute(() => import('./pages/ClaimDetailPage'))
 const AuditPage = lazyRoute(() => import('./pages/AuditPage'))
 const PhotosPage = lazyRoute(() => import('./pages/PhotosPage'))
 const PortalPage = lazyRoute(() => import('./pages/PortalPage'))
@@ -341,6 +342,15 @@ export default function App() {
           element={
             <RequireAuth>
               <RecoveryPage />
+            </RequireAuth>
+          }
+        />
+
+        <Route
+          path="/claims/:claimId/details"
+          element={
+            <RequireAuth>
+              <ClaimDetailPage />
             </RequireAuth>
           }
         />

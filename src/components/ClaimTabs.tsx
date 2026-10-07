@@ -1,12 +1,18 @@
 import { Link } from 'react-router-dom'
 
-type Tab = 'Overview' | 'Photos' | 'Worksheet' | 'Notes & audit' | 'Export'
+type Tab = 'Claim detail' | 'Overview' | 'Photos' | 'Worksheet' | 'Notes & audit' | 'Export'
 
 /**
  * Ported from shared.jsx -> ClaimTabs. Counts ride on Photos and Worksheet.
  * Surfaces not built yet render as greyed "Soon" spans rather than dead links.
  */
 const TABS: [Tab, string | null][] = [
+  // FIRST, and editable. Everything typed at intake lives here and can be
+  // changed for the life of the claim -- an insured's name is corrected, a
+  // carrier assigns a claim number a week later, a policy limit is found on
+  // the declarations page after the photos are already in. It was write-once,
+  // so the only way to fix a typo was to start again.
+  ['Claim detail', 'details'],
   ['Overview', 'overview'],
   // The gallery, not staging. Staging is one INGEST SESSION; this is every
   // photo on the claim, including the ones a session already promoted.
