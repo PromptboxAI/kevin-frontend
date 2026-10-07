@@ -431,16 +431,22 @@ export default function ItemDrawer({
                   alignItems: 'center',
                   gap: 6,
                   width: '100%',
-                  padding: '5px 14px',
+                  padding: '8px 14px',
                   border: 0,
                   borderBottom: '1px solid var(--k-line)',
-                  background: 'var(--k-bg)',
-                  color: 'var(--k-fg-4)',
-                  fontSize: 11,
+                  /* Readable, because this is a control and not a footnote.
+                     It shipped at 11px in --k-fg-4 on --k-bg, which is the
+                     tone for de-emphasised metadata -- on the one row telling
+                     you how to get the rest of the panel back, it was
+                     invisible. A control a user cannot find is not a control. */
+                  background: 'var(--k-bg-2)',
+                  color: 'var(--k-fg-2)',
+                  fontSize: 12.5,
+                  fontWeight: 500,
                   cursor: 'pointer',
                 }}
               >
-                <Icon d={photoOpen ? I.chevdown : I.chevright} size={11} />
+                <Icon d={photoOpen ? I.chevdown : I.chevright} size={12} stroke={2} />
                 {photoOpen ? 'Hide photo' : `Show photo${photos.length > 1 ? ` (${photos.length})` : ''}`}
               </button>
 
