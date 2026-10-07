@@ -231,13 +231,41 @@ export type AddressParts = { street: string; city: string; state: string; zip: s
 export function splitAddress(address: string): AddressParts {
   const whole: AddressParts = { street: address.trim(), city: '', state: '', zip: '' }
   const parts = address.split(',').map((p) => p.trim())
-  if (parts.length !== 3) return whole
 
-  const tail = parts[2].match(/^([A-Za-z]{2})\s+(\d{5})(?:-\d{4})?$/)
-  if (!tail) return whole
-  if (!parts[0] || !parts[1]) return whole
+  if (parts.length === 3) {
+    const tail = parts[2].match(/^([A-Za-z]{2})\s+(\d{5})(?:-\d{4})?$/)
+    if (tail && parts[0] && parts[1]) {
+      return { street: parts[0], city: parts[1], state: tail[1].toUpperCase(), zip: tail[2] }
+    }
+  }
 
-  return { street: parts[0], city: parts[1], state: tail[1].toUpperCase(), zip: tail[2] }
+  /*
+   * ⛔ THE ROUND TRIP HAS TO BE STABLE, and it was not.
+   *
+   * This used to return `whole` for anything that was not the full three-part
+   * shape. But `joinAddress` will happily append a ZIP to an unsplittable
+   * street, so an adjuster who typed 11790 into a claim whose address was
+   * blank or partial saved "11790" (or "123 Main St, 11790") -- a correct save
+   * that came back on the next load with the ZIP sitting in the STREET field
+   * and the ZIP field empty. It read as the save having been lost. It had not
+   * been: the ZIP was in `loss_address` the whole time, in the wrong box.
+   *
+   * A trailing five-digit group is not a guess the way a city boundary is, so
+   * peeling it off is safe where splitting the rest is not. City and state
+   * stay conservative: unrecognised shapes keep everything in `street`.
+   */
+  const trailing = whole.street.match(/^(.*?)[,\s]*([A-Za-z]{2})?\s*(\d{5})(?:-\d{4})?$/)
+  if (trailing && trailing[3]) {
+    const head = (trailing[1] ?? '').replace(/[,\s]+$/, '')
+    return {
+      street: head,
+      city: '',
+      state: (trailing[2] ?? '').toUpperCase(),
+      zip: trailing[3],
+    }
+  }
+
+  return whole
 }
 
 export function joinAddress(parts: AddressParts): string {
