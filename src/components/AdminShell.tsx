@@ -14,7 +14,7 @@ import type { MeResponse } from '../lib/types'
  * the one surface whose job is to tell you the truth about the system.
  */
 const SECTIONS: { label: string; to?: string }[] = [
-  { label: 'Overview' },
+  { label: 'Overview', to: '/admin/overview' },
   { label: 'Accounts', to: '/admin/accounts' },
   { label: 'Revenue', to: '/admin/revenue' },
   { label: 'Content' },

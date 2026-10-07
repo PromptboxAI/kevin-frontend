@@ -86,6 +86,7 @@ const AdminPlatformPage = lazyRoute(() => import('./pages/AdminPlatformPage'))
 const AdminAccountsPage = lazyRoute(() => import('./pages/AdminAccountsPage'))
 const AdminAccountDetailPage = lazyRoute(() => import('./pages/AdminAccountDetailPage'))
 const AdminRevenuePage = lazyRoute(() => import('./pages/AdminRevenuePage'))
+const AdminOverviewPage = lazyRoute(() => import('./pages/AdminOverviewPage'))
 const ExportsPage = lazyRoute(() => import('./pages/ExportsPage'))
 const ExportPage = lazyRoute(() => import('./pages/ExportPage'))
 const IntakePage = lazyRoute(() => import('./pages/IntakePage'))
@@ -508,7 +509,16 @@ export default function App() {
             </RequireAdmin>
           }
         />
-        <Route path="/admin" element={<Navigate to="/admin/system" replace />} />
+        <Route
+          path="/admin/overview"
+          element={
+            <RequireAdmin>
+              <AdminOverviewPage />
+            </RequireAdmin>
+          }
+        />
+        {/* Overview is the front door now that it has real numbers behind it. */}
+        <Route path="/admin" element={<Navigate to="/admin/overview" replace />} />
 
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
