@@ -6,7 +6,7 @@ import Badge from './Badge'
 import EditableCell from './EditableCell'
 import { ApiError, api } from '../lib/api'
 import { fmtCompPrice, fmtConfidence, fmtPct, fmtUSD } from '../lib/format'
-import { citedCompIndex, sampleNote } from '../lib/comps-rules'
+import { citedCompIndex, isMerchantLink, sampleNote } from '../lib/comps-rules'
 import { editDisplayLine, overrideItem, repriceItem } from '../lib/mutations'
 import { useDepreciationRules } from '../lib/depreciation-rules'
 import ClassOptionList from './ClassOptionList'
@@ -177,11 +177,22 @@ export default function ItemDrawer({
    * Two calls because the API has two: the price is an override, the proof URL
    * is a display field.
    */
+  /*
+   * STOPGAP, and it costs the line something -- see BACKEND-PROMPTS ask 23.
+   * There is no route to select a comp, so this hand-prices the line instead:
+   * the basis becomes `manual` and the backend clears the comps, meaning the
+   * adjuster gets ONE switch and then has no alternatives left to switch to.
+   *
+   * The link is only carried across when it is a real merchant URL. Only one
+   * comp per line has one; the others hold a Google redirect, and recording
+   * that as the adjuster's own `manual_source_url` would cite a page that
+   * never shows the listing. Better no link than a false one.
+   */
   const useComp = (comp: Comp) => {
     const price = Number(comp.price)
     if (!Number.isFinite(price) || price < 0) return
     override.mutate({ rcv: price })
-    editLine.mutate({ manual_source_url: comp.link ?? null })
+    editLine.mutate({ manual_source_url: isMerchantLink(comp.link) ? (comp.link ?? null) : null })
   }
 
   /**
@@ -763,13 +774,18 @@ function CompRow({
   comp: Comp
   /**
    * alternative_sources[0] is the PREFERRED SOURCE for the item's content
-   * class, and the only comp with a resolved merchant URL -- the rest are
-   * Google Shopping search links, which read as sloppy substantiation.
+   * class. That is ALL it is -- array order is source preference and nothing
+   * else.
    *
-   * It is NOT necessarily the comp the price came from. Since 2026-09-29 a
-   * priced line quotes an actual listing, and `cited` marks that one; on a
-   * line priced before then the unit cost is a median that may match no comp
-   * at all, and nothing is marked.
+   * It used to also mean "the one comp with a real merchant link", and this
+   * component linked index 0 because of it. That stopped being true on
+   * 2026-09-24, when the backend moved the one resolution it pays for to the
+   * comp nearest the RCV: display order deliberately did not change, so
+   * nothing on screen showed that the link had moved. Linkability is now
+   * decided by `isMerchantLink` reading the URL itself.
+   *
+   * Index 0 is also NOT necessarily the comp the price came from -- `cited`
+   * marks that one, when the arithmetic proves it.
    */
   preferred: boolean
   /** This comp's price IS the unit cost, so it is the listing being cited. */
@@ -817,7 +833,10 @@ function CompRow({
       </button>
     ) : null
 
-  if (preferred && comp.link) {
+  /* The comp that HOLDS a merchant URL gets the anchor, whichever it is.
+     Keyed off the value rather than the position, so it stays right across
+     both link rules and on lines priced under either. */
+  if (isMerchantLink(comp.link)) {
     return (
       <div className="k-insp-alt-row">
         <a className="k-insp-alt" href={comp.link} target="_blank" rel="noreferrer noopener">

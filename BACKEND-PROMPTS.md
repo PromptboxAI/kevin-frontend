@@ -19,6 +19,67 @@ documents a carrier reads. The message restated that it carries no approval.
 
 ---
 
+## 23. "Use this comp" has no route, so the panel hand-prices instead
+
+**Status:** new, 2026-10-07. NOT MINE TO ASK FOR — the backend session proposed
+this (`POST /v1/claim_items/{row_id}/select-comp`) and asked for corrections,
+not approval. This entry records what the frontend needs and the one question
+only the owner can answer. Nothing is being built.
+
+**The owner's words:** can he *"simply select one of the other 2 non selected
+comps and it reprices"*, instead of typing the price, losing the source link,
+and hunting for the listing by hand.
+
+### What the panel does today, and why it is wrong
+
+The "Use this price" button already exists on every non-cited comp. With no
+route behind it, it hand-prices the line:
+
+    override.mutate({ rcv: price })
+    editLine.mutate({ manual_source_url: ... })
+
+Three consequences, all of which the proposed route removes:
+
+- the override CLEARS the comps, so the adjuster gets **one** switch and then
+  has no alternatives left to switch between
+- the basis becomes `manual`, which suppresses the provenance line in the
+  drawer and degrades what the export can say about where the price came from
+- it is two calls racing, on a screen that can be minutes stale
+
+A selection must therefore keep its comp-derived basis and never land as
+`manual` or `overridden`. The price is still a real listing's price.
+
+### The blocker, which is the owner's call
+
+The backend corrected itself on 2026-10-07: a comp's real merchant link
+**cannot** be resolved on demand as stored today. Resolution needs Google's
+per-result page token, and the token is stripped before the comps are saved, so
+it never reaches the database. Consequences:
+
+- for lines priced **from a change onward**, the backend would have to keep the
+  token server-side (never returned to the client) for this to work at all
+- for every line **already priced** — including the owner's first real claim —
+  selecting a different comp can set the price but cannot produce a link to it
+
+So on existing lines the choice is: a correct price citing nothing, or a
+correct price citing a Google redirect that never shows the listing. The panel
+currently takes the first of those (it drops a non-merchant link rather than
+record it as the adjuster's own source), but which is right is a judgement
+about what a carrier-facing line may claim, and that is the owner's.
+
+Token lifetime is also unknown; the backend said it will test before promising.
+
+### Already fixed on the frontend, no backend change needed
+
+The drawer had been putting its one `<a>` on `alternative_sources[0]` since
+that index used to hold the only resolved link. That moved on 2026-09-24 to the
+comp nearest the RCV, and display order deliberately did not change, so nothing
+on screen revealed it. The panel now tests the URL itself (`isMerchantLink`)
+rather than a position, which is correct under both rules and on lines priced
+under either — so an explicit marker field is **not** needed for this.
+
+---
+
 ## 20. The photo packet numbers lines by POSITION — 0062 did not reach it
 
 **Status:** new, 2026-10-06. Same bug as ask 29, in the one file the fix

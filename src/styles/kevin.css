@@ -4342,13 +4342,22 @@
        is wrong and nothing is asked of the adjuster; the item is queued. */
     .k-paused { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: var(--k-fg-4); white-space: nowrap; }
     .k-paused-dot { width: 6px; height: 6px; border-radius: 99px; background: var(--k-accent); flex: 0 0 auto; animation: k-pulse 1.6s ease-in-out infinite; }
+    /* GREEN MEANS MOVEMENT, navy means held. The same pulsing dot marks both a
+       paused upload and a clustering run, and reading them alike is the
+       problem: one is waiting for you, the other is the machine working. */
+    .k-paused-dot--go { background: var(--k-ok); }
     @keyframes k-pulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
     .k-deferbar { display: flex; align-items: center; gap: 9px; padding: 9px 16px; background: var(--k-bg-2); border-bottom: 1px solid var(--k-line); font-size: 12.5px; color: var(--k-fg-3); }
     .k-deferbar strong { color: var(--k-fg-2); font-weight: 600; }
 
-    /* Upload progress ring — a 1 GB drop needs to look like it is working. */
+    /* Upload progress ring — a 1 GB drop needs to look like it is working.
+       Arc is --k-ok, the SAME green as .k-progress-bar--live directly below
+       it: the ring counts files and the bar counts bytes, and when the two
+       disagree (900 small photos can be a third of the payload) one colour is
+       what says they are measuring the same upload. It was --k-accent, which
+       made the only two moving things on the screen look unrelated. */
     .k-upbar-ring { position: relative; width: 38px; height: 38px; flex: 0 0 auto; border-radius: 99px;
-      background: conic-gradient(var(--k-accent) calc(var(--pct) * 1%), var(--k-line) 0); display: grid; place-items: center; }
+      background: conic-gradient(var(--k-ok) calc(var(--pct) * 1%), var(--k-line) 0); display: grid; place-items: center; }
     .k-upbar-ring::after { content: ''; position: absolute; inset: 3px; border-radius: 99px; background: var(--k-bg); }
     .k-upbar-ring span { position: relative; z-index: 1; font-family: var(--k-font-mono); font-size: 9.5px; font-weight: 700; color: var(--k-fg-2); }
 

@@ -139,3 +139,42 @@ export function checkTotals(input: {
   const drift = Math.abs(sum - input.claimTotal)
   return drift > totalsTolerance(input.loadedRowTotals.length) ? { state: 'stale' } : { state: 'ok' }
 }
+
+/**
+ * Is this comp's link worth putting an `<a>` on?
+ *
+ * Only ONE comp per line gets its real merchant URL resolved -- the resolution
+ * costs a search credit, so the backend spends it once. The rest keep Google's
+ * redirect, which does not land on a listing and reads as sloppy
+ * substantiation next to a price.
+ *
+ * ⛔ WHICH comp holds the real one has MOVED, so do not key off a position.
+ * Until 2026-09-24 it was `alternative_sources[0]`, the preferred source for
+ * the content class; since then it is the comp nearest the RCV. The drawer was
+ * written against the old rule and spent a year putting the link on index 0.
+ *
+ * Nor is it safe to key off the cited comp. "Nearest the RCV" and "price EQUALS
+ * the RCV" are different comps on a line priced before 2026-09-29, where the
+ * RCV is a median that may match nothing -- `citedCompIndex` correctly says
+ * nothing there, yet one of those comps does hold a real link.
+ *
+ * So TEST THE VALUE, which is true under every one of those rules and needs no
+ * payload field: a link is substantiation when it points at a merchant rather
+ * than back at Google. Same discipline as `citedCompIndex` -- nothing in the
+ * payload says which rule ran, so read what is actually there.
+ */
+const GOOGLE_HOST = /(^|\.)(google\.[a-z]{2,}(\.[a-z]{2,})?|googleadservices\.com|googleusercontent\.com|gstatic\.com)$/i
+
+export function isMerchantLink(url: string | null | undefined): boolean {
+  if (!url) return false
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    return false
+  }
+  /* Comps come from a third party and land in an href, so anything that is not
+     plain web navigation is refused rather than rendered. */
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return false
+  return !GOOGLE_HOST.test(parsed.hostname)
+}

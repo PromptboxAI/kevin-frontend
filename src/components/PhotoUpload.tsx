@@ -903,12 +903,24 @@ export default function PhotoUpload({
                       style={{ width: `${Math.round(byteFrac * 100)}%` }}
                     />
                   </div>
+                  {/*
+                    * The TIME LEFT is the one thing somebody watching a long
+                    * upload actually wants, so it is the only emphasised text
+                    * in this block -- bold, ink, and a size up from the bytes
+                    * and rate beside it, which are supporting evidence.
+                    *
+                    * It only earns that weight once there IS a number. While
+                    * `etaSeconds` is still withholding one, "estimating..."
+                    * stays quiet at the same size as its neighbours: an
+                    * emphasised non-answer reads as a result.
+                    */}
                   <div
                     style={{
                       display: 'flex',
                       justifyContent: 'space-between',
+                      alignItems: 'center',
                       gap: 10,
-                      marginTop: 4,
+                      marginTop: 5,
                       fontSize: 11,
                       color: 'var(--k-fg-4)',
                       fontFamily: 'var(--k-font-mono)',
@@ -918,7 +930,20 @@ export default function PhotoUpload({
                       {fmtMB(sentBytes)} of {fmtMB(totalBytes)}
                       {rate ? ` · ${rate}` : ''}
                     </span>
-                    <span>{eta ?? 'estimating…'}</span>
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        whiteSpace: 'nowrap',
+                        fontSize: eta ? 13 : 11,
+                        fontWeight: eta ? 700 : 400,
+                        color: eta ? 'var(--k-fg)' : 'var(--k-fg-4)',
+                      }}
+                    >
+                      {eta ? <Icon d={I.clock} size={12} /> : null}
+                      {eta ?? 'estimating…'}
+                    </span>
                   </div>
                 </div>
               ) : null}

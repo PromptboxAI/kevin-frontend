@@ -75,6 +75,14 @@ const FILL_IMG: React.CSSProperties = {
   display: 'block',
 }
 
+/** "4m 12s so far" -- a clock, not an estimate. We have no basis for an ETA. */
+function elapsedLabel(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000))
+  if (total < 60) return `${total}s so far`
+  const mins = Math.floor(total / 60)
+  return `${mins}m ${String(total % 60).padStart(2, '0')}s so far`
+}
+
 export default function StagingPage() {
   const { claimId = '' } = useParams()
   const [search] = useSearchParams()
@@ -144,6 +152,30 @@ export default function StagingPage() {
     (data?.groups ?? []).reduce((a, g) => a + g.photos.length, 0) + (data?.ungrouped_photos?.length ?? 0)
   const unlisted = Math.max(0, (data?.photo_count ?? 0) - listed)
   const reading = stillExtracting.length + unlisted
+  /** Photos the server has actually finished with. Zero for the whole run
+      today -- see the indeterminate-bar note where this is rendered. */
+  const readDone = Math.max(0, (data?.photo_count ?? 0) - reading)
+  /*
+   * ELAPSED TIME, because it is the only number on this panel that honestly
+   * moves while the server reports nothing. The ref holds the moment reading
+   * began and survives the 2.5s poll; the interval exists purely to re-render
+   * once a second, and is keyed off the BOOLEAN so a poll that changes the
+   * count does not restart the clock.
+   */
+  const isReading = reading > 0
+  const [readSince, setReadSince] = useState<number | null>(null)
+  const [readNow, setReadNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (!isReading) {
+      setReadSince(null)
+      return
+    }
+    setReadSince(Date.now())
+    const id = setInterval(() => setReadNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [isReading])
+  const readingFor = elapsedLabel(readSince ? readNow - readSince : 0)
+
   /** A loose photo is only actionable once its extraction finishes. */
   const loose = unassigned.filter(isActionable)
 
@@ -523,15 +555,22 @@ export default function StagingPage() {
                 </Alert>
               ) : null}
 
-              {/* A second drop APPENDS: staging is scoped to THIS session only. */}
-              <Alert
-                tone="info"
-                title={`Staging this upload only — ${fmtInt(data?.photo_count ?? 0)} ${
-                  (data?.photo_count ?? 0) === 1 ? 'photo' : 'photos'
-                }`}
-              >
-                Anything already processed on this claim stays as it is.
-              </Alert>
+              {/* A second drop APPENDS: staging is scoped to THIS session only.
+                  Held back until there are sets to scope. While grouping is
+                  still running this is the loudest thing on the screen and it
+                  answers a question nobody has yet -- the one being asked is
+                  "what is happening", and a caveat about other sessions reads
+                  as the answer to it. */}
+              {clustering && groups.length === 0 ? null : (
+                <Alert
+                  tone="info"
+                  title={`Staging this upload only — ${fmtInt(data?.photo_count ?? 0)} ${
+                    (data?.photo_count ?? 0) === 1 ? 'photo' : 'photos'
+                  }`}
+                >
+                  Anything already processed on this claim stays as it is.
+                </Alert>
+              )}
             </div>
 
             {/* The invitation to arrange sets is false once they are promoted --
@@ -542,6 +581,18 @@ export default function StagingPage() {
                   These <strong>{fmtInt(groups.length)} photo sets</strong> were submitted and
                   became {fmtInt(itemSets.length)} line items. This is the record of how the photos
                   were grouped — the items themselves are edited on the worksheet.
+                </>
+              ) : clustering && groups.length === 0 ? (
+                /* The past tense below is a LIE while this is still running,
+                   and it is the sentence a first-time user reads to find out
+                   where they are: it describes sets that do not exist yet,
+                   next to an empty grid. Say what is happening now, and what
+                   they will be asked to do when it lands. */
+                <>
+                  Kevin is reading capture times and grouping the photos into{' '}
+                  <strong>proposed photo sets</strong> — one set becomes at most one line item.
+                  Nothing has been identified and nothing is priced yet. When the sets appear you
+                  can merge, split, exclude and annotate them before anything is processed.
                 </>
               ) : (
                 <>
@@ -724,17 +775,40 @@ export default function StagingPage() {
                   */}
                 {reading > 0 && (data?.photo_count ?? 0) > 0 ? (
                   <span style={{ display: 'block', marginTop: 8, maxWidth: 380 }}>
-                    <span className="k-progress" style={{ display: 'block', width: '100%' }}>
+                    {/*
+                      * A BAR PINNED AT 0% IS WORSE THAN NO BAR. The server
+                      * does not report extraction per photo -- every photo
+                      * sits at status `uploaded` and they all flip together
+                      * when the batch commits -- so on a 209-photo drop this
+                      * read "0 of 209" for several minutes and then jumped
+                      * straight to done. An empty determinate bar does not
+                      * say "working", it says "stopped", which is exactly how
+                      * the owner read it.
+                      *
+                      * So: INDETERMINATE until the server has actually moved a
+                      * photo, determinate once it has. The sliding bar claims
+                      * only what is true -- something is running, and we do
+                      * not know how far in. Asked for per-photo state as
+                      * BACKEND-PROMPTS ask 24; this stops lying meanwhile.
+                      */}
+                    {readDone === 0 ? (
                       <span
-                        className="k-progress-bar k-progress-bar--live"
-                        style={{
-                          display: 'block',
-                          width: `${Math.round(
-                            ((( data?.photo_count ?? 0) - reading) / (data?.photo_count ?? 1)) * 100,
-                          )}%`,
-                        }}
-                      />
-                    </span>
+                        className="k-progress k-progress--busy"
+                        style={{ display: 'block', width: '100%' }}
+                      >
+                        <span className="k-progress-bar" />
+                      </span>
+                    ) : (
+                      <span className="k-progress" style={{ display: 'block', width: '100%' }}>
+                        <span
+                          className="k-progress-bar k-progress-bar--live"
+                          style={{
+                            display: 'block',
+                            width: `${Math.round((readDone / (data?.photo_count ?? 1)) * 100)}%`,
+                          }}
+                        />
+                      </span>
+                    )}
                     <span
                       style={{
                         display: 'block',
@@ -744,8 +818,12 @@ export default function StagingPage() {
                         fontFamily: 'var(--k-font-mono)',
                       }}
                     >
-                      {fmtInt((data?.photo_count ?? 0) - reading)} of{' '}
-                      {fmtInt(data?.photo_count ?? 0)} read
+                      {/* Elapsed is the one number that is honestly moving, and
+                          on a multi-minute wait it is the difference between a
+                          live page and a dead one. */}
+                      {readDone === 0
+                        ? `reading ${fmtInt(data?.photo_count ?? 0)} photos · ${readingFor}`
+                        : `${fmtInt(readDone)} of ${fmtInt(data?.photo_count ?? 0)} read · ${readingFor}`}
                     </span>
                   </span>
                 ) : null}
@@ -771,7 +849,7 @@ export default function StagingPage() {
               count is not known until grouping finishes, so none is drawn. */}
           {clustering && groups.length === 0 ? (
             <div className="k-stage-grouping">
-              <span className="k-paused-dot" aria-hidden="true" />
+              <span className="k-paused-dot k-paused-dot--go" aria-hidden="true" />
               <span>
                 Grouping {fmtInt(data?.photo_count ?? 0)}{' '}
                 {(data?.photo_count ?? 0) === 1 ? 'photo' : 'photos'} by capture time…
