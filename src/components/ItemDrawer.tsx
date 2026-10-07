@@ -3,6 +3,7 @@ import ItemEvidence from './ItemEvidence'
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Badge from './Badge'
+import { I, Icon } from './Icon'
 import EditableCell from './EditableCell'
 import { ApiError, api } from '../lib/api'
 import { fmtCompPrice, fmtConfidence, fmtPct, fmtUSD } from '../lib/format'
@@ -148,6 +149,22 @@ export default function ItemDrawer({
 
   const queryClient = useQueryClient()
   const [notice, setNotice] = useState<string | null>(null)
+
+  /** Remembered per browser; a blocked or cleared store just means "shown". */
+  const [photoOpen, setPhotoOpen] = useState(() => {
+    try {
+      return localStorage.getItem('kevin.drawer.photo') !== 'hidden'
+    } catch {
+      return true
+    }
+  })
+  useEffect(() => {
+    try {
+      localStorage.setItem('kevin.drawer.photo', photoOpen ? 'shown' : 'hidden')
+    } catch {
+      /* private window, blocked storage -- the toggle still works this session */
+    }
+  }, [photoOpen])
 
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ['claim-item', rowId] })
@@ -299,7 +316,8 @@ export default function ItemDrawer({
 
           {data ? (
             <>
-              <div className="k-insp-photo">
+              {photoOpen ? (
+                <div className="k-insp-photo">
                 {imageSrc ? (
                   <img className="k-insp-img" src={imageSrc} alt={data.description ?? 'Item'} />
                 ) : (
@@ -390,7 +408,41 @@ export default function ItemDrawer({
                     </div>
                   </>
                 ) : null}
-              </div>
+                </div>
+              ) : null}
+
+              {/*
+                * COLLAPSE THE PHOTO.
+                *
+                * The panel is a fixed-height column and the photo takes the
+                * top half of it, so on a short window the fields, comps and
+                * totals share a few hundred pixels and everything below the
+                * carousel is read through a scrollbar. The photo is the thing
+                * you look at once and the fields are the thing you work in.
+                *
+                * Remembered per browser, because someone who hides it is
+                * working through a claim, not toggling it per line.
+                */}
+              <button
+                type="button"
+                onClick={() => setPhotoOpen((v) => !v)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  width: '100%',
+                  padding: '5px 14px',
+                  border: 0,
+                  borderBottom: '1px solid var(--k-line)',
+                  background: 'var(--k-bg)',
+                  color: 'var(--k-fg-4)',
+                  fontSize: 11,
+                  cursor: 'pointer',
+                }}
+              >
+                <Icon d={photoOpen ? I.chevdown : I.chevright} size={11} />
+                {photoOpen ? 'Hide photo' : `Show photo${photos.length > 1 ? ` (${photos.length})` : ''}`}
+              </button>
 
               <div className="k-insp-body">
                 {unpriced && data.manual_reason ? (
