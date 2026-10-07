@@ -11,8 +11,17 @@ export const CHUNK_FILES = 20
 export const CHUNK_BYTES = 65 * 1024 * 1024
 
 /** iPhone/Samsung shoot HEIC by default -- omitting these hides their photos. */
+/**
+ * What the OS file dialog offers. The server's own list, plus `.zip`.
+ *
+ * The zip is here because there is a separate "Upload a .zip" button and
+ * people reasonably use the big "Choose photos" one anyway -- without it they
+ * have to switch the dialog's filter to All Files to see their archive, and
+ * every file type becomes selectable at the same time. Offering the zip in the
+ * photo picker is narrower than that, and `take()` expands whatever arrives.
+ */
 export const ACCEPT_TYPES =
-  'image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.gif,.heic,.heif'
+  'image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.gif,.heic,.heif,.zip'
 
 export type Chunk<T> = T[]
 

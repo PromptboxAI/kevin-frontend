@@ -142,9 +142,28 @@ export default function PhotoUpload({
     setError(null)
     setDone(false)
     setJunk((j) => j + droppedJunk)
+
+    /**
+     * A .zip ARRIVING HERE IS STILL A ZIP.
+     *
+     * The drop handler has always routed archives to `takeZip`; this path --
+     * the "Choose photos" picker and the folder picker -- did not, so a zip
+     * chosen through it was queued as a single 1.29 GB "photo" that would have
+     * failed at the server. The owner hit it by switching the file dialog's
+     * filter to All Files, which is a perfectly reasonable thing to do.
+     *
+     * Three entry points, one behaviour: whichever way an archive arrives, it
+     * gets expanded in the browser (rule 21 -- the archive itself is never
+     * posted).
+     */
+    const zips = files.filter((f) => /\.zip$/i.test(f.name))
+    const rest = files.filter((f) => !/\.zip$/i.test(f.name))
+    for (const z of zips) void takeZip(z)
+    if (rest.length === 0 && zips.length > 0) return
+
     setRows((prev) => {
       const seen = new Set(prev.map((r) => `${r.file.name}:${r.file.size}`))
-      const next = files
+      const next = rest
         .filter((f) => !seen.has(`${f.name}:${f.size}`))
         .map<Row>((f) => ({
           file: f,
