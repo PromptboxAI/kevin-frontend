@@ -477,6 +477,23 @@ export default function StagingPage() {
   const selectable = !isProcessed
   const canProcess = !busy && !isProcessed && itemSets.length > 0
 
+  /* Is the real Begin-processing button on screen? Watched rather than
+     guessed from scroll position, which would have to know the page height. */
+  const footerGoRef = useRef<HTMLButtonElement | null>(null)
+  const [footerGoVisible, setFooterGoVisible] = useState(false)
+  useEffect(() => {
+    const el = footerGoRef.current
+    if (!el) {
+      setFooterGoVisible(false)
+      return
+    }
+    const io = new IntersectionObserver((entries) => {
+      setFooterGoVisible(entries.some((e) => e.isIntersecting))
+    })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [isProcessed, groups.length])
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
@@ -951,6 +968,7 @@ export default function StagingPage() {
             </Link>
           ) : (
             <button
+              ref={footerGoRef}
               type="button"
               className="k-btn k-btn--lg"
               disabled={!canProcess || process.isPending}
@@ -963,6 +981,34 @@ export default function StagingPage() {
           )}
         </div>
       </div>
+
+      {/*
+        * BEGIN PROCESSING, in reach at any scroll position.
+        *
+        * A 209-photo session is a very long page and the only way to start the
+        * run was to scroll to the bottom of it. Same pill as the selection
+        * toolbar on purpose -- one floating-action vocabulary, not two.
+        *
+        * It yields in both directions rather than stacking: hidden while sets
+        * are selected, because that toolbar owns the spot and the adjuster is
+        * mid-gesture, and hidden once the real footer button is on screen, so
+        * the page never shows the same CTA twice.
+        */}
+      {!isProcessed && groups.length > 0 && selCount === 0 && !footerGoVisible ? (
+        <div className="k-selbar" role="toolbar" aria-label="Processing">
+          <span className="k-selbar-n">{fmtInt(itemSets.length)}</span>
+          <span className="k-selbar-l">{itemSets.length === 1 ? 'set' : 'sets'} ready</span>
+          <div className="k-selbar-div" />
+          <button
+            type="button"
+            className="k-selbar-b k-selbar-b--go"
+            disabled={!canProcess || process.isPending}
+            onClick={beginProcessing}
+          >
+            {process.isPending ? 'Processing…' : 'Begin processing →'}
+          </button>
+        </div>
+      ) : null}
 
       {/* Floating selection toolbar — in reach at any scroll position. */}
       {selCount > 0 ? (
