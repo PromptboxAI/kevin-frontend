@@ -578,21 +578,48 @@ export default function PhotoUpload({
                 {fmtMB(sentBytes)} / {fmtMB(totalBytes)}
               </span>
               {sending ? (
-                <button
-                  type="button"
-                  className={'k-btn k-btn--ghost' + (paused ? ' k-btn--active' : '')}
-                  title={
-                    paused
-                      ? 'Resume sending the remaining photos'
-                      : 'Finish the photos already sending, then stop'
-                  }
-                  onClick={() => {
-                    pausedRef.current = !pausedRef.current
-                    setPaused(pausedRef.current)
-                  }}
-                >
-                  {paused ? 'Resume' : 'Pause all'}
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className={'k-btn k-btn--ghost' + (paused ? ' k-btn--active' : '')}
+                    title={
+                      paused
+                        ? 'Resume sending the remaining photos'
+                        : 'Finish the photos already sending, then stop'
+                    }
+                    onClick={() => {
+                      pausedRef.current = !pausedRef.current
+                      setPaused(pausedRef.current)
+                    }}
+                  >
+                    {paused ? 'Resume' : 'Pause all'}
+                  </button>
+                  {/*
+                    * PAUSE IS NOT STOP, and until now there was no stop.
+                    * Once an upload started the only controls were Pause and
+                    * Resume -- so an adjuster who had queued the wrong thing
+                    * (a 1.29 GB archive, in the owner's case) could halt it and
+                    * then had nowhere to go: Clear only rendered when nothing
+                    * was sending.
+                    *
+                    * It pauses first, then empties the queue, so no further
+                    * chunk is sent while the rows are being torn out from
+                    * under the loop.
+                    */}
+                  <button
+                    type="button"
+                    className="k-btn k-btn--ghost k-btn--danger"
+                    title="Stop sending and empty the queue. Photos already uploaded stay on the claim."
+                    onClick={() => {
+                      pausedRef.current = true
+                      setPaused(true)
+                      clear()
+                      setSending(false)
+                    }}
+                  >
+                    Stop &amp; clear
+                  </button>
+                </>
               ) : (
                 <button type="button" className="k-btn k-btn--ghost" onClick={clear}>
                   Clear
