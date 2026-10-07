@@ -16,7 +16,7 @@ import type { MeResponse } from '../lib/types'
 const SECTIONS: { label: string; to?: string }[] = [
   { label: 'Overview' },
   { label: 'Accounts', to: '/admin/accounts' },
-  { label: 'Revenue' },
+  { label: 'Revenue', to: '/admin/revenue' },
   { label: 'Content' },
   { label: 'Platform', to: '/admin/platform' },
   { label: 'Support' },
