@@ -259,11 +259,10 @@ export default function ClaimDetailPage() {
             {error}
           </Alert>
         ) : null}
-        {notice && !dirty ? (
-          <Alert tone="success" title={notice}>
-            The export, the share link and the claims list all read these fields.
-          </Alert>
-        ) : null}
+        {/* Just the fact. The body used to name every surface that reads these
+            fields, which is true and is not an answer to "did it save" -- it
+            arrived at the moment the adjuster had already moved on. */}
+        {notice && !dirty ? <Alert tone="success" title={notice} /> : null}
 
         {/* Not a block -- it is the customer's claim, and rule 16 never gates on
             editorial readiness -- but a carrier is holding a document built from
