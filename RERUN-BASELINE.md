@@ -12,6 +12,30 @@ arithmetic rather than impression.
 **The claim was processed 2026-10-05.** Anything the backend shipped after that
 is what the re-run is testing.
 
+## ⚠️ What changed between this baseline and the re-run
+
+The backend shipped `00fc67e` on 2026-10-07, AFTER this reading was taken. Two
+of its changes will show up in the diff and are **not** the engine work being
+measured — attribute them correctly or the comparison lies:
+
+- **Ask 13: per-line tax now rounds half-cents UP, matching the rollup.** Some
+  lines will differ from this baseline by one cent — tax up, and where
+  depreciation moved, ACV down by a cent. So a small RCV/ACV delta is EXPECTED
+  and is not the engine identifying or merging differently.
+- **Ask 20: photo-packet captions now use the stored line number.** Affects the
+  exported PDF only; nothing in the figures below.
+
+Two further changes are new *measurement* tools rather than behaviour:
+`limit_clamped` (so a truncated read is now detectable rather than silent) and
+`group_kind` on each photo (`item` / `context` / `duplicate`), which means the
+re-run can report **why** a photo backs nothing instead of guessing. On this
+baseline claim the split is 206 `item`, 2 `context`, 0 `duplicate`.
+
+Not shipped, so unchanged in the re-run: **ask 19** (identify a photo Vision
+never saw) and **ask 21** (merge tuning — explicitly "nothing has been tuned").
+If the merge distribution moves, it moved for some other reason, which is worth
+knowing.
+
 ---
 
 ## Headline
