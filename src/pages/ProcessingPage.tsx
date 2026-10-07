@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
@@ -172,6 +172,35 @@ export default function ProcessingPage() {
    * adjuster that amber means "unpriced", which is exactly the signal the
    * worksheet needs it NOT to mean.
    */
+  /**
+   * THE STAGE BAR, ported from the design's `processing.jsx`.
+   *
+   * Five stages, because `.k-stage-bar` is a nine-track grid -- five stages and
+   * four connectors -- and a sixth would break the layout rather than wrap.
+   *
+   * The API does NOT separate identification from pricing: a line is
+   * `processing` until it is not. So the first three stages are marked done
+   * from a fact we actually have -- the line EXISTS, which means its set was
+   * uploaded, extracted and identified -- and only the pricing stage is shown
+   * as active. Splitting `processing` into two moving sub-phases would be
+   * inventing progress, which is the one thing this screen must not do.
+   */
+  const lineCount = settled + inFlight
+  const stages: { label: string; count: number; state: 'done' | 'active' | 'todo' }[] = [
+    { label: 'Uploaded', count: total, state: 'done' },
+    { label: 'Photos extracted', count: total, state: 'done' },
+    { label: 'Identifying items', count: lineCount, state: lineCount > 0 ? 'done' : 'active' },
+    {
+      label: 'Pricing comps',
+      count: settled,
+      state: done ? 'done' : inFlight > 0 ? 'active' : 'todo',
+    },
+    { label: 'Ready for review', count: done ? total : 0, state: done ? 'done' : 'todo' },
+  ]
+
+  /** Lines the server is still working on, for the "Now scanning" rail. */
+  const scanning = (feedQuery.data?.items ?? []).filter((i) => i.status === 'processing')
+
   const rows: [string, number, 'ok' | 'neutral' | 'danger'][] = [
     ['Priced', counts?.completed ?? 0, 'ok'],
     ['Needs your price', counts?.needs_manual ?? 0, 'neutral'],
@@ -251,12 +280,66 @@ export default function ProcessingPage() {
             {claim.data?.total_rcv ? <> · {fmtUSD(claim.data.total_rcv)} so far</> : null}
           </p>
 
-          <div className="k-progress" style={{ width: '100%', maxWidth: 520, marginTop: 14 }}>
-            <div className="k-progress-bar" style={{ width: `${pct}%` }} />
+          <div className="k-stage-bar" style={{ marginTop: 18 }}>
+            {stages.map((st, i) => (
+              <Fragment key={st.label}>
+                <div
+                  className="k-stage"
+                  data-on={st.state !== 'todo' ? 'true' : undefined}
+                  data-active={st.state === 'active' ? 'true' : undefined}
+                >
+                  <span className={`k-stage-i ${st.state === 'active' ? 'k-stage-i--active' : ''}`}>
+                    {st.state === 'done' ? <Icon d={I.check} size={10} stroke={2.5} /> : null}
+                    {st.state === 'active' ? <span className="k-pulse k-pulse--sm" /> : null}
+                  </span>
+                  <span
+                    style={
+                      st.state === 'done'
+                        ? { color: 'var(--k-fg)' }
+                        : st.state === 'active'
+                          ? { color: 'var(--k-accent)', fontWeight: 600 }
+                          : { color: 'var(--k-fg-4)' }
+                    }
+                  >
+                    {st.label}
+                  </span>
+                  <span className="k-stage-c">{fmtInt(st.count)}</span>
+                </div>
+                {i < stages.length - 1 ? (
+                  <div
+                    className={`k-stage-conn ${
+                      stages[i + 1].state !== 'todo' ? 'k-stage-conn--done' : ''
+                    }`}
+                  />
+                ) : null}
+              </Fragment>
+            ))}
           </div>
 
-          {/* The lines themselves, as they land. */}
-          <section className="k-proc-stats" style={{ marginTop: 22, maxWidth: 520 }}>
+          <div className="k-proc-cta" style={{ marginTop: 22 }}>
+            {/* Rows exist as they land, so the worksheet is useful before the
+                run ends. Never blocked -- waiting is the adjuster's choice. */}
+            <Link to={`/claims/${claimId}`} className="k-btn k-btn--lg">
+              {done
+                ? 'Open worksheet →'
+                : settled > 0
+                  ? `Open worksheet so far (${fmtInt(settled)}) →`
+                  : 'Open worksheet →'}
+            </Link>
+            <span style={{ fontSize: 12, color: 'var(--k-fg-4)' }}>
+              {done
+                ? 'Taking you there…'
+                : 'Pricing continues if you leave this page or close the tab.'}
+            </span>
+          </div>
+        </section>
+
+        {/* TWO COLUMNS, as the design has it: what has landed on the left, what
+            is still moving on the right. One column meant the feed and the
+            outcome tally pushed the in-flight work off the bottom of the page.
+            No widths here -- they belong to the .k-proc-grid tracks. */}
+        <div className="k-proc-grid">
+          <section className="k-proc-feed">
             <div className="k-proc-sec-hd">
               <span>Live feed</span>
               <span style={{ fontSize: 11, color: 'var(--k-fg-4)' }}>
@@ -326,13 +409,64 @@ export default function ProcessingPage() {
             </div>
           </section>
 
-          {/* Terminal buckets, not sequential stages. These are outcomes a line
-              can land in, and drawing them as a pipeline would imply an order
-              that does not exist. */}
-          <section className="k-proc-stats" style={{ marginTop: 22, maxWidth: 520 }}>
-            <div className="k-proc-sec-hd">
-              <span>Outcomes</span>
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 20, minWidth: 0 }}>
+            <section className="k-proc-now">
+              <div className="k-proc-sec-hd">
+                <span>Now scanning</span>
+                {scanning.length > 0 ? (
+                  <span className="k-mono" style={{ fontSize: 11, color: 'var(--k-fg-4)' }}>
+                    {fmtInt(scanning.length)} in flight
+                  </span>
+                ) : null}
+              </div>
+              <div style={{ padding: 4 }}>
+                {scanning.length === 0 ? (
+                  <div
+                    style={{
+                      padding: '18px 14px',
+                      textAlign: 'center',
+                      fontSize: 12,
+                      color: 'var(--k-fg-4)',
+                    }}
+                  >
+                    {done ? 'Nothing left to scan.' : 'Nothing in flight right now.'}
+                  </div>
+                ) : (
+                  /* Capped: on a 158-line run every row would be in flight at
+                     the start, and a list that long is not a status, it is a
+                     wall. The count in the header carries the rest. */
+                  scanning.slice(0, 8).map((it) => (
+                    <div key={it.id} className="k-inflight">
+                      <span className="k-pulse k-pulse--sm" />
+                      <span
+                        style={{
+                          flex: 1,
+                          minWidth: 0,
+                          fontSize: 12,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          color: 'var(--k-fg-3)',
+                        }}
+                      >
+                        {it.description?.trim() || `Line ${fmtInt(it.line_no ?? it.id)}`}
+                      </span>
+                      <span className="k-mono" style={{ fontSize: 11, color: 'var(--k-fg-4)' }}>
+                        pricing
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+
+            {/* Terminal buckets, not sequential stages. These are outcomes a
+                line can land in, and drawing them as a pipeline would imply an
+                order that does not exist. */}
+            <section className="k-proc-stats">
+              <div className="k-proc-sec-hd">
+                <span>Running totals</span>
+              </div>
             <div style={{ padding: '4px 14px 12px' }}>
               {rows.map(([label, value, tone], i) => (
                 <div
@@ -368,10 +502,12 @@ export default function ProcessingPage() {
                 </div>
               ))}
             </div>
-          </section>
+            </section>
+          </div>
+        </div>
 
           {stalled ? (
-            <div className="k-share-snapnote" style={{ marginTop: 18, maxWidth: 520 }}>
+            <div className="k-share-snapnote" style={{ marginTop: 18 }}>
               <Icon d={I.info} size={13} />
               <span>
                 This is taking longer than usual. The lines already priced are safe on the
@@ -380,23 +516,6 @@ export default function ProcessingPage() {
             </div>
           ) : null}
 
-          <div className="k-proc-cta" style={{ marginTop: 22 }}>
-            {/* Rows exist as they land, so the worksheet is useful before the
-                run ends. Never blocked -- waiting is the adjuster's choice. */}
-            <Link to={`/claims/${claimId}`} className="k-btn k-btn--lg">
-              {done
-                ? 'Open worksheet →'
-                : settled > 0
-                  ? `Open worksheet so far (${fmtInt(settled)}) →`
-                  : 'Open worksheet →'}
-            </Link>
-            <span style={{ fontSize: 12, color: 'var(--k-fg-4)' }}>
-              {done
-                ? 'Taking you there…'
-                : 'Pricing continues if you leave this page or close the tab.'}
-            </span>
-          </div>
-        </section>
       </div>
     </div>
   )
