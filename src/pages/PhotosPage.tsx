@@ -168,10 +168,20 @@ export default function PhotosPage() {
    *
    * Its 360px column is reserved by the grid whether or not it has content, so
    * an unfocused gallery renders a quarter of the screen as blank paper. The
-   * design opens on a focused photo for the same reason. Adjusted during
-   * render, and only until the adjuster picks one themselves.
+   * design opens on a focused photo for the same reason.
+   *
+   * ⚠️ ONCE, AND NEVER AFTER A CLOSE. This used to re-select photo[0] on every
+   * render where nothing was focused, which meant the panel's own close button
+   * could not work: setFocused(null) was undone by the next render before
+   * anything was painted, and the X looked broken. It opens the first photo on
+   * arrival; after that, what is focused is the adjuster's business.
    */
-  if (focused == null && photos.length > 0) setFocused(photos[0].photo_id)
+  const autoOpened = useRef(false)
+  useEffect(() => {
+    if (autoOpened.current || photos.length === 0) return
+    autoOpened.current = true
+    setFocused(photos[0].photo_id)
+  }, [photos])
 
   const visible = useMemo(() => {
     let out = photos
