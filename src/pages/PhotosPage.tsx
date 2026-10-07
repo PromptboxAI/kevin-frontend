@@ -58,12 +58,18 @@ import type {
  *   state / room / q  — filters. Narrowing resets `shown` DURING render, so the
  *                       new result set never paints inside the old window.
  *   shown             — lazy window, extended by the sentinel observer.
- *   focused           — the panel. FOUR writers: the auto-open effect, a tile
- *                       click, the panel's own strip, and the lightbox pager;
- *                       plus the close button, which sets it null. The
- *                       auto-open runs ONCE (`autoOpened`) — when it ran on
- *                       every render the close button could not work, because
- *                       the next render immediately re-selected photo[0].
+ *   focused           — the panel. FIVE writers: the auto-open effect, a tile
+ *                       click, the panel's own strip, the lightbox pager, and
+ *                       the follow-the-filter effect; plus the close button,
+ *                       which sets it null. TWO of those must not fight the
+ *                       close button, and both guard the same way — by
+ *                       returning early rather than re-selecting. The auto-open
+ *                       runs ONCE (`autoOpened`); when it ran on every render
+ *                       the close button could not work, because the next
+ *                       render immediately re-selected photo[0]. The filter
+ *                       effect returns when `focused` is already null, or it
+ *                       would re-open on the first visible photo the instant
+ *                       the panel was closed.
  *   full              — the lightbox. Only rendered with a `focus`, so closing
  *                       the panel cannot leave it orphaned.
  *
@@ -285,6 +291,26 @@ export default function PhotosPage() {
 
   const focus = focused == null ? null : (photos.find((p) => p.photo_id === focused) ?? null)
   const focusItem = focus ? itemForPhoto(focus, byId) : null
+
+  /**
+   * THE PANEL FOLLOWS THE FILTER.
+   *
+   * Focusing a photo and then narrowing the filter past it left the panel
+   * showing a photo with no tile highlighted anywhere in the grid -- correct
+   * in the sense that you did select it, and indistinguishable from a glitch.
+   * It now moves to the first photo that does match, and shuts when nothing
+   * does.
+   *
+   * ⚠️ Returns early when `focused` is already null, which is what keeps the
+   * close button working. Without that guard this would re-open the panel on
+   * the first visible photo the moment it was closed -- the same trap the
+   * auto-open fell into, from the other direction.
+   */
+  useEffect(() => {
+    if (focused == null) return
+    if (visible.some((p) => p.photo_id === focused)) return
+    setFocused(visible.length > 0 ? visible[0].photo_id : null)
+  }, [visible, focused])
 
   // Lazy window: extend when the sentinel scrolls in.
   const sentinel = useRef<HTMLDivElement | null>(null)
