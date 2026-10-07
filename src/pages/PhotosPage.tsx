@@ -38,6 +38,38 @@ import type {
  * three-pane anatomy are lifted verbatim; what changed is the DATA, because the
  * prototype's photo objects carried fields this API does not have. Each
  * deviation is marked where it occurs, per the porting rule.
+ *
+ * ── STATE MAP ────────────────────────────────────────────────────────────
+ * Audited 2026-10-07 after four bugs that were all one bug. Read this before
+ * adding anything that writes to `focused` or depends on a line number.
+ *
+ * SERVER, three independent queries:
+ *   claim      — the claim header.
+ *   data       — the photos.            } these two are JOINED, and the second
+ *   itemsPage  — every line item.       } lands later than the first.
+ *
+ * Everything an adjuster reads comes off that join: the tile's "Line 0045",
+ * the grid's ORDER, the frame numbers, and which photo the panel opens on.
+ * `joined` gates the grid on both, because a half-joined render is a render of
+ * something not true yet — it is what produced the flash of internal photo ids,
+ * the reshuffle behind it, and the panel opening on the wrong line.
+ *
+ * LOCAL:
+ *   state / room / q  — filters. Narrowing resets `shown` DURING render, so the
+ *                       new result set never paints inside the old window.
+ *   shown             — lazy window, extended by the sentinel observer.
+ *   focused           — the panel. FOUR writers: the auto-open effect, a tile
+ *                       click, the panel's own strip, and the lightbox pager;
+ *                       plus the close button, which sets it null. The
+ *                       auto-open runs ONCE (`autoOpened`) — when it ran on
+ *                       every render the close button could not work, because
+ *                       the next render immediately re-selected photo[0].
+ *   full              — the lightbox. Only rendered with a `focus`, so closing
+ *                       the panel cannot leave it orphaned.
+ *
+ * The rule the four bugs came from: before adding a control that writes
+ * `focused`, or a label that reads a line number, check what else already
+ * does — on this screen it is rarely nothing.
  */
 
 const PAGE = 36
@@ -67,13 +99,41 @@ export default function PhotosPage() {
    * into "Sonos Arc soundbar · $402.61". One page-sized fetch, reusing the
    * worksheet's own cache key so moving between the two costs nothing.
    */
-  const { data: itemsPage } = useQuery({
+  const { data: itemsPage, isPending: itemsPending } = useQuery({
     queryKey: ['claim-items-flat', claimId],
     /* Paged, because `limit` is capped at 100 server-side -- see
        fetchAllClaimItems for what that silently broke here. */
     queryFn: () => fetchAllClaimItems(claimId),
     enabled: !!claimId,
   })
+
+  /**
+   * ⏳ ONE READINESS GATE, and the reason it exists.
+   *
+   * This screen reads TWO independent queries: the photos, and the claim's
+   * line items. Almost everything an adjuster sees is joined from both — the
+   * tile's "Line 0045", the grid's order, the frame numbers, which photo the
+   * panel opens on. The items query is the slower of the two and resolves
+   * after the photos do.
+   *
+   * Rendering in between produced four separate symptoms, all reported as
+   * separate bugs and all the same thing:
+   *
+   *   1. tiles captioned "Photo 6237", then switching to "Line 0001";
+   *   2. the grid in internal photo-id order, then reshuffling into line order;
+   *   3. the panel auto-opening on whatever had the lowest photo id (line 0091
+   *      on the owner's claim) because it fired during that window;
+   *   4. frame numbers assigned off the pre-sort order, then renumbering.
+   *
+   * Each was patched where it showed. This is the cause: a half-joined render
+   * is a render of something that is not true yet. The page now waits for both
+   * and paints once.
+   *
+   * `isPending`, not `data === undefined`: if the items query FAILS the gate
+   * must open anyway, and it degrades honestly — no line numbers, tiles fall
+   * back to the photo id, and they stay that way rather than flickering.
+   */
+  const joined = !isLoading && !itemsPending
 
   const photosRaw = useMemo(() => data?.photos ?? [], [data])
   const items = useMemo(() => itemsPage?.items ?? [], [itemsPage])
@@ -193,10 +253,10 @@ export default function PhotosPage() {
      * have photos and no line items, and waiting for numbers that will never
      * arrive would leave the panel shut forever.
      */
-    if (itemsPage === undefined) return
+    if (!joined) return
     autoOpened.current = true
     setFocused(photos[0].photo_id)
-  }, [photos, itemsPage])
+  }, [photos, joined])
 
   const visible = useMemo(() => {
     let out = photos
@@ -404,7 +464,10 @@ export default function PhotosPage() {
             <p style={{ fontSize: 12.5, color: 'var(--k-danger)' }}>
               Could not load photos. {(error as Error).message}
             </p>
-          ) : isLoading ? (
+          ) : !joined ? (
+            /* Both queries, not just the photos -- see `joined`. Painting the
+               grid on the photos alone is what produced the flash of internal
+               ids and the reshuffle that followed it. */
             <p style={{ fontSize: 12.5, color: 'var(--k-fg-4)' }}>Loading photos…</p>
           ) : visible.length === 0 ? (
             <p style={{ fontSize: 12.5, color: 'var(--k-fg-4)' }}>
