@@ -333,9 +333,16 @@ export default function OverviewPage() {
             <section className="k-ov-card">
               <div className="k-ov-card-hd">
                 <span>Items by content class</span>
+                {/* No dollar figure here. It was `classTotal` -- the browser
+                    summing rcv_total_incl across the loaded items -- which is
+                    the frontend stating claim money, and it drifts from the
+                    server's own RCV by the per-line tax rounding
+                    (BACKEND-PROMPTS 13). The claim's RCV is in the stats strip
+                    at the top of this page, from the server, and once is
+                    enough. `classTotal` stays below for the BAR's segment
+                    widths: a proportion is not a money claim. */}
                 <span style={{ fontSize: 11, color: 'var(--k-fg-4)' }}>
-                  {claim.item_count} items · {classBreakdown(items).length} classes ·{' '}
-                  {fmtUSDshort(classTotal)} priced
+                  {claim.item_count} items · {classBreakdown(items).length} classes
                 </span>
               </div>
 
