@@ -12,6 +12,11 @@ travel; permission does not.
 Mark an entry **SENT** when relayed, and **DONE** when the backend ships it, so
 nothing gets asked twice and nothing quietly falls off.
 
+**Relayed 2026-10-07 to `kevin-backend-48`:** 13, 17, 18, 19, 20, 21 — sent as
+one batch with the substance inline, since that session is in the other repo
+and cannot read this file. 13 and 20 were flagged as the two that are wrong on
+documents a carrier reads. The message restated that it carries no approval.
+
 ---
 
 ## 20. The photo packet numbers lines by POSITION — 0062 did not reach it
