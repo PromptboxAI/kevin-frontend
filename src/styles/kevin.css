@@ -258,7 +258,13 @@
        bar + a neutral tint, so "being inspected" never reads as "selected". */
     .k-row--active { background: var(--k-bg-3) !important; box-shadow: inset 4px 0 0 var(--k-accent); }
     .k-btn--on { background: var(--k-accent); border-color: var(--k-accent); color: #fff; }
-    .k-btn--on:hover { background: var(--k-accent); }
+    /* The ACTIVE state wins on hover, text colour included. These buttons carry
+       `k-btn--ghost k-btn--on` together; the ghost hover sets color:var(--k-fg)
+       and this rule only set a background, so hovering a navy-filled toggle
+       like "Close panel" turned its label black on navy and it could not be
+       read. Restate every property the ghost hover touches rather than trusting
+       source order. */
+    .k-btn--on:hover { background: var(--k-accent); color: #fff; border-color: var(--k-accent); }
     .k-toggle--locked { opacity: 1; }
     .k-toggle--locked .k-toggle-box { background: var(--k-bg-3); border-style: solid; }
     .k-toggle--off { opacity: 0.5; cursor: not-allowed; }

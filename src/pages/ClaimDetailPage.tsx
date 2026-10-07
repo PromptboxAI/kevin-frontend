@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
@@ -82,14 +82,37 @@ export default function ClaimDetailPage() {
     retry: retryUnlessMissing,
   })
 
-  useEffect(() => {
-    if (!claim.data) return
-    const next = formFromClaim(claim.data as unknown as Record<string, unknown>)
+  const hydrate = (source: unknown) => {
+    const next = formFromClaim(source as Record<string, unknown>)
     setForm(next)
     setOriginal(next)
     setInsured(splitInsured(next.insured_name))
     setAddr(splitAddress(next.loss_address))
-  }, [claim.data])
+  }
+
+  /**
+   * ⛔ SEED ONCE PER CLAIM, never on every `claim.data`.
+   *
+   * This used to re-seed whenever the query produced a new object, which
+   * silently DISCARDED whatever was typed: TanStack refetches on window focus,
+   * so switching to another window and back — or any other component
+   * invalidating ['claim', id] — reset every field. The adjuster then pressed
+   * Save on a form that had quietly reverted, `claimPatch` found nothing
+   * changed, sent an empty PATCH, and the API answered 200. "Saved." was
+   * true about the request and false about the intent.
+   *
+   * After a real save the response itself re-seeds the form, which is both
+   * authoritative and the only moment overwriting the fields is correct.
+   */
+  const seededFor = useRef<string | null>(null)
+  useEffect(() => {
+    if (!claim.data || seededFor.current === claimId) return
+    seededFor.current = claimId
+    hydrate(claim.data)
+    // hydrate is stable enough for this one-shot seed; re-running on its
+    // identity would reintroduce exactly the clobber this guard prevents.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [claim.data, claimId])
 
   const set = (key: keyof ClaimDetailForm) => (value: string) =>
     setForm((f) => ({ ...f, [key]: value }))
@@ -165,11 +188,19 @@ export default function ClaimDetailPage() {
       api.patch<ClaimSummary>(`/v1/claims/${encodeURIComponent(claimId)}`, {
         json: claimPatch(original, edited),
       }),
-    onSuccess: async () => {
+    onSuccess: async (updated) => {
       setError(null)
       setNotice('Saved.')
+      /* Re-seed from the RESPONSE, which is what the claim now holds -- the
+         one moment overwriting these fields is right. */
+      hydrate(updated)
+      /* Every money column is computed on read from the claim's tax_rate, so
+         a saved rate only reaches the worksheet once its rows are refetched.
+         Without this the claim header updated and the Tax column did not. */
       await queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
       void queryClient.invalidateQueries({ queryKey: ['claims'] })
+      void queryClient.invalidateQueries({ queryKey: ['claim-items', claimId] })
+      void queryClient.invalidateQueries({ queryKey: ['claim-items-flat', claimId] })
     },
     onError: (e) => {
       setNotice(null)
