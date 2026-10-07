@@ -1361,9 +1361,15 @@
     .k-proc-hero { padding-bottom: 28px; border-bottom: 1px solid var(--k-line); }
     .k-proc-eyebrow {
       display: inline-flex; align-items: center; gap: 8px;
-      font-family: var(--k-font-mono); font-size: 11px; color: var(--k-fg-3);
+      font-family: var(--k-font-mono); font-size: 11px;
+      /* The accent, not grey. The dot beside it has always carried the state's
+         colour while the words stayed --k-fg-3, so the one line on the page
+         saying what is happening was also the quietest thing on it. */
+      color: var(--k-accent);
       text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;
     }
+    /* Finished is mint, matching the dot's own done state. */
+    .k-proc-eyebrow--done { color: oklch(0.36 0.08 175); }
     .k-pulse {
       width: 8px; height: 8px; border-radius: 99px; background: var(--k-accent);
       box-shadow: 0 0 0 0 var(--k-accent-soft); animation: k-pulse 1.6s infinite;

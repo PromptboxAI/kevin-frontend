@@ -6,7 +6,7 @@ import ClaimMissing from '../components/ClaimMissing'
 import { I, Icon } from '../components/Icon'
 import { ApiError, api } from '../lib/api'
 import { fmtInt, fmtUSD } from '../lib/format'
-import type { ClaimSummary, StatusCounts } from '../lib/types'
+import type { ClaimItem, ClaimItemListResponse, ClaimSummary, StatusCounts } from '../lib/types'
 
 /**
  * Kevin working, while it works.
@@ -46,6 +46,9 @@ function pollDelay(elapsedMs: number): number {
 /** A run that has not moved in this long is stuck, not slow. */
 const STALL_MS = 90_000
 
+/** How many resolved lines the feed keeps on screen. */
+const FEED_MAX = 40
+
 export default function ProcessingPage() {
   const { claimId = '' } = useParams()
   const navigate = useNavigate()
@@ -61,6 +64,44 @@ export default function ProcessingPage() {
     refetchInterval: delay,
     retry: (count, err) => !(err instanceof ApiError && err.isMissing) && count < 2,
   })
+
+  /**
+   * THE LIVE FEED — lines appearing as they resolve.
+   *
+   * The design has one and the port dropped it, leaving a counter: "47 of 161
+   * priced" tells you the machine is alive and nothing about what it is
+   * finding. Watching the actual items land is the difference between waiting
+   * and seeing your claim get built, and it is the first chance to notice
+   * Vision is reading things wrongly — before 160 rows exist.
+   *
+   * Built from a DIFF, not from a timestamp. Items are all created at promote
+   * time, so `created_at` orders them by nothing useful; what changes as a line
+   * resolves is its `status`. Each poll, any item that has reached a terminal
+   * state since the last poll is pushed onto the front of the feed. That makes
+   * "newest on top" literally true, with no new field from the backend.
+   */
+  const feedQuery = useQuery({
+    queryKey: ['processing-feed', claimId],
+    queryFn: () =>
+      api.get<ClaimItemListResponse>(
+        `/v1/claim_items?claim_id=${encodeURIComponent(claimId)}&limit=100`,
+      ),
+    refetchInterval: delay,
+    enabled: !!claimId,
+  })
+
+  const seen = useRef<Set<number>>(new Set())
+  const [feed, setFeed] = useState<ClaimItem[]>([])
+  useEffect(() => {
+    const items = feedQuery.data?.items ?? []
+    if (items.length === 0) return
+    const landed = items.filter((i) => i.status !== 'processing' && !seen.current.has(i.id))
+    if (landed.length === 0) return
+    for (const i of landed) seen.current.add(i.id)
+    // Newest first, and bounded: this runs for minutes on a large claim and an
+    // unbounded list would grow a DOM node per line for the whole run.
+    setFeed((prev) => [...landed.reverse(), ...prev].slice(0, FEED_MAX))
+  }, [feedQuery.data])
 
   const run = (useLocation().state as { run?: ProcessingRun } | null)?.run ?? null
   const all = claim.data?.status_counts
@@ -158,7 +199,10 @@ export default function ProcessingPage() {
 
       <div className="k-intake-body">
         <section className="k-proc-hero">
-          <div className="k-proc-eyebrow">
+          {/* The dot has always carried the state's colour -- navy working,
+              mint done -- while the words beside it stayed grey, so the one
+              line saying what is happening was the quietest thing on screen. */}
+          <div className={`k-proc-eyebrow${done ? ' k-proc-eyebrow--done' : ''}`}>
             <span className={`k-pulse ${done ? 'k-pulse--done' : ''}`} />
             <span>{done ? 'Kevin finished' : 'Kevin is working'}</span>
           </div>
@@ -199,6 +243,77 @@ export default function ProcessingPage() {
           <div className="k-progress" style={{ width: '100%', maxWidth: 520, marginTop: 14 }}>
             <div className="k-progress-bar" style={{ width: `${pct}%` }} />
           </div>
+
+          {/* The lines themselves, as they land. */}
+          <section className="k-proc-stats" style={{ marginTop: 22, maxWidth: 520 }}>
+            <div className="k-proc-sec-hd">
+              <span>Live feed</span>
+              <span style={{ fontSize: 11, color: 'var(--k-fg-4)' }}>
+                Items as they resolve · newest on top
+              </span>
+            </div>
+            <div className="k-proc-feed-list">
+              {feed.length === 0 ? (
+                <div
+                  style={{
+                    padding: '22px 14px',
+                    textAlign: 'center',
+                    fontSize: 12,
+                    color: 'var(--k-fg-4)',
+                    fontFamily: 'var(--k-font-mono)',
+                  }}
+                >
+                  {done ? 'Nothing landed in this run.' : 'Waiting for the first line…'}
+                </div>
+              ) : (
+                feed.map((it) => (
+                  <div key={it.id} className="k-feed-row">
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: 12.5,
+                          fontWeight: 500,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {/* Rule 2b: a no_query line arrives with an EMPTY
+                            description. That is a blank to be typed into, not
+                            an error, so it reads as one. */}
+                        {it.description?.trim() || 'Not identified — describe it on the worksheet'}
+                      </div>
+                      <div
+                        style={{
+                          display: 'flex',
+                          gap: 6,
+                          marginTop: 3,
+                          fontSize: 11,
+                          color: 'var(--k-fg-4)',
+                        }}
+                      >
+                        {it.make_mfr ? <span>{it.make_mfr}</span> : null}
+                        {it.model_number ? <span className="k-mono">{it.model_number}</span> : null}
+                        {it.category ? <span>{it.category}</span> : null}
+                      </div>
+                    </div>
+                    {/* Rule 12: an unpriced line is BLANK, not badged. */}
+                    <span
+                      className="k-mono"
+                      style={{
+                        fontSize: 12.5,
+                        fontWeight: 600,
+                        color: it.rcv_total_incl == null ? 'var(--k-fg-4)' : 'var(--k-fg)',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {it.rcv_total_incl == null ? '—' : fmtUSD(it.rcv_total_incl)}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
 
           {/* Terminal buckets, not sequential stages. These are outcomes a line
               can land in, and drawing them as a pipeline would imply an order
