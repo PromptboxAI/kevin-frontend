@@ -18,7 +18,8 @@ import {
 } from '../lib/api'
 import { fmtInt, fmtPct, fmtUSD } from '../lib/format'
 import { letterheadLines, formFrom } from '../lib/business-rules'
-import type { ClaimItem, ClaimItemListResponse, ClaimSummary, MeResponse } from '../lib/types'
+import { fetchAllClaimItems } from '../lib/claim-items-all'
+import type { ClaimItem, ClaimSummary, MeResponse } from '../lib/types'
 
 /**
  * The claim's Export tab -- the full report builder (screen 06).
@@ -65,7 +66,6 @@ const FORMATS: { id: Format; label: string; sub: string; recommended?: boolean }
   { id: 'pdf', label: 'PDF', sub: '.pdf · inventory, photos, or both' },
 ]
 
-const ITEM_PAGE = 500
 
 export default function ExportPage() {
   const { claimId = '' } = useParams()
@@ -84,13 +84,21 @@ export default function ExportPage() {
     retry: retryUnlessMissing,
   })
 
-  // Same key as Overview's, so moving between the tabs costs one fetch.
+  /**
+   * Same key as Overview, Photos and Recovery, so moving between tabs costs one
+   * fetch -- and THEREFORE the same fetcher, which it was not.
+   *
+   * This asked for `limit=500` and silently got 100 (capped server-side) while
+   * the other three had been moved to `fetchAllClaimItems`. One cache entry,
+   * two different fetchers: whichever screen mounted first decided what the
+   * others saw. Arriving here from Overview, the pre-export check ran over all
+   * 161 lines; landing on this tab directly, it ran over 100 and said so. The
+   * readiness summary on the screen that answers "is this fit to send" was
+   * correct or incomplete depending on how you navigated to it.
+   */
   const itemsPage = useQuery({
     queryKey: ['claim-items-flat', claimId],
-    queryFn: () =>
-      api.get<ClaimItemListResponse>(
-        `/v1/claim_items?claim_id=${encodeURIComponent(claimId)}&limit=${ITEM_PAGE}`,
-      ),
+    queryFn: () => fetchAllClaimItems(claimId),
     enabled: !!claimId,
   })
 
@@ -112,7 +120,9 @@ export default function ExportPage() {
 
   const items = useMemo(() => itemsPage.data?.items ?? [], [itemsPage.data])
   const check = useMemo(() => validate(items), [items])
-  // The flat read is capped; say so rather than presenting a partial count as whole.
+  /* Kept even though the fetcher now pages: fetchAllClaimItems stops at 30
+     pages, so a claim beyond 3,000 lines would still be checked in part. The
+     notice stays as the guard for that rather than as the normal case. */
   const partial = (itemsPage.data?.count ?? 0) > items.length
 
   if (claim.error instanceof ApiError && claim.error.isMissing) {
