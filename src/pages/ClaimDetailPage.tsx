@@ -6,7 +6,13 @@ import Alert from '../components/Alert'
 import ClaimMissing from '../components/ClaimMissing'
 import ClaimTabs from '../components/ClaimTabs'
 import IntakeField from '../components/IntakeField'
+import IntakeSelect from '../components/IntakeSelect'
+import { CompanyModal, PersonModal } from '../components/DirectoryModals'
 import { ApiError, api, retryUnlessMissing } from '../lib/api'
+import { COVERAGE_LABELS, US_STATES } from '../lib/us-states'
+import { useDirectory } from '../lib/directory'
+import { companyLabel, personLabel } from '../lib/directory-rules'
+import type { Company, Person } from '../lib/directory-rules'
 import { useTaxRate } from '../lib/tax-rate'
 import { taxPlanFor } from '../lib/tax-rate-rules'
 import {
@@ -14,66 +20,61 @@ import {
   claimPatch,
   formFromClaim,
   isDirty,
+  joinAddress,
+  joinInsured,
+  splitAddress,
+  splitInsured,
   validateClaimForm,
-  zipChanged,
 } from '../lib/claim-detail-rules'
 import type { ClaimDetailForm } from '../lib/claim-detail-rules'
 import type { ClaimSummary } from '../lib/types'
 
 /**
- * Claim detail — the first tab, and the only editable one.
+ * Claim detail — the first tab, and the same form as New claim.
  *
  * Everything typed at intake lived nowhere afterwards: the Overview printed it
  * as static text and `PATCH /v1/claims/{claim_id}` had never been called from
- * the frontend at all. So a claim was write-once. An insured's name misspelled
- * at 7am on site stayed misspelled on the export; a carrier that issues its
- * claim number a week later had nowhere to put it; a policy limit found on the
- * declarations page after the photos were already in meant starting over.
+ * the frontend at all. So a claim was write-once — a name misspelled on site
+ * stayed misspelled on the export, and a claim number issued a week later had
+ * nowhere to go. Xactimate lets an adjuster change this for the life of the
+ * file, and that is right: a claim is a document in progress.
  *
- * Xactimate lets an adjuster change all of this for the life of the file, and
- * that is the right model — a claim is a document in progress, not a form you
- * submit once.
+ * ▸ IT MIRRORS `IntakePage` DELIBERATELY (owner, 2026-10-07): the same two
+ *   numbered sections, the same field order, the same controls and widths. An
+ *   adjuster who has filled the form once should not have to learn a second one
+ *   to correct it, and two layouts over one set of fields drift the moment
+ *   either changes.
  *
- * Two rules shape the behaviour:
+ * Three things that are NOT the intake form, because editing is not creating:
  *
- *   1. It sends ONLY what changed. A PATCH of every field would stamp an edit
- *      on the audit trail for things nobody touched, and would let two people
- *      editing different fields overwrite each other.
- *   2. The loss ZIP resolves the sales tax rate, so the two may never drift
- *      apart (CLAUDE.md). Change the address to a new ZIP and the form offers
- *      the rate for it rather than silently keeping the old one, which would be
- *      wrong on every line of the export.
+ *   1. It sends ONLY what changed. A PATCH of every field would stamp the audit
+ *      trail for things nobody touched, and would let two people editing
+ *      different fields overwrite each other.
+ *   2. The insured and the address arrive JOINED — `"Robyn Beck"`, `"215 Rocky
+ *      Point Landing Rd., Rocky Point, NY 11778"` — and must be split back into
+ *      the boxes intake collected them in. That is lossy, so the splitters
+ *      refuse to guess: anything not matching intake's own shape comes back
+ *      whole in the first box rather than carved at invented boundaries.
+ *   3. A name saved on the claim before it existed in the directory still has
+ *      to appear in its select, or opening this page would silently clear it.
  */
-
-function Section({
-  title,
-  sub,
-  children,
-}: {
-  title: string
-  sub?: string
-  children: React.ReactNode
-}) {
-  return (
-    <section className="k-intake-section">
-      <div className="k-intake-section-hd">
-        <div>
-          <div className="k-intake-section-t">{title}</div>
-          {sub ? <div className="k-intake-section-s">{sub}</div> : null}
-        </div>
-      </div>
-      <div className="k-intake-form">{children}</div>
-    </section>
-  )
-}
 
 export default function ClaimDetailPage() {
   const { claimId = '' } = useParams()
   const queryClient = useQueryClient()
+  const { dir, savePerson, saveCompany } = useDirectory()
+
   const [form, setForm] = useState<ClaimDetailForm>(EMPTY_FORM)
   const [original, setOriginal] = useState<ClaimDetailForm>(EMPTY_FORM)
   const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [personModal, setPersonModal] = useState<'new' | Person | null>(null)
+  const [companyModal, setCompanyModal] = useState<'new' | Company | null>(null)
+
+  /* The split halves are their own state, so typing in City does not re-parse
+     a string this page assembled a keystroke ago. */
+  const [insured, setInsured] = useState({ first: '', last: '' })
+  const [addr, setAddr] = useState({ street: '', city: '', state: '', zip: '' })
 
   const claim = useQuery({
     queryKey: ['claim', claimId],
@@ -81,52 +82,63 @@ export default function ClaimDetailPage() {
     retry: retryUnlessMissing,
   })
 
-  /* Seed once the claim lands, and re-seed after a save so `original` is the
-     server's answer rather than what we hoped it accepted. */
   useEffect(() => {
     if (!claim.data) return
     const next = formFromClaim(claim.data as unknown as Record<string, unknown>)
     setForm(next)
     setOriginal(next)
+    setInsured(splitInsured(next.insured_name))
+    setAddr(splitAddress(next.loss_address))
   }, [claim.data])
 
   const set = (key: keyof ClaimDetailForm) => (value: string) =>
     setForm((f) => ({ ...f, [key]: value }))
 
-  const errors = useMemo(() => validateClaimForm(form), [form])
-  const errorFor = (field: keyof ClaimDetailForm) =>
-    errors.find((e) => e.field === field)?.message
-  const dirty = isDirty(original, form)
-
-  /* The address moved to a ZIP the current rate was not resolved from. */
-  const newZip = zipChanged(original, form)
-  const taxLookup = useTaxRate(newZip ?? '')
-  /*
-   * Through `taxPlanFor`, not off `suggested_rate` directly. It already knows
-   * the two things a hand-rolled read gets wrong: `suggested_rate` is a
-   * FRACTION needing conversion, and a ZIP that straddles two jurisdictions
-   * comes back `ambiguous` with a RANGE -- offering one number there would
-   * quietly pick a side of a tax line on the adjuster's behalf.
+  /**
+   * The two composed fields are DERIVED, not synced.
+   *
+   * Intake builds `first last` and `street, city, STATE ZIP` immediately before
+   * POSTing; here the parts are the state and the joined value is computed from
+   * them each render. Mirroring them into `form` through effects would work
+   * until it did not: an effect runs after the render that caused it, so for
+   * one frame `dirty`, the validation and a save fired in that window would all
+   * read the PREVIOUS address.
    */
-  const taxPlan = taxPlanFor(newZip ?? '', taxLookup.data ?? null, null, taxLookup.isFetching)
-  const offer =
-    newZip && !taxPlan.needsChoice
-      ? (taxPlan.options.find((o) => o.rate != null && o.rate > 0) ?? null)
-      : null
+  const edited = useMemo(
+    () => ({
+      ...form,
+      insured_name: joinInsured(insured),
+      loss_address: joinAddress(addr),
+    }),
+    [form, insured, addr],
+  )
+
+  const errors = useMemo(() => validateClaimForm(edited), [edited])
+  const errorFor = (k: keyof ClaimDetailForm) => errors.find((e) => e.field === k)?.message
+  const dirty = isDirty(original, edited)
+
+  /* The ZIP drives the rate, and it is the same select intake shows. */
+  const taxLookup = useTaxRate(addr.zip)
+  const taxPlan = taxPlanFor(addr.zip, taxLookup.data ?? null, null, taxLookup.isFetching)
+  /* What the claim currently holds, which may be a rate no longer offered for
+     this ZIP -- it has to stay selectable or saving would change it by accident. */
+  const currentTaxLabel =
+    taxPlan.options.find((o) => o.rate != null && String(o.rate) === edited.tax_rate)?.label ??
+    (edited.tax_rate ? `${edited.tax_rate}% · on this claim` : '')
+
+  const estimator = dir.people.find((p) => personLabel(p) === form.estimator_name) ?? null
+  const company = dir.companies.find((c) => companyLabel(c) === form.business_name) ?? null
 
   const save = useMutation({
     mutationFn: () =>
       api.patch<ClaimSummary>(`/v1/claims/${encodeURIComponent(claimId)}`, {
-        json: claimPatch(original, form),
+        json: claimPatch(original, edited),
       }),
     onSuccess: async () => {
       setError(null)
       setNotice('Saved.')
       await queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
-      /* Every surface that prints claim metadata, because the tax rate reaches
-         the money and the name reaches the export. */
       void queryClient.invalidateQueries({ queryKey: ['claims'] })
-      void queryClient.invalidateQueries({ queryKey: ['claim-items', claimId] })
     },
     onError: (e) => {
       setNotice(null)
@@ -172,7 +184,8 @@ export default function ClaimDetailPage() {
               Claim detail
             </h1>
             <p style={{ fontSize: 13, color: 'var(--k-fg-3)', margin: 0 }}>
-              Everything here prints on the export. Change any of it, at any point in the claim.
+              The same details you entered when you started this claim. Change any of them, at any
+              point — they all print on the export.
             </p>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -183,6 +196,8 @@ export default function ClaimDetailPage() {
                 disabled={save.isPending}
                 onClick={() => {
                   setForm(original)
+                  setInsured(splitInsured(original.insured_name))
+                  setAddr(splitAddress(original.loss_address))
                   setNotice(null)
                   setError(null)
                 }}
@@ -208,18 +223,20 @@ export default function ClaimDetailPage() {
           </div>
         </div>
 
-        {error ? <Alert tone="error" title="Not saved">{error}</Alert> : null}
+        {error ? (
+          <Alert tone="error" title="Not saved">
+            {error}
+          </Alert>
+        ) : null}
         {notice && !dirty ? (
           <Alert tone="success" title={notice}>
             The export, the share link and the claims list all read these fields.
           </Alert>
         ) : null}
 
-        {/*
-          * The export is already out. Not a block -- it is the customer's claim
-          * and rule 16 says we never gate on editorial readiness -- but a
-          * carrier is holding a document built from these values.
-          */}
+        {/* Not a block -- it is the customer's claim, and rule 16 never gates on
+            editorial readiness -- but a carrier is holding a document built from
+            these values. */}
         {c?.exported_at && dirty ? (
           <Alert tone="info" title="This claim has already been exported">
             Changing these details does not change the file a carrier already has. Re-export when
@@ -227,179 +244,270 @@ export default function ClaimDetailPage() {
           </Alert>
         ) : null}
 
-        {/*
-          * The one cross-field rule on this page. The ZIP resolves the rate, so
-          * moving the address without moving the rate is how an export ends up
-          * taxed at the wrong county on every line.
-          */}
-        {newZip ? (
-          <Alert
-            tone="wait"
-            title={`The loss address moved to ${newZip}`}
-            action={
-              offer ? (
-                <button
-                  type="button"
-                  className="k-btn k-btn--sm"
-                  onClick={() => set('tax_rate')(String(offer.rate))}
-                >
-                  Use {offer.rate}%
-                </button>
-              ) : undefined
-            }
-          >
-            {offer
-              ? `${offer.label}. The rate below still says ${form.tax_rate || '—'}%, and tax is applied to every line.`
-              : taxPlan.needsChoice
-                ? `${taxPlan.hint}. Set the rate below by hand — Kevin will not pick a side of a tax line for you.`
-                : taxLookup.isFetching
-                  ? 'Looking up the rate for that ZIP…'
-                  : 'Kevin has no rate on file for that ZIP. Set the rate below by hand.'}
-          </Alert>
-        ) : null}
-
         {claim.isLoading ? (
           <p style={{ fontSize: 12.5, color: 'var(--k-fg-4)' }}>Loading…</p>
         ) : (
           <>
-            <Section title="Claim" sub="How this file is identified, here and on the export.">
-              <IntakeField
-                label="Project name"
-                value={form.name}
-                width={300}
-                onChange={set('name')}
-                invalid={Boolean(errorFor('name'))}
-                hint={errorFor('name')}
-              />
-              <IntakeField
-                label="Claim number"
-                value={form.claim_number}
-                mono
-                onChange={set('claim_number')}
-                hint="From the carrier. Often issued after the inspection."
-              />
-              <IntakeField
-                label="Policy number"
-                value={form.policy_number}
-                mono
-                onChange={set('policy_number')}
-              />
-              <IntakeField label="Carrier" value={form.carrier} onChange={set('carrier')} />
-              <IntakeField
-                label="Cause of loss"
-                value={form.loss_type}
-                onChange={set('loss_type')}
-              />
-              <IntakeField
-                label="Date of loss"
-                value={form.date_of_loss}
-                type="date"
-                onChange={set('date_of_loss')}
-                invalid={Boolean(errorFor('date_of_loss'))}
-                hint={errorFor('date_of_loss')}
-              />
-              <IntakeField
-                label="Policy form"
-                value={form.policy_form}
-                onChange={set('policy_form')}
-              />
-            </Section>
+            {/* ── 01 — the same fields, in the same order, as New claim ── */}
+            <section className="k-intake-section">
+              <div className="k-intake-section-hd">
+                <span className="k-step-num">01</span>
+                <div>
+                  <div className="k-intake-section-t">Claim details</div>
+                  <div className="k-intake-section-s">
+                    These appear on the export and govern sales tax calculation.
+                  </div>
+                </div>
+              </div>
 
-            <Section
-              title="Insured & loss location"
-              sub="The ZIP in the address sets the sales tax rate for every line."
-            >
-              <IntakeField
-                label="Insured"
-                value={form.insured_name}
-                width={300}
-                onChange={set('insured_name')}
-              />
-              <IntakeField
-                label="Loss address"
-                value={form.loss_address}
-                width={420}
-                onChange={set('loss_address')}
-              />
-              <IntakeField
-                label="Sales tax rate"
-                value={form.tax_rate}
-                suffix="%"
-                width={160}
-                onChange={set('tax_rate')}
-                invalid={Boolean(errorFor('tax_rate'))}
-                hint={errorFor('tax_rate') ?? 'Applied to every line'}
-              />
-            </Section>
+              <div className="k-intake-form">
+                <IntakeField
+                  label="Project name"
+                  value={form.name}
+                  width={300}
+                  onChange={set('name')}
+                  invalid={Boolean(errorFor('name'))}
+                  hint={errorFor('name')}
+                />
+                <IntakeField
+                  label="Insured — first name"
+                  value={insured.first}
+                  onChange={(v) => setInsured((p) => ({ ...p, first: v }))}
+                />
+                <IntakeField
+                  label="Insured — last name"
+                  value={insured.last}
+                  onChange={(v) => setInsured((p) => ({ ...p, last: v }))}
+                />
+                <IntakeField
+                  label="Loss address"
+                  value={addr.street}
+                  width={300}
+                  onChange={(v) => setAddr((p) => ({ ...p, street: v }))}
+                />
+                <IntakeField
+                  label="City"
+                  value={addr.city}
+                  onChange={(v) => setAddr((p) => ({ ...p, city: v }))}
+                />
+                <IntakeSelect
+                  label="State"
+                  value={addr.state}
+                  options={US_STATES}
+                  width={92}
+                  onChange={(v) => setAddr((p) => ({ ...p, state: v }))}
+                >
+                  <option value="">—</option>
+                  {US_STATES.map((st) => (
+                    <option key={st} value={st}>
+                      {st}
+                    </option>
+                  ))}
+                </IntakeSelect>
+                <IntakeField
+                  label="Loss ZIP"
+                  value={addr.zip}
+                  mono
+                  width={120}
+                  onChange={(v) =>
+                    setAddr((p) => ({ ...p, zip: v.replace(/\D/g, '').slice(0, 5) }))
+                  }
+                  hint="Sets the sales tax rate"
+                />
+                <IntakeField
+                  label="Claim number"
+                  value={form.claim_number}
+                  mono
+                  onChange={set('claim_number')}
+                />
+                <IntakeField
+                  label="Policy number"
+                  value={form.policy_number}
+                  mono
+                  onChange={set('policy_number')}
+                />
+                <IntakeField
+                  label="Date of loss"
+                  value={form.date_of_loss}
+                  type="date"
+                  onChange={set('date_of_loss')}
+                  invalid={Boolean(errorFor('date_of_loss'))}
+                  hint={errorFor('date_of_loss')}
+                />
+                <IntakeField
+                  label="Cause of loss"
+                  value={form.loss_type}
+                  onChange={set('loss_type')}
+                />
+                <IntakeField
+                  label="Carrier / agency"
+                  value={form.carrier}
+                  onChange={set('carrier')}
+                />
+                <IntakeSelect
+                  label="Local tax rate"
+                  value={currentTaxLabel}
+                  options={taxPlan.options.map((o) => o.label)}
+                  width={300}
+                  onChange={(label) => {
+                    const picked = taxPlan.options.find((o) => o.label === label)
+                    if (picked?.rate != null) set('tax_rate')(String(picked.rate))
+                  }}
+                  // Same rule as intake: only an ambiguous ZIP has anything to
+                  // say here. A resolved rate is what it is.
+                  hint={taxPlan.needsChoice ? taxPlan.hint : undefined}
+                >
+                  {currentTaxLabel ? (
+                    <option value={currentTaxLabel}>{currentTaxLabel}</option>
+                  ) : null}
+                  {taxPlan.options
+                    .filter((o) => o.label !== currentTaxLabel)
+                    .map((o) => (
+                      <option key={o.label} value={o.label}>
+                        {o.label}
+                      </option>
+                    ))}
+                </IntakeSelect>
+                {/* Rule 14: the LABEL is the insured's own wording, never a
+                    coverage letter assumed to be universal. */}
+                <IntakeSelect
+                  label="Contents coverage label"
+                  value={form.personal_property_limit_label}
+                  options={COVERAGE_LABELS}
+                  width={280}
+                  onChange={set('personal_property_limit_label')}
+                  hint="Policies name this differently — matches the insured's declarations page"
+                />
+                <IntakeField
+                  label="Personal property limit"
+                  value={form.personal_property_limit}
+                  mono
+                  onChange={set('personal_property_limit')}
+                  invalid={Boolean(errorFor('personal_property_limit'))}
+                  hint={errorFor('personal_property_limit')}
+                />
+                <IntakeField
+                  label="Amount already claimed"
+                  value={form.amount_already_claimed}
+                  mono
+                  onChange={set('amount_already_claimed')}
+                  invalid={Boolean(errorFor('amount_already_claimed'))}
+                  hint={errorFor('amount_already_claimed') ?? 'Prior contents payments'}
+                />
+                <IntakeField
+                  label="Policy form"
+                  value={form.policy_form}
+                  onChange={set('policy_form')}
+                />
+              </div>
+            </section>
 
-            <Section
-              title="Coverage"
-              sub="Printed on the export summary. Policies name contents coverage differently, so the label travels with the limit."
-            >
-              {/* Rule 14: never print a coverage letter as though it were
-                  universal -- the LABEL is the insured's own wording. */}
-              <IntakeField
-                label="Contents coverage label"
-                value={form.personal_property_limit_label}
-                width={300}
-                onChange={set('personal_property_limit_label')}
-                hint="e.g. Coverage C — Personal Property"
-              />
-              <IntakeField
-                label="Personal property limit"
-                value={form.personal_property_limit}
-                mono
-                onChange={set('personal_property_limit')}
-                invalid={Boolean(errorFor('personal_property_limit'))}
-                hint={errorFor('personal_property_limit')}
-              />
-              <IntakeField
-                label="Already claimed"
-                value={form.amount_already_claimed}
-                mono
-                onChange={set('amount_already_claimed')}
-                invalid={Boolean(errorFor('amount_already_claimed'))}
-                hint={errorFor('amount_already_claimed') ?? 'Prior contents payments'}
-              />
-              <IntakeField
-                label="Deductible label"
-                value={form.deductible_label}
-                onChange={set('deductible_label')}
-              />
-              <IntakeField
-                label="Deductible"
-                value={form.deductible}
-                mono
-                onChange={set('deductible')}
-                invalid={Boolean(errorFor('deductible'))}
-                hint={errorFor('deductible')}
-              />
-            </Section>
+            {/* ── 02 — as on New claim ── */}
+            <section className="k-intake-section">
+              <div className="k-intake-section-hd">
+                <span className="k-step-num">02</span>
+                <div>
+                  <div className="k-intake-section-t">Personnel &amp; company</div>
+                  <div className="k-intake-section-s">
+                    Saved on your account and offered on every claim.
+                  </div>
+                </div>
+              </div>
 
-            <Section title="Preparer" sub="Who built this inventory, as it appears on the document.">
-              <IntakeField
-                label="Estimator"
-                value={form.estimator_name}
-                width={280}
-                onChange={set('estimator_name')}
-              />
-              <IntakeField
-                label="Company header"
-                value={form.business_name}
-                width={280}
-                onChange={set('business_name')}
-                hint="Your letterhead on the inventory PDF"
-              />
-              <IntakeField
-                label="Claim rep"
-                value={form.claim_rep}
-                width={280}
-                onChange={set('claim_rep')}
-              />
-            </Section>
+              <div className="k-intake-form">
+                <IntakeSelect
+                  label="Estimator"
+                  value={form.estimator_name}
+                  options={dir.people.map(personLabel)}
+                  addLabel="+ Add a person…"
+                  onAdd={() => setPersonModal('new')}
+                  width={280}
+                  onChange={set('estimator_name')}
+                  hint={estimator ? undefined : 'Prints on the export as the preparer'}
+                >
+                  <option value="">— None —</option>
+                  {/* A name saved on the claim before it was in the directory
+                      must still show, or opening this page would silently
+                      clear it on the next save. */}
+                  {form.estimator_name && !estimator ? (
+                    <option value={form.estimator_name}>{form.estimator_name}</option>
+                  ) : null}
+                  {dir.people.map((x) => (
+                    <option key={x.id} value={personLabel(x)}>
+                      {personLabel(x)}
+                    </option>
+                  ))}
+                </IntakeSelect>
+                {estimator ? (
+                  <button
+                    type="button"
+                    className="k-link"
+                    style={{ alignSelf: 'end', paddingBottom: 9, fontSize: 12 }}
+                    onClick={() => setPersonModal(estimator)}
+                  >
+                    Edit {estimator.name}
+                  </button>
+                ) : null}
+
+                <IntakeSelect
+                  label="Company header"
+                  value={form.business_name}
+                  options={dir.companies.map(companyLabel)}
+                  addLabel="+ Add a company…"
+                  onAdd={() => setCompanyModal('new')}
+                  width={320}
+                  onChange={set('business_name')}
+                  hint={company ? undefined : 'Your letterhead on the inventory PDF and share links'}
+                >
+                  <option value="">— None —</option>
+                  {form.business_name && !company ? (
+                    <option value={form.business_name}>{form.business_name}</option>
+                  ) : null}
+                  {dir.companies.map((x) => (
+                    <option key={x.id} value={companyLabel(x)}>
+                      {companyLabel(x)}
+                    </option>
+                  ))}
+                </IntakeSelect>
+                {company ? (
+                  <button
+                    type="button"
+                    className="k-link"
+                    style={{ alignSelf: 'end', paddingBottom: 9, fontSize: 12 }}
+                    onClick={() => setCompanyModal(company)}
+                  >
+                    Edit {company.name}
+                  </button>
+                ) : null}
+              </div>
+            </section>
           </>
         )}
       </div>
+
+      {personModal ? (
+        <PersonModal
+          person={personModal === 'new' ? undefined : personModal}
+          onClose={() => setPersonModal(null)}
+          onSave={(person: Person) => {
+            savePerson(person)
+            set('estimator_name')(personLabel(person))
+            setPersonModal(null)
+          }}
+        />
+      ) : null}
+
+      {companyModal ? (
+        <CompanyModal
+          company={companyModal === 'new' ? undefined : companyModal}
+          onClose={() => setCompanyModal(null)}
+          onSave={(next: Company) => {
+            saveCompany(next)
+            set('business_name')(companyLabel(next))
+            setCompanyModal(null)
+          }}
+        />
+      ) : null}
     </div>
   )
 }

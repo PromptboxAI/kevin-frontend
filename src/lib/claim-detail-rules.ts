@@ -185,3 +185,62 @@ export function zipChanged(original: ClaimDetailForm, next: ClaimDetailForm): st
   if (!after || after === before) return null
   return after
 }
+
+// ---------------------------------------------------------------------------
+// Splitting what intake joined
+// ---------------------------------------------------------------------------
+//
+// Intake collects the insured as first + last and the address as street, city,
+// state and ZIP, then JOINS each into the single string the API stores:
+//
+//   insured_name  =  `${first} ${last}`
+//   loss_address  =  `${street}, ${city}, ${state} ${zip}`
+//
+// Editing means pulling them apart again, and that is lossy: the stored string
+// is all we have, and it may not have come from this form at all. So both
+// splitters are conservative -- they only take a value apart when it clearly
+// matches the shape intake produces, and otherwise hand the whole string back
+// in the first field rather than guessing at boundaries. A mangled loss
+// address on a carrier document is worse than an unsplit one.
+
+export type InsuredParts = { first: string; last: string }
+
+/** Last token is the surname, the rest is the given name(s). */
+export function splitInsured(name: string): InsuredParts {
+  const t = name.trim().replace(/\s+/g, ' ')
+  if (!t) return { first: '', last: '' }
+  const i = t.lastIndexOf(' ')
+  if (i < 0) return { first: t, last: '' }
+  return { first: t.slice(0, i), last: t.slice(i + 1) }
+}
+
+export function joinInsured(parts: InsuredParts): string {
+  return [parts.first.trim(), parts.last.trim()].filter(Boolean).join(' ')
+}
+
+export type AddressParts = { street: string; city: string; state: string; zip: string }
+
+/**
+ * `street, city, STATE ZIP` -> parts, and ONLY that shape.
+ *
+ * Anything else -- two commas missing, a country on the end, an address typed
+ * somewhere other than this product -- comes back whole in `street` with the
+ * rest blank, so the editor shows exactly what is stored and re-saves it
+ * unchanged unless the adjuster edits it.
+ */
+export function splitAddress(address: string): AddressParts {
+  const whole: AddressParts = { street: address.trim(), city: '', state: '', zip: '' }
+  const parts = address.split(',').map((p) => p.trim())
+  if (parts.length !== 3) return whole
+
+  const tail = parts[2].match(/^([A-Za-z]{2})\s+(\d{5})(?:-\d{4})?$/)
+  if (!tail) return whole
+  if (!parts[0] || !parts[1]) return whole
+
+  return { street: parts[0], city: parts[1], state: tail[1].toUpperCase(), zip: tail[2] }
+}
+
+export function joinAddress(parts: AddressParts): string {
+  const tail = [parts.state.trim(), parts.zip.trim()].filter(Boolean).join(' ')
+  return [parts.street.trim(), parts.city.trim(), tail].filter(Boolean).join(', ')
+}
