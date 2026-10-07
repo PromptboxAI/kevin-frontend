@@ -19,9 +19,24 @@ documents a carrier reads. The message restated that it carries no approval.
 
 ---
 
-## 24. Extraction reports nothing until it reports everything
+## 24. Extraction reports nothing until it reports everything — DONE
 
-**Status:** new, 2026-10-07. Observed live on the owner's re-run: 209 photos,
+**Status:** DONE — `photos_extracted` shipped as `cc629b3`, 2026-10-07, with
+the owner's approval. It sits beside `photo_count` on every staging session
+response and counts the photos whose status is past `uploaded`; `null` means
+unavailable on that poll, so the client keeps its last value. Option (a) —
+sending the photo rows pre-cluster — was NOT built, so the loose-photo tray is
+untouched and needs no gate. Consumed on the staging screen.
+
+**DIAGNOSIS CORRECTED:** the original text below blamed a batch commit. That was
+wrong. Each photo is read by its own job and its status is written as it
+finishes — the bug was on this side: `_build_proposals` returns None before
+clustering, so the response lists no photo rows at all, and a client counting
+statuses necessarily sees nothing until clustering lists them all at once.
+
+Original report, kept because the symptom is the useful part:
+
+**Observed live on the owner's re-run:** 209 photos,
 1.29 GB. The staging panel sat at **"0 of 209 read" for several minutes** and
 then jumped straight to all 209. His words: *"its been several minutes and as a
 user this ux shows me nothing going on"* and *"it just jumps now to all of the

@@ -95,6 +95,20 @@ export type StagingSessionFull = {
   claim_id: string
   status: 'uploading' | 'clustering' | 'review' | 'processed'
   photo_count: number
+  /**
+   * How many of `photo_count` the server has finished reading (status past
+   * `uploaded`). Backend 2026-10-07, ask 24.
+   *
+   * Before clustering runs, this response lists NO photo rows at all --
+   * `_build_proposals` returns None when there are no staging_groups, so
+   * `groups` is null and `ungrouped_photos` is empty -- which is why a client
+   * counting statuses saw 0 of 209 for an entire run and then everything at
+   * once. This number is the only extraction signal that exists in that
+   * window.
+   *
+   * `null` is "not available on this poll", NOT zero: keep the last value.
+   */
+  photos_extracted?: number | null
   groups: StagingGroup[] | null
   tally: StagingTally | null
   ungrouped_photos: StagingPhoto[]

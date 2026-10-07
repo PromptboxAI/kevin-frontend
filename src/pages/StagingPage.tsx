@@ -152,9 +152,28 @@ export default function StagingPage() {
     (data?.groups ?? []).reduce((a, g) => a + g.photos.length, 0) + (data?.ungrouped_photos?.length ?? 0)
   const unlisted = Math.max(0, (data?.photo_count ?? 0) - listed)
   const reading = stillExtracting.length + unlisted
-  /** Photos the server has actually finished with. Zero for the whole run
-      today -- see the indeterminate-bar note where this is rendered. */
-  const readDone = Math.max(0, (data?.photo_count ?? 0) - reading)
+  /**
+   * Photos the server has finished reading -- its own count, not ours.
+   *
+   * Held in state because `photos_extracted` is nullable and null means "not
+   * available on this poll", never zero: dropping the bar back to the start
+   * because one response omitted the number would be a worse lie than the one
+   * this replaced. Reset when the session itself changes, so a second upload
+   * does not inherit the first one's progress.
+   */
+  const sessionId = data?.id ?? null
+  const lastSessionRef = useRef<number | null>(null)
+  const [extracted, setExtracted] = useState(0)
+  useEffect(() => {
+    const reported = data?.photos_extracted
+    if (lastSessionRef.current !== sessionId) {
+      lastSessionRef.current = sessionId
+      setExtracted(typeof reported === 'number' ? reported : 0)
+      return
+    }
+    if (typeof reported === 'number' && Number.isFinite(reported)) setExtracted(reported)
+  }, [sessionId, data?.photos_extracted])
+  const readDone = Math.min(Math.max(0, extracted), data?.photo_count ?? 0)
   /*
    * ELAPSED TIME, because it is the only number on this panel that honestly
    * moves while the server reports nothing. The ref holds the moment reading
@@ -793,20 +812,22 @@ export default function StagingPage() {
                 {reading > 0 && (data?.photo_count ?? 0) > 0 ? (
                   <span style={{ display: 'block', marginTop: 8, maxWidth: 380 }}>
                     {/*
-                      * A BAR PINNED AT 0% IS WORSE THAN NO BAR. The server
-                      * does not report extraction per photo -- every photo
-                      * sits at status `uploaded` and they all flip together
-                      * when the batch commits -- so on a 209-photo drop this
-                      * read "0 of 209" for several minutes and then jumped
-                      * straight to done. An empty determinate bar does not
-                      * say "working", it says "stopped", which is exactly how
-                      * the owner read it.
+                      * A BAR PINNED AT 0% IS WORSE THAN NO BAR.
                       *
-                      * So: INDETERMINATE until the server has actually moved a
-                      * photo, determinate once it has. The sliding bar claims
-                      * only what is true -- something is running, and we do
-                      * not know how far in. Asked for per-photo state as
-                      * BACKEND-PROMPTS ask 24; this stops lying meanwhile.
+                      * This read "0 of 209" for several minutes on a real drop
+                      * and then jumped straight to done, because the client was
+                      * counting photo statuses and THIS RESPONSE LISTS NO
+                      * PHOTOS until clustering has run. The jobs were writing
+                      * each status as they finished the whole time; we could
+                      * not see any of it. An empty determinate bar does not say
+                      * "working", it says "stopped".
+                      *
+                      * `photos_extracted` (ask 24, shipped 2026-10-07) is the
+                      * server's own count and is the only extraction signal in
+                      * that window. Indeterminate until it has moved a photo,
+                      * determinate after -- so the sliding bar is now only
+                      * shown when we genuinely do not know how far in we are,
+                      * which is the first poll or two.
                       */}
                     {readDone === 0 ? (
                       <span
