@@ -19,6 +19,38 @@ documents a carrier reads. The message restated that it carries no approval.
 
 ---
 
+## 25. A loss ZIP has nowhere to live
+
+**Status:** new, 2026-10-07. Small, and it is causing a visible data problem.
+
+**The ask:** a `loss_zip` column on the claim (5 chars, nullable), settable on
+create and PATCH, echoed on the claim summary like the other intake metadata.
+
+**Why.** The ZIP's job is to resolve the sales-tax rate, and `tax_rate` is what
+the worksheet actually consumes. But the only place a ZIP can be stored today
+is inside `loss_address`, which is one free-text string. So an adjuster who
+types a ZIP and nothing else -- which is the normal thing to do, because the
+rate is what they are after -- ends up with the claim's LOSS ADDRESS reading
+`11790`. That is wrong on the claims list, wrong on the overview, and wrong on
+the export summary a carrier reads.
+
+Worse in practice: a round-trip bug on our side briefly stored it twice, so a
+real claim is sitting on `loss_address = "11790, 11790"`.
+
+**What we did meanwhile.** The form no longer writes an address when there is
+no street and no city, and a stored value that is only digits is read as empty
+so it clears on the next save. The consequence is the one we would like
+`loss_zip` to remove: with no address, the ZIP does not persist at all -- it
+survives only as the `tax_rate` it produced. Re-opening the claim shows an
+empty ZIP field even though the rate is right, which will read as another lost
+save to anyone who does not know why.
+
+**Not urgent for the engine, just for the record being correct.** No behaviour
+change is wanted anywhere else: the rate stays claim-level, resolution stays
+where it is, and nothing about the money chain moves.
+
+---
+
 ## 24. Extraction reports nothing until it reports everything — DONE
 
 **Status:** DONE — `photos_extracted` shipped as `cc629b3`, 2026-10-07, with

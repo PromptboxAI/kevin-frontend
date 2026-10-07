@@ -195,12 +195,20 @@ export default function ClaimDetailPage() {
       api.patch<ClaimSummary>(`/v1/claims/${encodeURIComponent(claimId)}`, {
         json: claimPatch(original, edited),
       }),
-    onSuccess: async (updated) => {
+    onSuccess: async () => {
       setError(null)
       setNotice('Saved.')
-      /* Re-seed from the RESPONSE, which is what the claim now holds -- the
-         one moment overwriting these fields is right. */
-      hydrate(updated)
+      /*
+       * Re-seed from the next GET, not from the PATCH response.
+       *
+       * Seeding from the response assumes it echoes every field this form
+       * holds. If it echoes a subset, the missing ones blank out -- and
+       * because the seed-once guard then refuses to re-seed from the refetch,
+       * they STAY blank until the page is remounted, which reads exactly like
+       * "my change did not save". Clearing the guard hands the job back to the
+       * one code path that is known to carry the whole claim.
+       */
+      seededFor.current = null
       /* Every money column is computed on read from the claim's tax_rate, so
          a saved rate only reaches the worksheet once its rows are refetched.
          Without this the claim header updated and the Tax column did not. */
