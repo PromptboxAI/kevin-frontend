@@ -179,9 +179,24 @@ export default function PhotosPage() {
   const autoOpened = useRef(false)
   useEffect(() => {
     if (autoOpened.current || photos.length === 0) return
+    /*
+     * WAIT FOR THE ORDER TO MEAN SOMETHING.
+     *
+     * `photos` sorts by the line each one backs, but the line numbers come
+     * from a SEPARATE query that resolves after this one. Fire before it lands
+     * and every sort key is Infinity, the array falls back to internal photo-id
+     * order, and the panel opens on whatever has the lowest id -- line 0091 on
+     * the owner's claim, which is precisely the ordering the sort exists to
+     * replace. By the time the items query has settled, photos[0] is line 0001.
+     *
+     * `itemsPage` rather than a non-empty lineNos: a claim can legitimately
+     * have photos and no line items, and waiting for numbers that will never
+     * arrive would leave the panel shut forever.
+     */
+    if (itemsPage === undefined) return
     autoOpened.current = true
     setFocused(photos[0].photo_id)
-  }, [photos])
+  }, [photos, itemsPage])
 
   const visible = useMemo(() => {
     let out = photos
