@@ -52,11 +52,19 @@ different things.
 **Status:** new, 2026-10-06. Owner's report, now with numbers rather than a
 feeling.
 
+⚠️ **READ THE DATE BEFORE TUNING ANYTHING.** The owner has since told us the
+engine is already being worked on backend-side. This claim was processed
+BEFORE whatever is in flight, so the distribution below describes the engine
+that ran on 2026-10-05 and may already be history. Do not move a threshold on
+the strength of these numbers without re-measuring on a claim processed after
+your current work lands — and if it is already fixed, this entry is a record
+of what it used to do, not a request.
+
 The owner's words: a wide shot of a TV and the next shot of its make and model
 come back as two separate line items, *"almost 50/50"*.
 
-**Measured on `robyn-beck-contents`** — 208 photos, 205 backing a line, 160
-lines:
+**Measured on `robyn-beck-contents`, processed 2026-10-05** — 208 photos, 205
+backing a line, 160 lines:
 
 | photos on a line | lines |
 |---|---|
