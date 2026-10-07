@@ -966,7 +966,25 @@ export default function WorksheetPage() {
           * a total that is not the claim's total yet -- is still true after
           * you close it, and the export buttons beside it stay live.
           */}
-        {stillPricing > 0 ? (
+        {/*
+          * A HANDFUL OF LINES IN FLIGHT ON A BUILT CLAIM IS A RE-PRICE, not a
+          * half-built inventory, and must not be dressed as one. Editing a
+          * query and pressing Re-price put ONE line back into `processing` and
+          * raised "Kevin is still pricing — 1 of 158 lines to go", which told
+          * the adjuster their finished claim was a snapshot of unfinished work.
+          *
+          * Nothing in the payload says who started a run, so this reads the
+          * shape instead: a few lines moving while the rest are already priced
+          * is a re-price. Anything larger is a run.
+          */}
+        {stillPricing > 0 && stillPricing <= 3 && pricedSoFar > 0 ? (
+          <Alert
+            tone="info"
+            title={`Re-pricing ${fmtInt(stillPricing)} ${stillPricing === 1 ? 'line' : 'lines'}…`}
+          >
+            Its comps, RCV and ACV update when Kevin finishes. The rest of the claim is unaffected.
+          </Alert>
+        ) : stillPricing > 0 ? (
           <Alert
             tone="info"
             title={`Kevin is still pricing — ${fmtInt(stillPricing)} of ${fmtInt(stillPricing + pricedSoFar)} lines to go`}

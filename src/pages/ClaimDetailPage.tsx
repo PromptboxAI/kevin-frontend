@@ -160,14 +160,21 @@ export default function ClaimDetailPage() {
    * on read"), so the consequence showed up a screen away -- the worksheet's
    * Tax column stayed blank on every line.
    *
-   * Only once the ADJUSTER has changed the ZIP. Adopting a rate on mere page
-   * load would rewrite the rate on a claim that may already have been exported
-   * to a carrier, which is a silent change to money nobody asked for.
+   * Two ways in, and both are things the adjuster did: they changed the ZIP,
+   * or the claim has NO rate at all and a ZIP now resolves one. The second
+   * matters because the ZIP no longer persists in `loss_address` (a ZIP is not
+   * an address), so "has it changed" alone would stop firing the moment the
+   * page reloaded and leave the claim with no rate and a blank Tax column.
+   *
+   * What it will never do is overwrite a rate the claim already holds just
+   * because a page loaded -- that claim may be in a carrier's hands, and
+   * restamping its tax is a silent change to money nobody asked for.
    */
   const originalZip = zipOf(original.loss_address)
   const rateKey = taxPlan.options.map((o) => o.rate ?? '').join('|')
   useEffect(() => {
-    if (!addr.zip || addr.zip === originalZip || taxLookup.isFetching) return
+    if (!addr.zip || taxLookup.isFetching) return
+    if (addr.zip === originalZip && form.tax_rate.trim() !== '') return
     const first = taxPlan.options[0]
     if (first?.rate == null) return
     // An ambiguous ZIP offers a choice and no default -- let them pick.

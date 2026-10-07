@@ -258,7 +258,11 @@ export function splitAddress(address: string): AddressParts {
   if (trailing && trailing[3]) {
     const head = (trailing[1] ?? '').replace(/[,\s]+$/, '')
     return {
-      street: head,
+      /* A head that is itself only digits is not a street -- it is the same
+         ZIP written twice, which is what the earlier round-trip bug produced
+         ("11790, 11790" shown as a loss address). Reading it as empty lets
+         the bad value clear itself the next time the claim is saved. */
+      street: /^\d+$/.test(head) ? '' : head,
       city: '',
       state: (trailing[2] ?? '').toUpperCase(),
       zip: trailing[3],
@@ -268,7 +272,25 @@ export function splitAddress(address: string): AddressParts {
   return whole
 }
 
+/**
+ * ⛔ A ZIP ON ITS OWN IS NOT AN ADDRESS.
+ *
+ * `loss_address` is one string and there is no `loss_zip` column, so this used
+ * to join whatever it was given -- and an adjuster who typed only a ZIP (to
+ * resolve the sales-tax rate, which is the ZIP's actual job) had "11790" stored
+ * as the claim's loss address and shown as one everywhere it appears,
+ * including on a document a carrier reads. Nobody typed an address, so none is
+ * written.
+ *
+ * The ZIP is not lost by this: what it exists to produce is the claim's
+ * `tax_rate`, and that is stored in its own column. A dedicated `loss_zip` is
+ * asked for as BACKEND-PROMPTS ask 25; until it exists, the ZIP persists only
+ * as part of a real address.
+ */
 export function joinAddress(parts: AddressParts): string {
+  const street = parts.street.trim()
+  const city = parts.city.trim()
+  if (!street && !city) return ''
   const tail = [parts.state.trim(), parts.zip.trim()].filter(Boolean).join(' ')
-  return [parts.street.trim(), parts.city.trim(), tail].filter(Boolean).join(', ')
+  return [street, city, tail].filter(Boolean).join(', ')
 }
