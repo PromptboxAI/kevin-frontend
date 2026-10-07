@@ -6,7 +6,8 @@ import ClaimMissing from '../components/ClaimMissing'
 import { I, Icon } from '../components/Icon'
 import { ApiError, api } from '../lib/api'
 import { fmtInt, fmtUSD } from '../lib/format'
-import type { ClaimItem, ClaimItemListResponse, ClaimSummary, StatusCounts } from '../lib/types'
+import { fetchAllClaimItems } from '../lib/claim-items-all'
+import type { ClaimItem, ClaimSummary, StatusCounts } from '../lib/types'
 
 /**
  * Kevin working, while it works.
@@ -82,10 +83,20 @@ export default function ProcessingPage() {
    */
   const feedQuery = useQuery({
     queryKey: ['processing-feed', claimId],
-    queryFn: () =>
-      api.get<ClaimItemListResponse>(
-        `/v1/claim_items?claim_id=${encodeURIComponent(claimId)}&limit=100`,
-      ),
+    /*
+     * PAGED, not the first 100.
+     *
+     * `limit=100` was silently truncating the read: on a 158-item run the
+     * resolved lines can sit entirely past the first page, so the feed showed
+     * "waiting for the first line" while the counter beside it said 26 were
+     * priced. The two numbers came from different reads of the same claim and
+     * only one of them was complete.
+     *
+     * Same cap, same symptom, as the worksheet and the photos tab -- which is
+     * why the paging lives in one shared fetcher rather than being rewritten
+     * per screen.
+     */
+    queryFn: () => fetchAllClaimItems(claimId),
     refetchInterval: delay,
     enabled: !!claimId,
   })
