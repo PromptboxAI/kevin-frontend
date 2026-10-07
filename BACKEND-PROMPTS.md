@@ -52,6 +52,62 @@ different things.
 
 ---
 
+## 22. Saved people live in one browser, not on the account
+
+**Status:** new, 2026-10-07. Owner's request, and he named the comparison:
+*"Xactimate has all of this saved so once it's entered once a user can just
+click on the dropdown and pull it up."*
+
+**Where they live today.** The Estimator and Company header pickers on New
+claim — and now on the Claim detail tab, which is the same form — are backed by
+`localStorage` under `kevin.directory.v1`. There is no account-level route for
+them (BACKEND-ASKS 33), so:
+
+- a second machine shows empty dropdowns;
+- a different browser, or a cleared site data, loses the list;
+- a second person on the account never sees what the first one saved.
+
+The claim itself is fine either way — it stores `estimator_name` and
+`business_name` as plain strings — so nothing is lost when the list is. It is
+purely that the convenience does not follow the user, which is exactly the
+thing being compared to Xactimate.
+
+**Asking for: saved PEOPLE on the account.**
+
+```
+GET    /v1/me/contacts            -> { people: [...] }
+POST   /v1/me/contacts            -> create
+PATCH  /v1/me/contacts/{id}       -> edit  (the licence number someone forgot)
+DELETE /v1/me/contacts/{id}
+```
+
+Per person, matching what the form already collects: `name`, `company`,
+`license`, `phone`, `email`. Nothing claim-scoped — this is a contact list, and
+the claim keeps carrying its own `estimator_name` string so an export never
+depends on a lookup.
+
+**⚠️ We are deliberately NOT asking for a companies list, and want you to push
+back if you think that is wrong.** The account already has ONE business profile
+behind `GET/PATCH /v1/me` plus `/v1/me/logo`, and that profile — not the
+claim's `business_name` — is what brands the exported PDF
+(`letterheadLines(formFrom(me.data?.business))` in ExportPage). The owner
+settled multi-firm branding explicitly on 2026-09-30: *"we can leave it as is.
+I don't want to spend time building that out."* So a second, account-level list
+of companies would be a rival source of truth for something that already has
+one, and the likely outcome is a claim branded one way and a PDF branded
+another.
+
+If you agree, the Company header picker becomes a thin thing over the single
+business profile rather than a list, and we will change the UI to say so. If
+you think a list is right after all, say why and we will take it back to the
+owner rather than guessing.
+
+**Not urgent.** Nothing is broken and no data is at risk — a lost list costs
+somebody five minutes of retyping. It is a parity gap, raised because the owner
+asked for it by name.
+
+---
+
 ## 21. Merge quality — the clusterer leaves half the pairs unmerged
 
 **Status:** new, 2026-10-06. Owner's report, now with numbers rather than a
