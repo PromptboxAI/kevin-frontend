@@ -3920,6 +3920,21 @@
     .k-adm-tr { border-bottom: 1px solid var(--k-line); font-size: 13px; cursor: pointer; text-decoration: none; color: inherit; }
     .k-adm-tr:last-child { border-bottom: 0; }
     .k-adm-tr:hover { background: var(--k-bg-2); }
+    /* These rows are <button>s on the Support screen -- picking an account is an
+       action, not navigation -- so the browser's own button chrome has to go or
+       they render boxed and centred among the <a> rows beside them. */
+    button.k-adm-tr {
+      border: 0; border-bottom: 1px solid var(--k-line); font: inherit;
+      background: none; width: 100%; text-align: left;
+    }
+    /* The current selection. Stated with a bar rather than only a tint: the row
+       keeps its hover, and a tint alone is indistinguishable from the hovered
+       row directly under the cursor. */
+    .k-adm-tr--on {
+      background: var(--k-accent-soft);
+      box-shadow: inset 2px 0 0 var(--k-accent);
+    }
+    .k-adm-tr--on:hover { background: var(--k-accent-soft); }
     .k-adm-acct { display: flex; align-items: center; gap: 11px; min-width: 0; }
     .k-adm-avatar { width: 32px; height: 32px; border-radius: 99px; background: var(--k-accent); color: #fff; display: grid; place-items: center; font-size: 11px; font-weight: 700; flex: 0 0 auto; }
     .k-adm-bars { display: flex; align-items: flex-end; gap: 5px; height: 80px; }
