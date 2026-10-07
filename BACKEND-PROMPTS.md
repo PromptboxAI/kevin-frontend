@@ -19,6 +19,37 @@ documents a carrier reads. The message restated that it carries no approval.
 
 ---
 
+## 24. Extraction reports nothing until it reports everything
+
+**Status:** new, 2026-10-07. Observed live on the owner's re-run: 209 photos,
+1.29 GB. The staging panel sat at **"0 of 209 read" for several minutes** and
+then jumped straight to all 209. His words: *"its been several minutes and as a
+user this ux shows me nothing going on"* and *"it just jumps now to all of the
+photos but showed me no progress along the way"*.
+
+**What the client has to work with.** A photo is "still extracting" when
+`photo.status === "uploaded"`. Every photo in the session holds that status for
+the whole run and they all change together when the batch commits, so the only
+derivable progress number is 0% and then 100%. The page polls every 2.5s, so
+this is not a refresh problem — there is genuinely nothing new in the payload
+between those two moments.
+
+**The ask:** advance per-photo extraction state as it happens, so
+`status` moves off `uploaded` for each photo as that photo is read. Nothing new
+in the shape is needed; it is a question of when the write lands.
+
+If per-photo commits are expensive, a session-level counter is enough —
+`photos_extracted` beside `photo_count` on `GET …/staging` — and cheaper for us
+to read than counting statuses.
+
+**Mitigated meanwhile, not fixed.** The bar is now INDETERMINATE until the
+server actually moves a photo, with an elapsed clock beside it, because a
+determinate bar pinned at 0% does not read as "working", it reads as "stopped"
+— which is exactly how the owner read it. That is an honest placeholder for a
+number we do not have, not a substitute for having it.
+
+---
+
 ## 23. "Use this comp" has no route, so the panel hand-prices instead
 
 **Status:** new, 2026-10-07. NOT MINE TO ASK FOR — the backend session proposed
@@ -170,6 +201,32 @@ asked for it by name.
 ---
 
 ## 21. Merge quality — the clusterer leaves half the pairs unmerged
+
+**ADDENDUM 2026-10-07 — and now it OVER-merges too, on the same claim.**
+
+A counter-example from the re-run, which matters because it points the opposite
+way from the original complaint. Proposed **Set 03** holds three photos:
+
+    20261005_144947.jpg   a blue Igloo cooler
+    20261005_145003.jpg   a Pottery Barn label on a wooden panel
+    20261005_145011.jpg   the edge of a wooden drawer
+
+A 24-second span, and two different objects — the cooler is not the shelf. The
+first and third are plausibly the same piece of furniture; the cooler was shot
+between them while the adjuster walked past it.
+
+This is not a bug in the AND-gate so much as the ceiling of a pure time window:
+the original complaint was UNDER-merging (119 of 160 lines were single-photo, a
+wide shot and its model plate landing as two lines), and this is OVER-merging,
+from the same signal. **Tightening the window worsens one and loosening it
+worsens the other**, so the two cannot both be fixed by tuning a threshold.
+
+Worth knowing before anyone spends time on the threshold. The cost is also
+asymmetric: an unmerged pair costs a duplicate line the adjuster deletes, while
+an over-merged set costs ITEMS — one set promotes to at most one line, so Set
+03 as proposed would turn three objects into one, and the two that vanish are
+not flagged anywhere.
+
 
 **Status:** new, 2026-10-06. Owner's report, now with numbers rather than a
 feeling.
