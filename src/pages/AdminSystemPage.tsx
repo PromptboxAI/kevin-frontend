@@ -91,6 +91,14 @@ export default function AdminSystemPage() {
 
   const h = health.data
   const pricing = bannerFor(status.data, localTime)
+  /* The raw block, for the evidence line under the banner. `bannerFor` returns
+     only what a CUSTOMER should read; ops needs to see what it was derived from. */
+  const rawPricing = (status.data as {
+    pricing?: {
+      since?: string | null
+      check?: { result?: string | null; at?: string | null } | null
+    }
+  } | undefined)?.pricing
   const quota = vendorQuotaFrom(h?.jobs)
   const jobs = h?.jobs ?? []
   /** Failures by CAUSE: one bug that killed 48 photos is one thing to fix. */
@@ -190,9 +198,45 @@ export default function AdminSystemPage() {
         <Card title="Pricing service">
           <div className="k-set-card-body">
             {pricing ? (
-              <Alert tone={pricing.tone === 'paused' ? 'service' : 'wait'} title={pricing.message}>
-                {pricing.detail}
-              </Alert>
+              <>
+                <Alert tone={pricing.tone === 'paused' ? 'service' : 'wait'} title={pricing.message}>
+                  {pricing.detail}
+                </Alert>
+                {/*
+                  * TWO DIFFERENT PIECES OF EVIDENCE, and only one of them sets
+                  * the state.
+                  *
+                  * `state` mirrors the VENDOR's own status page -- deliberately,
+                  * because it once read "ok" straight through a two-day
+                  * published outage -- and returns to ok only when the vendor
+                  * clears the component. `check` is our own control search and
+                  * cannot lower it. They can therefore disagree for days, which
+                  * looks like a bug to anyone reading the banner and is the
+                  * single most useful thing to show whoever is deciding whether
+                  * to trust it.
+                  *
+                  * `unverified` is not a failure: it means no recent real
+                  * traffic and no control search allowed in that window (cap,
+                  * cooldown or budget), so it flips with ok.
+                  */}
+                <p
+                  className="k-note"
+                  style={{ marginTop: 10, display: 'flex', gap: 14, flexWrap: 'wrap' }}
+                >
+                  <span>
+                    State follows the vendor&rsquo;s status page
+                    {rawPricing?.since ? ` — set ${rawPricing.since}` : ''}.
+                  </span>
+                  <span>
+                    Our own last check:{' '}
+                    <strong>{rawPricing?.check?.result ?? 'none recorded'}</strong>
+                    {rawPricing?.check?.at ? ` at ${rawPricing.check.at}` : ''}
+                    {rawPricing?.check?.result === 'unverified'
+                      ? ' (no traffic and no control search allowed in that window)'
+                      : ''}
+                  </span>
+                </p>
+              </>
             ) : (
               <Alert tone="success" title="Pricing is running normally">
                 Nothing is paused, and adjusters see no banner.
