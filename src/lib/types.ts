@@ -169,6 +169,25 @@ export type Comp = {
   price?: number | string
   link?: string
   kind?: 'retail' | 'resale'
+  /**
+   * The adjuster chose this comp (`POST …/select_comp`, backend 2026-10-07).
+   *
+   * At most one comp carries it, and only on a line someone has chosen on. It
+   * OUTRANKS the arithmetic match, because two comps can share a price and
+   * "the comp whose price equals the RCV" then cannot say which was picked.
+   * Absent on every untouched line, where nearest-RCV still holds.
+   */
+  selected?: boolean
+}
+
+/** `POST /v1/claim_items/{row_id}/select_comp`. */
+export type SelectCompResponse = {
+  status: string
+  row_id: number
+  alternative_sources: Comp[]
+  source_link: string | null
+  /** "needed" = the chosen listing has no store page; prompt for one. */
+  link_status: 'resolved' | 'needed'
 }
 
 export type ClaimItem = {

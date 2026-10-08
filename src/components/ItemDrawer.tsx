@@ -13,7 +13,13 @@ import { useDepreciationRules } from '../lib/depreciation-rules'
 import ClassOptionList from './ClassOptionList'
 import { QUERY_MAX, composeQuery, isQueryValid, trimQuery } from '../lib/query'
 import { CAPACITY_REASONS } from '../lib/types'
-import type { ClaimItemDetail, ClaimSummary, Comp, ThumbnailsResponse } from '../lib/types'
+import type {
+  ClaimItemDetail,
+  ClaimSummary,
+  Comp,
+  SelectCompResponse,
+  ThumbnailsResponse,
+} from '../lib/types'
 
 /** Adjuster-facing copy for why a row is unpriced. */
 const MANUAL_COPY: Record<string, string> = {
@@ -194,37 +200,51 @@ export default function ItemDrawer({
    * Two calls because the API has two: the price is an override, the proof URL
    * is a display field.
    */
-  /*
-   * STOPGAP, and it costs the line something -- see BACKEND-PROMPTS ask 23.
-   * There is no route to select a comp, so this hand-prices the line instead:
-   * the basis becomes `manual` and the backend clears the comps, meaning the
-   * adjuster gets ONE switch and then has no alternatives left to switch to.
+  /**
+   * Pick a different comp (backend 2026-10-07, ask 23 — shipped).
    *
-   * The link is only carried across when it is a real merchant URL. Only one
-   * comp per line has one; the others hold a Google redirect, and recording
-   * that as the adjuster's own `manual_source_url` would cite a page that
-   * never shows the listing. Better no link than a false one.
+   * This replaces a stopgap that hand-priced the line through `override`. That
+   * was wrong in three ways the route fixes: the override CLEARED the comps, so
+   * the adjuster got one switch and then had nothing left to switch between;
+   * the basis became `manual`, which is false on a line whose price is a real
+   * listing's; and it was two calls racing. A selection keeps every comp, marks
+   * the chosen one, leaves the line comp-priced and charges no quota.
+   *
+   * `price` is sent so a stale panel is refused with a 409 rather than quietly
+   * selecting a comp the adjuster never saw.
    */
-  const useComp = (comp: Comp) => {
+  const [linkNeeded, setLinkNeeded] = useState(false)
+  const [linkDraft, setLinkDraft] = useState('')
+  const selectComp = useMutation({
+    mutationFn: (comp: { index: number; price: number }) =>
+      api.post<SelectCompResponse>(`/v1/claim_items/${rowId}/select_comp`, {
+        json: { index: comp.index, price: comp.price },
+      }),
+    onSuccess: (res) => {
+      /* The chosen listing may have no store page. Say so and offer the one
+         field that fixes it, rather than leaving the line silently unsourced:
+         on a carrier-facing line that is the difference between substantiated
+         and asserted. Every comp on a line priced before 2026-10-07 lands
+         here; lines priced after it usually resolve. */
+      setLinkNeeded(res.link_status === 'needed')
+      setLinkDraft('')
+      setNotice(null)
+      refresh()
+    },
+    onError: (e) =>
+      setNotice(
+        e instanceof ApiError && e.status === 409
+          ? 'That price has changed since the panel loaded. Reopen the line and pick again.'
+          : e instanceof Error
+            ? e.message
+            : 'Could not select that comp.',
+      ),
+  })
+
+  const useComp = (comp: Comp, index: number) => {
     const price = Number(comp.price)
     if (!Number.isFinite(price) || price < 0) return
-    const link = isMerchantLink(comp.link) ? (comp.link ?? null) : null
-    override.mutate({ rcv: price })
-    editLine.mutate({ manual_source_url: link })
-    /*
-     * SAY IT, do not just do it. Only one comp per line has its real merchant
-     * URL resolved -- the rest carry a Google redirect that never lands on a
-     * listing -- so taking a price from one of the others leaves the line with
-     * no source link. Dropping it silently looks like the link was lost; the
-     * adjuster needs to know the price moved and the proof did not, because on
-     * a carrier-facing line that is the difference between substantiated and
-     * asserted. The route that would carry the link across is ask 23.
-     */
-    setNotice(
-      link
-        ? null
-        : 'Price taken from this listing. Its link could not come with it — only the listing the price originally came from has a resolved merchant URL, and the others point back at Google. Paste a link in Source if you need this line substantiated.',
-    )
+    selectComp.mutate({ index, price })
   }
 
   /**
@@ -275,13 +295,27 @@ export default function ItemDrawer({
   const repricing = data?.status === 'processing' || reprice.isPending
 
   const unpriced = data?.status === 'needs_manual'
-  /** Which listing the unit cost came from, when the payload proves it. */
-  const cited = citedCompIndex(data?.rcv, data?.alternative_sources)
   /**
-   * How many listings the price was chosen from. Inert until the backend
-   * ships `comp_sample_size`; null today, and null is "not recorded".
+   * Which listing the unit cost came from.
+   *
+   * An explicit `selected` flag WINS over the arithmetic: two comps can share a
+   * price, so matching on "price equals rcv" cannot say which one the adjuster
+   * picked. The flag is absent on every line nobody has chosen on, where the
+   * arithmetic is still the only evidence there is.
    */
-  const sample = sampleNote(data?.comp_sample_size, data?.alternative_sources?.length ?? 0)
+  const chosen = (data?.alternative_sources ?? []).findIndex((c) => c.selected)
+  const cited =
+    chosen >= 0 ? chosen : citedCompIndex(data?.rcv, data?.alternative_sources)
+  /**
+   * How many listings the price was chosen from -- an ENGINE claim, so it is
+   * suppressed once the adjuster has chosen: on that line the price is their
+   * pick, not a selection out of a bucket, and saying otherwise credits the
+   * engine with a decision it did not make.
+   */
+  const sample =
+    chosen >= 0
+      ? null
+      : sampleNote(data?.comp_sample_size, data?.alternative_sources?.length ?? 0)
   const waiting = Boolean(
     unpriced && data?.manual_reason && CAPACITY_REASONS.has(data.manual_reason),
   )
@@ -693,8 +727,13 @@ export default function ItemDrawer({
                             comp={comp}
                             preferred={index === 0}
                             cited={index === cited}
-                            busy={repricing || override.isPending || editLine.isPending}
-                            onUse={index === cited ? undefined : () => useComp(comp)}
+                            busy={
+                              repricing ||
+                              override.isPending ||
+                              editLine.isPending ||
+                              selectComp.isPending
+                            }
+                            onUse={index === cited ? undefined : () => useComp(comp, index)}
                           />
                         ))}
                       </div>
@@ -717,9 +756,56 @@ export default function ItemDrawer({
                           comps and carries the adjuster's own link. */}
                       {cited !== null && data.valuation_basis !== 'manual' ? (
                         <span className="k-insp-hint">
-                          Unit cost is the price of a single listing — the one marked above — and
-                          the Source Link points at it{sample ? `, ${sample}` : ''}.
+                          {chosen >= 0
+                            ? 'Unit cost is the price of the listing you chose.'
+                            : `Unit cost is the price of a single listing — the one marked above — and the Source Link points at it${sample ? `, ${sample}` : ''}.`}
                         </span>
+                      ) : null}
+
+                      {/* The chosen listing has no store page, so the line has
+                          no Source Link until one is pasted. Offered here,
+                          beside the comp it belongs to, rather than left for
+                          the adjuster to discover a field away. */}
+                      {linkNeeded ? (
+                        <div className="k-lkq-note" style={{ marginTop: 8 }}>
+                          <span className="k-lkq-note-l">Source link needed</span>
+                          <span className="k-lkq-note-b">
+                            That listing has no store page Kevin can link to. Paste one to
+                            substantiate the line.
+                          </span>
+                          <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                            <input
+                              className="k-input"
+                              style={{ flex: 1, minWidth: 0 }}
+                              placeholder="https://…"
+                              value={linkDraft}
+                              onChange={(e) => setLinkDraft(e.target.value)}
+                            />
+                            <button
+                              type="button"
+                              className="k-btn k-btn--sm"
+                              disabled={!isMerchantLink(linkDraft) || editLine.isPending}
+                              title={
+                                isMerchantLink(linkDraft)
+                                  ? 'Save as this line’s Source Link'
+                                  : 'Needs a full http(s) link to the listing'
+                              }
+                              onClick={() => {
+                                editLine.mutate({ manual_source_url: linkDraft.trim() })
+                                setLinkNeeded(false)
+                              }}
+                            >
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              className="k-btn k-btn--sm k-btn--ghost"
+                              onClick={() => setLinkNeeded(false)}
+                            >
+                              Later
+                            </button>
+                          </div>
+                        </div>
                       ) : null}
                     </>
                   ) : (

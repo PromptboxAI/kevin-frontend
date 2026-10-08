@@ -97,7 +97,7 @@ number we do not have, not a substitute for having it.
 
 ---
 
-## 23. "Use this comp" has no route, so the panel hand-prices instead
+## 23. "Use this comp" has no route, so the panel hand-prices instead — DONE
 
 **Status:** new, 2026-10-07. NOT MINE TO ASK FOR — the backend session proposed
 this (`POST /v1/claim_items/{row_id}/select-comp`) and asked for corrections,
