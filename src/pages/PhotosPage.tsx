@@ -272,6 +272,15 @@ export default function PhotosPage() {
     if (needle) {
       out = out.filter((p) => {
         const it = itemForPhoto(p, byId)
+        /*
+         * THE LINE NUMBER IS WHAT THE TILE IS LABELLED WITH, so it is what
+         * people type. Both forms are matched: the padded one the label shows
+         * ("Line 0183") and the bare one ("183"), because an adjuster reading
+         * a number off a worksheet row or an export does not retype the zeros.
+         * Padded covers bare by substring anyway -- "183" is inside "0183" --
+         * but the bare form is listed so a line past 9999 still matches.
+         */
+        const padded = it?.line_no == null ? null : String(it.line_no).padStart(4, '0')
         return [
           it?.description,
           it?.suggested_description,
@@ -281,6 +290,8 @@ export default function PhotosPage() {
           p.room,
           p.note,
           `photo ${p.photo_id}`,
+          padded && `line ${padded}`,
+          it?.line_no == null ? null : String(it.line_no),
         ]
           .filter(Boolean)
           .some((s) => String(s).toLowerCase().includes(needle))
@@ -447,7 +458,7 @@ export default function PhotosPage() {
               <div className="k-search" style={{ minWidth: 220 }}>
                 <Icon d={I.search} size={12} />
                 <input
-                  placeholder="Search by item, make, model, room…"
+                  placeholder="Search by line no., item, make, model, room…"
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                 />
