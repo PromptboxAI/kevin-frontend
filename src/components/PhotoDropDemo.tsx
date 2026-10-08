@@ -152,6 +152,13 @@ const NOT_PRICED: Record<NotPricedReason, { head: string; body: string }> = {
     head: 'Not enough live listings',
     body: 'Kevin found the item but too few current listings to stand behind a number. In the worksheet that arrives as a blank, editable price rather than a guess.',
   },
+  /* NOT a verdict on the item. The vendor is degraded, so the lookup was not
+     properly attempted -- saying "not enough listings" here would blame the
+     visitor's photograph for our own outage. */
+  service_degraded: {
+    head: 'Live pricing is having trouble right now',
+    body: 'Kevin identified it, but the pricing service is degraded, so this is not a judgement about your photo — we could not look properly. The samples below were priced earlier and are unaffected.',
+  },
   budget_paused: {
     head: 'Live pricing is paused for today',
     body: "Kevin identified it, but today's share of live pricing is spent. Every price is a real lookup, so the demo has a daily ceiling. The samples below are already priced.",
@@ -160,6 +167,26 @@ const NOT_PRICED: Record<NotPricedReason, { head: string; body: string }> = {
     head: 'Something went wrong',
     body: 'That one did not make it through. Try another photo.',
   },
+}
+
+/**
+ * ⛔ TOTAL BY CONSTRUCTION. A reason this build has never heard of must not be
+ * able to take the home page down.
+ *
+ * `NOT_PRICED[reason].head` on an unknown key reads `.head` of undefined and
+ * throws during render, and there is no error boundary above this — so the
+ * whole page unmounts and the visitor gets a blank screen. That is what
+ * happened when the backend began returning `service_degraded`: the string was
+ * documented only in a schema docstring, the table had no entry, and the
+ * marketing page went white for everyone while the vendor was degraded.
+ *
+ * `drop.reason ?? 'unavailable'` did not help -- it covers null, not an
+ * unfamiliar string. The backend will add reasons again, and the frontend is
+ * deployed separately, so this gap reopens on every such release unless the
+ * lookup itself is total.
+ */
+function notPricedCopy(reason: NotPricedReason): { head: string; body: string } {
+  return NOT_PRICED[reason] ?? NOT_PRICED.unavailable
 }
 
 const REFUSAL: Record<DropRefusal['kind'], { head: string; body: string }> = {
@@ -928,8 +955,8 @@ export default function PhotoDropDemo() {
                   <strong>{view.identified.description}</strong>
                 </div>
               ) : null}
-              <strong>{NOT_PRICED[view.reason].head}</strong>
-              <p>{NOT_PRICED[view.reason].body}</p>
+              <strong>{notPricedCopy(view.reason).head}</strong>
+              <p>{notPricedCopy(view.reason).body}</p>
               <button type="button" className="k-btn k-btn--ghost" onClick={reset}>
                 Try another photo
               </button>

@@ -41,6 +41,12 @@ export type NotPricedReason =
   | 'not_an_item'
   | 'needs_adjuster'
   | 'no_price'
+  /**
+   * The pricing vendor is publicly degraded, so the lookup was not properly
+   * attempted (backend 698dd9c). NOT the same as `no_price`: that one means
+   * too few listings exist, this one means we could not look right now.
+   */
+  | 'service_degraded'
   | 'budget_paused'
   | 'unavailable'
 
