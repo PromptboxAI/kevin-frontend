@@ -1252,3 +1252,77 @@ Two live facts we rely on and would want to know about if they change: exactly
 **one** line carries a `max_pct` (`Music, Movies & Media > DVDs`), and **six**
 classes are `appraisal: true` — jewelry, firearms, fine arts, furs, fine china
 and graded trading cards. Both are stated publicly now.
+
+---
+
+## 40 · Companies and estimators belong to the CLAIM, and its documents
+
+Raised by the owner, 2026-10-08, from a real export: a company was added under
+**Personnel & company**, with a logo, and the PDF still printed with no
+letterhead and the export said *"No firm details saved."*
+
+### The model Xactimate sets, and the one we have
+
+**Xactimate allows multiple companies and estimators per claim, and they become
+part of that claim's documents.** Our shape is one company name and one
+estimator name per claim, as free text, with the letterhead coming from
+somewhere else entirely.
+
+### What is true today (all verified, not assumed)
+
+- A claim **does** persist `business_name` and `estimator_name`. Confirmed on
+  the live API: `GET /v1/claims/sample` returns both among its 35 fields.
+  **Neither appears anywhere in FRONTEND.md** — worth documenting regardless of
+  what else changes here.
+- They are **single free-text strings**. No structured company record, so no
+  address, licence, phone, website or logo travels with the claim, and there is
+  no way to attach a second company or a second estimator.
+- The **Directory** (Personnel & company) is browser-only: `localStorage` key
+  `kevin.directory.v1`, zero API calls in `src/lib/directory.ts`. It does not
+  sync across devices and does not survive clearing site data.
+- Of everything a company record holds, **only the name leaves the browser** —
+  it populates the claim's `business_name`. The logo is read in exactly one
+  place (`IntakePage.tsx:613`, a thumbnail beside the picker) and the address
+  block in one (`companyLines`, line 615). `ClaimDetailPage` does not render
+  either, so after intake they are invisible.
+- The **PDF letterhead reads the ACCOUNT**, not the claim:
+  `ExportPage.tsx:138` → `letterheadLines(formFrom(me.data?.business))`, i.e.
+  `/v1/me` → `business`, edited at Settings → Business. `?letterhead=false`
+  only switches it off; there is no per-claim source.
+
+### The immediate bug: three places promise a letterhead
+
+The picker hint on **both** `IntakePage.tsx:590` and `ClaimDetailPage.tsx:536`
+reads *"Your letterhead on the inventory PDF and share links"*, and the company
+dialog is subtitled *"The letterhead on your exports"*
+(`DirectoryModals.tsx:138`). None of it is wired. The owner followed those
+instructions exactly and got nothing — which is how this was found.
+
+The intent was clearly to print: `LOGO_MAX_BYTES` is 512KB, commented *"big
+enough to print, small enough for a browser store."*
+
+### What we are asking for
+
+1. **Per-claim company and estimator as records, not strings.** A claim should
+   carry the company's name, address, licence and logo — enough to render its
+   own letterhead — rather than a name we cannot lay out.
+2. **Support more than one of each per claim**, per the Xactimate model, with
+   whatever ordering decides which prints as the header.
+3. **A snapshot, not a live reference.** `src/lib/business-rules.ts` already
+   argues this for the account profile: a claim is a point-in-time document and
+   must keep the preparer it was made with "even after the person leaves the
+   firm." The same reasoning says a claim's company should be captured at the
+   time, not re-read from a directory that may have changed.
+4. **The PDF letterhead should prefer the CLAIM's company**, falling back to the
+   account profile when the claim has none. Today the claim's company cannot
+   affect the letterhead at all.
+5. **Document `business_name` / `estimator_name`** in FRONTEND.md whatever is
+   decided, since the frontend already PATCHes them.
+
+### Until then
+
+The frontend half is the core-product session's (`IntakePage`,
+`ClaimDetailPage`, `ExportPage`, the Directory) and nothing has been changed.
+The smallest honest interim fix is to stop promising a letterhead in those
+three strings and point people at Settings → Business, which is where the
+letterhead actually comes from.
