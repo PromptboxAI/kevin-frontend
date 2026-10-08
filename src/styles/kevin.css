@@ -1061,7 +1061,12 @@
       width: 200px; height: 4px; background: var(--k-bg-3); border-radius: 99px; overflow: hidden;
       border: 1px solid var(--k-line);
     }
-    .k-progress-bar { height: 100%; background: var(--k-accent); transition: width 0.4s ease-out; }
+    /* `display: block` is load-bearing, not tidying. The bar is written as a
+       <span> in several places, and width/height do not apply to an inline
+       box -- so every INDETERMINATE bar rendered as nothing at all, which is
+       how "Grouping 126 photos…" came to sit under an empty track. The
+       determinate ones only survived because they carry an inline width. */
+    .k-progress-bar { display: block; height: 100%; background: var(--k-accent); transition: width 0.4s ease-out; }
 
     /* ── Upload progress: movement, because a still bar reads as a stuck one ──
        Two shapes, and the difference is whether we actually know a figure.

@@ -75,6 +75,73 @@ const FILL_IMG: React.CSSProperties = {
   display: 'block',
 }
 
+function PhaseRow({
+  label,
+  state,
+  clock,
+  detail,
+  frac,
+}: {
+  label: string
+  state: 'done' | 'active' | 'wait'
+  clock: string | null
+  detail: string
+  /** A real fraction, or null when the server reports no progress for it. */
+  frac: number | null
+}) {
+  const pct = frac == null ? 0 : Math.round(Math.min(Math.max(frac, 0), 1) * 100)
+  return (
+    <div style={{ opacity: state === 'wait' ? 0.55 : 1 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+        {state === 'done' ? (
+          <Icon d={I.check} size={12} stroke={2.5} />
+        ) : state === 'active' ? (
+          <span className="k-paused-dot k-paused-dot--go" aria-hidden="true" />
+        ) : (
+          <span
+            aria-hidden="true"
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: 99,
+              background: 'var(--k-fg-4)',
+              flex: '0 0 auto',
+            }}
+          />
+        )}
+        <span style={{ fontSize: 13, fontWeight: state === 'active' ? 600 : 500 }}>{label}</span>
+        <span style={{ flex: 1 }} />
+        {clock ? (
+          <span className="k-mono" style={{ fontSize: 11, color: 'var(--k-fg-4)' }}>
+            {clock}
+          </span>
+        ) : null}
+      </div>
+
+      {/* Indeterminate ONLY where there is genuinely nothing to count. A
+          determinate bar sitting at 0% reads as stopped, not as working. */}
+      {state === 'active' && frac == null ? (
+        <span className="k-progress k-progress--busy" style={{ display: 'block', width: '100%' }}>
+          <span className="k-progress-bar" />
+        </span>
+      ) : (
+        <span className="k-progress" style={{ display: 'block', width: '100%' }}>
+          <span
+            className={`k-progress-bar${state === 'active' ? ' k-progress-bar--live' : ''}`}
+            style={{ width: `${state === 'done' ? 100 : pct}%` }}
+          />
+        </span>
+      )}
+
+      <span
+        style={{ display: 'block', marginTop: 5, fontSize: 11.5, color: 'var(--k-fg-4)' }}
+      >
+        {detail}
+      </span>
+    </div>
+  )
+}
+
 /** "4m 12s so far" -- a clock, not an estimate. We have no basis for an ETA. */
 function elapsedLabel(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 1000))
@@ -184,16 +251,8 @@ export default function StagingPage() {
   const isReading = reading > 0
   const [readSince, setReadSince] = useState<number | null>(null)
   const [readNow, setReadNow] = useState(() => Date.now())
-  useEffect(() => {
-    if (!isReading) {
-      setReadSince(null)
-      return
-    }
-    setReadSince(Date.now())
-    const id = setInterval(() => setReadNow(Date.now()), 1000)
-    return () => clearInterval(id)
-  }, [isReading])
   const readingFor = elapsedLabel(readSince ? readNow - readSince : 0)
+
 
   /** A loose photo is only actionable once its extraction finishes. */
   const loose = unassigned.filter(isActionable)
@@ -493,6 +552,58 @@ export default function StagingPage() {
    * describe a grouping the line items no longer follow.
    */
   const isProcessed = data?.status === 'processed'
+
+  /**
+   * HOW MANY PHOTOS ARE LEFT TO READ -- the server's own figure.
+   *
+   * `reading` counts photos the session has not LISTED, which it cannot do
+   * until clustering runs, so it stays pinned at the full count for the whole
+   * pass. That is the right question for gating the grouping actions and the
+   * wrong one for telling the adjuster what is happening. `photos_extracted`
+   * answers that; `reading` is the fallback only while the field is absent.
+   */
+  const readLeft =
+    typeof data?.photos_extracted === 'number'
+      ? Math.max(0, (data?.photo_count ?? 0) - readDone)
+      : reading
+
+  const readingDone = (data?.photo_count ?? 0) > 0 && readLeft === 0
+  const groupingDone = groups.length > 0
+  const groupingActive = !groupingDone && (clustering || readingDone)
+
+  /* When each phase started and finished, so each row can show its own clock
+     rather than one timer the adjuster has to attribute. */
+  const [marks, setMarks] = useState<Record<string, { start?: number; end?: number }>>({})
+  const stamp = (key: string, field: 'start' | 'end') =>
+    setMarks((m) => (m[key]?.[field] ? m : { ...m, [key]: { ...m[key], [field]: Date.now() } }))
+  useEffect(() => {
+    if (isReading) stamp('read', 'start')
+    if (readingDone) stamp('read', 'end')
+  }, [isReading, readingDone])
+  useEffect(() => {
+    if (groupingActive) stamp('group', 'start')
+    if (groupingDone) stamp('group', 'end')
+  }, [groupingActive, groupingDone])
+
+  const phaseClock = (key: string): string | null => {
+    const m = marks[key]
+    if (!m?.start) return null
+    return elapsedLabel((m.end ?? readNow) - m.start)
+  }
+
+  /* One ticking clock for every phase row. It has to outlive extraction --
+     grouping has no progress of its own, so its elapsed time is the only thing
+     on that row that moves. */
+  const ticking = isReading || (!isProcessed && groups.length === 0)
+  useEffect(() => {
+    if (!isReading) setReadSince(null)
+    else setReadSince(Date.now())
+  }, [isReading])
+  useEffect(() => {
+    if (!ticking) return
+    const id = setInterval(() => setReadNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [ticking])
   const selectable = !isProcessed
   const canProcess = !busy && !isProcessed && itemSets.length > 0
 
@@ -790,14 +901,27 @@ export default function StagingPage() {
           </div>
         ) : null}
 
-        {loose.length > 0 || reading > 0 ? (
+        {/*
+          * ONE SOURCE FOR "IS IT STILL READING", because two of them openly
+          * contradicted each other on screen: the headline counted photos the
+          * session has not LISTED yet (which it cannot until clustering runs,
+          * so it stays at the full count for the whole pass) while the bar
+          * under it counted `photos_extracted` from the server. The result was
+          * "126 photos are still processing" above "126 of 126 read" above a
+          * full green bar.
+          *
+          * The server's count wins. `reading` still gates the grouping actions,
+          * where "not listed yet" is the right question -- but it is no longer
+          * allowed to narrate.
+          */}
+        {loose.length > 0 ? (
           <div className={'k-tray' + (loose.length === 0 ? ' k-tray--pending' : '')}>
             <div className="k-tray-hd">
               <Icon d={loose.length ? I.warn : I.clock} size={14} />
               <span className="k-tray-t">
                 {loose.length
                   ? `${loose.length} ${loose.length === 1 ? 'photo' : 'photos'} arrived after grouping ran, so ${loose.length === 1 ? 'it is' : 'they are'} on ${loose.length === 1 ? 'its' : 'their'} own below — merge, note or exclude ${loose.length === 1 ? 'it' : 'them'} like any other set.`
-                  : `${reading} ${reading === 1 ? 'photo is' : 'photos are'} still processing. Nothing to do yet.`}
+                  : `Reading ${readLeft} more ${readLeft === 1 ? 'photo' : 'photos'}. Nothing to do yet.`}
                 {loose.length > 0 && reading > 0
                   ? ` ${reading} more ${reading === 1 ? 'is' : 'are'} still processing.`
                   : ''}
@@ -881,37 +1005,63 @@ export default function StagingPage() {
           </div>
         ) : null}
 
-        <div className="k-stage-grid2">
-          {/* One honest status, not a row of placeholder cards: eight skeletons
-              over a one-photo upload read as eight things arriving. The set
-              count is not known until grouping finishes, so none is drawn. */}
-          {clustering && groups.length === 0 ? (
-            <div className="k-stage-grouping">
-              <span className="k-paused-dot k-paused-dot--go" aria-hidden="true" />
-              <span>
-                Grouping {fmtInt(data?.photo_count ?? 0)}{' '}
-                {(data?.photo_count ?? 0) === 1 ? 'photo' : 'photos'} by capture time…
-                {/* A blinking dot says "alive", not "how long". Clustering has
-                    no per-photo progress to report -- it is one server pass --
-                    so the bar is indeterminate and says so by moving rather
-                    than by filling to a number we do not have. */}
-                <span style={{ display: 'block', marginTop: 8, maxWidth: 320 }}>
-                  <span
-                    className="k-progress k-progress--busy"
-                    style={{ display: 'block', width: '100%' }}
-                  >
-                    <span className="k-progress-bar" />
-                  </span>
-                </span>
-                <span
-                  style={{ display: 'block', marginTop: 6, fontSize: 11.5, color: 'var(--k-fg-4)' }}
-                >
-                  No photo is uploaded or priced by this step — it only decides which shots belong
-                  together. You can change every grouping it proposes.
-                </span>
-              </span>
+        {/*
+          * THE THREE PHASES, each with its own clock and its own bar.
+          *
+          * One status line could not say where the work was, and two of them
+          * contradicted each other. Three rows say it plainly -- and each bar
+          * claims only what the server actually reports: reading has a real
+          * fraction (`photos_extracted`), grouping is ONE server pass with no
+          * per-photo progress so it is indeterminate, and identifying has not
+          * started because the adjuster has not pressed the button.
+          *
+          * A phase's clock is its own, which is what the owner asked for after
+          * a single timer left him unable to tell what it was counting.
+          */}
+        {!isProcessed && (readLeft > 0 || groups.length === 0) ? (
+          <section className="k-set-card" style={{ marginBottom: 14 }}>
+            <div className="k-set-card-hd">Getting your photos ready</div>
+            <div
+              style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 16 }}
+            >
+              <PhaseRow
+                label="Reading photos"
+                state={readingDone ? 'done' : 'active'}
+                clock={phaseClock('read')}
+                detail={
+                  readingDone
+                    ? `${fmtInt(data?.photo_count ?? 0)} read`
+                    : `${fmtInt(readDone)} of ${fmtInt(data?.photo_count ?? 0)} read`
+                }
+                frac={
+                  (data?.photo_count ?? 0) > 0 ? readDone / (data?.photo_count ?? 1) : null
+                }
+              />
+              <PhaseRow
+                label="Grouping into sets"
+                state={groupingDone ? 'done' : groupingActive ? 'active' : 'wait'}
+                clock={phaseClock('group')}
+                detail={
+                  groupingDone
+                    ? `${fmtInt(groups.length)} ${groups.length === 1 ? 'set' : 'sets'} proposed`
+                    : groupingActive
+                      ? 'By capture time. No per-photo progress to report — it is one pass.'
+                      : 'Starts once every photo has been read.'
+                }
+                frac={null}
+              />
+              <PhaseRow
+                label="Identifying and pricing"
+                state="wait"
+                clock={null}
+                detail="Starts when you press Begin processing. Nothing is identified or priced before that."
+                frac={null}
+              />
             </div>
-          ) : null}
+          </section>
+        ) : null}
+
+        <div className="k-stage-grid2">
 
           {groups.map((group, si) => (
             <SetCard
