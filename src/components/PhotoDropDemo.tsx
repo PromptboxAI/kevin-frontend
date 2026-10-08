@@ -162,13 +162,14 @@ const NOT_PRICED: Record<NotPricedReason, { head: string; body: string }> = {
        mutually exclusive on view.k — so once a photo is found the samples are
        not below the reader, which is why the card carries a "Back to the
        samples" button at all.
-       SCOPE: the owner asked for this line only. Eight other messages carry
-       the same phrasing and are deliberately left as they are. */
+       All nine sibling messages were given the same treatment on
+       2026-10-08: none of them may say the samples are "below", because none
+       of them renders in the view that holds the samples. */
     body: 'Kevin identified it, but the pricing service is degraded, so this is not a judgement about your photo — we could not look properly.',
   },
   budget_paused: {
     head: 'Live pricing is paused for today',
-    body: "Kevin identified it, but today's share of live pricing is spent. Every price is a real lookup, so the demo has a daily ceiling. The samples below are already priced.",
+    body: "Kevin identified it, but today's share of live pricing is spent. Every price is a real lookup, so the demo has a daily ceiling. The ready-made samples are already priced.",
   },
   unavailable: {
     head: 'Something went wrong',
@@ -199,11 +200,11 @@ function notPricedCopy(reason: NotPricedReason): { head: string; body: string } 
 const REFUSAL: Record<DropRefusal['kind'], { head: string; body: string }> = {
   not_configured: {
     head: 'Live drops are not switched on yet',
-    body: 'Rather than show a made-up answer for your own photo, here is nothing. The sample photos below are real output from the same pipeline.',
+    body: 'Rather than show a made-up answer for your own photo, here is nothing. The ready-made sample photos are real output from the same pipeline.',
   },
   turnstile: {
     head: 'The bot check would not clear',
-    body: 'Kevin took a fresh check and tried your photo again, and the server turned it down both times. That is usually a configuration problem on our side rather than anything you did. The samples below are unaffected.',
+    body: 'Kevin took a fresh check and tried your photo again, and the server turned it down both times. That is usually a configuration problem on our side rather than anything you did. The ready-made samples are unaffected.',
   },
   too_large: {
     head: 'That photo is too large',
@@ -230,15 +231,15 @@ const REFUSAL: Record<DropRefusal['kind'], { head: string; body: string }> = {
   },
   rejected_empty: {
     head: 'The upload arrived empty',
-    body: 'The photo read fine here but reached Kevin with no data in it. That is on us rather than on your file. Dropping it again is worth one try; if it repeats, the samples below are unaffected.',
+    body: 'The photo read fine here but reached Kevin with no data in it. That is on us rather than on your file. Dropping it again is worth one try; if it repeats, the ready-made samples are unaffected.',
   },
   rate_limited: {
     head: 'That is the limit for now',
-    body: 'Three photos an hour, ten a day — each live price is a lookup we pay for. The samples below are free and already priced.',
+    body: 'Three photos an hour, ten a day — each live price is a lookup we pay for. The ready-made samples are free and already priced.',
   },
   capacity: {
     head: 'The demo is busy',
-    body: "Too many photos at once, or today's ceiling is reached. Try a sample below — those are instant — or come back a little later.",
+    body: "Too many photos at once, or today's ceiling is reached. Try a ready-made sample — those are instant — or come back a little later.",
   },
   network: {
     head: 'Could not reach Kevin',
@@ -246,15 +247,15 @@ const REFUSAL: Record<DropRefusal['kind'], { head: string; body: string }> = {
     // backend is indistinguishable from a dropped connection, and it is far
     // more often the former. Sending someone to fix their wifi over our 500
     // is the wrong instruction.
-    body: 'The request did not complete. That is more often on our side than your connection. Dropping the photo again in a moment is worth a try; the samples below are unaffected.',
+    body: 'The request did not complete. That is more often on our side than your connection. Dropping the photo again in a moment is worth a try; the ready-made samples are unaffected.',
   },
   timeout: {
     head: 'That one is taking too long',
-    body: 'A live price is usually under a minute and this went past three. It may still finish server-side, but nothing is kept, so the quickest thing is another photo. The samples below are instant.',
+    body: 'A live price is usually under a minute and this went past three. It may still finish server-side, but nothing is kept, so the quickest thing is another photo. The ready-made samples are instant.',
   },
   unexpected: {
     head: 'Something broke on our side',
-    body: 'Not your photo and not your connection — Kevin hit an error handling the response. The details are in the browser console if you want to send them over. The samples below still work.',
+    body: 'Not your photo and not your connection — Kevin hit an error handling the response. The details are in the browser console if you want to send them over. The ready-made samples still work.',
   },
 }
 
