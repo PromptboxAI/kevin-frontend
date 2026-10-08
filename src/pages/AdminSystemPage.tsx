@@ -2,6 +2,13 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import AdminShell from '../components/AdminShell'
 import Alert from '../components/Alert'
+import { ApiError } from '../lib/api'
+import {
+  restartKind,
+  stuckFor,
+  useRestartSession,
+  useStuckSessions,
+} from '../lib/stuck-staging'
 import Badge from '../components/Badge'
 import { I, Icon } from '../components/Icon'
 import { API_BASE_URL } from '../lib/env'
@@ -56,6 +63,8 @@ function Card({
 export default function AdminSystemPage() {
   const health = useJobsHealth()
   const failed = useFailedJobs(50)
+  const stuck = useStuckSessions()
+  const restart = useRestartSession()
   const { reap, purgeExif } = useOpsActions()
   const [open, setOpen] = useState<string | null>(null)
   const [openCause, setOpenCause] = useState<string | null>(null)
@@ -194,6 +203,119 @@ export default function AdminSystemPage() {
                 A deploy is half-finished. Builds seen:{' '}
                 {[...new Set(Object.values(h.worker_builds))].join(', ')}.
               </Alert>
+            ) : null}
+          </div>
+        </Card>
+
+        {/* — Staging sessions nothing will recover on its own — */}
+        <Card
+          title={`Stuck in clustering · ${
+            stuck.data?.liveness_known === false
+              ? 'unknown'
+              : fmtInt(stuck.data?.sessions.length ?? 0)
+          }`}
+        >
+          <div style={{ padding: '10px 16px 14px' }}>
+            {/*
+              * An empty list is only good news when the queue could be read.
+              * This screen exists because a session sat dead while every other
+              * surface said all-clear; repeating that with a confident zero
+              * would be the same failure wearing a tick.
+              */}
+            {stuck.data?.liveness_known === false ? (
+              <Alert tone="wait" title="The job queue could not be read">
+                Sessions may be stuck and this list cannot say. Treat an empty list as unknown, not
+                as all-clear.
+              </Alert>
+            ) : null}
+
+            {stuck.isLoading ? (
+              <p className="k-note">Loading…</p>
+            ) : stuck.error ? (
+              <p className="k-error">Could not read the stuck list.</p>
+            ) : (stuck.data?.sessions.length ?? 0) === 0 ? (
+              <p className="k-note">
+                {stuck.data?.liveness_known === false
+                  ? 'Nothing to show while the queue is unreadable.'
+                  : 'No session is stuck. The queue retries a killed job, and a sweep re-queues a dead one twice before it reaches this list.'}
+              </p>
+            ) : (
+              <>
+                <div
+                  className="k-adm-tbl-hd"
+                  style={{ '--adm-cols': '1.6fr 1fr 0.8fr 0.8fr auto' } as React.CSSProperties}
+                >
+                  <span>Claim</span>
+                  <span>Account</span>
+                  <span>Photos</span>
+                  <span>Stuck for</span>
+                  <span />
+                </div>
+                {(stuck.data?.sessions ?? []).map((row) => {
+                  const kind = restartKind(row.groups_count)
+                  return (
+                    <div
+                      key={row.session_id}
+                      className="k-adm-tr"
+                      style={{ '--adm-cols': '1.6fr 1fr 0.8fr 0.8fr auto' } as React.CSSProperties}
+                    >
+                      <span style={{ minWidth: 0 }}>
+                        <span style={{ fontWeight: 600, display: 'block' }}>
+                          {row.claim_name || row.claim_id}
+                        </span>
+                        <span className="k-mono" style={{ fontSize: 11, color: 'var(--k-fg-4)' }}>
+                          session {row.session_id}
+                          {row.auto_requeues ? ` · re-queued ${row.auto_requeues}×` : ''}
+                        </span>
+                      </span>
+                      <span
+                        style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', fontSize: 12 }}
+                      >
+                        {row.email ?? row.user_id}
+                      </span>
+                      <span className="k-mono" style={{ fontSize: 12 }}>
+                        {fmtInt(row.photos_extracted ?? 0)}/{fmtInt(row.photo_count ?? 0)}
+                        {row.groups_count ? ` · ${fmtInt(row.groups_count)} sets` : ''}
+                      </span>
+                      <span style={{ fontSize: 12, color: 'var(--k-fg-3)' }}>
+                        {stuckFor(row.clustering_started_at, Date.now()) ?? '—'}
+                      </span>
+                      {/* The ROUTE decides full vs remainder and will not
+                          rebuild a session that has sets. The label says which
+                          one is coming so nobody presses it expecting the
+                          other. */}
+                      <button
+                        type="button"
+                        className="k-btn k-btn--sm"
+                        disabled={restart.isPending}
+                        title={
+                          kind === 'remainder'
+                            ? 'Groups only the unassigned photos. Existing sets are untouched.'
+                            : 'Re-runs grouping for the whole session. It has no sets yet, so nothing is discarded.'
+                        }
+                        onClick={() => restart.mutate(row.session_id)}
+                      >
+                        {restart.isPending ? 'Restarting…' : `Restart (${kind})`}
+                      </button>
+                    </div>
+                  )
+                })}
+              </>
+            )}
+
+            {restart.isSuccess ? (
+              <p className="k-note" style={{ marginTop: 10 }}>
+                Re-queued session {restart.data?.session_id} as a {restart.data?.kind} pass.
+              </p>
+            ) : null}
+            {restart.isError ? (
+              <p className="k-error" style={{ marginTop: 10 }}>
+                {restart.error instanceof ApiError && restart.error.status === 409
+                  ? 'That session is not stuck any more — its job is alive or it has left clustering.'
+                  : restart.error instanceof ApiError && restart.error.status === 503
+                    ? 'The queue could not be read, so nothing was re-queued.'
+                    : 'Could not restart that session.'}
+              </p>
             ) : null}
           </div>
         </Card>
