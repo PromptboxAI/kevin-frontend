@@ -235,8 +235,14 @@ export default function ItemDrawer({
       setNotice(
         e instanceof ApiError && e.status === 409
           ? 'That price has changed since the panel loaded. Reopen the line and pick again.'
-          : e instanceof Error
-            ? e.message
+          : /* 404/405 here is almost always the route not being deployed yet,
+               not a missing line -- the panel is reading that same line fine.
+               Saying "not found" would send someone hunting for a data problem
+               that does not exist. */
+            e instanceof ApiError && (e.status === 404 || e.status === 405)
+            ? 'Choosing a comp is not available on the server yet. The line is unchanged — try again shortly.'
+            : e instanceof Error
+              ? e.message
             : 'Could not select that comp.',
       ),
   })
