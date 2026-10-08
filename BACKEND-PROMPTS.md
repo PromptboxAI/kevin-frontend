@@ -19,6 +19,62 @@ documents a carrier reads. The message restated that it carries no approval.
 
 ---
 
+## 26. A staging session has no timestamps, so nobody can see how long it has been stuck
+
+**Status:** new, 2026-10-08. Written the day a clustering run stalled on the
+owner's claim with **no worker running** — and the honest problem was not the
+stall, it was that nothing anywhere could say how long it had been stalled.
+
+### The ask
+
+Timestamps on the staging session, returned by `GET /v1/claims/{id}/staging`:
+
+- **`created_at`** — when the session was opened (the first upload landed).
+- **`clustering_started_at`** — when the clustering job was enqueued. Null
+  until it is.
+
+Both ISO-8601 UTC, both read-only. Nothing else about the session needs to
+change.
+
+### Why the client cannot answer this itself
+
+The staging response carries `id`, `status`, `photo_count`, `photos_extracted`,
+`groups`, `tally` and `ungrouped_photos`. **Not one of them is a time.** So the
+only clock the frontend can build is one that starts when the component mounts,
+which means:
+
+- a **page reload restarts it** — reported by the owner today, and refreshing to
+  check whether something is stuck is precisely when someone reloads;
+- opening the claim on **another machine** starts it again from zero;
+- a session that has been clustering since yesterday reads as "12s so far".
+
+We now persist the start per session id in the browser, which fixes the reload
+case for one browser and fixes nothing else. It is a workaround for a fact the
+server has and does not send.
+
+### What it is worth
+
+- The **three-phase checklist** on staging (Reading / Grouping / Identifying)
+  can report a real elapsed time per phase instead of a per-tab guess.
+- A **stall threshold** becomes possible. The processing screen already says
+  "this is taking longer than usual" after 90 seconds; staging cannot, because
+  it does not know when the work began. With `clustering_started_at` it can say
+  so — which is the difference between a user waiting patiently on a dead queue
+  and a user who knows to come back later.
+- **You get it too.** "How long has this session been clustering" is currently
+  unanswerable from the API by anyone, including support and the admin console,
+  which is part of why today's stall was noticed by the owner rather than by us.
+
+### One question back
+
+When a worker comes back after a stall like today's, does the enqueued
+clustering job resume on its own, or does the session need re-clustering? The
+answer changes the UI: a row that will recover should say "waiting"; one that
+will not should offer a retry. We do not want to offer a retry that
+re-clusters and silently discards manual merges (rule 22).
+
+---
+
 ## 25. A loss ZIP has nowhere to live
 
 **Status:** new, 2026-10-07. Small, and it is causing a visible data problem.
