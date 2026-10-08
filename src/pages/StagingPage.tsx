@@ -81,6 +81,7 @@ function PhaseRow({
   clock,
   detail,
   frac,
+  action,
 }: {
   label: string
   state: 'done' | 'active' | 'wait'
@@ -88,6 +89,8 @@ function PhaseRow({
   detail: string
   /** A real fraction, or null when the server reports no progress for it. */
   frac: number | null
+  /** Shown beside the detail line when the phase needs a human. */
+  action?: React.ReactNode
 }) {
   const pct = frac == null ? 0 : Math.round(Math.min(Math.max(frac, 0), 1) * 100)
   return (
@@ -133,11 +136,19 @@ function PhaseRow({
         </span>
       )}
 
-      <span
-        style={{ display: 'block', marginTop: 5, fontSize: 11.5, color: 'var(--k-fg-4)' }}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          marginTop: 5,
+          fontSize: 11.5,
+          color: 'var(--k-fg-4)',
+        }}
       >
-        {detail}
-      </span>
+        <span style={{ flex: 1, minWidth: 0 }}>{detail}</span>
+        {action}
+      </div>
     </div>
   )
 }
@@ -616,6 +627,28 @@ export default function StagingPage() {
     if (groupingDone) stamp('group', 'end')
   }, [groupingActive, groupingDone])
 
+  /**
+   * Grouping has been running too long to be running at all.
+   *
+   * Backend, 2026-10-08: a clustering job killed mid-run (their deploy
+   * restarted the workers) does NOT resume — there is no reaper, and the only
+   * recovery is POST /staging/cluster. The owner's session sat dead until a
+   * page reload happened to re-fire our auto-cluster. So the wait and the
+   * stall look identical, and the one that needs an action looked like the
+   * one that does not.
+   *
+   * 150s is well past a real pass (126 photos clustered in ~9 minutes once,
+   * but the ENQUEUE-to-start gap is what matters and that is seconds) while
+   * staying short enough to catch a dead job in the same sitting. When the
+   * session carries `clustering_started_at` (ask 26) this stops depending on a
+   * clock we started ourselves.
+   */
+  const groupingStalled = (() => {
+    const start = marks.group?.start
+    if (!start || groupingDone || !groupingActive) return false
+    return readNow - start > 150_000
+  })()
+
   const phaseClock = (key: string): string | null => {
     const m = marks[key]
     if (!m?.start) return null
@@ -1075,11 +1108,30 @@ export default function StagingPage() {
                 detail={
                   groupingDone
                     ? `${fmtInt(groups.length)} ${groups.length === 1 ? 'set' : 'sets'} proposed`
-                    : groupingActive
-                      ? 'By capture time. No per-photo progress to report — it is one pass.'
-                      : 'Starts once every photo has been read.'
+                    : groupingStalled
+                      ? 'This is taking longer than a grouping pass should. The job may have been interrupted — restarting is safe, nothing has been arranged yet.'
+                      : groupingActive
+                        ? 'By capture time. No per-photo progress to report — it is one pass.'
+                        : 'Starts once every photo has been read.'
                 }
                 frac={null}
+                action={
+                  /* Offered ONLY while no sets exist. /staging/cluster rebuilds
+                     the session, so on a grouped one it would discard merges
+                     the adjuster made by hand (rule 22). Here there is nothing
+                     to lose by definition -- which is exactly why it is safe to
+                     put in front of them. */
+                  groupingStalled && groups.length === 0 ? (
+                    <button
+                      type="button"
+                      className="k-btn k-btn--sm"
+                      disabled={cluster.isPending}
+                      onClick={() => cluster.mutate()}
+                    >
+                      {cluster.isPending ? 'Restarting…' : 'Restart grouping'}
+                    </button>
+                  ) : null
+                }
               />
               <PhaseRow
                 label="Identifying and pricing"
