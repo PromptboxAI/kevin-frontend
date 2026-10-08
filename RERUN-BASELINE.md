@@ -48,6 +48,36 @@ knowing.
 | Line items | **160** |
 | Items ≤ photos (rule 1) | ✅ 160 ≤ 208 |
 
+## Money — added 2026-10-08, after the re-run
+
+| | run 1 (2026-10-05) | run 2 (2026-10-07/08) |
+|---|---|---|
+| Claim total | **~$29k** | **~$47k** |
+| Line items | 160 | 158 |
+
+Owner's figures, read off the worksheet. The same photographs, the same
+line count, and **+62% of value** — so the difference is per-line, not more
+lines, and it is worth knowing WHICH of two very different causes produced it:
+
+- **Benign, and the likely one:** run 1 left **26 lines unpriced** (21 of them
+  with no description at all), and an unpriced line contributes **0** to the
+  total. If run 2 identified those, the total rises with nothing wrong
+  anywhere. **The check is the unpriced count, not the dollars.**
+- **Not benign:** the comp mismatches the backend measured on run 1 — a $1,320
+  drawer insert priced off a whole cabinet set, a $499 tweeter off a complete
+  speaker kit, a $1,000 Sarah Churchill print off a Winston Churchill
+  lithograph. Those all push the total UP, and 30 of 112 scored lines were
+  wrong that way.
+
+So: **a higher total is not by itself an improvement.** Read it together with
+unpriced count, blank descriptions, and (once it exists) the `comp_review`
+flag. If unpriced fell from 26 toward zero, the money moved for the right
+reason.
+
+⚠️ Pricing was `degraded` (`vendor_degraded`, SerpApi) from 2026-10-07 18:41Z,
+so any batch added during that window may hold deferred lines. Retry those
+before taking a reading, or they read as unpriced.
+
 ## Merge quality — the one the owner flagged as "almost 50/50"
 
 Photos per line item:
