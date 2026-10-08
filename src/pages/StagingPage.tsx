@@ -309,7 +309,23 @@ export default function StagingPage() {
      * starts.
      */
     const stillReading = stillExtracting.length > 0
-    if (none && data.photo_count > 0 && !stillReading && data.status !== 'processed') {
+    /*
+     * ⛔ NEVER WHILE A PASS IS ALREADY RUNNING.
+     *
+     * `status === 'clustering'` means one was started. This used to fire
+     * anyway, and on 2026-10-08 it did: the owner reloaded a session whose job
+     * the queue had already retried, and a SECOND vision pass ran beside the
+     * first for eight minutes, both writing the same groups. The backend is
+     * adding a server-side guard, but firing a request we know is a no-op --
+     * and which was a race before that guard existed -- is not something to
+     * leave to the server.
+     *
+     * A genuinely dead job is not this code's problem: the queue retries it,
+     * a backend sweep re-queues it twice more, and what survives that lands on
+     * the admin stuck list.
+     */
+    const alreadyRunning = data.status === 'clustering'
+    if (none && data.photo_count > 0 && !stillReading && !alreadyRunning && data.status !== 'processed') {
       autoFired.current = true
       log('auto-clustering — no sets yet, nothing mid-extraction', {
         photos: data.photo_count,
@@ -628,25 +644,31 @@ export default function StagingPage() {
   }, [groupingActive, groupingDone])
 
   /**
-   * Grouping has been running too long to be running at all.
+   * Grouping has been running longer than it should.
    *
-   * Backend, 2026-10-08: a clustering job killed mid-run (their deploy
-   * restarted the workers) does NOT resume — there is no reaper, and the only
-   * recovery is POST /staging/cluster. The owner's session sat dead until a
-   * page reload happened to re-fire our auto-cluster. So the wait and the
-   * stall look identical, and the one that needs an action looked like the
-   * one that does not.
+   * ⛔ CORRECTED 2026-10-08, and the first version was dangerous. It was built
+   * on "a killed clustering job never resumes", which the backend retracted
+   * the same day: the QUEUE retries it, and a backend sweep re-queues twice
+   * more after that. So the row offered a Restart button that would have
+   * started a SECOND pass beside a live one — which is exactly the defect that
+   * produced three vision passes on one upload, two of them racing.
    *
-   * 150s is well past a real pass (126 photos clustered in ~9 minutes once,
-   * but the ENQUEUE-to-start gap is what matters and that is seconds) while
-   * staying short enough to catch a dead job in the same sitting. When the
-   * session carries `clustering_started_at` (ask 26) this stops depending on a
-   * clock we started ourselves.
+   * There is now no action here, because there is no action the adjuster
+   * should take: recovery is automatic, and what survives it reaches the admin
+   * stuck list. This only says the wait is longer than normal, so nobody sits
+   * wondering whether the page is broken.
+   *
+   * 12 minutes, not the 150s I first used: a real pass over 126 photos took
+   * about NINE (13:57 to 14:06 on session 88), so the first threshold would
+   * have fired in the middle of healthy work.
+   *
+   * Still measured from a clock we start ourselves. `clustering_started_at`
+   * (ask 26, built not pushed) replaces it with the server's.
    */
   const groupingStalled = (() => {
     const start = marks.group?.start
     if (!start || groupingDone || !groupingActive) return false
-    return readNow - start > 150_000
+    return readNow - start > 12 * 60_000
   })()
 
   const phaseClock = (key: string): string | null => {
@@ -1109,29 +1131,12 @@ export default function StagingPage() {
                   groupingDone
                     ? `${fmtInt(groups.length)} ${groups.length === 1 ? 'set' : 'sets'} proposed`
                     : groupingStalled
-                      ? 'This is taking longer than a grouping pass should. The job may have been interrupted — restarting is safe, nothing has been arranged yet.'
+                      ? 'Longer than a grouping pass usually takes. If it was interrupted it is re-queued automatically — nothing for you to do, and nothing has been lost.'
                       : groupingActive
                         ? 'By capture time. No per-photo progress to report — it is one pass.'
                         : 'Starts once every photo has been read.'
                 }
                 frac={null}
-                action={
-                  /* Offered ONLY while no sets exist. /staging/cluster rebuilds
-                     the session, so on a grouped one it would discard merges
-                     the adjuster made by hand (rule 22). Here there is nothing
-                     to lose by definition -- which is exactly why it is safe to
-                     put in front of them. */
-                  groupingStalled && groups.length === 0 ? (
-                    <button
-                      type="button"
-                      className="k-btn k-btn--sm"
-                      disabled={cluster.isPending}
-                      onClick={() => cluster.mutate()}
-                    >
-                      {cluster.isPending ? 'Restarting…' : 'Restart grouping'}
-                    </button>
-                  ) : null
-                }
               />
               <PhaseRow
                 label="Identifying and pricing"
