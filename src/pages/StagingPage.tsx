@@ -644,6 +644,22 @@ export default function StagingPage() {
   }, [groupingActive, groupingDone])
 
   /**
+   * Prefer the SERVER's timestamp for a phase's start (backend e0a8f3e).
+   *
+   * The local marks stay as the fallback -- they are all there is before a
+   * clustering job is enqueued, and on any session predating these fields --
+   * but wherever the server has an answer it is the right one: it survives a
+   * reload, it is the same on every device, and it is measuring the job rather
+   * than the page.
+   */
+  const serverStart = (key: string): number | null => {
+    const iso = key === 'read' ? data?.created_at : data?.clustering_started_at
+    if (!iso) return null
+    const t = Date.parse(iso)
+    return Number.isFinite(t) ? t : null
+  }
+
+  /**
    * Grouping has been running longer than it should.
    *
    * ⛔ CORRECTED 2026-10-08, and the first version was dangerous. It was built
@@ -662,19 +678,23 @@ export default function StagingPage() {
    * about NINE (13:57 to 14:06 on session 88), so the first threshold would
    * have fired in the middle of healthy work.
    *
-   * Still measured from a clock we start ourselves. `clustering_started_at`
-   * (ask 26, built not pushed) replaces it with the server's.
+   * Measured from `clustering_started_at` now that the server sends it, so
+   * this is how long the JOB has run rather than how long this tab has been
+   * open. A reload no longer resets it and a second device agrees with the
+   * first.
    */
   const groupingStalled = (() => {
-    const start = marks.group?.start
+    const start = serverStart('group') ?? marks.group?.start
     if (!start || groupingDone || !groupingActive) return false
     return readNow - start > 12 * 60_000
   })()
 
+
   const phaseClock = (key: string): string | null => {
     const m = marks[key]
-    if (!m?.start) return null
-    return elapsedLabel((m.end ?? readNow) - m.start)
+    const start = serverStart(key) ?? m?.start
+    if (!start) return null
+    return elapsedLabel((m?.end ?? readNow) - start)
   }
 
   /* One ticking clock for every phase row. It has to outlive extraction --

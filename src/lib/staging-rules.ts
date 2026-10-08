@@ -109,6 +109,17 @@ export type StagingSessionFull = {
    * `null` is "not available on this poll", NOT zero: keep the last value.
    */
   photos_extracted?: number | null
+  /** ISO UTC. When the session was opened — the first upload landing. */
+  created_at?: string | null
+  /**
+   * ISO UTC, null until a clustering job is enqueued; stays set afterwards.
+   *
+   * THE SERVER'S CLOCK, which is the point. Timing grouping from the moment a
+   * browser mounted the page meant a reload restarted it and a second device
+   * disagreed with the first — and the number exists to answer "has this been
+   * running too long", which is precisely the question a reload is asked.
+   */
+  clustering_started_at?: string | null
   groups: StagingGroup[] | null
   tally: StagingTally | null
   ungrouped_photos: StagingPhoto[]
