@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
@@ -7,6 +7,8 @@ import { I, Icon } from '../components/Icon'
 import { ApiError, api } from '../lib/api'
 import { fmtInt, fmtUSD } from '../lib/format'
 import { fetchAllClaimItems } from '../lib/claim-items-all'
+import { useThumb } from '../lib/thumbnails'
+import type { ClaimPhoto } from '../lib/photo-rules'
 import type { ClaimItem, ClaimSummary, StatusCounts } from '../lib/types'
 
 /**
@@ -35,6 +37,65 @@ export type ProcessingRun = {
   created: number
   skipped: number
   before: StatusCounts | null
+}
+
+/**
+ * The item's photo, or a placeholder holding its place.
+ *
+ * The design leads every feed row with one, and the port dropped it: watching
+ * descriptions scroll past tells you the machine is alive, watching your own
+ * photographs resolve tells you it is reading the right things. A line that is
+ * going to be wrong is usually obvious from the picture first.
+ *
+ * Never collapses to nothing -- a row that sometimes has a tile and sometimes
+ * does not makes the list jump while it fills.
+ */
+function FeedThumb({ photoId, size = 36 }: { photoId?: number; size?: number }) {
+  if (photoId == null) return <ThumbBox size={size} />
+  return <ThumbImg photoId={photoId} size={size} />
+}
+
+function ThumbBox({ size }: { size: number }) {
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        width: size,
+        height: size,
+        flex: '0 0 auto',
+        borderRadius: 5,
+        background: 'var(--k-bg-3)',
+        border: '1px solid var(--k-line)',
+      }}
+    />
+  )
+}
+
+function ThumbImg({ photoId, size }: { photoId: number; size: number }) {
+  const { ref, src, onError } = useThumb<HTMLDivElement>(photoId)
+  return (
+    <div
+      ref={ref}
+      style={{
+        width: size,
+        height: size,
+        flex: '0 0 auto',
+        borderRadius: 5,
+        overflow: 'hidden',
+        background: 'var(--k-bg-3)',
+        border: '1px solid var(--k-line)',
+      }}
+    >
+      {src ? (
+        <img
+          src={src}
+          alt=""
+          onError={onError}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+        />
+      ) : null}
+    </div>
+  )
 }
 
 /** Polling is cheap, but not free -- back off once the burst is over. */
@@ -113,6 +174,32 @@ export default function ProcessingPage() {
     // unbounded list would grow a DOM node per line for the whole run.
     setFeed((prev) => [...landed.reverse(), ...prev].slice(0, FEED_MAX))
   }, [feedQuery.data])
+
+  /**
+   * ONE READ for every thumbnail on the page.
+   *
+   * The list payload carries no photo reference -- `photos` is on the item
+   * DETAIL -- so a thumbnail per row would be a request per row, which on a
+   * 158-line run is 158 requests to decorate a feed. The claim's photo index
+   * gives the same mapping in a single call, and `useThumb` then batches the
+   * signing for whichever tiles actually scroll into view.
+   */
+  const photoIndex = useQuery({
+    queryKey: ['claim-photo-index', claimId],
+    queryFn: () =>
+      api.get<{ photos: ClaimPhoto[] }>(
+        `/v1/claims/${encodeURIComponent(claimId)}/photos?limit=500`,
+      ),
+    enabled: !!claimId,
+    staleTime: 60_000,
+  })
+  const photoFor = useMemo(() => {
+    const m = new Map<number, number>()
+    for (const p of photoIndex.data?.photos ?? []) {
+      if (p.item_id != null && !m.has(p.item_id)) m.set(p.item_id, p.photo_id)
+    }
+    return m
+  }, [photoIndex.data])
 
   const run = (useLocation().state as { run?: ProcessingRun } | null)?.run ?? null
   const all = claim.data?.status_counts
@@ -362,6 +449,7 @@ export default function ProcessingPage() {
               ) : (
                 feed.map((it) => (
                   <div key={it.id} className="k-feed-row">
+                    <FeedThumb photoId={photoFor.get(it.id)} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div
                         style={{
@@ -437,7 +525,9 @@ export default function ProcessingPage() {
                      wall. The count in the header carries the rest. */
                   scanning.slice(0, 8).map((it) => (
                     <div key={it.id} className="k-inflight">
-                      <span className="k-pulse k-pulse--sm" />
+                      <div className="k-inflight-thumb">
+                        <FeedThumb photoId={photoFor.get(it.id)} size={32} />
+                      </div>
                       <span
                         style={{
                           flex: 1,

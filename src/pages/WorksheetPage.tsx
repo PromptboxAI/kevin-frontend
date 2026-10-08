@@ -1340,6 +1340,24 @@ export default function WorksheetPage() {
       {selected.size > 0 ? (
         <div className="k-ws-bar k-ws-bar--sel">
           <span>{selected.size} selected</span>
+          {/*
+            * CLEAR IT FROM HERE. The bar announced a selection and offered no
+            * way out of it: the only exits were scrolling back to the row you
+            * ticked, or select-all-then-deselect-all. Both are work to undo
+            * something that took one click, and on a 158-row grid the first
+            * one can be a long way up.
+            */}
+          <button
+            type="button"
+            className="k-btn k-btn--sm k-btn--ghost"
+            title="Clear the selection"
+            onClick={() => {
+              setSelected(new Set())
+              setConfirmDel(false)
+            }}
+          >
+            Clear
+          </button>
           <div style={{ display: 'flex', gap: 8 }}>
             <select
               className="k-insp-input"
