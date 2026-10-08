@@ -571,11 +571,42 @@ export default function StagingPage() {
   const groupingDone = groups.length > 0
   const groupingActive = !groupingDone && (clustering || readingDone)
 
-  /* When each phase started and finished, so each row can show its own clock
-     rather than one timer the adjuster has to attribute. */
+  /*
+   * When each phase started and finished, so each row shows its own clock
+   * rather than one timer the adjuster has to attribute.
+   *
+   * ⛔ PERSISTED, because a reload used to restart them. A clock that resets
+   * when you refresh is worse than no clock: it reports a fresh wait on work
+   * that has been running for ten minutes, which is exactly the moment someone
+   * refreshes to check whether anything is stuck.
+   *
+   * Keyed by the staging session id, so a second upload gets its own clocks.
+   * The limit is that this is per-browser -- the session itself carries no
+   * timestamp, so opening the claim elsewhere starts the clock again. A
+   * `created_at` on the staging session would fix that properly.
+   */
+  const marksKey = sessionId == null ? null : `kevin.staging.${sessionId}.marks`
   const [marks, setMarks] = useState<Record<string, { start?: number; end?: number }>>({})
+  useEffect(() => {
+    if (!marksKey) return
+    try {
+      const raw = localStorage.getItem(marksKey)
+      setMarks(raw ? (JSON.parse(raw) as Record<string, { start?: number; end?: number }>) : {})
+    } catch {
+      setMarks({})
+    }
+  }, [marksKey])
   const stamp = (key: string, field: 'start' | 'end') =>
-    setMarks((m) => (m[key]?.[field] ? m : { ...m, [key]: { ...m[key], [field]: Date.now() } }))
+    setMarks((m) => {
+      if (m[key]?.[field]) return m
+      const next = { ...m, [key]: { ...m[key], [field]: Date.now() } }
+      try {
+        if (marksKey) localStorage.setItem(marksKey, JSON.stringify(next))
+      } catch {
+        /* private window or blocked storage -- the clock still runs this visit */
+      }
+      return next
+    })
   useEffect(() => {
     if (isReading) stamp('read', 'start')
     if (readingDone) stamp('read', 'end')
