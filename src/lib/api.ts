@@ -344,11 +344,51 @@ export async function printExport(
   options: ExportOptions = {},
 ): Promise<{ previewed: boolean | null }> {
   const tab = window.open('', '_blank')
+  /*
+   * A CLOCK IN THE WAITING TAB.
+   *
+   * The server renders this, and a photo packet over a few hundred lines is
+   * minutes of work -- during which a static "Preparing the inventory PDF…"
+   * is indistinguishable from a tab that has died. Same complaint the staging
+   * screen earned: no movement reads as no progress.
+   *
+   * Everything here is best-effort. The tab is about:blank and same-origin so
+   * it is writable, but the person can close it, navigate it, or the browser
+   * can discard it -- every touch is wrapped, and none of it may affect
+   * whether the download itself succeeds.
+   */
+  const startedAt = Date.now()
+  let ticker: number | undefined
   if (tab) {
-    tab.opener = null
-    tab.document.title = 'Preparing PDF…'
-    tab.document.body.style.cssText = 'font:14px system-ui,sans-serif;color:#555;padding:32px'
-    tab.document.body.textContent = 'Preparing the inventory PDF…'
+    try {
+      tab.opener = null
+      tab.document.title = 'Preparing PDF…'
+      tab.document.body.style.cssText = 'font:14px system-ui,sans-serif;color:#555;padding:32px'
+      const line = tab.document.createElement('div')
+      line.textContent = 'Preparing the inventory PDF…'
+      const sub = tab.document.createElement('div')
+      sub.style.cssText = 'margin-top:8px;font-size:12px;color:#888'
+      sub.textContent = 'A photo packet over a long inventory can take a few minutes.'
+      const clock = tab.document.createElement('div')
+      clock.style.cssText =
+        'margin-top:14px;font:12px ui-monospace,SFMono-Regular,Menlo,monospace;color:#888'
+      clock.textContent = '0s'
+      tab.document.body.append(line, sub, clock)
+      ticker = window.setInterval(() => {
+        try {
+          if (!tab || tab.closed) return
+          const secs = Math.floor((Date.now() - startedAt) / 1000)
+          clock.textContent = secs < 60 ? `${secs}s` : `${Math.floor(secs / 60)}m ${secs % 60}s`
+        } catch {
+          /* the tab navigated away from about:blank -- nothing to update */
+        }
+      }, 1000)
+    } catch {
+      /* popup blocked mid-write, or the tab was closed immediately */
+    }
+  }
+  const stopTicker = () => {
+    if (ticker !== undefined) window.clearInterval(ticker)
   }
   let blob: Blob
   let headers: Headers
@@ -365,9 +405,11 @@ export async function printExport(
       `/v1/claims/${encodeURIComponent(claimId)}/export?${qs.toString()}`,
     ))
   } catch (error) {
+    stopTicker()
     tab?.close()
     throw error
   }
+  stopTicker()
   const url = URL.createObjectURL(blob)
   if (tab && !tab.closed) {
     tab.location.href = url
