@@ -150,8 +150,25 @@ export default function ItemDrawer({
       tile.scrollIntoView({ block: 'nearest', inline: 'nearest' })
     }
   }, [photoIndex])
+  /*
+   * ⛔ NOTHING FROM THE PREVIOUS ROW WHILE THIS ONE LOADS.
+   *
+   * The docked panel re-syncs in place as you click down the grid, so the
+   * <img> keeps its DOM node and the browser keeps painting the old src until
+   * a new one decodes. Clicking a blank line after a television showed the
+   * television's photo and then dropped to "No photo" -- a line with no
+   * evidence briefly appearing to have some, on a claim where the photo is
+   * what substantiates the item.
+   *
+   * `isPending` is the whole guard: no image of any kind until THIS row's
+   * detail has landed.
+   */
   // photos[0] is always the same frame as image_url, so fall back to it.
-  const imageSrc = current ? (thumbFor(current.photo_id) ?? data?.image_url) : data?.image_url
+  const imageSrc = isPending
+    ? null
+    : current
+      ? (thumbFor(current.photo_id) ?? data?.image_url)
+      : data?.image_url
 
   const queryClient = useQueryClient()
   const [notice, setNotice] = useState<string | null>(null)
@@ -337,7 +354,19 @@ export default function ItemDrawer({
       >
         <div className="k-insp">
           <div className="k-insp-hd">
-            <strong>{data?.description || `Item ${rowId}`}</strong>
+            {/*
+              * THE LINE NUMBER, not the row id. A blank line fell back to
+              * `Item 10549` -- a database key the adjuster has never seen,
+              * sitting above a grid where the same row reads 0257. The id is
+              * ours; the line number is theirs, and it is what the worksheet,
+              * the export and the photo packet all cite.
+              */}
+            <strong>
+              {data?.description ||
+                (data?.line_no != null
+                  ? `Line ${String(data.line_no).padStart(4, '0')}`
+                  : 'Untitled line')}
+            </strong>
             <button type="button" className="k-icon-btn" onClick={onClose} aria-label="Close">
               ✕
             </button>
@@ -357,7 +386,10 @@ export default function ItemDrawer({
           {data ? (
             <>
               {photoOpen ? (
-                <div className="k-insp-photo">
+                /* Keyed by the row so React replaces this subtree instead of
+                   reusing the <img>, which is what let a decoded frame linger
+                   across a row change. */
+                <div className="k-insp-photo" key={rowId}>
                 {imageSrc ? (
                   <img className="k-insp-img" src={imageSrc} alt={data.description ?? 'Item'} />
                 ) : (
