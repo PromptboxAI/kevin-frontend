@@ -157,7 +157,14 @@ const NOT_PRICED: Record<NotPricedReason, { head: string; body: string }> = {
      visitor's photograph for our own outage. */
   service_degraded: {
     head: 'Live pricing is having trouble right now',
-    body: 'Kevin identified it, but the pricing service is degraded, so this is not a judgement about your photo — we could not look properly. The samples below were priced earlier and are unaffected.',
+    /* No "the samples below" tail (owner, 2026-10-08). The samples render in
+       the `idle` block; this message renders in `refused`, and the two are
+       mutually exclusive on view.k — so once a photo is found the samples are
+       not below the reader, which is why the card carries a "Back to the
+       samples" button at all.
+       SCOPE: the owner asked for this line only. Eight other messages carry
+       the same phrasing and are deliberately left as they are. */
+    body: 'Kevin identified it, but the pricing service is degraded, so this is not a judgement about your photo — we could not look properly.',
   },
   budget_paused: {
     head: 'Live pricing is paused for today',
