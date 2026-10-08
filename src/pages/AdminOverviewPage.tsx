@@ -20,6 +20,7 @@ import {
 } from '../lib/admin-overview-rules'
 import type { LimitsResponse } from '../lib/admin-overview-rules'
 import { sinceLabel } from '../lib/admin-accounts-rules'
+import { useStuckSessions } from '../lib/stuck-staging'
 
 /**
  * Screen 64 — Overview. The first screen of the back office, answering one
@@ -74,6 +75,7 @@ export default function AdminOverviewPage() {
   })
   const accounts = useAdminAccounts('', 0, 100)
   const failed = useFailedJobs(500)
+  const stuck = useStuckSessions()
   const status = useQuery({
     queryKey: ['service-status'],
     queryFn: async () => {
@@ -98,6 +100,10 @@ export default function AdminOverviewPage() {
     pastDueAccounts: breakdown.pastDue,
     pricingDegraded: Boolean(pricing),
     limits: limits.data,
+    stuckSessions: stuck.data?.sessions.length ?? 0,
+    /* Undefined while the query is in flight, so a slow read does not flash
+       "cannot be detected" at someone every time this page opens. */
+    stuckLivenessKnown: stuck.data ? stuck.data.liveness_known : undefined,
   })
 
   const meters = byPressure(meteredLimits(limits.data?.limits))

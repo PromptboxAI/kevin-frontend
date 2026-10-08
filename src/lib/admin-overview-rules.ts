@@ -108,6 +108,14 @@ export function attentionItems(input: {
   pastDueAccounts?: number | null
   pricingDegraded?: boolean
   limits?: LimitsResponse | null
+  /** Staging sessions whose clustering job is gone for good. */
+  stuckSessions?: number | null
+  /**
+   * FALSE means the job queue could not be read, so `stuckSessions` is not a
+   * zero — it is a question mark. Reporting all-clear off an unreadable queue
+   * is the exact failure this card had on 2026-10-08.
+   */
+  stuckLivenessKnown?: boolean
 }): Attention[] {
   const out: Attention[] = []
 
@@ -116,6 +124,34 @@ export function attentionItems(input: {
     out.push({
       key: 'failed_jobs',
       label: `${n} failed job${n === 1 ? '' : 's'} — a customer's work did not finish`,
+      rank: 0,
+      to: '/admin/system',
+    })
+  }
+
+  /*
+   * A SESSION NOTHING WILL RECOVER. It has already outlived the queue's retry
+   * and the sweep's two re-queues, so it is waiting on a person — and this is
+   * the card that person looks at. On 2026-10-08 a claim sat dead in
+   * clustering while this card said "Nothing is wrong"; the owner found it by
+   * watching his own upload.
+   */
+  if ((input.stuckSessions ?? 0) > 0) {
+    const n = input.stuckSessions as number
+    out.push({
+      key: 'stuck_staging',
+      label: `${n} photo session${n === 1 ? ' is' : 's are'} stuck in clustering — nothing will retry ${n === 1 ? 'it' : 'them'}`,
+      rank: 0,
+      to: '/admin/system',
+    })
+  }
+
+  /* An unreadable queue is its own finding, and it OUTRANKS a quiet list:
+     "no sessions stuck" and "cannot tell" look identical otherwise. */
+  if (input.stuckLivenessKnown === false) {
+    out.push({
+      key: 'stuck_unknown',
+      label: 'The job queue cannot be read — stuck sessions cannot be detected',
       rank: 0,
       to: '/admin/system',
     })
