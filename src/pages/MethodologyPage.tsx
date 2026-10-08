@@ -154,7 +154,7 @@ export default function MethodologyPage() {
           <h2>Priced and depreciated</h2>
           <ShotFigure
             src="/marketing/flow-priced-2x.webp"
-            alt="Processing: a progress bar through upload, extraction, identification and pricing, beside a live feed of resolved items showing make, model, content class and price"
+            alt="Processing: a progress bar for the run, beside a live feed of items as they resolve, each showing make, model, content class and price"
             label="kevin.co/claims/…/processing"
             caption="Items resolve one at a time, each with its make, model and class. You can leave the page; the work carries on without it."
           />
