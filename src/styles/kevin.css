@@ -6689,8 +6689,12 @@
     .k-faqx-item[open] .k-faqx-q::before { content: "–"; }
     .k-faqx-a { padding: 0 2px 16px 24px; font-size: 15.5px; line-height: 1.6; color: var(--k-fg-2); max-width: 72ch; }
 
+    /* The figure had 24px above and NOTHING below, so the prose that follows
+       ran straight into the caption and read as part of it (owner,
+       2026-10-08). A screenshot is a block of its own: it wants air on both
+       sides, and more of it below, where a paragraph picks the thread back up. */
     .k-seoshot {
-      margin: 24px 0 0; border: 1px solid var(--k-line-2); border-radius: 12px; overflow: hidden;
+      margin: 26px 0 30px; border: 1px solid var(--k-line-2); border-radius: 12px; overflow: hidden;
       box-shadow: 0 2px 6px oklch(0.2 0.02 250 / 0.05), 0 20px 48px oklch(0.2 0.02 250 / 0.10);
     }
     .k-seoshot-bar {
@@ -6699,8 +6703,8 @@
     }
     .k-seoshot img { display: block; width: 100%; height: auto; }
     .k-seoshot-cap {
-      padding: 12px 14px; background: var(--k-bg); border-top: 1px solid var(--k-line);
-      font-size: 13.5px; line-height: 1.5; color: var(--k-fg-3);
+      padding: 14px 16px 16px; background: var(--k-bg); border-top: 1px solid var(--k-line);
+      font-size: 13.5px; line-height: 1.55; color: var(--k-fg-3);
     }
 
     .k-sstrip {

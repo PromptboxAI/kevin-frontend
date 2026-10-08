@@ -109,6 +109,12 @@ export default function MethodologyPage() {
 
         <section className="k-seosec">
           <h2>Photos in</h2>
+          <ShotFigure
+            src="/marketing/flow-photos-in-2x.webp"
+            alt="Kevin's upload screen: a drop target for photos, a folder or a .zip, with a queue showing each file, its size and its upload progress"
+            label="kevin.co/claims/…/photos"
+            caption="One selection, however many photos. The queue is the whole drop, not one file at a time."
+          />
           <p>
             Select the whole folder and click once — a phone dump or a whole .zip works the same
             way, and there is no total-size cap. Re-dropping yesterday’s folder resolves to
@@ -120,6 +126,12 @@ export default function MethodologyPage() {
 
         <section className="k-seosec">
           <h2>Reviewed</h2>
+          <ShotFigure
+            src="/marketing/flow-reviewed-2x.webp"
+            alt="Staging: ten photos grouped into six proposed photo sets, several badged two photos to one item, each with merge, note, exclude and delete controls"
+            label="kevin.co/claims/…/staging"
+            caption="Ten photographs, six proposed sets. The 2 → 1 item badges are the whole rule: a set becomes at most one line, so items never outnumber photographs."
+          />
           <p>
             Shots taken seconds apart, in the same place, are proposed as one item. This step is
             deliberately <em>pre-identification</em>: staging shows you sets and timestamps, never a
@@ -140,6 +152,12 @@ export default function MethodologyPage() {
 
         <section className="k-seosec">
           <h2>Priced and depreciated</h2>
+          <ShotFigure
+            src="/marketing/flow-priced-2x.webp"
+            alt="Processing: a progress bar through upload, extraction, identification and pricing, beside a live feed of resolved items showing make, model, content class and price"
+            label="kevin.co/claims/…/processing"
+            caption="Items resolve one at a time, each with its make, model and class. You can leave the page; the work carries on without it."
+          />
           <p>
             Each item is priced against the Kevin Content Pricing Engine, from a single listing —
             with that listing’s link stored on the row and printed in the export. Where retail
