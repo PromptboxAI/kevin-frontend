@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { formatPhone } from '../lib/phone-rules'
 import { useAuth } from '../lib/auth'
 import { AvatarStorageMissing, EMPTY_PROFILE, profileFrom, removeAvatar, saveProfile, uploadAvatar } from '../lib/profile'
-import { LOGO_ERROR, logoProblem } from '../lib/directory-rules'
+import { AVATAR_ERROR, avatarProblem } from '../lib/avatar-rules'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import SettingsShell from '../components/SettingsShell'
@@ -201,9 +201,12 @@ export default function SettingsProfilePage() {
   }
 
   const takePhoto = async (file: File) => {
-    const problem = logoProblem(file)
+    /* A PHOTO, not a logo. The logo rule caps at 2 MB in PNG/JPEG only, which
+       refuses a typical phone capture twice over -- once for size and, on an
+       iPhone, again for being HEIC. */
+    const problem = avatarProblem(file)
     if (problem) {
-      setPhotoError(LOGO_ERROR[problem])
+      setPhotoError(AVATAR_ERROR[problem])
       return
     }
     setPhotoBusy(true)
