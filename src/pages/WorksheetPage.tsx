@@ -865,6 +865,9 @@ export default function WorksheetPage() {
 
   // Grouped view is a review mode over a filtered set, so it renders whole.
   const windowed = groups === null
+  /** More pages are coming, whether or not one is in flight this instant. */
+  const loadingRest = rows.hasNextPage || rows.isFetchingNextPage
+
   const win = windowRange(scrollTop, viewportH, rowH, visible.length, OVERSCAN)
   const startIdx = windowed ? win.startIdx : 0
   const endIdx = windowed ? win.endIdx : visible.length
@@ -1608,11 +1611,43 @@ export default function WorksheetPage() {
         <>
           <footer className="k-footer">
             <span>
+              {/*
+                * ⛔ DO NOT STATE A TOTAL WE DO NOT HAVE YET.
+                *
+                * THE API IS NEWEST-FIRST, so page one of a 263-line claim is
+                * lines 0164-0263 -- the TAIL rendered at the top of the grid.
+                * For the second it takes the rest to arrive, the footer read
+                * "Showing 100 of 100 items · All changes saved": a confident,
+                * wrong total under a confident, wrong first row. The owner
+                * read it as every age resetting to 1, because the rows he was
+                * looking at were not the rows he expected to be looking at.
+                *
+                * `isFetchingNextPage` alone did not cover it -- there is a gap
+                * between one page settling and the next being requested, and
+                * that gap is exactly when the screen looks finished. The
+                * question is "are there more pages", not "is a request in
+                * flight right now".
+                */}
               Showing <strong style={{ color: 'var(--k-fg-2)' }}>{fmtInt(visible.length)}</strong> of{' '}
-              {fmtInt(items.length)} {items.length === 1 ? 'item' : 'items'}
-              {rows.isFetchingNextPage ? ' · loading more…' : ''}
-              {' · '}
-              {saving ? 'Saving…' : 'All changes saved'}
+              {fmtInt(
+                loadingRest && countCheck.apiCount > items.length
+                  ? countCheck.apiCount
+                  : items.length,
+              )}{' '}
+              {items.length === 1 ? 'item' : 'items'}
+              {loadingRest ? (
+                <>
+                  {' · '}
+                  <span style={{ color: 'var(--k-fg-3)' }}>
+                    still loading the rest of the claim
+                  </span>
+                </>
+              ) : (
+                <>
+                  {' · '}
+                  {saving ? 'Saving…' : 'All changes saved'}
+                </>
+              )}
               {/* The count comes from the rows actually rendered, never from the
                   API total alone -- a disagreement means rows are counted that
                   are not lines, and it is surfaced rather than papered over.
