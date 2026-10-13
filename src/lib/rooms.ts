@@ -31,13 +31,43 @@ export function deleteRoom(roomId: number) {
 }
 
 /**
+ * The server's own ceiling on `item_ids` (schemas.py BulkAssignRoomRequest,
+ * confirmed by the backend 2026-10-13). Over this is a 422, not a 500.
+ *
+ * Ids are integers, so 500 of them is about 3 KB — the limit is a schema
+ * guard, not a size problem, and the route is ONE update statement. So we send
+ * the whole selection in one call up to here and chunk only above it: chunking
+ * earlier would trade a clean all-or-nothing failure for a partial one, for
+ * nothing.
+ */
+export const ASSIGN_ROOM_MAX = 500
+
+/**
  * Bulk (un)assign. All-or-nothing: a foreign id or a room from another claim
  * fails the whole batch and changes nothing.
+ *
+ * Above `ASSIGN_ROOM_MAX` it necessarily becomes several calls, and the
+ * guarantee then holds per call rather than across the set — unavoidable, and
+ * better than a 422 that files nothing on a 600-line claim.
  */
-export function assignRoom(itemIds: number[], roomId: number | null) {
-  return api.patch<{ assigned: number; item_ids: number[] }>('/v1/claim_items/assign-room', {
-    json: { item_ids: itemIds, room_id: roomId },
-  })
+export async function assignRoom(itemIds: number[], roomId: number | null) {
+  if (itemIds.length <= ASSIGN_ROOM_MAX) {
+    return api.patch<{ assigned: number; item_ids: number[] }>('/v1/claim_items/assign-room', {
+      json: { item_ids: itemIds, room_id: roomId },
+    })
+  }
+  let assigned = 0
+  const done: number[] = []
+  for (let i = 0; i < itemIds.length; i += ASSIGN_ROOM_MAX) {
+    const slice = itemIds.slice(i, i + ASSIGN_ROOM_MAX)
+    const res = await api.patch<{ assigned: number; item_ids: number[] }>(
+      '/v1/claim_items/assign-room',
+      { json: { item_ids: slice, room_id: roomId } },
+    )
+    assigned += res.assigned
+    done.push(...(res.item_ids ?? slice))
+  }
+  return { assigned, item_ids: done }
 }
 
 /**
