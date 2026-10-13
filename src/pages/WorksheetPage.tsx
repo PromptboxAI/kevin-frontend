@@ -122,6 +122,16 @@ const FLEX_COL = 4
 const ROW_H = { comfortable: 42, compact: 34 }
 const OVERSCAN = 8
 
+/** Carries how much of a filing actually landed, so the error path can say. */
+class RoomFilingError extends Error {
+  readonly written: number
+  constructor(message: string, written: number) {
+    super(message)
+    this.name = 'RoomFilingError'
+    this.written = written
+  }
+}
+
 export default function WorksheetPage() {
   const { claimId = '' } = useParams()
   /**
@@ -589,15 +599,66 @@ export default function WorksheetPage() {
    * without the second half would let someone file all 52 lines and hand the
    * carrier a schedule with a blank Room/Area column. See ask 28.
    */
+  /**
+   * FILING LINES IN A ROOM IS TWO WRITES, and they fail differently.
+   *
+   *   1. `assign-room` — ONE call, all-or-nothing by contract. If it throws,
+   *      nothing anywhere changed.
+   *   2. `room_area` text — one PATCH PER LINE, so on a 263-row selection it is
+   *      263 requests. A failure part-way leaves rows filed with the old text
+   *      still printing on the export.
+   *
+   * The old handler collapsed both into "Could not file those lines", which is
+   * a lie in the second case: the lines ARE filed. It said the same thing when
+   * nothing had happened at all, which is what the owner hit — and left him
+   * unable to tell whether to retry or to go looking for half-applied rows.
+   */
   const fileInRoom = useMutation({
     mutationFn: async ({ ids, roomId }: { ids: number[]; roomId: number | null }) => {
       const chosen = items.filter((i) => ids.includes(i.id))
       const room = roomId == null ? null : (rooms.data?.rooms ?? []).find((r) => r.id === roomId)
       const plan = assignPlan(chosen, room ?? null)
-      await assignRoom(plan.itemIds, plan.roomId)
-      // Chunked: a 300-row selection must not open 300 sockets at once.
+
+      try {
+        await assignRoom(plan.itemIds, plan.roomId)
+      } catch (error) {
+        throw new RoomFilingError(
+          error instanceof ApiError
+            ? `Those lines were not filed (HTTP ${error.status}${
+                typeof error.detail === 'string' ? ` — ${error.detail}` : ''
+              }). Nothing was changed.`
+            : 'Those lines were not filed. Nothing was changed.',
+          0,
+        )
+      }
+
+      // Chunked: a 300-row selection must not open 300 sockets at once. One
+      // retry on a 429, honouring Retry-After -- 263 writes in a few seconds is
+      // exactly the shape a rate limit is for, and losing the tail of a filing
+      // to it is silent on the export.
+      let done = 0
       for (const chunk of planTextChunks(plan.textUpdates)) {
-        await Promise.all(chunk.map((u) => setRoomArea(u.id, u.room_area)))
+        try {
+          await Promise.all(chunk.map((u) => setRoomArea(u.id, u.room_area)))
+          done += chunk.length
+        } catch (error) {
+          if (error instanceof ApiError && error.isRateLimited) {
+            await new Promise((r) => setTimeout(r, (error.retryAfter ?? 2) * 1000))
+            try {
+              await Promise.all(chunk.map((u) => setRoomArea(u.id, u.room_area)))
+              done += chunk.length
+              continue
+            } catch {
+              /* fall through to the partial report */
+            }
+          }
+          throw new RoomFilingError(
+            `Filed into ${room?.name ?? 'no room'}, but the Room/Area text was only written to ${fmtInt(
+              done,
+            )} of ${fmtInt(plan.textUpdates.length)} lines. The rest still print their old room on the export — run it again to finish them.`,
+            done,
+          )
+        }
       }
       return { plan, name: room?.name ?? null }
     },
@@ -607,8 +668,12 @@ export default function WorksheetPage() {
       void queryClient.invalidateQueries({ queryKey: ['rooms', claimId] })
       refresh()
     },
-    onError: (error) =>
-      setNotice(error instanceof Error ? error.message : 'Could not file those lines.'),
+    onError: (error) => {
+      /* A partial run DID change rows, so the grid has to be re-read even
+         though this is the error path. */
+      if (error instanceof RoomFilingError && error.written > 0) refresh()
+      setNotice(error instanceof Error ? error.message : 'Could not file those lines.')
+    },
   })
 
   const removeRows = useMutation({
