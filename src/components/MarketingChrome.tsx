@@ -70,6 +70,8 @@ const LIVE = new Set<string>([
   '/guides/source-pricing-insurance-contents',
   '/contents-software-roi',
   '/guides/useful-life-by-content-class',
+  '/guides/photo-vs-description-contents-pricing',
+  '/guides/insurance-grade-contents-documentation',
   '/guides/best-contents-software-public-adjusters',
   '/case-studies/4000-contents-line-items-30-days',
 ])

@@ -227,6 +227,18 @@ export const SEO_PAGES: Record<string, SeoEntry> = {
       "The full depreciation schedule Kevin applies: 87 lines across 31 categories, with useful life and basis for each. Downloadable as a CSV.",
     image: 'og-default.png',
   },
+  '/guides/photo-vs-description-contents-pricing': {
+    title: 'Photo-Based vs Description-Only Contents Pricing | Kevin',
+    description:
+      "When photographs are the stronger evidence, when a written list is the only option, and what each route can and cannot establish about an item.",
+    image: 'og-default.png',
+  },
+  '/guides/insurance-grade-contents-documentation': {
+    title: 'What Is Insurance-Grade Contents Documentation? | Kevin',
+    description:
+      "Identity, evidence, quantity, a defensible replacement, a source, a class, depreciation and traceability — what a contents line has to carry on its own.",
+    image: 'og-default.png',
+  },
   '/guides/best-contents-software-public-adjusters': {
     title: 'Best Contents Software for Public Adjusters | Kevin',
     description:

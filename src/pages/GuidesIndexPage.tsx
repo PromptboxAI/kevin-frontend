@@ -45,6 +45,11 @@ const GROUPS: { h: string; blurb: string; items: Entry[] }[] = [
     blurb: 'Method that holds up whether or not you use our software.',
     items: [
       {
+        to: '/guides/insurance-grade-contents-documentation',
+        t: 'What insurance-grade means',
+        d: 'The standard a contents line has to meet, and the four questions it must answer alone.',
+      },
+      {
         to: '/guides/contents-claim-qa-checklist',
         t: 'Contents claim QA checklist',
         d: 'The pass to make before a schedule leaves your hands, grouped by what you are looking at.',
@@ -151,6 +156,11 @@ const GROUPS: { h: string; blurb: string; items: Entry[] }[] = [
     h: 'Total losses',
     blurb: 'When the property and the evidence are both gone.',
     items: [
+      {
+        to: '/guides/photo-vs-description-contents-pricing',
+        t: 'Photos vs descriptions',
+        d: 'Which evidence each route can establish, and when a written list is the only option.',
+      },
       {
         to: '/contents-claims/without-photos',
         t: 'Pricing a contents claim without photos',
