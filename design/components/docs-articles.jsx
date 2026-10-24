@@ -91,7 +91,7 @@ const DOC_ARTICLES_A = {
       ['h2', 'The tally'],
       ['p', 'The counter shows photo sets, not line items — 50 photos might propose 47 sets. The item count is not known until identification runs, and it will be lower still once unmatched and context photos fall out.'],
       ['h2', 'Notes that steer identification'],
-      ['p', 'You can attach a note of up to 120 characters to any set. It rides on the whole set and steers what Kevin looks for: "the TV is the Sony, not the Samsung," or "this is the mahogany one, not the veneer." Notes influence identification only — they never affect price.'],
+      ['p', 'You can attach a note of up to 300 characters to any set. It rides on the whole set and steers what Kevin looks for: "the TV is the Sony, not the Samsung," or "this is the mahogany one, not the veneer." Notes influence identification only — they never affect price.'],
       ['note', 'Notes are pre-processing only. If an item comes back misidentified, correct it by editing the worksheet row, not by re-running identification.'],
     ],
   },

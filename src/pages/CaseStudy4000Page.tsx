@@ -222,7 +222,7 @@ export default function CaseStudy4000Page() {
             {
               to: '/pricing',
               t: 'Pricing: $249/mo, unlimited claims',
-              d: '2,000 line items a month included, then $0.20 an item.',
+              d: '2,000 line items a month included, then credits at $0.75 an item.',
             },
           ]}
         />

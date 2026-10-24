@@ -393,6 +393,6 @@ export const softwareJsonLd = {
     '@type': 'Offer',
     price: '249',
     priceCurrency: 'USD',
-    description: 'Unlimited claims, 2,000 line items a month included, then $0.20 per item.',
+    description: 'Unlimited claims, 2,000 line items a month included, then credits at $0.75 an item.',
   },
 }

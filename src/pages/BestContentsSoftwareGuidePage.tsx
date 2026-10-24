@@ -195,7 +195,7 @@ export default function BestContentsSoftwareGuidePage() {
             agree. The export is Xactimate (Excel) · .xlsx in the XactContents template, with static
             values because the importer rejects formulas. A person reviews the grouping before
             anything becomes a claim item. Pricing is $249/mo flat, unlimited claims, 2,000 line
-            items a month included and $0.20 an item after, with the first 250 free and no deadline.
+            items a month included and then credits at $0.75 an item after, with the first 250 free and no deadline.
             Jewelry, fine arts, firearms and furs are never auto-priced.
           </p>
         </section>

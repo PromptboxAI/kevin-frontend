@@ -66,6 +66,21 @@ RULES = [
      r"upload,\s*extract|extract,\s*cluster|cluster,\s*review|promote,\s*price|"
      r"depreciate,\s*export|eight\s+stages|\bOCR\b|model[- ]number\s+patterns|"
      r"content\s+hash", "prose", "public"),
+    # Rule 9, amended 2026-10-03: post-pay overage is withdrawn "from every
+    # surface" and past the allowance you buy CREDITS at $0.75. billing.ts is
+    # decisive -- CREDIT_PRICE exists, PRO_OVERAGE_PRICE deliberately does
+    # not. The dead $0.20 survived on six surfaces anyway, one of them inside
+    # softwareJsonLd, which no reader ever sees. Legitimate copy denying it
+    # ("the server does not do that") is caught by NEGATION_HINTS.
+    ("9", "the withdrawn $0.20 post-pay overage",
+     r"\$0\.20|0\.20\s+(an|per)\s+item|per[- ]item\s+overage"),
+    # Rule 23: the note an adjuster TYPES is 300 chars. The 120 cap belongs to
+    # the DERIVED note (the backend fusing member photo notes), which is a
+    # different, read-only thing. The docs article collapsed the two and said
+    # 120 for the editable note. Narrow on purpose: a correct sentence about
+    # the derived summary being capped at 120 must still pass.
+    ("23", "the editable set note is 300 chars, not 120",
+     r"note\s+of\s+up\s+to\s+120|120[- ]character\s+note"),
     ("10", "the comp-selection METHOD (internal only)",
      r"middle\s+(one|listing|price|comp)\b|middle\s+by\s+price|"
      r"median\s+of\s+(the\s+)?(comps?|listings?|prices?|offers?)|"

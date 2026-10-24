@@ -18,6 +18,6 @@ The counter shows photo sets, not line items — 50 photos might propose 47 sets
 
 ## Notes that steer identification
 
-You can attach a note of up to 120 characters to any set. It rides on the whole set and steers what Kevin looks for: "the TV is the Sony, not the Samsung," or "this is the mahogany one, not the veneer." Notes influence identification only — they never affect price.
+You can attach a note of up to 300 characters to any set. It rides on the whole set and steers what Kevin looks for: "the TV is the Sony, not the Samsung," or "this is the mahogany one, not the veneer." Notes influence identification only — they never affect price.
 
 > Notes are pre-processing only. If an item comes back misidentified, correct it by editing the worksheet row, not by re-running identification.

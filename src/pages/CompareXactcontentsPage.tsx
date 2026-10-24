@@ -53,7 +53,7 @@ const FAQS: Faq[] = [
   },
   {
     q: 'What about pricing models?',
-    a: 'Kevin is flat monthly — $249, unlimited claims, 2,000 line items a month included and $0.20 an item after that, with the first 250 free and no deadline on them. There is no per-seat or per-claim fee.',
+    a: 'Kevin is flat monthly — $249, unlimited claims, 2,000 line items a month included and then credits at $0.75 an item after that, with the first 250 free and no deadline on them. There is no per-seat or per-claim fee.',
   },
 ]
 

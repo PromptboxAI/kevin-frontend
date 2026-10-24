@@ -245,7 +245,7 @@ export default function PaContentsSoftwarePage() {
             {
               to: '/pricing',
               t: 'Pricing: $249/mo, unlimited claims',
-              d: '2,000 line items a month included, then $0.20 an item. First 250 free.',
+              d: '2,000 line items a month included, then credits at $0.75 an item. First 250 free.',
             },
             {
               to: '/sample',
