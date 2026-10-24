@@ -2,10 +2,8 @@
 // One-time per-claim engagements (admin revenue "Services" stream); no subscription needed.
 // Layout: hero → hairline stats → asymmetric two-column (numbered rail ⟷ photo collage)
 // → full-bleed on-site band → rate card → accent quote → closing CTA.
-// Deliberately non-linear. Rates are FLAT PER TIER, not marginal: the line
-// count selects ONE rate and every line bills at it, so an adjuster can price
-// a job in their head. Note the tiers are non-monotonic at the boundaries --
-// 801 lines bills less than 800 -- see the rate-card comment.
+// Rates are MARGINAL with a $750 minimum (owner, 2026-10-22) -- see the
+// rate-card comment; src/lib/dfy-pricing-rules.ts is the implementation.
 // Site days are NOT part of this: they are an on-site charge and live in the
 // on-site band, because a client who sends their own photos never incurs one.
 const DoneForYou = () => (
@@ -27,14 +25,14 @@ const DoneForYou = () => (
           <a className="k-btn k-btn--lg" href="38-Contact.html">Send us a claim →</a>
           <a className="k-btn k-btn--ghost k-btn--lg" href="51-Book-call.html">Talk it through first</a>
         </div>
-        <div style={{ marginTop: 14, fontSize: 12.5, color: 'var(--k-fg-4)' }}>Priced per line, quoted up front from your photo count. One-time per engagement — no subscription, no seats, no retainer.</div>
+        <div style={{ marginTop: 14, fontSize: 12.5, color: 'var(--k-fg-4)' }}>From $750, priced per finished line and quoted before we start. One-time per engagement — no subscription, no seats, no retainer.</div>
       </section>
 
       {/* Hairline stat row */}
       <section style={{ maxWidth: 940, margin: '0 auto', padding: '0 40px 44px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)' }}>
         {[
           ['1 business day', 'Typical turnaround', 'photo dump in, worksheet + PDF back'],
-          ['Every photo', 'Becomes a priced line', 'duplicates and context shots sorted out for you'],
+          ['One item, one line', 'However many photos it took', 'duplicates and context shots cost nothing'],
           ['3 sources', 'On every priced line', 'live comps with dated proof links'],
         ].map(([n, l, sub], i) => (
           <div key={i} style={{ textAlign: 'center', padding: '18px 12px', borderTop: '1px solid var(--k-line)', borderBottom: '1px solid var(--k-line)', borderLeft: i > 0 ? '1px solid var(--k-line)' : 'none' }}>
@@ -116,32 +114,27 @@ const DoneForYou = () => (
         </div>
       </section>
 
-      {/* Closing — self-serve upsell */}
-      {/* Rate card. FLAT PER TIER: the line count picks one rate and every line
-          bills at it. Chosen over marginal brackets because an adjuster should
-          be able to price a job in their head while still on the phone.
-
-          KNOWN EDGE: the bands are non-monotonic at their boundaries. 800 lines
-          bills $2,800; 801 bills $2,002.50 -- $797.50 less for one MORE line --
-          and an 800-line job ($2,800) bills more than an 1,100-line one
-          ($2,750). Deliberate trade-off for legibility; if it ever bites, the
-          fix is to cap each band at the next band's entry price rather than to
-          go marginal. */}
+      {/* Rate card. MARGINAL, $750 MINIMUM (owner, 2026-10-22): price =
+          max(750, marginal line total). The public view leads with the
+          minimum and dollar ranges; the per-line bands sit behind a
+          disclosure for professionals. Live numbers are derived in
+          src/lib/dfy-pricing-rules.ts -- these are its outputs, typed. */}
       <section className="k-dfy-rates-sec" style={{ maxWidth: 940, margin: '0 auto' }}>
         <div style={{ fontFamily: 'var(--k-font-mono)', fontSize: 11, color: 'var(--k-fg-4)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>What it costs</div>
         <h2 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 34, letterSpacing: '-0.024em', margin: '8px 0 8px', lineHeight: 1.1 }}>
-          Priced by the line. The bigger the loss, the less each line costs.
+          Minimum project: $750.
         </h2>
         <p style={{ fontSize: 14, color: 'var(--k-fg-3)', lineHeight: 1.6, margin: '0 0 22px', maxWidth: 620 }}>
-          Your line count sets one rate, and every line on the claim bills at it.
+          Most inventories land in one of these ranges. Final pricing is based on the number of completed insurance line items — send us your photos for an exact quote.
         </p>
 
         <dl className="k-dfy-rates">
           {[
-            ['1–150 lines', '$7.00', 'a line, all lines'],
-            ['151–400 lines', '$5.00', 'a line, all lines'],
-            ['401–800 lines', '$3.50', 'a line, all lines'],
-            ['801+ lines', '$2.50', 'a line, all lines'],
+            ['Small contents loss', '$750–$1,000', 'up to about 210 lines'],
+            ['Medium inventory', '$1,000–$1,750', 'about 210–390 lines'],
+            ['Large residential inventory', '$1,750–$3,000', 'about 390–740 lines'],
+            ['Major or total-loss inventory', '$3,000+', 'over 740 lines'],
+            ['Commercial', 'Custom', 'quoted per job'],
           ].map(([band, rate, note], i) => (
             <div key={i} className="k-dfy-rate">
               <dt className="k-dfy-rate-band">{band}</dt>
@@ -150,27 +143,44 @@ const DoneForYou = () => (
           ))}
         </dl>
 
-        <div className="k-dfy-worked">
-          <div className="k-dfy-worked-hd">A 2,000-line contents inventory, worked through</div>
-          <table className="k-dfy-worked-t">
-            <tbody>
-              {[
-                ['2,000 lines — past 800, so every line is $2.50', '$5,000'],
-                ['You sent the photos, so no site day', '—'],
-              ].map(([l, v], i) => (
-                <tr key={i}><td>{l}</td><td className="k-mono">{v}</td></tr>
-              ))}
-              <tr className="k-dfy-worked-tot">
-                <td>Total · $2.50 a line</td><td className="k-mono">$5,000</td>
-              </tr>
-            </tbody>
-          </table>
-          <p className="k-dfy-worked-foot">
-            The alternative on a loss that size is two field adjusters and an inside rep working it for
-            two weeks — and the rep is still looking up replacement costs one item at a time. That runs
-            about <strong>$9,000</strong>. This is <strong>$5,000</strong>, a <strong>$4,000</strong> saving,
-            and you get it back in a day.
-          </p>
+        <div className="k-faqx" style={{ maxWidth: 620 }}>
+          <details className="k-faqx-item">
+            <summary className="k-faqx-q">Per-line rates, for public adjusters and professionals</summary>
+            <div className="k-faqx-a" style={{ fontSize: 14 }}>
+              <p style={{ margin: '0 0 14px' }}>Rates are progressive. Each band prices only the lines inside it, so <strong>crossing into a lower tier does not reprice earlier items</strong> and adding a line never lowers the total. The price is the line total or the $750 minimum, whichever is higher.</p>
+              <dl className="k-dfy-rates">
+                {[
+                  ['First 100 lines', '$5.00', 'a line'],
+                  ['Lines 101–250', '$4.50', 'a line'],
+                  ['Lines 251–500', '$4.00', 'a line'],
+                  ['Lines 501–1,000', '$3.50', 'a line'],
+                  ['1,001 and up', '$3.00', 'a line, or a custom volume rate'],
+                ].map(([band, rate, note], i) => (
+                  <div key={i} className="k-dfy-rate">
+                    <dt className="k-dfy-rate-band">{band}</dt>
+                    <dd className="k-dfy-rate-v"><span className="k-mono">{rate}</span> <span className="k-dfy-rate-note">{note}</span></dd>
+                  </div>
+                ))}
+              </dl>
+              <div className="k-dfy-worked">
+                <div className="k-dfy-worked-hd">A 400-line contents inventory, worked through</div>
+                <table className="k-dfy-worked-t">
+                  <tbody>
+                    {[
+                      ['First 100 lines at $5.00', '$500'],
+                      ['Lines 101–250 at $4.50', '$675'],
+                      ['Lines 251–400 at $4.00', '$600'],
+                      ['You sent the photos, so no site day', '—'],
+                    ].map(([l, v], i) => (
+                      <tr key={i}><td>{l}</td><td className="k-mono">{v}</td></tr>
+                    ))}
+                    <tr className="k-dfy-worked-tot"><td>Total · $4.44 a line</td><td className="k-mono">$1,775</td></tr>
+                  </tbody>
+                </table>
+                <p className="k-dfy-worked-foot">One more line would make it $1,779, never less.</p>
+              </div>
+            </div>
+          </details>
         </div>
       </section>
 

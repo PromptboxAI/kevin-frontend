@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build && vite build --ssr src/entry-server.tsx --outDir dist-ssr && node scripts/prerender-meta.mjs && node scripts/prerender-html.mjs",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:dfy": "node --experimental-strip-types --no-warnings --test scripts/test-dfy-pricing.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",

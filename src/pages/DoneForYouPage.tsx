@@ -3,7 +3,7 @@ import Seo from '../components/Seo'
 import { crumbJsonLd, softwareJsonLd } from '../components/seo-kit'
 import { I, Icon } from '../components/Icon'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
-import { DFY_BANDS, DFY_SETUP_FEE, quoteFor } from '../lib/dfy-pricing-rules'
+import { DFY_BANDS, DFY_MINIMUM_FEE, DFY_TYPICAL, linesWithin, quoteFor } from '../lib/dfy-pricing-rules'
 
 /**
  * Done-for-you — the service line: send Kevin the photos, we build the
@@ -25,17 +25,15 @@ import { DFY_BANDS, DFY_SETUP_FEE, quoteFor } from '../lib/dfy-pricing-rules'
  * several photos of one object into one line, so photos would bill a customer
  * for our clustering rather than for what they receive.
  *
- * The $199 setup fee is what makes a small job viable: a tiny claim still
- * takes onboarding, a review pass, correspondence and delivery, and a handful
- * of lines at $5 does not pay for a morning of anyone's time.
+ * $750 MINIMUM PROJECT FEE (owner, 2026-10-22), applied as max(750, line
+ * total) -- never added on top. It replaced a $199 setup fee: the NY contents-
+ * inventory market starts at $750 for a small loss, and Kevin does not compete
+ * by underpricing it. Still NO MINIMUM LINE COUNT: the fee is the floor, so an
+ * eight-line jewelry schedule is a $750 job rather than a refusal.
  *
- * THERE IS NO MINIMUM LINE COUNT, and none should be added (owner,
- * 2026-10-02). The setup fee already is the floor, and it self-polices:
- * nobody pays $199 plus $50 to have ten items written up, so the job that
- * would have been refused by a minimum simply never gets sent. A published
- * minimum would only turn a quiet non-starter into a visible refusal on the
- * page -- and it would be wrong the first time somebody has a genuine
- * eight-line jewelry schedule they are happy to pay for.
+ * The public view leads with the minimum and dollar ranges; the per-line
+ * bands sit in a disclosure for professionals. Do not promote the band table
+ * back to the headline -- a homeowner cannot count lines.
  *
  * `k-dfy` is a page hook: every section here is inline-styled with no class of
  * its own, so there is nothing for a breakpoint to target.
@@ -81,16 +79,33 @@ const COLLAGE = ['20260805_144436', '20260805_144542', '20260805_144723', '20260
  */
 const RATES: [string, string, string][] = DFY_BANDS.map((b) => [
   b.label,
-  b.rate === null ? 'Custom' : `$${b.rate.toFixed(2)}`,
-  b.rate === null ? 'talk to us' : 'a line',
+  `$${b.rate.toFixed(2)}`,
+  b.upTo === null ? 'a line, or a custom volume rate' : 'a line',
 ])
 
-const SETUP_FEE = `$${DFY_SETUP_FEE}`
+const usd = (n: number) =>
+  `$${n.toLocaleString('en-US', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 })}`
+
+const MINIMUM = usd(DFY_MINIMUM_FEE)
 
 /** The example on the page. 400 lines is big enough to cross three bands. */
 const EXAMPLE = quoteFor(400)!
-const usd = (n: number) =>
-  `$${n.toLocaleString('en-US', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 })}`
+const NEXT = quoteFor(401)!
+
+/** Rounded to the nearest 10: these are "about" figures beside a range. */
+const about = (n: number) => Math.round(n / 10) * 10
+
+/** The public ranges, each with the size it buys from the same bands. */
+const TYPICAL: [string, string, string][] = DFY_TYPICAL.map((t) => {
+  if (t.from === null) return [t.label, 'Custom', 'quoted per job']
+  if (t.to === null) return [t.label, `${usd(t.from)}+`, `over ${about(linesWithin(t.from))} lines`]
+  const low = t.from === DFY_MINIMUM_FEE ? 0 : linesWithin(t.from)
+  return [
+    t.label,
+    `${usd(t.from)}–${usd(t.to)}`,
+    low === 0 ? `up to about ${about(linesWithin(t.to))} lines` : `about ${about(low)}–${about(linesWithin(t.to))} lines`,
+  ]
+})
 
 export default function DoneForYouPage() {
   return (
@@ -146,8 +161,8 @@ export default function DoneForYouPage() {
             </Link>
           </div>
           <div style={{ marginTop: 14, fontSize: 12.5, color: 'var(--k-fg-4)' }}>
-            Priced per line, quoted up front from your photo count. One-time per engagement — no
-            subscription, no seats, no retainer.
+            From {MINIMUM}, priced per finished line and quoted before we start. One-time per
+            engagement — no subscription, no seats, no retainer.
           </div>
         </section>
 
@@ -443,7 +458,10 @@ export default function DoneForYouPage() {
           </div>
         </section>
 
-        {/* Rate card */}
+        {/* Rate card. The public view leads with the minimum and dollar
+            ranges a homeowner can place themselves in; the per-line table is
+            for professionals and sits behind a disclosure (owner, 2026-10-22).
+            Both are derived from lib/dfy-pricing-rules. */}
         <section className="k-dfy-rates-sec" style={{ maxWidth: 940, margin: '0 auto' }}>
           <div
             style={{
@@ -467,7 +485,7 @@ export default function DoneForYouPage() {
               lineHeight: 1.1,
             }}
           >
-            Priced by the line item. The bigger the loss, the less each line costs.
+            Minimum project: {MINIMUM}.
           </h2>
           <p
             style={{
@@ -478,16 +496,28 @@ export default function DoneForYouPage() {
               maxWidth: 620,
             }}
           >
-            Each band prices only the lines inside it, so a bigger claim never costs less than a
-            smaller one. A <strong style={{ color: 'var(--k-fg-2)' }}>{SETUP_FEE} setup fee</strong>{' '}
-            covers onboarding, the review pass and delivery, whatever the size.
+            Most inventories land in one of these ranges. Final pricing is based on the number of
+            completed insurance line items — send us your photos for an exact quote.
           </p>
+
+          <dl className="k-dfy-rates">
+            {TYPICAL.map(([label, range, note]) => (
+              <div key={label} className="k-dfy-rate">
+                <dt className="k-dfy-rate-band">{label}</dt>
+                <dd className="k-dfy-rate-v">
+                  <span className="k-mono">{range}</span>{' '}
+                  <span className="k-dfy-rate-note">{note}</span>
+                </dd>
+              </div>
+            ))}
+          </dl>
+
           <p
             style={{
               fontSize: 13,
               color: 'var(--k-fg-3)',
               lineHeight: 1.6,
-              margin: '-12px 0 22px',
+              margin: '-8px 0 22px',
               maxWidth: 620,
             }}
           >
@@ -496,65 +526,74 @@ export default function DoneForYouPage() {
                 clustering rather than for what the adjuster receives. */}
             A line item is one finished row on the inventory —{' '}
             <strong style={{ color: 'var(--k-fg-2)' }}>not a photo</strong>. Six shots of the same
-            sofa are one line. You see the number before we start: your photos cluster into sets
-            first, a set becomes at most one line, so{' '}
+            sofa are one line, and duplicates and context shots are none. You see the number before
+            we start: your photos cluster into sets first, a set becomes at most one line, so{' '}
             <strong style={{ color: 'var(--k-fg-2)' }}>
               the quote is a ceiling the invoice cannot pass
             </strong>
             .
           </p>
 
-          <dl className="k-dfy-rates">
-            {RATES.map(([band, rate, note]) => (
-              <div key={band} className="k-dfy-rate">
-                <dt className="k-dfy-rate-band">{band}</dt>
-                <dd className="k-dfy-rate-v">
-                  <span className="k-mono">{rate}</span>{' '}
-                  <span className="k-dfy-rate-note">{note}</span>
-                </dd>
-              </div>
-            ))}
-          </dl>
+          {/* Reuses the FAQ disclosure (k-faqx): details/summary, so the
+              table is in the HTML for search and print whether open or not. */}
+          <div className="k-faqx" style={{ maxWidth: 620 }}>
+            <details className="k-faqx-item">
+              <summary className="k-faqx-q">Per-line rates, for public adjusters and professionals</summary>
+              <div className="k-faqx-a" style={{ fontSize: 14 }}>
+                <p style={{ margin: '0 0 14px' }}>
+                  Rates are progressive. Each band prices only the lines inside it, so{' '}
+                  <strong>crossing into a lower tier does not reprice earlier items</strong> and
+                  adding a line never lowers the total. The price is the line total or the{' '}
+                  {MINIMUM} minimum, whichever is higher.
+                </p>
+                <dl className="k-dfy-rates">
+                  {RATES.map(([band, rate, note]) => (
+                    <div key={band} className="k-dfy-rate">
+                      <dt className="k-dfy-rate-band">{band}</dt>
+                      <dd className="k-dfy-rate-v">
+                        <span className="k-mono">{rate}</span>{' '}
+                        <span className="k-dfy-rate-note">{note}</span>
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
 
-          <div className="k-dfy-worked">
-            <div className="k-dfy-worked-hd">
-              A {EXAMPLE.lines}-line contents inventory, worked through
-            </div>
-            <table className="k-dfy-worked-t">
-              <tbody>
-                <tr>
-                  <td>Setup</td>
-                  <td className="k-mono">{usd(EXAMPLE.setup)}</td>
-                </tr>
-                {EXAMPLE.breakdown.map((row) => (
-                  <tr key={row.label}>
-                    <td>
-                      {row.label} at ${row.rate.toFixed(2)}
-                    </td>
-                    <td className="k-mono">{usd(row.amount)}</td>
-                  </tr>
-                ))}
-                <tr>
-                  <td>You sent the photos, so no site day</td>
-                  <td className="k-mono">—</td>
-                </tr>
-                <tr className="k-dfy-worked-tot">
-                  <td>Total · {usd(EXAMPLE.perLine)} a line all in</td>
-                  <td className="k-mono">{usd(EXAMPLE.total)}</td>
-                </tr>
-              </tbody>
-            </table>
-            {/* The comparison is to a PUBLISHED rate rather than an invented
-                one: outsourced claim prep bills $99–$125 an hour across the
-                estimate-writing market. The hours are the honest variable, so
-                they are stated as a range rather than a single figure. */}
-            <p className="k-dfy-worked-foot">
-              The alternative is someone looking up {EXAMPLE.lines} replacement costs one at a
-              time. Outsourced
-              claim prep bills <strong>$99–$125 an hour</strong>; at {EXAMPLE.lines} items that is
-              a week of someone's attention, and you are still waiting at the end of it. This is{' '}
-              <strong>{usd(EXAMPLE.total)}</strong>, back in a day.
-            </p>
+                <div className="k-dfy-worked">
+                  <div className="k-dfy-worked-hd">
+                    A {EXAMPLE.lines}-line contents inventory, worked through
+                  </div>
+                  <table className="k-dfy-worked-t">
+                    <tbody>
+                      {EXAMPLE.breakdown.map((row) => (
+                        <tr key={row.label}>
+                          <td>
+                            {row.label} at ${row.rate.toFixed(2)}
+                          </td>
+                          <td className="k-mono">{usd(row.amount)}</td>
+                        </tr>
+                      ))}
+                      <tr>
+                        <td>You sent the photos, so no site day</td>
+                        <td className="k-mono">—</td>
+                      </tr>
+                      <tr className="k-dfy-worked-tot">
+                        <td>Total · {usd(EXAMPLE.perLine)} a line</td>
+                        <td className="k-mono">{usd(EXAMPLE.total)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  {/* The comparison is to a PUBLISHED rate rather than an
+                      invented one: outsourced claim prep bills $99–$125 an
+                      hour across the estimate-writing market. */}
+                  <p className="k-dfy-worked-foot">
+                    One more line would make it {usd(NEXT.total)}, never less. The alternative is
+                    someone looking up {EXAMPLE.lines} replacement costs one at a time: outsourced
+                    claim prep bills <strong>$99–$125 an hour</strong>, and at {EXAMPLE.lines} items
+                    that is a week of someone's attention.
+                  </p>
+                </div>
+              </div>
+            </details>
           </div>
         </section>
 

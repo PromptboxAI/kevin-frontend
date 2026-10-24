@@ -23,7 +23,7 @@ const A2_Card = ({ title, action, children, pad = true }) => (
 // claims (we build the inventory for the customer). Kept out of every MRR/NRR
 // rollup by construction; production sums Stripe one-time charges.
 const A2_SERVICES_30D = [
-  ['Done-for-you claims', 3, 2850, 'Flat per-claim engagements — we run intake → export'],
+  ['Done-for-you claims', 3, 2850, 'Per-line engagements, $750 minimum — we run intake → export'],
   ['Client-share unlocks', 11, 539, 'Paywalled share links opened by clients ($49 each)'],
 ];
 

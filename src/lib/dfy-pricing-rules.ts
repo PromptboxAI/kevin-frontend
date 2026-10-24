@@ -6,46 +6,80 @@
  * beside hand-written worked examples, which is how the previous scheme ended
  * up with a table whose own example contradicted it.
  *
+ * ⛔ THIS IS A DISPLAY MIRROR, NOT THE AUTHORITY. The quote a client accepts is
+ * the server's quote record (BACKEND-PROMPTS 12); the page renders the
+ * published examples from here so they cannot drift from the rate card. When
+ * the backend ships its pricing config, the page should read the bands from it
+ * and this file shrinks to formatting.
+ *
  * ⛔ MARGINAL, NOT FLAT PER TIER (owner, 2026-10-02). Each band prices only the
  * lines inside it. The scheme it replaced picked ONE rate by line count and
  * applied it to every line, which made the invoice fall at every boundary: 800
  * lines billed $2,800 and 801 billed $2,002.50. `totalForLines` is monotonic by
- * construction and a test asserts it for every count up to the custom band.
+ * construction and `scripts/test-dfy-pricing.mjs` asserts it at every count.
  *
- * ⛔ THE UNIT IS A COMPLETED LINE ITEM, never an uploaded photo. Kevin merges
- * several photos of one object into one line, so photos would bill for our
- * clustering rather than for what the client receives.
+ * ⛔ $750 MINIMUM PROJECT FEE, NO SETUP FEE (owner, 2026-10-22). The price is
+ * `max(750, marginal total)`. It replaced a $199 setup fee added on top: the
+ * NY market benchmark starts at $750 for a small loss, and Kevin does not
+ * compete by underpricing it. Still no minimum LINE COUNT — the fee is the
+ * floor, and an eight-line jewelry schedule is a $750 job, not a refusal.
+ *
+ * ⛔ THE UNIT IS A COMPLETED (PROMOTED) LINE ITEM, never an uploaded photo,
+ * staging photo or candidate set. Kevin merges several photos of one object
+ * into one line, and a context or duplicate set promotes to none.
  */
 
-/** Covers onboarding, the review pass and delivery, at any size. There is no
- *  minimum line count and none should be added: the fee is the floor. */
-export const DFY_SETUP_FEE = 199
+/** The least any engagement costs. Applied by max(), never added. */
+export const DFY_MINIMUM_FEE = 750
 
-/** `upTo: null` is the open-ended band, which is quoted by hand. */
-export type DfyBand = { upTo: number | null; rate: number | null; label: string }
+/** `upTo: null` is the open-ended band. */
+export type DfyBand = { upTo: number | null; rate: number; label: string }
 
 export const DFY_BANDS: DfyBand[] = [
   { upTo: 100, rate: 5.0, label: 'First 100 lines' },
   { upTo: 250, rate: 4.5, label: 'Lines 101–250' },
   { upTo: 500, rate: 4.0, label: 'Lines 251–500' },
   { upTo: 1000, rate: 3.5, label: 'Lines 501–1,000' },
-  { upTo: null, rate: null, label: '1,001 and up' },
+  { upTo: null, rate: 3.0, label: '1,001 and up' },
 ]
 
-/** The largest line count this table prices without a conversation. */
-export const DFY_AUTO_MAX = 1000
+/** From here the $3.00 band still prices the job, but a custom volume rate is
+ *  on the table — a 5,000-line total loss is a conversation about timeline
+ *  and staffing as much as price. */
+export const DFY_CUSTOM_FROM = 1001
+
+/**
+ * The public "typical examples". Dollar ranges, not line counts, because a
+ * homeowner cannot count lines — `linesWithin` translates each into the line
+ * count it buys, so the ranges can never claim a size the bands do not price.
+ * `to: null` is open-ended; `from: null` is quoted by hand.
+ */
+export type DfyTypical = { label: string; from: number | null; to: number | null }
+
+export const DFY_TYPICAL: DfyTypical[] = [
+  { label: 'Small contents loss', from: 750, to: 1000 },
+  { label: 'Medium inventory', from: 1000, to: 1750 },
+  { label: 'Large residential inventory', from: 1750, to: 3000 },
+  { label: 'Major or total-loss inventory', from: 3000, to: null },
+  { label: 'Commercial', from: null, to: null },
+]
 
 export type QuoteLine = { label: string; count: number; rate: number; amount: number }
 
 export type DfyQuote = {
   lines: number
-  setup: number
   /** Every band that contributed, in order, for a worked breakdown. */
   breakdown: QuoteLine[]
+  /** The marginal sum before the minimum. */
   lineTotal: number
+  minimum: number
+  /** True when the minimum, not the lines, set the price. */
+  minimumApplied: boolean
   total: number
-  /** Setup included — what the client actually pays per line. */
+  /** What the client actually pays per line, minimum included. */
   perLine: number
+  /** Large enough that a custom volume rate may apply instead. */
+  customEligible: boolean
 }
 
 /**
@@ -62,80 +96,85 @@ export type DfyQuote = {
 const cents = (dollars: number) => Math.round(dollars * 100)
 const dollars = (c: number) => c / 100
 
-/** The marginal sum, in cents, for a whole number of lines. */
-function lineCents(lines: number): number {
+type BandUse = { from: number; to: number; rate: number; cents: number }
+
+/** The bands a whole number of lines falls across, in cents. */
+function bandsFor(lines: number): BandUse[] {
+  const out: BandUse[] = []
   let remaining = lines
   let floor = 0
-  let total = 0
   for (const band of DFY_BANDS) {
-    if (band.upTo === null || band.rate === null) break
-    const inBand = Math.min(remaining, band.upTo - floor)
+    if (remaining <= 0) break
+    const inBand = band.upTo === null ? remaining : Math.min(remaining, band.upTo - floor)
     if (inBand > 0) {
-      total += inBand * cents(band.rate)
+      out.push({ from: floor + 1, to: floor + inBand, rate: band.rate, cents: inBand * cents(band.rate) })
       remaining -= inBand
     }
-    floor = band.upTo
-    if (remaining <= 0) break
+    if (band.upTo !== null) floor = band.upTo
   }
-  return total
+  return out
 }
 
-/**
- * The per-line charge, marginal across the bands.
- *
- * Returns null above `DFY_AUTO_MAX`, where the answer is "talk to us" rather
- * than a number — a 5,000-line total loss is a different conversation about
- * timeline and staffing, not a bigger version of the same job.
- */
+const lineCents = (lines: number) => bandsFor(lines).reduce((s, b) => s + b.cents, 0)
+
+/** The marginal line charge for a whole number of lines, minimum NOT applied.
+ *  Null for anything that is not a positive count. */
 export function totalForLines(lines: number): number | null {
   if (!Number.isFinite(lines) || lines < 1) return null
-  if (lines > DFY_AUTO_MAX) return null
   return dollars(lineCents(Math.floor(lines)))
 }
 
+/** What the client pays for `lines`: `max(minimum, marginal total)`. */
+export function priceForLines(lines: number): number | null {
+  const lineTotal = totalForLines(lines)
+  if (lineTotal === null) return null
+  return Math.max(DFY_MINIMUM_FEE, lineTotal)
+}
+
+const count = (n: number) => n.toLocaleString('en-US')
+
 /**
- * The whole quote, as a client reads it: setup, the bands that applied, and
- * what it comes to per line once the setup is spread across them.
+ * The whole quote, as a client reads it: the bands that applied, whether the
+ * minimum set the price, and what it comes to per line.
  */
 export function quoteFor(lines: number): DfyQuote | null {
   const lineTotal = totalForLines(lines)
   if (lineTotal === null) return null
 
   const n = Math.floor(lines)
-  const breakdown: QuoteLine[] = []
-  let remaining = n
-  let floor = 0
-  for (const band of DFY_BANDS) {
-    if (band.upTo === null || band.rate === null) break
-    const inBand = Math.min(remaining, band.upTo - floor)
-    if (inBand > 0) {
-      // The label narrows to what was actually used: a 400-line job's third
-      // band is "Lines 251-400", not "Lines 251-500".
-      const from = floor + 1
-      const to = floor + inBand
-      breakdown.push({
-        label: from === 1 ? `First ${to} lines` : `Lines ${from}–${to}`,
-        count: inBand,
-        rate: band.rate,
-        amount: dollars(inBand * cents(band.rate)),
-      })
-      remaining -= inBand
-    }
-    floor = band.upTo
-    if (remaining <= 0) break
-  }
+  // The label narrows to what was actually used: a 400-line job's third band
+  // is "Lines 251-400", not "Lines 251-500".
+  const breakdown: QuoteLine[] = bandsFor(n).map((b) => ({
+    label: b.from === 1 ? `First ${count(b.to)} lines` : `Lines ${count(b.from)}–${count(b.to)}`,
+    count: b.to - b.from + 1,
+    rate: b.rate,
+    amount: dollars(b.cents),
+  }))
 
-  const totalCents = lineCents(n) + cents(DFY_SETUP_FEE)
+  const totalCents = Math.max(lineCents(n), cents(DFY_MINIMUM_FEE))
   return {
     lines: n,
-    setup: DFY_SETUP_FEE,
     breakdown,
     lineTotal,
+    minimum: DFY_MINIMUM_FEE,
+    minimumApplied: lineCents(n) < cents(DFY_MINIMUM_FEE),
     total: dollars(totalCents),
     // Half-up on an integer, so 493.5 cents is 494 rather than whatever the
     // double happened to store.
     perLine: dollars(Math.round(totalCents / n)),
+    customEligible: n >= DFY_CUSTOM_FROM,
   }
+}
+
+/**
+ * The most lines a budget buys at the marginal rates — how the public dollar
+ * ranges are translated into a size. Monotonic, so a walk is exact.
+ */
+export function linesWithin(budget: number): number {
+  const cap = cents(budget)
+  let n = 0
+  while (lineCents(n + 1) <= cap) n++
+  return n
 }
 
 /**

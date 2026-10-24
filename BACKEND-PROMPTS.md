@@ -598,7 +598,7 @@ in cents, so the screen does no arithmetic of its own:
 2. **What one-time streams actually exist in Stripe today?** The design screen
    shows a "Services & paywall · last 30 days" table listing done-for-you
    engagements and $49 client-share unlocks. The DFY price has since changed
-   ($199 setup plus marginal per-line bands, rule 9) and we are not confident
+   ($750 minimum plus marginal per-line bands, rule 9d) and we are not confident
    the $49 share paywall is a real product rather than a stale mock. Credit
    purchases at $0.75/item ARE real. Rather than us inventing the shape: tell
    us which one-time charge types exist, and we will render those. Whatever
@@ -753,13 +753,26 @@ New lines being right is enough, unless you would rather do both.
 
 ## 12. Self-serve Done-for-you: quote before work, deposit, balance — NEEDS THE OWNER IN THE BACKEND SESSION
 
+> **AMENDED 2026-10-22, owner — the price changed; read this before the rest.**
+> The **$199 setup fee is gone**. The price is now **`max($750, marginal line total)`**,
+> with a fifth band: 1,001+ at **$3.00** (or a custom volume rate). **The deposit is the
+> $750 minimum** (owner, 2026-10-24) and the balance is `final_total − 750`; the body
+> below now reads that way. New asks on top of what follows: a **pricing config
+> table** (`minimum_fee`, `tier_start`, `tier_end`, `per_item_rate`, `active`,
+> `effective_date`) that quotes snapshot; **admin overrides** with a required reason, audited;
+> quote **status** `draft|sent|accepted|declined|expired`; the **invoice counts promoted
+> items only**, capped at the quote; and **analytics** events for requested, sent, accepted,
+> declined and delivered, each with photo, set, quoted and final counts. Boundary tests to port:
+> `scripts/test-dfy-pricing.mjs`. Full audit, schema and the proposed internal DFY desk:
+> `DFY-PRICING-PLAN.md`.
+
 **Status:** new, 2026-10-02. Owner's design. This is a flow, not an endpoint,
 so it is worth agreeing the shape before anyone builds a piece of it.
 
 **What the client does.** Drops a `.zip` (or pastes a Drive link) with no
-account. Clustering runs. They get back a quote: `$199` setup plus the marginal
-line price for the number of sets. They accept, pay the $199, we build, and the
-balance is collected on delivery.
+account. Clustering runs. They get back a quote: the marginal line price for
+the number of sets, or the $750 minimum if that is higher. They accept, pay a
+$750 deposit, we build, and the balance is collected on delivery.
 
 **Why the set count is the right number to quote on.** Clustering is pre-Vision
 and costs us nothing to run, and a set becomes **at most** one line — a context
@@ -770,9 +783,9 @@ the quote must be computed from sets and the invoice must never exceed it.
 
 **The pricing is already written and tested on our side.**
 `src/lib/dfy-pricing-rules.ts`: marginal bands ($5.00 first 100, $4.50 to 250,
-$4.00 to 500, $3.50 to 1,000, custom past that), `$199` setup, integer-cent
-arithmetic, and a test asserting the total strictly increases at every count
-from 1 to 1,000. Port it or call it — but it should exist once, and if the
+$4.00 to 500, $3.50 to 1,000, $3.00 past that), a `$750` minimum applied by
+`max()`, integer-cent arithmetic, and `scripts/test-dfy-pricing.mjs` asserting
+the price never falls at any count from 1 to 5,000. Port it or call it — but it should exist once, and if the
 server recomputes independently the two will disagree on a cent eventually.
 
 ### What we think we need from you
@@ -787,21 +800,25 @@ server recomputes independently the two will disagree on a cent eventually.
 3. **The quote record itself** — set count, the computed total, and the
    **ceiling**, frozen at acceptance so a later re-cluster cannot raise it.
 4. **Deposit checkout.** `POST /v1/dfy/quotes/{id}/accept` → a Stripe Checkout
-   session for $199. `services/payments.py` already builds sessions with ad-hoc
+   session for **$750, the minimum** (owner, 2026-10-24). Every job owes at
+   least that, so the deposit is never refundable on size grounds -- a quote
+   that comes in at the minimum is paid in full here. `services/payments.py` already builds sessions with ad-hoc
    `price_data`/`unit_amount`, so **no new Stripe price object and no dashboard
    work** — the same helper covers the deposit and the balance.
 5. **Promotion to a real claim** on payment, via the webhook rather than the
    browser return (the portal already does it this way).
 6. **The balance.** We would rather reuse the share-link paywall than build a
    second payment surface: the finished claim goes out as a share link priced at
-   `total − 199`, and paying unlocks the files. That machinery exists
+   `final_total − 750`, and paying unlocks the files. `final_total` is
+   `min(price(final_lines), quoted total)` and never below $750, so the balance
+   is never negative; when it is **zero** the link goes out with no paywall. That machinery exists
    (`/v1/claims/{id}/share`, `/p/{token}/checkout`, unlock on webhook). The only
    new part is setting that price from the quote.
 
 ### Three things the owner has now decided
 
 - **No claim exists until the deposit clears.** The quote holds the photos; the
-  claim and worksheet are created when the $199 is paid. Nothing half-built sits
+  claim and worksheet are created when the $750 deposit is paid. Nothing half-built sits
   in a stranger's account.
 - **The invoice caps at the quote.** If a hand-added line pushes the final count
   past the ceiling, we eat the difference — we promised a ceiling in writing.

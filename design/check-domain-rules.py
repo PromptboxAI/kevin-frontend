@@ -45,6 +45,10 @@ RULES = [
     ("9b", "the scrapped free-first-estate promo", r"free\s+first\s+estate|first\s+estate\s+(is\s+)?free"),
     # The trial cap is 250 items. Any OTHER number of free items is drift.
     ("9b", "a trial cap other than 250 items",  r"\b(?!250\b)[\d,]{2,7}\s+free\s+items\b(?!\s+(left|remaining|used))"),
+    # Rule 9d. Done-for-you is max($750, marginal line total). The $199 setup
+    # fee it replaced was ADDED on top, and flat-per-tier rates made the invoice
+    # fall at every boundary -- both are dead.
+    ("9d", "the scrapped DFY setup fee / flat-per-tier rates", r"\$199\s+setup|setup\s+fee|flat\s+per[- ](tier|item)|all\s+lines\b(?!\s+of)", "prose"),
     ("10", "per-retailer sources / store list",  r"per[- ](retailer|store)\s+(integration|scraper|adapter)|18\s+stores|toggleable\s+stores"),
     ("10", "domain allowlist / blocklist",       r"(domain|strict)\s+(allow|block)list|allowlists?\s+govern"),
     # AMENDED 2026-10-04. The comp-SELECTION METHOD is internal only, the same
