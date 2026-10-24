@@ -32,6 +32,29 @@
 /** The least any engagement costs. Applied by max(), never added. */
 export const DFY_MINIMUM_FEE = 750
 
+/**
+ * A SITE VISIT, when Kevin does the shooting.
+ *
+ * $275 a visit, one per 300 items or part thereof. 300 is about four hours on
+ * site -- roughly 150 items in two hours, each wanting the item, its plate and
+ * the damage -- plus the drive. An earlier 1,200 priced a week of field work
+ * as a single day; 150 overcorrected, because the trip does not scale with the
+ * item count the way time on site does.
+ *
+ * The fee counts toward the minimum, it does not stack on it. `max(750, lines
+ * + visits * 275)` keeps one floor and one headline; `max(750, lines) + visits
+ * * 275` made a small job with a visit $1,025 and broke the "From $750"
+ * promise on exactly the jobs that sit at the floor.
+ */
+export const DFY_VISIT_FEE = 275
+export const DFY_ITEMS_PER_VISIT = 300
+
+/** Visits needed for a job Kevin shoots. Zero when the customer sends photos. */
+export function visitsFor(lines: number): number {
+  if (!Number.isFinite(lines) || lines <= 0) return 0
+  return Math.ceil(lines / DFY_ITEMS_PER_VISIT)
+}
+
 /** `upTo: null` is the open-ended band. */
 export type DfyBand = { upTo: number | null; rate: number; label: string }
 
@@ -129,6 +152,25 @@ export function priceForLines(lines: number): number | null {
   const lineTotal = totalForLines(lines)
   if (lineTotal === null) return null
   return Math.max(DFY_MINIMUM_FEE, lineTotal)
+}
+
+/**
+ * What the client pays when KEVIN does the shooting: the line charge plus a
+ * visit fee per 300 items, with the minimum applied to the SUM.
+ *
+ * ⛔ THE MINIMUM GOES ROUND THE WHOLE THING, not round the lines. Compose it
+ * the other way -- `priceForLines(n) + visits * 275` -- and a 20-line job
+ * shot by us comes to $1,025, because the $750 floor has already swallowed
+ * the $100 of lines and the fee then lands on top of the floor. Inside the
+ * max() the same job is $750. That is the owner's rule and it is also the only
+ * version that keeps the "From $750" headline true on the small jobs most
+ * likely to want us on site.
+ */
+export function priceWithVisits(lines: number): number | null {
+  const lineTotal = totalForLines(lines)
+  if (lineTotal === null) return null
+  const withVisits = cents(lineTotal) + visitsFor(lines) * cents(DFY_VISIT_FEE)
+  return dollars(Math.max(withVisits, cents(DFY_MINIMUM_FEE)))
 }
 
 const count = (n: number) => n.toLocaleString('en-US')

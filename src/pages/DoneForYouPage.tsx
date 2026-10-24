@@ -3,7 +3,17 @@ import Seo from '../components/Seo'
 import { crumbJsonLd, softwareJsonLd } from '../components/seo-kit'
 import { I, Icon } from '../components/Icon'
 import { MktFooter, MktNav } from '../components/MarketingChrome'
-import { DFY_BANDS, DFY_MINIMUM_FEE, DFY_TYPICAL, linesWithin, quoteFor } from '../lib/dfy-pricing-rules'
+import {
+  DFY_BANDS,
+  DFY_ITEMS_PER_VISIT,
+  DFY_MINIMUM_FEE,
+  DFY_TYPICAL,
+  DFY_VISIT_FEE,
+  linesWithin,
+  priceWithVisits,
+  quoteFor,
+  visitsFor,
+} from '../lib/dfy-pricing-rules'
 
 /**
  * Done-for-you — the service line: send Kevin the photos, we build the
@@ -391,16 +401,32 @@ export default function DoneForYouPage() {
                   maxWidth: 600,
                 }}
               >
-                {/* 150 an item-day, not 1,200 (owner, 2026-10-24). At item-level
-                    capture a day of shooting is roughly 150 items — each one
-                    wants the item, its plate and the damage — so 1,200 priced a
-                    week of field labour as one day. "Or part thereof" was also
-                    doing two jobs: legally precise, commercially opaque, and it
-                    hides a step. At 150 most jobs span several days, so the step
-                    is shown with an example instead. */}
-                <strong>$275 a site day</strong> — one day covers up to 150 items, so a 400-item
-                job is three days. On top of the line rate, and only when we do the shooting: send
-                your own photos and there is no site day at all.
+                {/* A VISIT, not a day, and it counts toward the minimum rather
+                    than stacking on top of it (owner, 2026-10-24).
+
+                    "Site day" collapsed three different costs: the trip, which
+                    does not scale with items at all; time on site, which does,
+                    at roughly 150 items in two hours; and the desk work, which
+                    the line rate already covers. 1,200 priced a week of field
+                    work as one day, then 150 overcorrected by charging the drive
+                    as though it scaled with the list. A visit is ~300 items,
+                    about four hours plus the drive.
+
+                    The fee sits INSIDE max(750, ...). Outside it a 20-item job
+                    came to $1,025, which breaks the "From $750" headline on
+                    exactly the jobs sitting at the floor — and a 100-item
+                    ServPro list is the common case, not the edge. Inside, that
+                    job is $750 and nothing above the floor moves.
+
+                    Figures come from DFY_VISIT_FEE / DFY_ITEMS_PER_VISIT /
+                    visitsFor() so the paragraph and the worked example below
+                    cannot disagree. */}
+                <strong>{usd(DFY_VISIT_FEE)} a site visit</strong> — one visit covers up to{' '}
+                {DFY_ITEMS_PER_VISIT} items, so a {EXAMPLE.lines}-item job is{' '}
+                {visitsFor(EXAMPLE.lines)} visit{visitsFor(EXAMPLE.lines) === 1 ? '' : 's'}. It
+                counts toward the {MINIMUM} minimum rather than
+                stacking on top of it, and it only applies when we do the shooting: send your own
+                photos and there is no visit fee at all.
               </p>
             </div>
             <a
@@ -580,12 +606,26 @@ export default function DoneForYouPage() {
                         </tr>
                       ))}
                       <tr>
-                        <td>You sent the photos, so no site day</td>
+                        <td>You sent the photos, so no visit fee</td>
                         <td className="k-mono">—</td>
                       </tr>
                       <tr className="k-dfy-worked-tot">
                         <td>Total · {usd(EXAMPLE.perLine)} a line</td>
                         <td className="k-mono">{usd(EXAMPLE.total)}</td>
+                      </tr>
+                      {/* The other path, from the same constants rather than a
+                          second set of numbers to drift. */}
+                      {/* The visit path comes from priceWithVisits(), not from
+                          EXAMPLE.total + fee: the minimum has to wrap the SUM,
+                          and composing it here would put the floor round the
+                          lines alone. Same reason the rate card and this table
+                          share one module. */}
+                      <tr>
+                        <td>
+                          If we shoot it instead · {EXAMPLE.lines} items is{' '}
+                          {visitsFor(EXAMPLE.lines)} visits at {usd(DFY_VISIT_FEE)}
+                        </td>
+                        <td className="k-mono">{usd(priceWithVisits(EXAMPLE.lines)!)}</td>
                       </tr>
                     </tbody>
                   </table>

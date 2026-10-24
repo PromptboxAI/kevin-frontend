@@ -12,11 +12,15 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
+  DFY_ITEMS_PER_VISIT,
   DFY_MINIMUM_FEE,
+  DFY_VISIT_FEE,
   linesWithin,
   priceForLines,
+  priceWithVisits,
   quoteFor,
   totalForLines,
+  visitsFor,
 } from '../src/lib/dfy-pricing-rules.ts'
 
 const BOUNDARIES = [1, 50, 99, 100, 101, 149, 150, 249, 250, 251, 499, 500, 501, 999, 1000, 1001, 2000]
@@ -78,6 +82,40 @@ test('a count that is not a positive number is not a quote', () => {
     assert.equal(totalForLines(n), null)
     assert.equal(priceForLines(n), null)
     assert.equal(quoteFor(n), null)
+  }
+})
+
+test('a site visit is one per 300 items or part thereof', () => {
+  assert.equal(DFY_VISIT_FEE, 275)
+  assert.equal(DFY_ITEMS_PER_VISIT, 300)
+  assert.equal(visitsFor(1), 1)
+  assert.equal(visitsFor(300), 1)
+  assert.equal(visitsFor(301), 2)
+  assert.equal(visitsFor(600), 2)
+  assert.equal(visitsFor(1200), 4)
+  // No shoot, no fee -- and nothing that is not a count buys a visit.
+  for (const n of [0, -1, NaN, Infinity]) assert.equal(visitsFor(n), 0)
+})
+
+test('the visit fee sits INSIDE the minimum, never on top of it', () => {
+  // The whole point: a small job we shoot still starts at the floor, which is
+  // where it would have started without us shooting it.
+  assert.equal(priceWithVisits(20), 750) // 100 + 275 = 375 -> floor
+  assert.equal(priceWithVisits(95), 750) // 475 + 275 = 750, the exact edge
+  assert.equal(priceWithVisits(96), 755) // 480 + 275, first count past it
+  assert.equal(priceWithVisits(100), 775) // 500 + 275
+  assert.equal(priceWithVisits(400), 2325) // 1775 + 2 visits
+  assert.equal(priceWithVisits(1200), 5625) // 4525 + 4 visits
+  for (const n of [0, -1, NaN, Infinity]) assert.equal(priceWithVisits(n), null)
+})
+
+test('the shot price never falls, and never undercuts the unshot one', () => {
+  let prev = priceWithVisits(1)
+  for (let n = 2; n <= 5000; n++) {
+    const p = priceWithVisits(n)
+    assert.ok(p >= prev, `shot price(${n})=${p} < ${prev}`)
+    assert.ok(p >= priceForLines(n), `shooting ${n} lines cost less than not shooting them`)
+    prev = p
   }
 })
 

@@ -91,8 +91,15 @@ const DoneForYou = () => (
               A Kevin field photographer walks the loss and captures every item — wide shots, model plates, serial tags — then the claim runs straight through the same build. One engagement, from front door to finished worksheet.
             </p>
             <p style={{ fontSize: 13, color: 'var(--k-fg-2)', margin: '8px 0 0', lineHeight: 1.55, maxWidth: 600 }}>
-              <strong>$275 a site day</strong>, one per 1,200 items or part thereof, on top of the line rate. Only
-              charged when we do the shooting — send your own photos and there is no site day at all.
+              {/* A VISIT, not a day, and it counts toward the $750 minimum
+                  rather than stacking on top of it (owner, 2026-10-24). 1,200
+                  priced a week of field work as one day; a visit is ~300 items,
+                  about four hours plus the drive. Outside the max() a 20-line
+                  job we shot came to $1,025 and broke the "From $750" line on
+                  exactly the small jobs most likely to want us on site. */}
+              <strong>$275 a site visit</strong> — one visit covers up to 300 items, so a 400-item job is
+              2 visits. It counts toward the $750 minimum rather than stacking on top of it, and it only
+              applies when we do the shooting — send your own photos and there is no visit fee at all.
             </p>
           </div>
           <a className="k-btn" href="38-Contact.html" style={{ flex: '0 0 auto' }}>Ask about on-site →</a>
@@ -170,11 +177,14 @@ const DoneForYou = () => (
                       ['First 100 lines at $5.00', '$500'],
                       ['Lines 101–250 at $4.50', '$675'],
                       ['Lines 251–400 at $4.00', '$600'],
-                      ['You sent the photos, so no site day', '—'],
+                      ['You sent the photos, so no visit fee', '—'],
                     ].map(([l, v], i) => (
                       <tr key={i}><td>{l}</td><td className="k-mono">{v}</td></tr>
                     ))}
                     <tr className="k-dfy-worked-tot"><td>Total · $4.44 a line</td><td className="k-mono">$1,775</td></tr>
+                    {/* The other path, so the visit fee is not left abstract:
+                        max(750, 1775 + 2 visits). */}
+                    <tr><td>If we shoot it instead · 400 items is 2 visits at $275</td><td className="k-mono">$2,325</td></tr>
                   </tbody>
                 </table>
                 <p className="k-dfy-worked-foot">One more line would make it $1,779, never less.</p>
