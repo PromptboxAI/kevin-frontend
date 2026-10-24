@@ -239,6 +239,12 @@ export const SEO_PAGES: Record<string, SeoEntry> = {
       "Identity, evidence, quantity, a defensible replacement, a source, a class, depreciation and traceability — what a contents line has to carry on its own.",
     image: 'og-default.png',
   },
+  '/compare/kevin-vs-contents-team': {
+    title: 'Kevin vs Contents.team | Contents Claim Software',
+    description:
+      "Where the camera points and how each one charges — quoted from Contents.team's own site and dated, with no capability scoring of their product.",
+    image: 'og-default.png',
+  },
   '/guides/best-contents-software-public-adjusters': {
     title: 'Best Contents Software for Public Adjusters | Kevin',
     description:
@@ -278,7 +284,7 @@ export const SEO_PAGES: Record<string, SeoEntry> = {
   '/done-for-you': {
     title: 'Done-for-you claims — Kevin',
     description:
-      'Send us the photos and we build the inventory. Flat per-item pricing, XactContents-ready .xlsx and a client PDF, usually within one business day.',
+      'Send the photos and we build the inventory. From $750, priced per finished line, with an XactContents-ready .xlsx and a client PDF.',
   },
   '/about': {
     title: 'About — Kevin',

@@ -188,6 +188,11 @@ const GROUPS: { h: string; blurb: string; items: Entry[] }[] = [
         d: 'What Kevin does, what it does not, and how the export lands. Not affiliated with Verisk.',
       },
       {
+        to: '/compare/kevin-vs-contents-team',
+        t: 'Kevin vs Contents.team',
+        d: 'Room-first against item-first, and seats against a flat fee — quoted from their site, scored nowhere.',
+      },
+      {
         to: '/compare/kevin-vs-xactcontents',
         t: 'Kevin vs XactContents',
         d: 'Row by row, including when XactContents is the better fit.',

@@ -87,6 +87,13 @@ export default function BestContentsSoftwareGuidePage() {
             nothing to the reader. What follows is the criteria we would use, including where they
             point away from us.
           </p>
+          <p>
+            Where we do name a competitor &mdash; on{' '}
+            <a href="/compare/kevin-vs-contents-team">Kevin vs Contents.team</a> and{' '}
+            <a href="/compare/kevin-vs-xactcontents">Kevin vs XactContents</a> &mdash; the rule is
+            this same one: quote what they publish, date it, and score nothing. A feature grid of our
+            guesses about somebody else&rsquo;s product would contradict the paragraph above.
+          </p>
         </DirectAnswer>
 
         <section className="k-seosec">
@@ -135,6 +142,33 @@ export default function BestContentsSoftwareGuidePage() {
             Kevin is the fourth. If your bottleneck is scheduling crews or tracking boxes, the third
             row is your problem and we are not it.
           </p>
+        </section>
+
+        <section className="k-seosec">
+          <h2>Speed is only worth what the output supports</h2>
+          <p>
+            A demo that turns one room photograph into hundreds of items is genuinely impressive,
+            and for triage &mdash; what was in here, roughly how much of it &mdash; it is useful.
+            The question to carry into the trial is what each of those lines can support once a desk
+            reviewer opens it.
+          </p>
+          <p>
+            The more an item&rsquo;s value rests on brand, model, material, edition or quality tier,
+            the more item-level evidence it takes to price. A closet photograph establishes that
+            thirty shirts existed; it does not establish which three were designer, and pricing all
+            thirty as mid-range produces a figure quickly without producing a defensible one. Speed
+            and accuracy are not opposites, but they are not the same measurement, and only one of
+            them is visible in a demo.
+          </p>
+          <EvidenceCallout>
+            <p>
+              One arithmetic check settles a lot of it:{' '}
+              <strong>does the tool ever report more items than you took photographs?</strong> On a
+              contents claim some frames are context, some are a second angle of something already
+              counted, and some are unreadable &mdash; so the honest item count is at or below the
+              photo count. A number above it has to come from somewhere.
+            </p>
+          </EvidenceCallout>
         </section>
 
         <section className="k-seosec">
