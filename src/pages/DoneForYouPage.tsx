@@ -391,9 +391,16 @@ export default function DoneForYouPage() {
                   maxWidth: 600,
                 }}
               >
-                <strong>$275 a site day</strong>, one per 1,200 items or part thereof, on top of the
-                line rate. Only charged when we do the shooting — send your own photos and there is
-                no site day at all.
+                {/* 150 an item-day, not 1,200 (owner, 2026-10-24). At item-level
+                    capture a day of shooting is roughly 150 items — each one
+                    wants the item, its plate and the damage — so 1,200 priced a
+                    week of field labour as one day. "Or part thereof" was also
+                    doing two jobs: legally precise, commercially opaque, and it
+                    hides a step. At 150 most jobs span several days, so the step
+                    is shown with an example instead. */}
+                <strong>$275 a site day</strong> — one day covers up to 150 items, so a 400-item
+                job is three days. On top of the line rate, and only when we do the shooting: send
+                your own photos and there is no site day at all.
               </p>
             </div>
             <a
