@@ -49,8 +49,8 @@ import type {
 import { numberRows, rowInvariant, windowRange } from '../lib/rows'
 import { checkTotals } from '../lib/comps-rules'
 import { listProposals } from '../lib/proposals'
-import { assignRoom, listRooms, setRoomArea } from '../lib/rooms'
-import { assignPlan, assignSummary, planTextChunks } from '../lib/room-rules'
+import { assignRoom, listRooms } from '../lib/rooms'
+import { assignPlan, assignSummary } from '../lib/room-rules'
 import type { NumberedItem } from '../lib/rows'
 import { useDeferred } from '../lib/deferred'
 import {
@@ -121,16 +121,6 @@ const FLEX_COL = 4
  */
 const ROW_H = { comfortable: 42, compact: 34 }
 const OVERSCAN = 8
-
-/** Carries how much of a filing actually landed, so the error path can say. */
-class RoomFilingError extends Error {
-  readonly written: number
-  constructor(message: string, written: number) {
-    super(message)
-    this.name = 'RoomFilingError'
-    this.written = written
-  }
-}
 
 export default function WorksheetPage() {
   const { claimId = '' } = useParams()
@@ -600,66 +590,29 @@ export default function WorksheetPage() {
    * carrier a schedule with a blank Room/Area column. See ask 28.
    */
   /**
-   * FILING LINES IN A ROOM IS TWO WRITES, and they fail differently.
+   * Filing lines in a room is ONE write again.
    *
-   *   1. `assign-room` — ONE call, all-or-nothing by contract. If it throws,
-   *      nothing anywhere changed.
-   *   2. `room_area` text — one PATCH PER LINE, so on a 263-row selection it is
-   *      263 requests. A failure part-way leaves rows filed with the old text
-   *      still printing on the export.
+   * It used to be two: `assign-room` set the room, then one PATCH PER LINE set
+   * the `room_area` TEXT the export prints. On a 263-row claim that was 263
+   * follow-up requests in about twenty seconds, and on 2026-10-13 it stopped
+   * at 112 of them — leaving every line filed but 151 of them exporting no
+   * room at all. The failure was invisible until the export printed.
    *
-   * The old handler collapsed both into "Could not file those lines", which is
-   * a lie in the second case: the lines ARE filed. It said the same thing when
-   * nothing had happened at all, which is what the owner hit — and left him
-   * unable to tell whether to retry or to go looking for half-applied rows.
+   * Since 2026-10-22 the route writes the room's name into `room_area` in the
+   * same statement, so the loop is deleted rather than made more careful. The
+   * partial-failure reporting that went with it is deleted too: one call that
+   * is all-or-nothing cannot land half way.
+   *
+   * Unassigning leaves `room_area` as it was, server-side — taking a line out
+   * of a room does not erase the text someone typed, and `assignPlan` already
+   * sends no text on that path.
    */
   const fileInRoom = useMutation({
     mutationFn: async ({ ids, roomId }: { ids: number[]; roomId: number | null }) => {
       const chosen = items.filter((i) => ids.includes(i.id))
       const room = roomId == null ? null : (rooms.data?.rooms ?? []).find((r) => r.id === roomId)
       const plan = assignPlan(chosen, room ?? null)
-
-      try {
-        await assignRoom(plan.itemIds, plan.roomId)
-      } catch (error) {
-        throw new RoomFilingError(
-          error instanceof ApiError
-            ? `Those lines were not filed (HTTP ${error.status}${
-                typeof error.detail === 'string' ? ` — ${error.detail}` : ''
-              }). Nothing was changed.`
-            : 'Those lines were not filed. Nothing was changed.',
-          0,
-        )
-      }
-
-      // Chunked: a 300-row selection must not open 300 sockets at once. One
-      // retry on a 429, honouring Retry-After -- 263 writes in a few seconds is
-      // exactly the shape a rate limit is for, and losing the tail of a filing
-      // to it is silent on the export.
-      let done = 0
-      for (const chunk of planTextChunks(plan.textUpdates)) {
-        try {
-          await Promise.all(chunk.map((u) => setRoomArea(u.id, u.room_area)))
-          done += chunk.length
-        } catch (error) {
-          if (error instanceof ApiError && error.isRateLimited) {
-            await new Promise((r) => setTimeout(r, (error.retryAfter ?? 2) * 1000))
-            try {
-              await Promise.all(chunk.map((u) => setRoomArea(u.id, u.room_area)))
-              done += chunk.length
-              continue
-            } catch {
-              /* fall through to the partial report */
-            }
-          }
-          throw new RoomFilingError(
-            `Filed into ${room?.name ?? 'no room'}, but the Room/Area text was only written to ${fmtInt(
-              done,
-            )} of ${fmtInt(plan.textUpdates.length)} lines. The rest still print their old room on the export — run it again to finish them.`,
-            done,
-          )
-        }
-      }
+      await assignRoom(plan.itemIds, plan.roomId)
       return { plan, name: room?.name ?? null }
     },
     onSuccess: ({ plan, name }) => {
@@ -668,12 +621,14 @@ export default function WorksheetPage() {
       void queryClient.invalidateQueries({ queryKey: ['rooms', claimId] })
       refresh()
     },
-    onError: (error) => {
-      /* A partial run DID change rows, so the grid has to be re-read even
-         though this is the error path. */
-      if (error instanceof RoomFilingError && error.written > 0) refresh()
-      setNotice(error instanceof Error ? error.message : 'Could not file those lines.')
-    },
+    onError: (error) =>
+      setNotice(
+        error instanceof ApiError
+          ? `Those lines were not filed (HTTP ${error.status}${
+              typeof error.detail === 'string' ? ` — ${error.detail}` : ''
+            }). Nothing was changed.`
+          : 'Those lines were not filed. Nothing was changed.',
+      ),
   })
 
   const removeRows = useMutation({

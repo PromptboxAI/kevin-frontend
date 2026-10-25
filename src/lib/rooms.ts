@@ -31,16 +31,14 @@ export function deleteRoom(roomId: number) {
 }
 
 /**
- * The server's own ceiling on `item_ids` (schemas.py BulkAssignRoomRequest,
- * confirmed by the backend 2026-10-13). Over this is a 422, not a 500.
+ * The server's ceiling on `item_ids` (schemas.py BulkAssignRoomRequest).
  *
- * Ids are integers, so 500 of them is about 3 KB — the limit is a schema
- * guard, not a size problem, and the route is ONE update statement. So we send
- * the whole selection in one call up to here and chunk only above it: chunking
- * earlier would trade a clean all-or-nothing failure for a partial one, for
- * nothing.
+ * Raised from 500 to 20,000 on 2026-10-22: the server batches internally and
+ * the bound now only stops an absurd request body. A whole claim goes in one
+ * call, so the all-or-nothing guarantee holds across the entire selection
+ * rather than per chunk — which is the point of keeping one call.
  */
-export const ASSIGN_ROOM_MAX = 500
+export const ASSIGN_ROOM_MAX = 20_000
 
 /**
  * Bulk (un)assign. All-or-nothing: a foreign id or a room from another claim

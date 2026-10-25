@@ -26,6 +26,19 @@ export type ServiceStatus = {
     reason: string | null
     since: string | null
     next_check_at: string | null
+    /**
+     * OUR OWN recent searches (backend 2026-10-22). Present only alongside a
+     * `vendor_degraded` / `vendor_outage` warning, and only when something has
+     * actually searched recently; absent or null otherwise.
+     *
+     * `searches` is up to the last 50, `with_listings` how many returned
+     * anything, `last_at` when the newest ran.
+     */
+    recent?: {
+      searches?: number | null
+      with_listings?: number | null
+      last_at?: string | null
+    } | null
   }
   updated_at: string
 }
@@ -43,6 +56,35 @@ export type StatusBanner = {
   tone: 'paused' | 'degraded'
 }
 
+/**
+ * What our own searches are doing, said BESIDE the provider's warning.
+ *
+ * ⛔ NEVER INSTEAD OF IT. Owner's rule, 2026-10-08: while the provider reports
+ * an outage the banner stays up — "I want any possible slowness or disruption
+ * to be shown to the user". This exists because the opposite reading is so
+ * tempting: our searches answering looks like proof the warning is stale, and
+ * it is not. It is evidence about OUR traffic, not about the provider.
+ *
+ * Returns '' when there is nothing honest to add — no block, no search count,
+ * or a zero count, which says nothing about whether pricing works.
+ */
+export function recentSearchNote(
+  recent: ServiceStatus['pricing']['recent'],
+  formatTime: (iso: string) => string,
+): string {
+  if (!recent) return ''
+  const searches = recent.searches
+  const found = recent.with_listings
+  if (typeof searches !== 'number' || searches <= 0) return ''
+  if (typeof found !== 'number' || found < 0) return ''
+  const when =
+    recent.last_at && !Number.isNaN(Date.parse(recent.last_at))
+      ? ` (as of ${formatTime(recent.last_at)})`
+      : ''
+  const noun = searches === 1 ? 'search' : 'searches'
+  return `Our last ${searches} ${noun}: ${found} returned listings${when}.`
+}
+
 /** Everything else keeps working during either pause (FRONTEND.md). */
 const STILL_WORKS = 'Uploads, edits and exports still work.'
 const RETRY = 'Lines added meanwhile are held, not lost — once pricing resumes, use Retry deferred on the claim.'
@@ -56,6 +98,8 @@ function isServiceStatus(value: unknown): value is ServiceStatus {
 export function bannerFor(status: unknown, formatTime: (iso: string) => string): StatusBanner | null {
   if (!isServiceStatus(status)) return null
   const { state, reason, next_check_at: next } = status.pricing
+  const recent = recentSearchNote(status.pricing.recent, formatTime)
+  const withRecent = (detail: string) => (recent ? `${detail} ${recent}` : detail)
 
   /**
    * `degraded` (backend, 2026-09-16): the provider publicly reports a
@@ -71,8 +115,9 @@ export function bannerFor(status: unknown, formatTime: (iso: string) => string):
       // search took 46.5s against a 35s threshold, so a large claim crawls.
       // Telling an adjuster to sit tight while that happens is what earns the
       // support ticket; saying it will be slow lets them plan the day.
-      detail:
+      detail: withRecent(
         'Pricing is still running, just slower than usual — a large claim will take noticeably longer to finish. Nothing is lost.',
+      ),
       tone: 'degraded',
     }
   }
@@ -98,7 +143,9 @@ export function bannerFor(status: unknown, formatTime: (iso: string) => string):
   if (reason === 'vendor_outage') {
     return {
       message: 'Pricing temporarily paused: search provider outage.',
-      detail: `${STILL_WORKS} Kevin keeps checking and resumes pricing as soon as it recovers. ${RETRY}`,
+      detail: withRecent(
+        `${STILL_WORKS} Kevin keeps checking and resumes pricing as soon as it recovers. ${RETRY}`,
+      ),
       tone: 'paused',
     }
   }
