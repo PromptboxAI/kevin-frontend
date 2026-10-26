@@ -21,7 +21,7 @@ Rules:
 | Page | Path | Title | Description |
 |---|---|---|---|
 | 00-Sign-in.html | /signin | Sign in — Kevin | Sign in to your Kevin account. |
-| 02-Landing.html | / | Contents Inventory Software for Adjusters \| Kevin — Photos in. Inventory out. | Drop your claim photos and Kevin builds a defensible, Xactimate-ready contents inventory: identified items, live retail comps, depreciation, and ACV — reviewed by you. |
+| 02-Landing.html | / | Contents Inventory Software for Adjusters \| Kevin | Drop your claim photos and Kevin builds a defensible, Xactimate-ready contents inventory: identified items, live retail comps, depreciation, and ACV — reviewed by you. |
 | 15-Request-access.html | /request-access | Kevin for Teams — Enterprise | Kevin Enterprise: volume licensing for carriers, TPAs and multi-adjuster agencies. One invoice, custom terms, and contents inventories built from claim photos. |
 | 21-Pricing.html | /pricing | Pricing — Kevin | $249/mo for content inventory specialists, IAs and public adjusters. Unlimited claims, 2,000 items a month included, no per-seat fee. First 250 items free. |
 | 22-For-Adjusters.html | /for-adjusters | Kevin for Insurance Adjusters | Turn pack-out photo dumps into priced, defensible contents inventories that import straight into Xactimate and XactContents. |

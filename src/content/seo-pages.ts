@@ -35,7 +35,7 @@ export type SeoEntry = {
 
 export const SEO_PAGES: Record<string, SeoEntry> = {
   '/': {
-    title: 'Contents Inventory Software for Adjusters | Kevin — Photos in. Inventory out.',
+    title: 'Contents Inventory Software for Adjusters | Kevin',
     description:
       'Drop your claim photos and Kevin builds a defensible, Xactimate-ready contents inventory: identified items, priced comps, depreciation and ACV.',
     image: 'og-landing.png',
