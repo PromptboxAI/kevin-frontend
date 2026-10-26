@@ -51,6 +51,8 @@ import { checkTotals } from '../lib/comps-rules'
 import { listProposals } from '../lib/proposals'
 import { assignRoom, listRooms } from '../lib/rooms'
 import { assignPlan, assignSummary } from '../lib/room-rules'
+import { isReviewFilter, matchesReview, REVIEW_LABEL } from '../lib/review-filters'
+import type { ReviewFilter } from '../lib/review-filters'
 import type { NumberedItem } from '../lib/rows'
 import { useDeferred } from '../lib/deferred'
 import {
@@ -159,7 +161,19 @@ export default function WorksheetPage() {
    * needs_manual badges, and a blank cell is a thing to type into rather than
    * an error to mark up.
    */
-  const [needsDesc, setNeedsDesc] = useState(false)
+  /**
+   * The "needs a look" filter, named rather than a bare boolean.
+   *
+   * It is seeded from `?review=` so the export page's Review buttons land on
+   * the rows they counted instead of on line 1 of the whole claim. The menu
+   * toggle writes the same state, so there is one mechanism rather than a
+   * URL-driven one beside a menu-driven one.
+   */
+  const [review, setReview] = useState<ReviewFilter>(() => {
+    const want = new URLSearchParams(window.location.search).get('review')
+    return isReviewFilter(want) ? want : ''
+  })
+  const needsDesc = review === 'no_desc'
   /** Shared cache key with RoomsPopover -- one fetch feeds both. */
   const rooms = useQuery({
     queryKey: ['rooms', claimId],
@@ -661,14 +675,14 @@ export default function WorksheetPage() {
     let out = items
     if (roomFilter === 'none') out = out.filter((item) => item.room_id == null)
     else if (roomFilter != null) out = out.filter((item) => item.room_id === roomFilter)
-    if (needsDesc) out = out.filter((item) => !(item.description ?? '').trim())
+    if (review) out = out.filter((item) => matchesReview(item, review))
     if (!term) return out
     return out.filter((item) =>
       [item.description, item.make_mfr, item.category, item.model_number, item.room_area]
         .filter(Boolean)
         .some((field) => String(field).toLowerCase().includes(term)),
     )
-  }, [items, search, roomFilter, needsDesc])
+  }, [items, search, roomFilter, review])
 
   /** Group headers aggregate the rows' own flags -- never re-derived from cat. */
   const groups = useMemo(() => {
@@ -699,7 +713,7 @@ export default function WorksheetPage() {
       navigate(`/claims/${encodeURIComponent(claimId)}/staging`, { replace: true })
     }
   }, [staged.waiting, nothingProcessed, claimId, navigate])
-  const filterCount = (status ? 1 : 0) + (needsDesc ? 1 : 0)
+  const filterCount = (status ? 1 : 0) + (review ? 1 : 0)
   /** How many rows are waiting on a description, for the filter's own label.
    *  NOT `undescribed` -- that name is already an import from deferred-rules. */
   const blankDescCount = useMemo(
@@ -1136,7 +1150,7 @@ export default function WorksheetPage() {
                       style={{ fontSize: 11 }}
                       onClick={() => {
                         setStatus('')
-                        setNeedsDesc(false)
+                        setReview('')
                       }}
                     >
                       Clear
@@ -1175,7 +1189,7 @@ export default function WorksheetPage() {
                         className={`k-menu-item ${needsDesc ? 'k-menu-item--on' : ''}`}
                         title="Lines Kevin could not describe — type one and they price themselves"
                         onClick={() => {
-                          setNeedsDesc((v) => !v)
+                          setReview((v) => (v === 'no_desc' ? '' : 'no_desc'))
                           setFilterOpen(false)
                         }}
                       >
@@ -1624,6 +1638,31 @@ export default function WorksheetPage() {
               docked
             />
           ) : null}
+        </div>
+      ) : null}
+
+      {/*
+        * SAY WHAT IS BEING HIDDEN. A filter applied by a link from another
+        * screen is otherwise invisible: the grid just looks like a claim with
+        * two rows in it, and the way out is a popover the adjuster has no
+        * reason to open.
+        */}
+      {review ? (
+        <div className="k-deferbar">
+          <Icon d={I.filter} size={13} />
+          <span>
+            Showing <strong>{REVIEW_LABEL[review]}</strong> only —{' '}
+            {fmtInt(visible.length)} of {fmtInt(items.length)}{' '}
+            {items.length === 1 ? 'line' : 'lines'}.
+          </span>
+          <div style={{ flex: 1 }} />
+          {/* "Clear filter", not "Show all lines": rule 9d's guard greps for
+              that phrase to catch DFY flat-per-line pricing copy, and a guard
+              that learns to ignore a false positive stops being read. The
+              chip beside this already says what is hidden. */}
+          <button type="button" className="k-btn k-btn--sm k-btn--ghost" onClick={() => setReview('')}>
+            Clear filter
+          </button>
         </div>
       ) : null}
 

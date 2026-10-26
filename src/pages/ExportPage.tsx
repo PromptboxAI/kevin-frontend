@@ -16,6 +16,7 @@ import {
   type PdfContents,
   type PhotosPerPage,
 } from '../lib/api'
+import { matchesReview, reviewHref } from '../lib/review-filters'
 import { fmtInt, fmtPct, fmtUSD } from '../lib/format'
 import { letterheadLines, formFrom } from '../lib/business-rules'
 import { fetchAllClaimItems } from '../lib/claim-items-all'
@@ -483,7 +484,10 @@ export default function ExportPage() {
                   tone="wait"
                   title={`${fmtInt(check.unpriced.length)} unpriced item${check.unpriced.length === 1 ? '' : 's'}`}
                   action={
-                    <Link className="k-btn k-btn--sm k-btn--ghost" to={`/claims/${claimId}`}>
+                    <Link
+                      className="k-btn k-btn--sm k-btn--ghost"
+                      to={reviewHref(claimId, 'unpriced')}
+                    >
                       Price them →
                     </Link>
                   }
@@ -497,7 +501,10 @@ export default function ExportPage() {
                   tone="info"
                   title={`${fmtInt(check.noModel.length)} without a model number`}
                   action={
-                    <Link className="k-btn k-btn--sm k-btn--ghost" to={`/claims/${claimId}`}>
+                    <Link
+                      className="k-btn k-btn--sm k-btn--ghost"
+                      to={reviewHref(claimId, 'no_model')}
+                    >
                       Review →
                     </Link>
                   }
@@ -511,7 +518,10 @@ export default function ExportPage() {
                   tone="info"
                   title={`${fmtInt(check.noClass.length)} without a content class`}
                   action={
-                    <Link className="k-btn k-btn--sm k-btn--ghost" to={`/claims/${claimId}`}>
+                    <Link
+                      className="k-btn k-btn--sm k-btn--ghost"
+                      to={reviewHref(claimId, 'no_class')}
+                    >
                       Review →
                     </Link>
                   }
@@ -581,9 +591,11 @@ function Toggle({
 
 /** Counts straight from the rows; the export itself never refuses (rule 16). */
 function validate(items: ClaimItem[]) {
-  const unpriced = items.filter((r) => r.rcv == null && r.status === 'needs_manual')
-  const noModel = items.filter((r) => !r.model_number?.trim())
-  const noClass = items.filter((r) => !r.category)
+  // Shared with the worksheet's filters, so a count can never disagree with
+  // the rows its Review button filters to.
+  const unpriced = items.filter((r) => matchesReview(r, 'unpriced'))
+  const noModel = items.filter((r) => matchesReview(r, 'no_model'))
+  const noClass = items.filter((r) => matchesReview(r, 'no_class'))
   const pricedRows = items.filter((r) => r.rcv != null)
   const sourced = pricedRows.filter(
     (r) => (r.alternative_sources ?? []).length > 0 || !!r.manual_source_url,
