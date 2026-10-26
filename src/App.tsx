@@ -21,6 +21,7 @@ import GuidesIndexPage from './pages/GuidesIndexPage'
 import CaseStudy4000Page from './pages/CaseStudy4000Page'
 import FireLossInventoryGuidePage from './pages/FireLossInventoryGuidePage'
 import RcvVsAcvGuidePage from './pages/RcvVsAcvGuidePage'
+import XactcontentsImportTemplateGuidePage from './pages/XactcontentsImportTemplateGuidePage'
 import PaFieldGuidePage from './pages/PaFieldGuidePage'
 import CarrierReviewGuidePage from './pages/CarrierReviewGuidePage'
 import NonSalvageableGuidePage from './pages/NonSalvageableGuidePage'
@@ -203,6 +204,7 @@ export default function App() {
         />
         <Route path="/guides/contents-inventory-after-house-fire" element={<FireLossInventoryGuidePage />} />
         <Route path="/guides/rcv-vs-acv-personal-property" element={<RcvVsAcvGuidePage />} />
+        <Route path="/guides/xactcontents-import-template" element={<XactcontentsImportTemplateGuidePage />} />
         <Route path="/guides/public-adjuster-contents-inventory" element={<PaFieldGuidePage />} />
         <Route path="/guides/what-carriers-look-for-contents-inventory" element={<CarrierReviewGuidePage />} />
         <Route path="/guides/non-salvageable-contents-inventory" element={<NonSalvageableGuidePage />} />

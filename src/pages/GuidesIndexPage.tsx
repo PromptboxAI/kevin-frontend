@@ -188,6 +188,11 @@ const GROUPS: { h: string; blurb: string; items: Entry[] }[] = [
         d: 'What Kevin does, what it does not, and how the export lands. Not affiliated with Verisk.',
       },
       {
+        to: '/guides/xactcontents-import-template',
+        t: 'The XactContents import template',
+        d: 'Every column in the .xlsx, how a line foots, and what stops a file importing.',
+      },
+      {
         to: '/compare/kevin-vs-contents-team',
         t: 'Kevin vs Contents.team',
         d: 'Room-first against item-first, and seats against a flat fee — quoted from their site, scored nowhere.',

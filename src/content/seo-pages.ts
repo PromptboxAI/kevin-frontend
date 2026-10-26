@@ -128,6 +128,12 @@ export const SEO_PAGES: Record<string, SeoEntry> = {
       "Replacement cost value is what the item costs today; actual cash value is that figure less depreciation for its age and class. How a real worksheet line foots.",
     image: 'og-default.png',
   },
+  '/guides/xactcontents-import-template': {
+    title: 'XactContents Import Template: Columns and Rules | Kevin',
+    description:
+      "Every column in Kevin's .xlsx for an XactContents import, how each line foots, and the formulas, text and blanks that stop a contents file importing.",
+    image: 'og-default.png',
+  },
   '/guides/public-adjuster-contents-inventory': {
     title: 'Public Adjuster Contents Inventory Field Guide | Kevin',
     description:
