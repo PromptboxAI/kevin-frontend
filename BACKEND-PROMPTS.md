@@ -19,6 +19,76 @@ documents a carrier reads. The message restated that it carries no approval.
 
 ---
 
+## 27. Two adjusters on one worksheet — FUTURE, not now
+
+**Status:** PARKED, recorded 2026-10-26 at the owner's request. *"not needed at
+the moment but we will need a share/collab where two adjusters can work on and
+edit the same worksheet."* Nothing is being asked for yet. This exists so the
+shape is on record before it is urgent, and so it does not get decided by
+whoever implements the first piece of it.
+
+### The case
+
+A carrier-side adjuster should be able to open a claim and **make adjustments**
+— not approve, not sign off, not comment. Work in it, the way the owning
+adjuster does.
+
+### What exists today, and why neither is it
+
+- **A share link** (`POST /v1/claims/{id}/share`) is read-only by
+  construction: public `/p/<token>` route, no account, no writes, and the
+  payload deliberately omits confidence, comps, `substitution_note`, `status`,
+  `manual_reason` and `valuation_basis`. It is a finished inventory for a
+  client, not a working surface.
+- **Nothing else.** Every claim is scoped to one account and the API answers
+  **404** for anyone else, deliberately not distinguishing "not found" from
+  "not yours". There is no invite, no member list, no per-claim grant anywhere
+  in the contract.
+
+So this is a feature, not a setting.
+
+### The four decisions, none of them ours
+
+1. **Identity.** Either the second adjuster has their own Kevin account and is
+   granted one claim, or they get a scoped credential — and that pattern
+   already exists: `/pair` + `/capture` is a public route with an upload-only
+   credential narrowed to a single claim. The same shape with write scope is
+   the cheaper of the two, and the one that does not require the carrier's
+   person to buy anything.
+2. **Permission.** Which fields? Prices, classes and ages are one answer;
+   deleting lines and re-running Vision are a different one. The money chain is
+   server-owned, so whoever edits, the server recomputes — the question is only
+   what they may touch.
+3. **Attribution.** ⛔ The one that cannot be deferred. The audit log IS the
+   defensibility story, and today every entry is the owner. Two people editing
+   under one name does not weaken the log, it **defeats** it — and a claim
+   where "who changed that price" has no answer is worse than one with no
+   collaboration at all. Whatever identity model is chosen has to reach
+   `claim_events` before the first shared write, not after.
+4. **Billing.** Items are metered per account (rule 9). If a guest's edit
+   re-prices a line, that search is billed to the OWNER today. Workable, but it
+   should be a decision rather than a discovery, and it is an abuse surface:
+   an account that shares widely spends someone else's allowance.
+
+### One line to keep in view
+
+A carrier adjuster editing inside Kevin sits close to something deliberately
+rejected: a carrier-facing **review and approval** surface (rule 4), removed
+because it misrepresents a product that exports a file the adjuster sends.
+The owner has been explicit that this is NOT that — *"this isn't a 'carrier
+review'"* — and co-editing is a different thing. But the distinction will live
+entirely in how it is built and worded, so it is worth being deliberate rather
+than discovering the line later.
+
+### What the frontend would need
+
+Little, and none of it before the model is settled: a grant UI on the claim, a
+badge on rows edited by someone else, and the audit log rendering an actor it
+already has a column for. The worksheet itself needs no change — it writes
+through the same routes whoever is typing.
+
+---
+
 ## 26. A staging session has no timestamps, so nobody can see how long it has been stuck
 
 **Status:** new, 2026-10-08. Written the day a clustering run stalled on the
