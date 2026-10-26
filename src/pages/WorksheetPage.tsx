@@ -440,6 +440,17 @@ export default function WorksheetPage() {
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ['claim-items', claimId] })
     void queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
+    /*
+     * ⛔ AND THE FLAT CACHE, which is a DIFFERENT key.
+     *
+     * The grid pages under ['claim-items', id, status]; Export, Overview,
+     * Photos and Recovery all read the whole claim under
+     * ['claim-items-flat', id]. Invalidating only the grid's key left those
+     * four holding rows from before the edit — so fixing the last line with no
+     * content class and walking back to Export still showed "1 without a
+     * content class", off a cache nothing had told to move.
+     */
+    void queryClient.invalidateQueries({ queryKey: ['claim-items-flat', claimId] })
   }
 
   /**
@@ -473,6 +484,24 @@ export default function WorksheetPage() {
             ...page,
             items: page.items.map((row) => (row.id === id ? { ...row, ...patch } : row)),
           })),
+        },
+    )
+    /*
+     * The same row in the FLAT cache the other four screens read. A splice
+     * that updates only the grid is why a corrected line could still be
+     * counted on the Export tab: the edit never reached the list that tab
+     * reads, and nothing invalidated it either.
+     *
+     * Patched rather than invalidated because this path exists to avoid a
+     * refetch -- re-reading 263 rows to change one field is what made a class
+     * change take seconds.
+     */
+    queryClient.setQueryData<ClaimItemListResponse>(
+      ['claim-items-flat', claimId],
+      (prev) =>
+        prev && {
+          ...prev,
+          items: prev.items.map((row) => (row.id === id ? { ...row, ...patch } : row)),
         },
     )
   }
