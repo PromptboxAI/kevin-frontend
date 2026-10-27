@@ -275,6 +275,24 @@ export const SEO_PAGES: Record<string, SeoEntry> = {
       'How Kevin works end to end: photo ingestion, item identification, live retail comps, depreciation, and carrier-ready exports.',
     image: 'og-product.png',
   },
+  '/total-loss-contents': {
+    title: 'Total Loss Contents Inventory Software | Kevin',
+    description:
+      'Rebuild a total-loss contents inventory with no photographs: import a list, spreadsheet or pack-out PDF, priced with depreciation and a carrier-ready export.',
+    image: 'og-adjusters.png',
+  },
+  '/catastrophe-contents-claims': {
+    title: 'Catastrophe Contents Claims: CAT Surge Workflow | Kevin',
+    description:
+      'Twenty contents files in a week on a flat fee with unlimited claims: bulk photo intake, total losses priced from a list, and the item allowance stated plainly.',
+    image: 'og-adjusters.png',
+  },
+  '/status': {
+    title: 'Service Status | Kevin',
+    description:
+      'The live state of the Kevin pricing engine, read from the same signal the product uses.',
+    image: 'og-default.png',
+  },
   '/for-adjusters': {
     title: 'Kevin for Insurance Adjusters',
     description:

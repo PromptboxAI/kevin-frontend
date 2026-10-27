@@ -5,7 +5,10 @@ import ScrollToTop from './components/ScrollToTop'
 import { AuthProvider } from './lib/auth'
 import RootRoute from './components/RootRoute'
 import PricingPage from './pages/PricingPage'
+import CatastropheContentsPage from './pages/CatastropheContentsPage'
 import ForAdjustersPage from './pages/ForAdjustersPage'
+import StatusPage from './pages/StatusPage'
+import TotalLossContentsPage from './pages/TotalLossContentsPage'
 import PaContentsSoftwarePage from './pages/PaContentsSoftwarePage'
 import ContentsPricingSoftwarePage from './pages/ContentsPricingSoftwarePage'
 import XactcontentsAlternativePage from './pages/XactcontentsAlternativePage'
@@ -183,6 +186,9 @@ export default function App() {
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/product" element={<ProductPage />} />
         <Route path="/for-adjusters" element={<ForAdjustersPage />} />
+        <Route path="/total-loss-contents" element={<TotalLossContentsPage />} />
+        <Route path="/catastrophe-contents-claims" element={<CatastropheContentsPage />} />
+        <Route path="/status" element={<StatusPage />} />
         <Route
           path="/public-adjusters/ai-contents-inventory-software"
           element={<PaContentsSoftwarePage />}

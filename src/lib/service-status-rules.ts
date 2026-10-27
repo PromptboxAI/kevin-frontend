@@ -157,3 +157,81 @@ export function bannerFor(status: unknown, formatTime: (iso: string) => string):
     tone: 'paused',
   }
 }
+
+/* ── the public status page ──────────────────────────────────────────────── */
+
+export type PublicStatus = {
+  /** The headline state, as a reader would say it. */
+  label: string
+  /** One line under it. */
+  detail: string
+  /**
+   * `ok` green, `degraded` amber-free service tone, `paused` the same tone
+   * firmer, `unknown` neutral. Never `--k-warn`: amber belongs to special
+   * limits (rule 6) and this is the service tone (rule 6b).
+   */
+  tone: 'ok' | 'degraded' | 'paused' | 'unknown'
+}
+
+/**
+ * What the PUBLIC status page says — the one surface that must also render
+ * the good case, which is why it cannot reuse `bannerFor` (that returns null
+ * on `ok`, because a banner announcing normality is noise).
+ *
+ * ⛔ `unknown` IS NOT `ok`. A failed read, a malformed payload or a state this
+ * build has never heard of all render as "could not read", never as
+ * operational. The banner can stay silent on a bad read because silence there
+ * means "no banner"; on a page whose entire job is to answer "is it working",
+ * silence would be read as a yes. Owner's rule: show disruption, never hide
+ * it — and that includes not hiding our own blindness.
+ *
+ * Pass `null`/`undefined` for the pre-fetch render. It returns `unknown` with
+ * "Checking", which is also what the prerendered HTML shell ships with, so a
+ * crawler can never cache this page claiming everything is fine.
+ */
+export function publicStatusFor(status: unknown): PublicStatus {
+  if (!isServiceStatus(status)) {
+    return {
+      label: 'Checking',
+      detail: 'Reading the current state of the pricing engine.',
+      tone: 'unknown',
+    }
+  }
+
+  const { state, reason } = status.pricing
+
+  if (state === 'ok') {
+    return {
+      label: 'Operational',
+      detail: 'Pricing is running normally. Items price as they are processed.',
+      tone: 'ok',
+    }
+  }
+
+  if (state === 'degraded') {
+    return {
+      label: 'Degraded',
+      detail:
+        'Pricing is running, but slower than usual — a large claim will take noticeably longer to finish. Nothing is lost.',
+      tone: 'degraded',
+    }
+  }
+
+  if (state === 'paused') {
+    return {
+      label: 'Paused',
+      detail:
+        reason === 'budget'
+          ? 'Today’s pricing capacity is used up. Everything else works; affected lines retry once capacity resets.'
+          : 'Pricing is paused while the search provider recovers. Everything else works; affected lines can be retried.',
+      tone: 'paused',
+    }
+  }
+
+  // A state this build does not know. Never guess it is fine.
+  return {
+    label: 'Unrecognised state',
+    detail: 'The service reported a state this page does not know how to read.',
+    tone: 'unknown',
+  }
+}

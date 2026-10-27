@@ -76,6 +76,9 @@ const LIVE = new Set<string>([
   '/guides/xactcontents-import-template',
   '/guides/best-contents-software-public-adjusters',
   '/case-studies/4000-contents-line-items-30-days',
+  '/total-loss-contents',
+  '/catastrophe-contents-claims',
+  '/status',
 ])
 
 function MktLink({
@@ -250,6 +253,8 @@ export function MktFooter() {
           <MktLink to="/sample">Sample claim</MktLink>
           <MktLink to="/done-for-you">Done-for-you claims</MktLink>
           <MktLink to="/for-estate-liquidators">For estate liquidators</MktLink>
+          <MktLink to="/total-loss-contents">Total loss contents</MktLink>
+          <MktLink to="/catastrophe-contents-claims">Catastrophe claims</MktLink>
           <MktLink to="/demo">Watch demo</MktLink>
           <MktLink to="/docs">Docs</MktLink>
           <MktLink to="/pricing#faq">FAQ</MktLink>
@@ -303,6 +308,7 @@ export function MktFooter() {
           <MktLink to="/legal">Privacy</MktLink>
           <MktLink to="/legal#terms">Terms</MktLink>
           <MktLink to="/security">Security</MktLink>
+          <MktLink to="/status">Status</MktLink>
         </span>
         <span>© 2026</span>
       </div>
