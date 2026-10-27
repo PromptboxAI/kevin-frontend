@@ -836,6 +836,94 @@ New lines being right is enough, unless you would rather do both.
 > `scripts/test-dfy-pricing.mjs`. Full audit, schema and the proposed internal DFY desk:
 > `DFY-PRICING-PLAN.md`.
 
+### THE BRIEF — what to ship (2026-10-26). Supersedes the asks further down where they differ.
+
+Two things the older text below does not know: the **site-visit fee** (added
+2026-10-24) and that the **internal DFY desk ships before self-serve**. Phase 1
+alone unblocks the admin screen. The older sections stay as background — the
+homeowner intake, the 14-day expiry and the comped-account decisions all still
+hold.
+
+#### Phase 1 — the internal DFY desk (ship first)
+
+**1. One pricing function, integer cents, config-driven.**
+`dfy_price(lines, visits, config) -> {breakdown[], line_total, visit_total, minimum_applied, total}`
+
+- `line_total` = marginal sum over bands: 1–100 $5.00 · 101–250 $4.50 ·
+  251–500 $4.00 · 501–1,000 $3.50 · 1,001+ $3.00.
+- `visits` = `ceil(lines / 300)` when Kevin shoots the site, else 0.
+- `total` = `max(750, line_total + visits × 275)`. **The minimum wraps the
+  whole sum** — the visit fee never stacks on top of the floor.
+- Config tables, no constants in code:
+  `dfy_pricing_bands(tier_start, tier_end NULL, rate_cents, active, effective_date)` and
+  `dfy_pricing(minimum_fee_cents, visit_fee_cents, items_per_visit, effective_date)`.
+- Port `kevin-frontend/scripts/test-dfy-pricing.mjs` verbatim: every boundary,
+  price(n+1) ≥ price(n) from 1 to 5,000, and the worked totals (400 → $1,775,
+  401 → $1,779, 20 lines shot → $750, 400 lines shot → $2,325).
+
+**2. Quote record — `dfy_quotes`.**
+
+| Group | Fields |
+|---|---|
+| Customer | `first_name`, `last_name`, `email`, `zip` (required); `phone`, `street` (optional) |
+| Job | `claim_name`, `loss_type`, `estimated_scope`, `notes`, `we_shoot: bool` |
+| Counts | `photo_count`, `set_count` (kind = item only; context and duplicate excluded), `quoted_lines` (= `set_count` unless staff edit it) |
+| Pricing snapshot | `config_snapshot` (bands and fees used, frozen so a later price change never restates a sent quote), `breakdown`, `computed_total` |
+| Override | `override_total`, `override_reason` (required when set), `final_quote_total` = override or computed |
+| Lifecycle | `status ∈ draft · sent · accepted · declined · expired`, `expires_at` (sent + 14 days), `claim_id` |
+| Delivery | `final_lines` (promoted items only), `final_total` |
+
+`final_total = max(750, min(dfy_price(final_lines), final_quote_total))` — the
+quote is a ceiling the invoice cannot pass.
+
+**3. Claim and staging — decide one. Frontend recommends (a).**
+
+- **(a)** Creating a quote also creates a claim under the **comped internal DFY
+  account**, with its own staging session. All of staging (upload, extraction,
+  clustering, merge/split/reclassify) is reused unchanged, and nothing lands in
+  a stranger's account — which is what "no claim until the deposit clears"
+  protected. Needs the comped account's id, kept out of quota and revenue
+  rollups.
+- **(b)** A pre-claim staging session owned by the quote. New upload and
+  cluster routes — the bigger job.
+
+**4. Endpoints, all admin-gated (`admin` / `owner`).**
+
+| Endpoint | Does |
+|---|---|
+| `POST /v1/admin/dfy/quotes` | Create a draft with intake fields → `{id, claim_id, staging_session_id}` |
+| `GET /v1/admin/dfy/quotes?status=` | List |
+| `GET /v1/admin/dfy/quotes/{id}` | The record above, plus live `extraction_status`, `clustering_status` and `excluded_set_count` from staging |
+| `PATCH /v1/admin/dfy/quotes/{id}` | Intake fields, `we_shoot`, `quoted_lines`, override + reason. Returns the recomputed quote. |
+| `POST /v1/admin/dfy/quotes/{id}/recount` | Re-read `set_count` from staging and reprice. Draft only. |
+| `POST /v1/admin/dfy/quotes/{id}/status` | `{to, note?}` for sent, accepted, declined. Expired is set by a sweep. Accepted freezes the ceiling. |
+| `GET /v1/admin/dfy/quotes/{id}/history` | Audit trail: who, when, field, old → new, reason. Every override and status change writes here. |
+
+**5. Analytics events.** `dfy_quote_requested`, `dfy_quote_sent`,
+`dfy_quote_accepted`, `dfy_quote_declined`, `dfy_quote_expired`,
+`dfy_delivered` — each carrying `photo_count`, `set_count`, `quoted_lines`,
+`quote_total`, `final_lines`, `final_total` and `variance`.
+
+#### Phase 2 — self-serve and payment (not needed for the desk)
+
+6. **Public routes.** `POST /v1/dfy/quotes` — anonymous intake with the same
+   upload chunking and `rejected[]` enum as staging. `GET /v1/dfy/quotes/{id}` —
+   the client's view: counts, breakdown, total, status, expiry. Nothing else.
+7. **Deposit.** `POST /v1/dfy/quotes/{id}/accept` → a Stripe Checkout session
+   for **$750** through the existing `price_data` helper. The webhook, not the
+   browser return, moves the quote to accepted.
+8. **Balance.** On delivery, mint the share link priced at `final_total − 750`;
+   when that is $0 the link has no paywall.
+
+#### What the frontend needs back
+
+1. The **(a) / (b)** decision.
+2. The **comped DFY account id**.
+3. The exact response shape of **`GET /v1/admin/dfy/quotes/{id}`** — the admin
+   screen is built against it.
+
+#### Background (2026-10-02 onward)
+
 **Status:** new, 2026-10-02. Owner's design. This is a flow, not an endpoint,
 so it is worth agreeing the shape before anyone builds a piece of it.
 
