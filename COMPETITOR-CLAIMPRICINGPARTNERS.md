@@ -112,8 +112,14 @@ Their **Price Check guarantee** — carrier rejects a source, it is re-sourced
 free within 24 hours — is the trust device built on top of it. We have the
 re-price capability already; we have never made it a promise.
 
-I would treat the screenshot as a genuine product idea from this audit, not a
-copy fix. It is the only thing on the site I would want.
+**⛔ REJECTED, owner, 2026-10-29. Do not build this.** The reasoning above is
+wrong where it counts: link rot is real, but it is not a pain the buyer feels.
+An adjuster who finds a dead source link simply re-researches the item — they
+do not treat a dated screenshot of an old listing as binding, and it locks a
+carrier into nothing. Twenty-two years in the field against an inference drawn
+from a rule's phrasing; the field wins. Provenance is already served by the
+Source Link plus the two correction routes in the product. **Nothing on this
+site is a gap we should close.**
 
 ---
 

@@ -275,6 +275,12 @@ export const SEO_PAGES: Record<string, SeoEntry> = {
       'How Kevin works end to end: photo ingestion, item identification, live retail comps, depreciation, and carrier-ready exports.',
     image: 'og-product.png',
   },
+  '/contents-inventory-template': {
+    title: 'Contents Inventory Template for Insurance Claims (Excel, Free)',
+    description:
+      'A free room-by-room contents inventory template in Excel or CSV, with what to put in each column and a filled-in example. No sign-up.',
+    image: 'og-default.png',
+  },
   '/total-loss-contents': {
     title: 'Total Loss Contents Inventory Software | Kevin',
     description:

@@ -679,3 +679,45 @@ fallback (ask 31).
   51 of 51 priced lines substantiated, so it correctly stays silent there.
 - **The `vision_fallback` cue** was verified by forcing the flag; every real set
   clustered so far has validated.
+
+---
+
+## Carrier-specific export templates — State Farm first
+
+**Raised by the owner 2026-10-29, from a State Farm rep.** State Farm hands
+adjusters **their own contents template**. If our export does not arrive on it,
+the adjuster copies our list into theirs by hand — line by line, on a claim
+that may run to hundreds of lines. Every minute Kevin saves upstream is handed
+straight back at the end.
+
+So: add a **carrier template** choice to the export, alongside the
+XactContents .xlsx and the client PDF. State Farm is the first one worth
+building because we have a rep saying so.
+
+What this is NOT: rule 4 stands. Kevin exports a file the adjuster sends. This
+does not push anything into a carrier system and does not make us a
+carrier-facing surface — it changes the SHAPE of the file we hand back, nothing
+else.
+
+Open questions for that thread, none answered yet:
+
+- **Get the actual template.** Column order, exact header text, sheet name, any
+  required cover sheet. Ask the rep for a blank copy — guessing at a carrier's
+  format produces a file that still needs re-keying, which is worse than
+  admitting we do not have it.
+- **Is it one template or several?** Contents vs total loss, residential vs
+  commercial may each have their own.
+- **How do our fields map onto theirs?** Our columns are the
+  Xactimate/XactContents parity set. Anything State Farm wants that we do not
+  carry is either derivable or a gap, and a gap needs the owner's call rather
+  than a blank column.
+- **Does the static-values rule apply?** Almost certainly yes (rule 2b) — if
+  the file is ingested by anything, formulas break it.
+- **How many more carriers do this?** If Allstate, Travelers and USAA all hand
+  out templates, this is a pluggable template layer, not a State Farm special
+  case. Worth asking before building the first one in a way that cannot take a
+  second.
+
+Scope guess, not a commitment: this is mostly an export-writer change plus a
+mapping table per carrier, and it needs a real blank template in hand before
+any of it starts.

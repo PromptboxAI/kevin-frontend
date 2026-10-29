@@ -79,6 +79,7 @@ const LIVE = new Set<string>([
   '/total-loss-contents',
   '/catastrophe-contents-claims',
   '/status',
+  '/contents-inventory-template',
 ])
 
 function MktLink({
@@ -283,6 +284,7 @@ export function MktFooter() {
           <MktLink to="/guides/discontinued-items-insurance-claims">Discontinued items</MktLink>
           <MktLink to="/guides/retail-vs-secondary-market-contents">Retail vs resale</MktLink>
           <MktLink to="/contents-claims/without-photos">Pricing without photos</MktLink>
+          <MktLink to="/contents-inventory-template">Inventory template</MktLink>
           <MktLink to="/guides/exact-match-vs-like-kind-quality">Exact match vs LKQ</MktLink>
           <MktLink to="/guides/high-value-contents-claims">High-value contents</MktLink>
           <MktLink to="/guides/collectibles-insurance-contents">Collectibles</MktLink>
