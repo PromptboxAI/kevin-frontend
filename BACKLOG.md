@@ -718,6 +718,20 @@ Open questions for that thread, none answered yet:
   case. Worth asking before building the first one in a way that cannot take a
   second.
 
-Scope guess, not a commitment: this is mostly an export-writer change plus a
-mapping table per carrier, and it needs a real blank template in hand before
-any of it starts.
+**UPDATE 2026-10-29: the owner supplied the template, and it is analysed.**
+Full spec in `CARRIER-TEMPLATES.md`; the blank is checked in at
+`docs/carrier-templates/state-farm-xactcontents-import-template-v4.xls`. The
+owner's instruction is to assume it is not a one-off and build the pluggable
+layer.
+
+Three findings that change the shape of the work:
+
+- **Rule 2b inverts.** Their template is built on 5,002 formulas (column J is
+  `qty x unit cost`, I7 sums it). Write F and I, leave J and I7 alone. Static
+  values would break the total the moment an adjuster edits a quantity. Make it
+  a per-template flag, not a global rule change.
+- **Room is a controlled vocabulary of 34 values** against our deliberately
+  free-text Room/Area. Needs a per-carrier normaliser in data, and unmapped
+  rooms surfaced before download rather than silently dropped.
+- **It is legacy `.xls` (BIFF8), not `.xlsx`.** Whether State Farm accepts
+  `.xlsx` is the single biggest cost question in the feature.
