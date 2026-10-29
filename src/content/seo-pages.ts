@@ -276,7 +276,7 @@ export const SEO_PAGES: Record<string, SeoEntry> = {
     image: 'og-product.png',
   },
   '/contents-inventory-template': {
-    title: 'Contents Inventory Template for Insurance Claims (Excel, Free)',
+    title: 'Contents Inventory Template for Insurance Claims (Excel)',
     description:
       'A free room-by-room contents inventory template in Excel or CSV, with what to put in each column and a filled-in example. No sign-up.',
     image: 'og-default.png',
