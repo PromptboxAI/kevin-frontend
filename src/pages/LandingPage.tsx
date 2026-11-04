@@ -564,6 +564,42 @@ export default function LandingPage() {
 
       <MktROISection />
 
+      {/* — Built by an adjuster —
+          ONE LINE, and deliberately not the founder block a competitor runs.
+          getassetledger's homepage carries a photo, social links and "I answer
+          the support email myself" because it is reassuring consumers that a
+          tiny unknown company is safe. That is not our problem. Ours is the
+          first silent objection an adjuster has about any contents tool --
+          "do these people actually know contents?" -- and the credential
+          answers it in a sentence. The bio, the timeline and the $1B stay on
+          /about; duplicating them here would bury the CTA under a story. */}
+      <section
+        style={{
+          borderTop: '1px solid var(--k-line)',
+          padding: '26px 24px',
+          textAlign: 'center',
+        }}
+      >
+        <p
+          style={{
+            margin: 0,
+            fontSize: 14.5,
+            color: 'var(--k-fg-2)',
+            lineHeight: 1.6,
+            maxWidth: 620,
+            marginLeft: 'auto',
+            marginRight: 'auto',
+          }}
+        >
+          <strong style={{ color: 'var(--k-fg)' }}>Built by an adjuster.</strong> Kevin Godfrey
+          spent 22 years in the field and settled more than 10,000 claims before building the
+          thing he wanted on a Friday night.{' '}
+          <Link to="/about" style={{ color: 'var(--k-accent)', whiteSpace: 'nowrap' }}>
+            About Kevin &rarr;
+          </Link>
+        </p>
+      </section>
+
       {/* — Final CTA band — */}
       <section className="k-cta">
         <div className="k-cta-inner">
