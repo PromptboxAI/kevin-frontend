@@ -275,6 +275,30 @@ export const SEO_PAGES: Record<string, SeoEntry> = {
       'How Kevin works end to end: photo ingestion, item identification, live retail comps, depreciation, and carrier-ready exports.',
     image: 'og-product.png',
   },
+  '/compare/kevin-vs-encircle': {
+    title: 'Kevin vs Encircle: Contents Pricing Compared',
+    description:
+      'Both price contents. Encircle is a restoration platform where a person researches each replacement; Kevin is contents-only and researches it for you.',
+    image: 'og-default.png',
+  },
+  '/compare/kevin-vs-outsourced-contents-pricing': {
+    title: 'Outsourced Contents Pricing vs Software | Kevin',
+    description:
+      'Send the claim to a pricing desk per line, or run it on a flat subscription. The crossover is about 500 line items a month — here is the arithmetic.',
+    image: 'og-default.png',
+  },
+  '/compare/kevin-vs-icontentspro': {
+    title: 'Kevin vs iContentsPro: Which Photo Model?',
+    description:
+      'iContentsPro expands one photo into many priced lines. Kevin works from item-level evidence, so items never outnumber photographs. The difference, tested.',
+    image: 'og-default.png',
+  },
+  '/compare/kevin-vs-enservio': {
+    title: 'Kevin vs Enservio: Contents Valuation Compared',
+    description:
+      'Enservio is a carrier-side valuation service pricing from a proprietary database. Kevin is software for the adjuster, pricing from linked retail listings.',
+    image: 'og-default.png',
+  },
   '/contents-inventory-template': {
     title: 'Contents Inventory Template for Insurance Claims (Excel)',
     description:

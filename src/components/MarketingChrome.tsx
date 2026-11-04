@@ -80,6 +80,10 @@ const LIVE = new Set<string>([
   '/catastrophe-contents-claims',
   '/status',
   '/contents-inventory-template',
+  '/compare/kevin-vs-encircle',
+  '/compare/kevin-vs-outsourced-contents-pricing',
+  '/compare/kevin-vs-icontentspro',
+  '/compare/kevin-vs-enservio',
 ])
 
 function MktLink({
@@ -289,6 +293,8 @@ export function MktFooter() {
           <MktLink to="/guides/high-value-contents-claims">High-value contents</MktLink>
           <MktLink to="/guides/collectibles-insurance-contents">Collectibles</MktLink>
           <MktLink to="/contents-software-roi">ROI calculator</MktLink>
+          <MktLink to="/compare/kevin-vs-encircle">Kevin vs Encircle</MktLink>
+          <MktLink to="/compare/kevin-vs-outsourced-contents-pricing">Outsourcing vs software</MktLink>
           <MktLink to="/xactcontents-alternative">XactContents alternative</MktLink>
           <MktLink to="/guides/xactcontents-import-template">XactContents import template</MktLink>
         </div>

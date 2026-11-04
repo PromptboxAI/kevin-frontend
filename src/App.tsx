@@ -6,6 +6,10 @@ import { AuthProvider } from './lib/auth'
 import RootRoute from './components/RootRoute'
 import PricingPage from './pages/PricingPage'
 import CatastropheContentsPage from './pages/CatastropheContentsPage'
+import CompareEncirclePage from './pages/CompareEncirclePage'
+import CompareEnservioPage from './pages/CompareEnservioPage'
+import CompareIcontentsProPage from './pages/CompareIcontentsProPage'
+import CompareOutsourcingPage from './pages/CompareOutsourcingPage'
 import ForAdjustersPage from './pages/ForAdjustersPage'
 import InventoryTemplatePage from './pages/InventoryTemplatePage'
 import StatusPage from './pages/StatusPage'
@@ -189,6 +193,10 @@ export default function App() {
         <Route path="/for-adjusters" element={<ForAdjustersPage />} />
         <Route path="/total-loss-contents" element={<TotalLossContentsPage />} />
         <Route path="/contents-inventory-template" element={<InventoryTemplatePage />} />
+        <Route path="/compare/kevin-vs-encircle" element={<CompareEncirclePage />} />
+        <Route path="/compare/kevin-vs-outsourced-contents-pricing" element={<CompareOutsourcingPage />} />
+        <Route path="/compare/kevin-vs-icontentspro" element={<CompareIcontentsProPage />} />
+        <Route path="/compare/kevin-vs-enservio" element={<CompareEnservioPage />} />
         <Route path="/catastrophe-contents-claims" element={<CatastropheContentsPage />} />
         <Route path="/status" element={<StatusPage />} />
         <Route
