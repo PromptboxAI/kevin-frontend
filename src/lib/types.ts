@@ -136,6 +136,22 @@ export const CLOSED_STATUSES: readonly string[] = ['closed', 'archived']
 export type ManualReason =
   | 'manual_class' | 'luxury_brand' | 'low_sample' | 'no_comps' | 'no_query'
   | 'no_description' | 'vision_unavailable' | 'low_confidence_high_value'
+  /**
+   * A WATCH that priced above $750 including the claim's sales tax (backend
+   * 2026-11-08). Watches now price from the ordinary retail and resale market
+   * rather than jewellery sellers, so one worth more than the limit goes to an
+   * adjuster.
+   *
+   * A SIBLING OF low_confidence_high_value, not of no_comps: the pipeline DID
+   * find a price. `alternative_sources` stays on the row, so the drawer shows
+   * the evidence, and the withheld figure is on the audit trail as
+   * `withheld_rcv` / `withheld_rcv_with_tax` beside `limit_with_tax`.
+   *
+   * Distinct from `manual_class` (fine jewellery, appraisal-only) and
+   * `luxury_brand` (the brand itself is the trigger) — this one is about the
+   * NUMBER, so a cheap watch prices normally.
+   */
+  | 'watch_over_limit'
   | 'valuation_error' | 'quota_exhausted' | 'budget_exhausted' | 'vendor_unavailable'
   | 'placeholder_row' | 'not_priced' | 'enqueue_failed'
 

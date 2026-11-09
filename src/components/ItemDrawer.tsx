@@ -35,6 +35,12 @@ const MANUAL_COPY: Record<string, string> = {
   vision_unavailable:
     'Kevin could not read these photos, and the label it does have is not one it will price from. Describe the item and reprice.',
   low_confidence_high_value: 'We found a price, but this line needs your eyes.',
+  // Same shape as the line above and deliberately so: a price EXISTS, the
+  // comps are on the row, and the only thing missing is a person agreeing with
+  // it. Says the threshold, because "needs your eyes" without a reason reads
+  // as the engine having failed -- it did not.
+  watch_over_limit:
+    'This watch priced above the $750 review limit, so Kevin held the figure for you. The listings it found are below; the withheld price is in the audit trail.',
   valuation_error: 'The comp lookup failed. A reprice will usually fix it.',
   // Paused-pricing reasons, one per cause (FRONTEND.md line 551-552). Each says
   // the line was deferred, not judged, and that Retry deferred prices it --
