@@ -54,7 +54,11 @@ const FAQS: Faq[] = [
   },
   {
     q: 'Which approach is better?',
-    a: 'They answer different questions. A curated database gives consistency across thousands of claims and a defensible like-kind match for discontinued goods. A live listing answers "what does this cost today, and where do I see it". A carrier settling at volume values the first; an adjuster arguing a single line usually wants the second.',
+    // "A retail listing", never "a live listing" — rule 10. Links go stale
+    // over months and the claim is about what the price IS, not the URL's
+    // future. This answer also renders into the FAQ JSON-LD below, which is
+    // why it was worth a second look: the dead $0.20 hid in JSON-LD too.
+    a: 'They answer different questions. A curated database gives consistency across thousands of claims and a defensible like-kind match for discontinued goods. A retail listing answers "what does this cost today, and where do I see it". A carrier settling at volume values the first; an adjuster arguing a single line usually wants the second.',
   },
   {
     q: 'How do I review an Enservio valuation I disagree with?',
@@ -167,7 +171,7 @@ export default function CompareEnservioPage() {
           />
           <p>
             A curated database gives consistency across thousands of claims and a defensible match
-            for goods that are no longer sold. A live listing answers a different question &mdash;
+            for goods that are no longer sold. A retail listing answers a different question &mdash;
             what does this cost today, and where can I see it &mdash; which is the question that
             tends to come back from a desk reviewer on a single disputed line.
           </p>

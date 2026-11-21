@@ -104,7 +104,7 @@ const ProductOverview = () => {
             {[
               { n: '01', t: 'Intake',   img: 'intake-form',      href: '03-Intake.html',        body: 'Claim and policy details, the contents coverage limit, and a loss ZIP that resolves the sales-tax rate. One short form, then straight to the photos.' },
               { n: '02', t: 'Stage',    img: 'staging-sets',     href: '73-Photo-staging.html', body: 'Drop a folder, a phone dump, or a whole .zip — no total-size cap. Duplicates are hashed out, and shots taken seconds apart are grouped into one set — merge, split, or exclude before anything is identified.' },
-              { n: '03', t: 'Process',  img: 'processing-live', href: '04-Processing.html',    body: 'Item, make, model number, content class. Three live comps per item, with the median becoming the replacement cost and a dated proof link on the line.' },
+              { n: '03', t: 'Process',  img: 'processing-live', href: '04-Processing.html',    body: 'Item, make, model number, content class. Three live comps per item, the replacement cost taken from a single listing rather than a blend of several, and a dated proof link on the line.' },
               { n: '04', t: 'Review',   img: 'worksheet-review', href: '05-Worksheet-flat.html', body: 'One grid, every cell editable. Pin the item panel to see the source photo and comps beside the row. Special-limits flags, room filters, class grouping.' },
               { n: '05', t: 'Export',   img: 'export-modal',     href: '06-Export-modal.html',  body: 'The XactContents spreadsheet for claims, a client-ready PDF for estate sales, or the whole bundle with photos and the audit log.' },
             ].map((s, i) => (
@@ -524,7 +524,7 @@ const PricingSourceDetail = () => (
             Valuation behavior lives in one place so this screen and the engine can never disagree. Change any of it in <a href="14-Settings-pricing.html" style={{ color: 'var(--k-accent)', fontWeight: 600, textDecoration: 'underline' }}>Settings → Pricing</a>.
           </p>
           {[
-            ['Offers kept per item',       'Top 3 · RCV is the median'],
+            ['Offers kept per item',       'Top 3 · cited listing marked'],
             ['LKQ substitutions',          'On — discontinued models priced as the nearest new equivalent'],
             ['Class depreciation ceilings', 'Enforced'],
             ['Brand-direct tiebreaker',    'On — applied when offers disagree by more than 15%'],

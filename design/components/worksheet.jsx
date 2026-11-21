@@ -255,7 +255,7 @@ const RCVPopover = ({ row, onClose, onPick, pos, popRef }) => {
     <div ref={popRef} className="k-pop" style={{ position: 'fixed', top: pos.top, left: pos.left, width: 380, zIndex: 200, padding: 0, maxHeight: pos.maxH, display: 'flex', flexDirection: 'column' }} onClick={(e) => e.stopPropagation()}>
       <div style={{ padding: '11px 13px', borderBottom: '1px solid var(--k-line)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <div style={{ fontSize: 10.5, color: 'var(--k-fg-4)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Live comps · median sets RCV</div>
+          <div style={{ fontSize: 10.5, color: 'var(--k-fg-4)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Live comps · cited listing marked</div>
           <div style={{ fontSize: 12.5, color: 'var(--k-fg-2)', marginTop: 3, fontWeight: 500 }}>{[row.mfr, row.model].filter(Boolean).join(' · ') || 'Not identified'}</div>
         </div>
         <button onClick={onClose} className="k-icon-btn"><Icon d={I.close} size={12} /></button>
@@ -269,7 +269,7 @@ const RCVPopover = ({ row, onClose, onPick, pos, popRef }) => {
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3, flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--k-fg)' }}>{a.source}</span>
-                {a.pick && <Badge tone="accent">Kevin's pick · median</Badge>}
+                {a.pick && <Badge tone="accent">Kevin's pick</Badge>}
               </div>
               <div style={{ fontSize: 11, color: 'var(--k-fg-4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 230 }}>{a.title}</div>
               {isDirectComp(a.link)
@@ -768,7 +768,7 @@ const Lightbox = ({ row, index, total, onNav, onClose, onUpdate, docked, onToggl
           <ItemHistory rowId={row.id} />
           <div className="k-insp-field">
             <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-              <span>{manualRow ? 'No comps yet' : estate ? 'Live comps · haircut sets FMV' : 'Live comps · median sets RCV'}</span>
+              <span>{manualRow ? 'No comps yet' : estate ? 'Live comps · haircut sets FMV' : 'Live comps · cited listing marked'}</span>
               {!editing && <button className="k-link" onClick={() => { setQuery(row.desc); setEditing(true); }}><Icon d={manualRow ? I.search : I.refresh} size={10} /> {manualRow ? 'Look up pricing' : 'Recheck'}</button>}
             </label>
             {queryTrimmed && !repricing && (

@@ -81,11 +81,45 @@ RULES = [
     # the derived summary being capped at 120 must still pass.
     ("23", "the editable set note is 300 chars, not 120",
      r"note\s+of\s+up\s+to\s+120|120[- ]character\s+note"),
+    # Rule 10's wording constraint: say "a listing", NEVER "a live listing" --
+    # links go stale over months and the claim is about what the price IS, not
+    # the URL's future. Added 2026-11-21 after the phrasing was found live on
+    # /compare/kevin-vs-enservio, twice: once in prose and once in the FAQ
+    # data, which also renders into FAQ JSON-LD that nobody reads on screen --
+    # the same invisible channel that hid the free-first-claim offer and the
+    # $0.20. There was no pattern for it, which is why it shipped. "live
+    # comps" is NOT banned and is approved copy on many surfaces; it is the
+    # LISTING that may not be called live, because that is the thing a Source
+    # Link points at. "prose" skips comments, so a code comment explaining
+    # this rule does not flag itself.
+    ("10", 'a "live listing" (say "a listing" -- links go stale)',
+     r"\blive\s+(retail\s+)?listings?\b|\blistings?\s+that\s+(is|are)\s+live\b", "prose"),
+    # WIDENED 2026-11-21. Every pattern here looked for the median "OF" the
+    # comps, so the VERB forms walked straight through: the design prototype
+    # printed "median sets RCV" on the worksheet popover and the item drawer,
+    # "Kevin's pick · median" on the marked comp, "RCV = median of the live
+    # merchant comps" in the Pricing settings BASES string (the one rule 10
+    # says had already been scrubbed twice), "(median shown)" on the
+    # client-facing PDF, and "takes the median as RCV" on the how-it-works
+    # page -- 13 strings across 6 files, none of them caught, while the
+    # deployed app in src/ carried only the sanctioned property wording.
+    # That gap mattered because of the PORTING RULE: copy in those files is
+    # lifted verbatim, so each one was a standing instruction to put the
+    # method back into the shipping UI.
+    #
+    # The identifier is fine and common in the mock engine (`const median =
+    # ...`, `median.price`), which is why these all require a verb or an
+    # assignment -- and "prose" skips comments, so data.jsx explaining what it
+    # computes still passes.
     ("10", "the comp-selection METHOD (internal only)",
      r"middle\s+(one|listing|price|comp)\b|middle\s+by\s+price|"
      r"median\s+of\s+(the\s+)?(comps?|listings?|prices?|offers?)|"
      r"midpoint\s+of\s+(the\s+)?(comps?|listings?)|"
-     r"average\s+of\s+(the\s+)?(comps?|listings?)", "prose"),
+     r"average\s+of\s+(the\s+)?(comps?|listings?)|"
+     r"median\s+(sets?|becom\w*|becam\w*|shown|drives?|drove|wins?|won|is\s+taken)\b|"
+     r"takes?\s+the\s+median|settle\s+the\s+median|"
+     r"(RCV|unit\s+cost|price)\s*(=|is)\s+(the\s+)?median\b|"
+     r"pick\s*[·|/-]\s*median", "prose"),
     # AMENDED 2026-09-03. `comparable_sale` / `market_comp` are LIVE again --
     # the backend reintroduced the resale fall-through, so flagging them
     # produced false positives on correct code (ItemDrawer's basis label).
@@ -166,18 +200,37 @@ def negated(line, match, prev=""):
     negation out of reach of a line-local window, and that false positive sat
     in the output permanently, which is how a guard stops being read. So when
     the matched line is a comment continuation, the previous line's tail counts
-    as part of the before-window."""
+    as part of the before-window.
+
+    WIDENED 2026-11-21: that applies to any wrapped line, not just comments.
+    JSX prose wraps the same way, and the guides page carries the sentence
+    'Kevin prices from a listing, not from "a / live listing"' -- the denial
+    ends one line, the term starts the next, and the window saw nothing. The
+    rule is now about the WINDOW rather than the kind of line: if the match
+    sits so near the start that the before-window is truncated, the window is
+    incomplete, so borrow the previous line's tail to fill it. A match in the
+    middle of a line is unaffected, which keeps the guard's own documented
+    catch ("You don't need this -- start on Pro ... 7-day free trial", all one
+    line) exactly as it was."""
     before = line[max(0, match.start() - NEGATION_WINDOW):match.start()]
-    if COMMENT_CONT.match(line) and prev:
+    if prev and (COMMENT_CONT.match(line) or match.start() < NEGATION_WINDOW):
         before = prev[-NEGATION_WINDOW:] + " " + before
     after = line[match.end():match.end() + NEGATION_WINDOW_AFTER]
     return bool(NEGATION_HINTS.search(before) or NEGATION_HINTS.search(after))
 
 
 # Docs that quote the prohibitions in order to state them.
+#
+# `bot-guard-rules.ts` is this script's counterpart for model OUTPUT: a
+# chatbot answer is a shipping surface no file grep can reach, so the same
+# prohibitions are restated there as regexes. Every line of it is a banned
+# string by construction -- it belongs here for exactly the reason this
+# script skips itself. Its own eval set (`npm run test:bot`) is what keeps it
+# honest, including a case per rule and the correct answer that must pass.
 SKIP_BASENAMES = {
     "CLAUDE.md", "INTERACTIONS.md", "SEO.md", "ROUTES.md", "SCHEMAS.md",
-    "Kevin-docs.md", "github.md", os.path.basename(__file__),
+    "Kevin-docs.md", "github.md", "bot-guard-rules.ts",
+    os.path.basename(__file__),
 }
 
 # The design prototype AND the React app that actually serves kevin.co. The

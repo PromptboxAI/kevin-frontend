@@ -1326,3 +1326,118 @@ The frontend half is the core-product session's (`IntakePage`,
 The smallest honest interim fix is to stop promising a letterhead in those
 three strings and point people at Settings → Business, which is where the
 letterhead actually comes from.
+
+## 41 · Two chatbot routes — the model call, the caps, and a second copy of the guard
+
+New ask, 2026-11-20. Full design, cost arithmetic and the frontend half that is
+already built: `CHATBOT-PLAN.md`. The owner settled the shape the same day: it
+is **two bots**, one public and one signed-in, sharing a corpus and nothing
+else, so a visitor can never reach claim data.
+
+Nothing is wired on the frontend yet — this ask is what the panels need to
+exist against, and the shapes below are proposals, not a spec we have built to.
+
+### The routes
+
+```
+POST /v1/bot/ask                     anonymous. Turnstile token required, fail-closed.
+POST /v1/claims/{claim_id}/bot/ask   signed in. Read-only. Claim resolved from the session.
+```
+
+Both answer the same shape, so one client serves both:
+
+```json
+{
+  "answer": "…",
+  "sources": [{ "title": "Plans and billing", "anchor": "/docs/billing-plans#credits" }],
+  "blocked": false,
+  "stage": "done"
+}
+```
+
+Request: `{ "question": "...", "history": [...], "turnstile_token": "..." }` on
+the public route; the signed-in route takes no claim id in the body — or if it
+does, **check it against the session's own account rather than trusting it**.
+
+Streaming (SSE, or the demo's poll shape) is wanted on the public route: the
+first sentence beats a spinner. Not a blocker for v1.
+
+### What the backend owns
+
+1. **The model call and the key.** Proposed: **Claude Haiku 5.5**
+   (`claude-haiku-5-5`, $0.10/$0.50 per MTok) for the public bot at effort
+   `low`, **Claude Sonnet 5.5** (`claude-sonnet-5-5`, $2/$10) for the adjuster
+   bot. ≈$0.001 and ≈$0.03 a question respectively. Three model notes that will
+   otherwise cost an afternoon: thinking cannot be disabled on either model
+   (`budget_tokens` is a 400 — use `output_config.effort`), assistant prefill is
+   a 400, and **Haiku 5.5 has no server-side refusal fallback**, so the route
+   handles `stop_reason: "refusal"` itself.
+2. **Prompt caching.** System prompt and corpus prefix stable and first, the
+   question last. Watch `usage.cache_read_input_tokens`; a timestamp or a
+   session id in the prefix silently costs full price forever.
+3. **Retrieval over `public/bot-corpus.json`**, served from kevin.co.
+   **`schema: 2`, 563 passages: 174 from the 45 docs articles and 389
+   harvested from 56 public pages** (pricing, product, the 30-odd guides, the
+   comparison pages, done-for-you, security, legal, about). Every passage
+   carries `id`, `slug`, `title`, `heading`, `anchor`, `text`, `section` and
+   **`kind`: `docs` or `page`** — a docs passage links to a real `#anchor`, a
+   page passage to its route, and a system prompt can prefer one over the
+   other. `counts` and a content `hash` let the route cache it and refuse a
+   shape it does not understand; the hash covers the passages only, not a
+   build timestamp, so an unchanged corpus keeps its hash. Keyword scoring is
+   in `src/lib/bot-corpus-rules.ts` if a port is easier than a fetch; the
+   artifact is the contract either way. **The auth pages, `/status`, the
+   sample claim and the docs index are deliberately NOT in it** — reasons in
+   CHATBOT-PLAN.md §2.
+4. **No question cap — owner's decision, 2026-11-20.** Not an omission, and
+   please do not add one: *"why penalize a user/potential user because other
+   users are asking questions."* A global ceiling spends one visitor's goodwill
+   on another's traffic, and a per-visitor quota turns the most engaged prospect
+   on the site away. It is also the house pattern -- rule 19 sends an **email
+   first, never a mid-claim lockout**. What we are asking for instead:
+   **Turnstile fail-closed** (the gate an abuser has to beat), **a burst guard
+   rather than a quota** (one question in flight per session, a second or two
+   between turns -- costs a human nothing, takes a scripted loop from thousands
+   an hour to dozens), and **a spend alert plus a kill switch the OWNER sees**,
+   on the admin console System screen (page 72) and by email. The ceiling
+   exists; it stops the owner's day instead of a visitor's. At ~$0.001 a
+   question, 10,000 questions a day is $10 -- and unlike the photo demo, a bot
+   question consumes **no vendor search**, so the 500/day shared cap is not
+   behind it. Dollars are the only exposure.
+5. **⛔ Its own copy of the output guard.** This is the one that matters.
+   `src/lib/bot-guard-rules.ts` checks an answer against the domain rules — the
+   comp vendor and selection method (rule 10), the withdrawn $0.20 (rule 9), a
+   timed trial (9b), SOC 2 (7), Xactimate XML (2), carrier push (4), sold comps
+   (11), a 90% depreciation cap (13), an export gate (16), and a money
+   invariant: a dollar figure must be a published price or appear verbatim in
+   the context the model was given. It is TypeScript; the route is Python. A
+   guard that runs only in the browser is not a guard — the answer has already
+   been generated and billed, and a direct POST skips it. Either the route ports
+   it (23 patterns across 15 rule keys, ~250 lines, with the negation windows
+   that have to come too) or the rules move somewhere both can read. **Our
+   preference: the route ports it and `npm run test:bot`'s 48 answer cases
+   become a shared fixture**, so the two copies cannot disagree quietly. Say
+   which way you want it.
+
+### Two things that must NOT happen
+
+- **A bot question must not touch the item allowance.** The allowance meters
+  items *produced* (rule 9) and a question produces none. Nor does it consume a
+  vendor search: the adjuster bot reads prices already on the claim, it never
+  prices anything.
+- **The adjuster bot stays read-only.** No PATCH, no re-price, no retry-deferred
+  from a bot turn, even if the model asks for one. When it does get write
+  ability, the owner's rule is that nothing changes without the adjuster
+  confirming — the same as active lists.
+
+### What the frontend needs settled to build the panels
+
+1. Route names and the response shape, or a correction to the two above.
+2. Whether the public route streams, and in what form.
+3. Where the Turnstile token goes — first question of a session, or every
+   question. (The demo takes one per drop. Per session is kinder; per question
+   is safer. Backend's call, since it enforces it.)
+4. Whether `sources` carries docs anchors only, or also a claim-row reference on
+   the signed-in route (e.g. `{ "row_id": 8070 }`) so the panel can link
+   straight to the row.
+5. Which copy of the guard is authoritative, per point 5 above.

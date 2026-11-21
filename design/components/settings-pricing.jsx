@@ -16,7 +16,7 @@ const PRICING_COVERAGE = [
 ];
 
 const PRICING_BASES = [
-  ['Retail comp',          'Item still sold new \u2014 RCV = median of the live merchant comps returned for the query. Two alternates stay one click away in the worksheet, each with a dated proof link.'],
+  ['Retail comp',          'Item still sold new \u2014 RCV is the price of a single merchant listing rather than a blend of several. Two alternates stay one click away in the worksheet, each with a dated proof link.'],
   ['Like-kind substitute', 'Exact model discontinued but a comparable is still sold new \u2014 Kevin prices the nearest NEW equivalent as RCV. Substitution is noted on the row.'],
   ['Manual / appraisal',   'No confident new-replacement comp came back, or the class is manual-only (Jewelry, Fine Arts, Firearms, Furs) — the item arrives flagged needs_manual with a reason, RCV and ACV null, and the adjuster types the value and attaches a proof link. Kevin never prices an item off a used listing to avoid leaving it blank.'],
 ];
@@ -86,7 +86,7 @@ const SettingsPricing = () => {
               <div style={{ fontSize: 11, color: 'var(--k-fg-4)', fontFamily: 'var(--k-font-mono)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 600 }}>Pricing</div>
               <h1 style={{ fontFamily: 'var(--k-font-display)', fontWeight: 400, fontSize: 28, letterSpacing: '-0.022em', margin: '4px 0 4px' }}>Where Kevin gets Replacement Cost Values.</h1>
               <p style={{ fontSize: 13, color: 'var(--k-fg-3)', margin: 0, maxWidth: 760 }}>
-                Every comp comes from <strong>one unified pricing engine</strong> — there are no per-retailer integrations. What the source roster below controls is not <em>where</em> we fetch, but how results are <strong>classified and ranked</strong>: whether a confident new-replacement comp exists chooses the valuation basis, and the priority chain sets which comp leads. Jewelry, Fine Arts, Firearms and Furs are never auto-priced — they arrive flagged for a person. The Kevin Content Pricing Engine spans major retailers, specialty stores, brand-direct storefronts and marketplaces. There are no per-store scrapers to maintain or switch on. RCV defaults to the <strong>median of the live comps</strong> returned for an item, with the alternates one click away in the worksheet and a dated proof link kept for the file.
+                Every comp comes from <strong>one unified pricing engine</strong> — there are no per-retailer integrations. What the source roster below controls is not <em>where</em> we fetch, but how results are <strong>classified</strong>: whether a confident new-replacement comp exists chooses the valuation basis. Jewelry, Fine Arts, Firearms and Furs are never auto-priced — they arrive flagged for a person. The Kevin Content Pricing Engine spans major retailers, specialty stores, brand-direct storefronts and marketplaces. There are no per-store scrapers to maintain or switch on. RCV defaults to the <strong>median of the live comps</strong> returned for an item, with the alternates one click away in the worksheet and a dated proof link kept for the file.
               </p>
             </div>
           </div>
@@ -167,7 +167,7 @@ const SettingsPricing = () => {
               <Toggle
                 on={tiebreak} set={setTie}
                 title="Brand-direct tiebreaker"
-                desc="When merchant offers disagree by more than 15%, weight the manufacturer's own storefront price to settle the median."
+                desc="When merchant offers disagree by more than 15%, weight the manufacturer's own storefront price to settle it."
               />
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
                 <button className="k-btn">Save changes</button>

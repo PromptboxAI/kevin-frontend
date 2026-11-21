@@ -140,7 +140,7 @@ const PdfInventory = ({ method = 'straight_line' }) => {
           <div className="pdf-tot"><div className="pdf-tot-l">Less depreciation</div><div className="pdf-tot-v" style={{ color: 'var(--pdf-muted)' }}>{totals.dep > 0 ? '−' + fmtUSD(totals.dep) : fmtUSD(0)}</div></div>
           <div className="pdf-tot pdf-tot--big"><div className="pdf-tot-l">Actual cash value (ACV)</div><div className="pdf-tot-v">{fmtUSD(totals.acv)}</div></div>
         </div>
-        <div className="pdf-note">Sales tax ({CLAIM.taxRate}) of {fmtUSD(totals.tax)} is shown per line item and included in the ACV above. Each replacement cost is backed by three live retailer comps (median shown); dated source links are retained in the digital file.</div>
+        <div className="pdf-note">Sales tax ({CLAIM.taxRate}) of {fmtUSD(totals.tax)} is shown per line item and included in the ACV above. Each replacement cost is backed by three live retailer comps and is the price of a single listing; dated source links are retained in the digital file.</div>
       </div>
 
       {/* — Itemized table — */}
