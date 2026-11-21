@@ -136,9 +136,12 @@ export default function AddReceiptsPage() {
           </Link>
           <h1 style={{ ...H1, margin: '6px 0 6px' }}>Add receipts</h1>
           <p style={{ margin: 0, color: 'var(--k-fg-3)', fontSize: 13.5, maxWidth: 640, lineHeight: 1.55 }}>
-            For items that are gone. Each item on a receipt becomes a line: the description as
-            printed, the regular price, and an age from the purchase date. Nothing is searched, and
-            receipt lines don’t count toward your plan. Rooms are left for you to fill in.
+            <strong style={{ color: 'var(--k-fg-2)' }}>Lost the items but kept the receipts?</strong>{' '}
+            Upload them, and every item on each receipt becomes a line on your worksheet. Kevin uses
+            the description as printed, the regular price (not a sale or coupon price), and works out
+            the age from the purchase date. Anything it can’t read clearly is flagged for you to
+            check. Receipt lines are free and don’t use your plan’s line items. You can add rooms
+            afterward on the worksheet.
           </p>
         </div>
 
