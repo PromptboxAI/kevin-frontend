@@ -133,6 +133,13 @@ export default function OverviewPage() {
             <Link className="k-btn k-btn--ghost" to={`/claims/${claimId}/import`}>
               <Icon d={I.file} size={12} /> Import a list
             </Link>
+            <Link
+              className="k-btn k-btn--ghost"
+              to={`/claims/${encodeURIComponent(claimId)}/receipts`}
+              title="Turn the insured's purchase receipts into lines — for items that are gone"
+            >
+              <Icon d={I.receipt} size={12} /> Add receipts
+            </Link>
             <ClaimStateMenu claim={claim} onNotice={setNotice} />
             <Link className="k-btn" to={`/claims/${claimId}`}>
               Open worksheet →

@@ -13,6 +13,8 @@ import { useDepreciationRules } from '../lib/depreciation-rules'
 import ClassOptionList from './ClassOptionList'
 import { QUERY_MAX, composeQuery, isQueryValid, trimQuery } from '../lib/query'
 import { CAPACITY_REASONS } from '../lib/types'
+import { isPdfUrl } from '../lib/receipt-rules'
+import ReceiptPdfTile from './ReceiptPdfTile'
 import type {
   ClaimItemDetail,
   ClaimSummary,
@@ -57,6 +59,10 @@ const MANUAL_COPY: Record<string, string> = {
   placeholder_row: 'A template line — enter the price.',
   not_priced: 'Created deliberately unpriced.',
   enqueue_failed: 'The valuation job could not be queued. A reprice retries it.',
+  // §5e. Flagged, never guessed: the line keeps what was read. Free, and not
+  // a capacity wait -- Retry deferred never touches it.
+  receipt_unreadable:
+    'Receipt unreadable — check the receipt. Part of it was faded, cut off or uncertain, so Kevin left this for you rather than guessing.',
 }
 
 /**
@@ -71,6 +77,7 @@ const BASIS_LABEL: Record<string, string> = {
   like_kind_new: 'Like-kind substitute (nearest new equivalent)',
   comparable_sale: 'Comparable sale (resale market, not a new-replacement price)',
   manual: 'Manual / appraisal',
+  receipt: 'Purchase receipt',
 }
 
 export default function ItemDrawer({
@@ -324,6 +331,8 @@ export default function ItemDrawer({
   const repricing = data?.status === 'processing' || reprice.isPending
 
   const unpriced = data?.status === 'needs_manual'
+  /** §5e: no search, no comp selection, no find-a-link on these lines. */
+  const receiptLine = data?.valuation_basis === 'receipt'
   /**
    * Which listing the unit cost came from.
    *
@@ -396,7 +405,14 @@ export default function ItemDrawer({
                    reusing the <img>, which is what let a decoded frame linger
                    across a row change. */
                 <div className="k-insp-photo" key={rowId}>
-                {imageSrc ? (
+                {/* A PDF receipt (§5e) has no thumbnail and its signed URL
+                    serves application/pdf -- an <img> would render broken. */}
+                {imageSrc && isPdfUrl(imageSrc) ? (
+                  <ReceiptPdfTile
+                    url={imageSrc}
+                    style={{ height: 140, borderRadius: 6, border: '1px solid var(--k-line)' }}
+                  />
+                ) : imageSrc ? (
                   <img className="k-insp-img" src={imageSrc} alt={data.description ?? 'Item'} />
                 ) : (
                   <div className="k-insp-img k-insp-img--empty">No photo</div>
@@ -472,7 +488,9 @@ export default function ItemDrawer({
                             title={p.note ?? (p.is_primary ? 'Primary photo' : `Photo ${i + 1}`)}
                             onClick={() => setPhotoIndex(i)}
                           >
-                            {thumb ? (
+                            {thumb && isPdfUrl(thumb) ? (
+                              <ReceiptPdfTile url={thumb} link={false} compact />
+                            ) : thumb ? (
                               <img src={thumb} alt="" loading="lazy" decoding="async" />
                             ) : (
                               /* The strip keeps its shape while URLs mint, so
@@ -650,6 +668,11 @@ export default function ItemDrawer({
                   />
                 </div>
 
+                {/* Owner, 2026-11-21: receipts are never re-priced. A receipt
+                    line was never searched, so there is no query to show and
+                    nothing here may run one -- the receipt price is the price.
+                    Price, qty, description and age stay hand-editable above. */}
+                {receiptLine ? null : (
                 <div className="k-insp-field">
                   <label>Search query</label>
 
@@ -742,6 +765,7 @@ export default function ItemDrawer({
                     </>
                   )}
                 </div>
+                )}
 
                 {repricing ? (
                   <div className="k-reprice-status">
@@ -760,6 +784,18 @@ export default function ItemDrawer({
                   </div>
                 ) : null}
 
+                {/* A receipt line (§5e) was never searched: the receipt IS
+                    the source, so there is no comp list and no find-a-link
+                    fallback to offer. */}
+                {receiptLine ? (
+                  <div className="k-insp-field">
+                    <label>Source</label>
+                    <span style={{ fontSize: 12.5, color: 'var(--k-fg-2)' }}>Source: purchase receipt</span>
+                    <span className="k-insp-hint">
+                      The price is the regular price printed on the receipt — no search, no comparable listings.
+                    </span>
+                  </div>
+                ) : (
                 <div className={`k-insp-field${repricing ? ' k-cell--pending' : ''}`}>
                   <label>Comparable listings</label>
                   {data.alternative_sources?.length ? (
@@ -858,6 +894,7 @@ export default function ItemDrawer({
                     </span>
                   )}
                 </div>
+                )}
 
                 {/* Every figure below is the server's, read verbatim. */}
                 <div className={`k-insp-totals${repricing ? ' k-cell--pending' : ''}`}>

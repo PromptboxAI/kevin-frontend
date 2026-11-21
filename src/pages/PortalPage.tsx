@@ -3,6 +3,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
 import Badge from '../components/Badge'
 import { I, Icon } from '../components/Icon'
+import ReceiptPdfTile from '../components/ReceiptPdfTile'
+import { isPdfUrl } from '../lib/receipt-rules'
 import { ApiError } from '../lib/api'
 import { isApiConfigured } from '../lib/env'
 import { fmtDate, fmtInt, fmtUSD } from '../lib/format'
@@ -1176,6 +1178,9 @@ function PhotoThumb({
       title="View photo"
       aria-label={`View photo of ${item.description || `line ${item.id}`}`}
     >
+      {isPdfUrl(src) ? (
+        <ReceiptPdfTile url={src} link={false} compact />
+      ) : (
       <img
         src={src}
         alt=""
@@ -1185,6 +1190,7 @@ function PhotoThumb({
           onError()
         }}
       />
+      )}
     </button>
   )
 }
@@ -1205,7 +1211,11 @@ function PhotoViewer({ item, onClose }: { item: PortalItem; onClose: () => void 
         <button type="button" className="k-icon-btn" aria-label="Close" onClick={onClose}>
           <Icon d={I.close} size={15} />
         </button>
-        {item.image_url ? <img src={item.image_url} alt={item.description ?? ''} /> : null}
+        {item.image_url && isPdfUrl(item.image_url) ? (
+          <ReceiptPdfTile url={item.image_url} style={{ minHeight: 240 }} />
+        ) : item.image_url ? (
+          <img src={item.image_url} alt={item.description ?? ''} />
+        ) : null}
         <figcaption>
           <strong>{item.description || '—'}</strong>
           {item.room_area ? <span> · {item.room_area}</span> : null}

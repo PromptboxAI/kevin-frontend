@@ -294,6 +294,26 @@ export function describeEvent(event: ItemEvent): EventLine {
         tone: 'danger',
       }
 
+    case 'receipt_imported': {
+      // §5e. Payload: { store, purchase_date, filename, batch_id, flagged, flag_detail }
+      const detail = [
+        str(p.filename),
+        p.flagged === true ? `flagged${str(p.flag_detail) ? `: ${str(p.flag_detail)}` : ''}` : undefined,
+      ]
+        .filter(Boolean)
+        .join(' · ')
+      // "Added from receipt · THE HOME DEPOT · 11/03/2024". Inline rather than
+      // imported from receipt-rules: this module stays import-free for tests.
+      const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(str(p.purchase_date) ?? '')
+      const date = iso ? `${iso[2]}/${iso[3]}/${iso[1]}` : str(p.purchase_date)
+      return {
+        title: ['Added from receipt', str(p.store), date].filter(Boolean).join(' · '),
+        detail: detail || undefined,
+        actor,
+        tone: p.flagged === true ? 'neutral' : 'ok',
+      }
+    }
+
     case 'retry_scheduled':
       return { title: 'Queued to try again', detail: str(p.reason), actor, tone: 'neutral' }
 

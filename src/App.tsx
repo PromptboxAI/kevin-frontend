@@ -107,6 +107,7 @@ const AddPhotosPage = lazyRoute(() => import('./pages/AddPhotosPage'))
 const StagingPage = lazyRoute(() => import('./pages/StagingPage'))
 const ProcessingPage = lazyRoute(() => import('./pages/ProcessingPage'))
 const ImportPage = lazyRoute(() => import('./pages/ImportPage'))
+const AddReceiptsPage = lazyRoute(() => import('./pages/AddReceiptsPage'))
 const OverviewPage = lazyRoute(() => import('./pages/OverviewPage'))
 const ClaimDetailPage = lazyRoute(() => import('./pages/ClaimDetailPage'))
 const AuditPage = lazyRoute(() => import('./pages/AuditPage'))
@@ -348,6 +349,16 @@ export default function App() {
           element={
             <RequireAuth>
               <ImportPage />
+            </RequireAuth>
+          }
+        />
+
+        {/* Purchase receipts -> line items (FRONTEND.md §5e). */}
+        <Route
+          path="/claims/:claimId/receipts"
+          element={
+            <RequireAuth>
+              <AddReceiptsPage />
             </RequireAuth>
           }
         />

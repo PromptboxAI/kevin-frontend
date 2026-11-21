@@ -154,6 +154,13 @@ export type ManualReason =
   | 'watch_over_limit'
   | 'valuation_error' | 'quota_exhausted' | 'budget_exhausted' | 'vendor_unavailable'
   | 'placeholder_row' | 'not_priced' | 'enqueue_failed'
+  /**
+   * A line read off a PURCHASE RECEIPT (§5e) where part of it was faded, cut
+   * off or uncertain -- flagged, never guessed. Free, and NOT a capacity wait:
+   * Retry deferred never touches it. The line keeps whatever was read; an
+   * unreadable purchase date leaves `age_years` null.
+   */
+  | 'receipt_unreadable'
 
 /**
  * Reasons that mean "pricing was paused", not "act on this": deferred, never
@@ -228,7 +235,12 @@ export type ClaimItem = {
    * starting point for the description the line needs.
    */
   suggested_description?: string | null
-  valuation_basis: 'retail' | 'like_kind_new' | 'comparable_sale' | 'manual' | null
+  /**
+   * `receipt` (§5e): the regular price printed on the insured's purchase
+   * receipt. No search, no comps, no Source Link -- the receipt image is the
+   * source, and it never counts toward the plan.
+   */
+  valuation_basis: 'retail' | 'like_kind_new' | 'comparable_sale' | 'manual' | 'receipt' | null
   is_manually_queried: boolean
   category: string | null
   query: string | null

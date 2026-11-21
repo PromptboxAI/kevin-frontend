@@ -8,6 +8,8 @@ import Badge from '../components/Badge'
 import ClaimMissing from '../components/ClaimMissing'
 import ClaimTabs from '../components/ClaimTabs'
 import { I, Icon } from '../components/Icon'
+import ReceiptPdfTile from '../components/ReceiptPdfTile'
+import { isPdfUrl } from '../lib/receipt-rules'
 import { ApiError, api, retryUnlessMissing } from '../lib/api'
 import { attachItemPhotos, detachItemPhotos } from '../lib/evidence'
 import { createBlankRow } from '../lib/mutations'
@@ -618,7 +620,11 @@ function PhotoTile({
   return (
     <button ref={ref} type="button" onClick={onOpen} className={`k-photo ${on ? 'k-photo--on' : ''}`}>
       <div style={{ position: 'relative', borderRadius: 6, overflow: 'hidden' }}>
-        {src ? (
+        {src && isPdfUrl(src) ? (
+          /* A PDF receipt (§5e): no thumbnail exists. Not a link here -- the
+             tile is a button that opens the panel, which links the PDF. */
+          <ReceiptPdfTile url={src} link={false} style={{ aspectRatio: '1', height: 'auto' }} />
+        ) : src ? (
           <img
             src={src}
             onError={onError}
@@ -894,7 +900,12 @@ function PhotoDetail({
       </div>
 
       <div ref={ref} style={{ padding: 14, borderBottom: '1px solid var(--k-line)' }}>
-        {src ? (
+        {src && isPdfUrl(src) ? (
+          <ReceiptPdfTile
+            url={src}
+            style={{ aspectRatio: '4/3', height: 'auto', borderRadius: 8, border: '1px solid var(--k-line)' }}
+          />
+        ) : src ? (
           <img
             src={src}
             onError={onError}
@@ -1094,7 +1105,9 @@ function PanelThumb({
       aria-label={`Show frame ${n}`}
       onClick={onPick}
     >
-      {src ? (
+      {src && isPdfUrl(src) ? (
+        <ReceiptPdfTile url={src} link={false} compact />
+      ) : src ? (
         <img src={src} onError={onError} alt="" loading="lazy" decoding="async" />
       ) : (
         <span className="k-insp-thumb-skel" aria-hidden="true" />
@@ -1192,7 +1205,9 @@ function FullView({
           {/* `original` is the item detail's own signed URL and expires the
               same way, so a failure here re-signs the thumbnail and falls back
               to it rather than leaving the lightbox blank. */}
-          {original ?? src ? (
+          {isPdfUrl(original ?? src) ? (
+            <ReceiptPdfTile url={(original ?? src)!} style={{ minHeight: 240 }} />
+          ) : original ?? src ? (
             <img
               src={original ?? src ?? undefined}
               onError={onError}

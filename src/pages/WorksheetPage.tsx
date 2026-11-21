@@ -954,6 +954,15 @@ export default function WorksheetPage() {
             >
               <Icon d={I.plus} size={12} /> Add photos
             </Link>
+            {/* Same control as the overview's (§5e) -- the worksheet is where
+                the adjuster is working, so it lives here too. */}
+            <Link
+              className="k-btn k-btn--ghost"
+              to={`/claims/${encodeURIComponent(claimId)}/receipts`}
+              title="Turn the insured's purchase receipts into lines — for items that are gone"
+            >
+              <Icon d={I.receipt} size={12} /> Add receipts
+            </Link>
             {/* Only when there IS something waiting: a permanent zero-badge
                 teaches people to ignore the control. */}
             {pendingProposals > 0 ? (
@@ -1998,6 +2007,23 @@ function SourceCell({
           }
         }}
       />
+    )
+  }
+
+  /**
+   * A receipt line (§5e) has no Source Link by contract -- the receipt image
+   * is the source. Says so instead of offering the "+ add" chip, which would
+   * invite pasting a store search over a price the receipt already proves.
+   * An adjuster-supplied URL still wins if one was attached.
+   */
+  if (item.valuation_basis === 'receipt' && !comp?.link && !shownUrl) {
+    return (
+      <span
+        title="Source: purchase receipt"
+        style={{ fontSize: 11.5, color: 'var(--k-fg-3)', whiteSpace: 'nowrap' }}
+      >
+        Receipt
+      </span>
     )
   }
 

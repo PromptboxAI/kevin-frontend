@@ -126,6 +126,8 @@ export const I = {
   trash: (
     <path d="M4 7h16M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13" />
   ),
+  /** A till receipt: torn foot, two printed lines. */
+  receipt: <path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6" />,
   camera: (
     <>
       <path d="M3 7h3l2-3h8l2 3h3v12H3z" />
