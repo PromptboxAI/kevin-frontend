@@ -1552,7 +1552,7 @@ export default function WorksheetPage() {
 
       {rows.data ? (
         <div className={docked && openRow !== null ? 'k-grid-dock' : 'k-grid-dock k-grid-dock--off'}>
-          <section className="k-grid" style={gridStyle}>
+          <section className="k-grid" style={gridStyle} data-ws-more={loadingRest ? '1' : undefined}>
             <div className="k-row k-row--head">
               {HEADERS.map(([cls, label]) =>
                 cls === 'k-c--check' ? (
@@ -1597,7 +1597,7 @@ export default function WorksheetPage() {
                 </div>
               </div>
             ) : groups ? (
-              groups.map(([category, groupItems]) => (
+              groups.map(([category, groupItems], gi) => (
                 <div key={category}>
                   <div className="k-grp">
                     <span>
@@ -1605,9 +1605,12 @@ export default function WorksheetPage() {
                       <span className="k-grp-n">{groupItems.length}</span>
                     </span>
                   </div>
-                  {groupItems.map((item) => (
+                  {groupItems.map((item, ii) => (
                     <Row
                       key={item.id}
+                      rowIndex={
+                        groups.slice(0, gi).reduce((a, [, g]) => a + g.length, 0) + ii
+                      }
                       item={item}
                       n={item.lineNo}
                       selected={selected.has(item.id)}
@@ -1630,9 +1633,10 @@ export default function WorksheetPage() {
             ) : (
               <>
                 {padTop > 0 ? <div style={{ height: padTop }} /> : null}
-                {visible.slice(startIdx, endIdx).map((item) => (
+                {visible.slice(startIdx, endIdx).map((item, i) => (
                   <Row
                   key={item.id}
+                  rowIndex={startIdx + i}
                   item={item}
                   n={item.lineNo}
                   selected={selected.has(item.id)}
@@ -2084,6 +2088,7 @@ function Money({ value }: { value: number | null | undefined }) {
 }
 
 function Row({
+  rowIndex,
   item,
   n,
   selected,
@@ -2101,6 +2106,8 @@ function Row({
   onNotice,
   isNew,
 }: {
+  /** Index in the loaded grid -- the row half of a cell's keyboard position. */
+  rowIndex: number
   item: NumberedItem
   n: number
   selected: boolean
@@ -2188,6 +2195,7 @@ function Row({
         <EditableCell
           value={item.room_area ?? ''}
           placeholder="Room / area…"
+          pos={{ row: rowIndex, col: 'room' }}
           onCommit={(next) => onEditLine({ room_area: next || null })}
         />
       </div>
@@ -2195,6 +2203,7 @@ function Row({
       <div className="k-c k-c--qty">
         <EditableCell
           value={String(item.quantity)}
+          pos={{ row: rowIndex, col: 'qty' }}
           numeric
           align="right"
           onCommit={(next) => {
@@ -2212,6 +2221,7 @@ function Row({
         <EditableCell
           value={item.description ?? ''}
           placeholder="Describe the item…"
+          pos={{ row: rowIndex, col: 'desc' }}
           onCommit={(next) => onEditLine({ description: next || null })}
           onEnterPastEnd={onAppend}
         />
@@ -2221,6 +2231,7 @@ function Row({
       <div className="k-c k-c--mfr">
         <EditableCell
           value={item.make_mfr ?? ''}
+          pos={{ row: rowIndex, col: 'mfr' }}
           placeholder="—"
           onCommit={(next) => onEditLine({ make_mfr: next || null })}
         />
@@ -2229,6 +2240,7 @@ function Row({
       <div className="k-c k-c--model">
         <EditableCell
           value={item.model_number ?? ''}
+          pos={{ row: rowIndex, col: 'model' }}
           placeholder="—"
           mono
           onCommit={(next) => onEditLine({ model_number: next || null })}
@@ -2271,6 +2283,7 @@ function Row({
         <span className="k-money-sym">$</span>
         <EditableCell
           value={item.rcv === null ? '' : String(item.rcv)}
+          pos={{ row: rowIndex, col: 'rcv' }}
           numeric
           decimals
           align="right"
@@ -2314,6 +2327,7 @@ function Row({
             the server re-runs the engine and returns the four line totals. */}
         <EditableCell
           value={String(item.age_years ?? 0)}
+          pos={{ row: rowIndex, col: 'age' }}
           numeric
           align="right"
           pending={pendingField === 'age_years'}
@@ -2346,6 +2360,7 @@ function Row({
         ) : (
           <EditableCell
             value={deprCellValue(item.depreciation_pct)}
+            pos={{ row: rowIndex, col: 'dep' }}
             numeric
             align="right"
             mono

@@ -8,9 +8,24 @@ import { fmtUSD } from '../lib/format'
  *  - numeric cells CLEAR on focus and restore the old value if you leave
  *    without typing. Select-on-focus was tried and dropped: it was unreliable
  *    and left the caret sitting in front of the digits.
- *  - Enter commits and moves down, Tab commits and moves right, Escape reverts
- *    (Excel muscle memory -- an adjuster tabs across a row without reaching
- *    for the mouse)
+ *  - Excel keyboard mechanics (muscle memory -- an adjuster works down a
+ *    column without reaching for the mouse):
+ *      Enter / Shift+Enter  commit, same column, next / previous row
+ *      Up / Down            the same, grid cells only
+ *      Left / Right         move the caret; jump a cell only from the start /
+ *                           end of the text, or before anything is typed
+ *      Tab / Shift+Tab      commit, browser moves focus
+ *      Escape               revert
+ *
+ * POSITION, NOT COUNTING. Grid cells carry `pos` -> data-ws-row (index in the
+ * loaded grid) and data-ws-col (a stable column key). The old code walked a
+ * flat list of inputs with a "stride" nobody ever set, so Enter moved right;
+ * and counting inputs breaks the moment a row has a disabled or pending cell.
+ * Lookups are scoped to the `.k-grid` the cell sits in -- the item panel also
+ * renders this component, and a document-wide query jumped into it.
+ *
+ * Moving through a cell without changing it sends nothing: commit() returns
+ * early on an unchanged value, and `armed` keeps a changed one to one save.
  */
 export default function EditableCell({
   value,
@@ -26,6 +41,7 @@ export default function EditableCell({
   disabled = false,
   pending = false,
   title,
+  pos,
 }: {
   value: string
   onCommit: (next: string) => void
@@ -58,6 +74,8 @@ export default function EditableCell({
    */
   pending?: boolean
   title?: string
+  /** Grid cells only: where this cell sits, for keyboard moves. */
+  pos?: { row: number; col: string }
 }) {
   const [draft, setDraft] = useState(value)
   const [editing, setEditing] = useState(false)
@@ -79,6 +97,8 @@ export default function EditableCell({
    * first commit or by Escape.
    */
   const armed = useRef(false)
+  /** Typed into since focus. Until then Left/Right jump cells, as in Excel. */
+  const typed = useRef(false)
 
   useEffect(() => {
     if (editing) return
@@ -108,19 +128,112 @@ export default function EditableCell({
     onCommit(next)
   }
 
-  /** Move focus to the next/previous editable cell; returns false at the end. */
-  const step = (direction: 1 | -1, sameColumn: boolean): boolean => {
+  /** Still focused, but the commit already happened: take edits again. */
+  const rearm = () => {
+    armed.current = true
+    typed.current = false
+    untouched.current = false
+    setEditing(true)
+  }
+
+  const land = (target: HTMLInputElement) => {
+    target.focus()
+    target.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  }
+
+  /** Panel cells: Enter walks the panel's own inputs, never into the grid. */
+  const stepPanel = (direction: 1 | -1): boolean => {
     const all = Array.from(
-      document.querySelectorAll<HTMLInputElement>('input[data-ws-cell]'),
+      document.querySelectorAll<HTMLInputElement>('input.k-insp-input[data-ws-cell]'),
     ).filter((el) => !el.disabled)
     const index = all.indexOf(ref.current as HTMLInputElement)
     if (index === -1) return false
-    // Enter walks a column: the row stride is the number of editable cells per row.
-    const stride = sameColumn ? Number(ref.current?.dataset.wsStride ?? 1) : 1
-    const target = all[index + direction * stride]
+    const target = all[index + direction]
     if (!target) return false
     target.focus()
     return true
+  }
+
+  /** Previous / next enabled cell in this row, in column order. */
+  const stepAcross = (direction: 1 | -1): boolean => {
+    const me = ref.current
+    const grid = me?.closest<HTMLElement>('.k-grid')
+    if (!me || !grid || !pos) return false
+    const all = Array.from(
+      grid.querySelectorAll<HTMLInputElement>(`input[data-ws-cell][data-ws-row="${pos.row}"]`),
+    ).filter((el) => el === me || !el.disabled)
+    const target = all[all.indexOf(me) + direction]
+    if (!target) return false
+    land(target)
+    return true
+  }
+
+  /**
+   * Same column, nearest row in `direction` whose cell is enabled -- disabled
+   * and pending cells are skipped, not stopped on.
+   *
+   *   'moved'  focus moved now
+   *   'later'  that row is not drawn yet (virtualised window, or a page still
+   *            arriving): scroll toward it and finish on a later frame
+   *   'end'    nowhere further to go
+   */
+  const stepDown = (direction: 1 | -1): 'moved' | 'later' | 'end' => {
+    const me = ref.current
+    const grid = me?.closest<HTMLElement>('.k-grid')
+    if (!me || !grid || !pos) return 'end'
+    const { row, col } = pos
+    const find = () => {
+      let best: HTMLInputElement | null = null
+      let bestRow = 0
+      for (const el of grid.querySelectorAll<HTMLInputElement>(
+        `input[data-ws-cell][data-ws-col="${col}"]`,
+      )) {
+        if (el.disabled) continue
+        const r = Number(el.dataset.wsRow)
+        if ((r - row) * direction <= 0) continue
+        if (best === null || (r - bestRow) * direction < 0) {
+          best = el
+          bestRow = r
+        }
+      }
+      return best
+    }
+    const hit = find()
+    if (hit) {
+      land(hit)
+      return 'moved'
+    }
+    const scroller = grid.querySelector<HTMLElement>('.k-scroll')
+    if (!scroller) return 'end'
+    const canScroll = () =>
+      direction === 1
+        ? scroller.scrollTop + scroller.clientHeight < scroller.scrollHeight - 1
+        : scroller.scrollTop > 0
+    // Only downward waits on pages: Down on the last loaded row fetches more.
+    const morePages = () => direction === 1 && grid.dataset.wsMore === '1'
+    if (!canScroll() && !morePages()) return 'end'
+    // Walk the window toward the row half a screen at a time. Scrolling also
+    // trips the grid's own near-the-bottom page fetch.
+    const startTop = scroller.scrollTop
+    const deadline = performance.now() + 8000
+    const tick = () => {
+      const found = find()
+      if (found) {
+        land(found)
+        return
+      }
+      if (canScroll()) {
+        scroller.scrollTop += (direction * scroller.clientHeight) / 2
+      } else if (!morePages() || performance.now() > deadline) {
+        // Nothing there after all: put the view back where it was.
+        scroller.scrollTop = startTop
+        if (me.isConnected) me.focus()
+        return
+      }
+      requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
+    return 'later'
   }
 
   // Unfocused money cells display-format; the draft stays raw for typing.
@@ -137,6 +250,8 @@ export default function EditableCell({
     <input
       ref={ref}
       data-ws-cell=""
+      data-ws-row={pos?.row}
+      data-ws-col={pos?.col}
       className={
         (variant === 'panel' ? 'k-insp-input' : 'k-cell k-cell--input') +
         (numeric || mono ? ' k-mono' : '') +
@@ -150,10 +265,12 @@ export default function EditableCell({
       inputMode={numeric ? 'decimal' : undefined}
       onChange={(e) => {
         untouched.current = false
+        typed.current = true
         setDraft(e.target.value)
       }}
       onFocus={() => {
         armed.current = true
+        typed.current = false
         setEditing(true)
         if (numeric) {
           untouched.current = true
@@ -162,12 +279,21 @@ export default function EditableCell({
       }}
       onBlur={commit}
       onKeyDown={(e) => {
+        if (e.nativeEvent.isComposing) return
+        const inGrid = variant === 'grid' && pos !== undefined
+        const plain = !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey
         if (e.key === 'Enter') {
           e.preventDefault()
+          const direction = e.shiftKey ? -1 : 1
           commit()
-          const moved = step(e.shiftKey ? -1 : 1, true)
+          if (!inGrid) {
+            if (!stepPanel(direction)) rearm()
+            return
+          }
+          if (stepDown(direction) !== 'end') return
           // Enter on the last row appends a new line, as in the design.
-          if (!moved && !e.shiftKey) onEnterPastEnd?.()
+          if (direction === 1 && onEnterPastEnd) onEnterPastEnd()
+          else rearm()
         } else if (e.key === 'Escape') {
           e.preventDefault()
           armed.current = false
@@ -178,6 +304,28 @@ export default function EditableCell({
         } else if (e.key === 'Tab') {
           // Let the browser move focus; just make sure the edit lands first.
           commit()
+        } else if (
+          inGrid &&
+          plain &&
+          (e.key === 'ArrowUp' || e.key === 'ArrowDown') &&
+          // Never steal arrows from an open list.
+          e.currentTarget.getAttribute('aria-expanded') !== 'true'
+        ) {
+          e.preventDefault()
+          commit()
+          // Down on the last row stays put; appending is Enter's job.
+          if (stepDown(e.key === 'ArrowDown' ? 1 : -1) === 'end') rearm()
+        } else if (inGrid && plain && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+          const el = e.currentTarget
+          const left = e.key === 'ArrowLeft'
+          const atEdge =
+            el.selectionStart === el.selectionEnd &&
+            (left ? el.selectionStart === 0 : el.selectionEnd === el.value.length)
+          // Mid-text after typing: the caret moves, as in any text box.
+          if (typed.current && !atEdge) return
+          e.preventDefault()
+          commit()
+          if (!stepAcross(left ? -1 : 1)) rearm()
         }
       }}
     />
