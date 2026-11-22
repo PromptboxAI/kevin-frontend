@@ -310,7 +310,6 @@ export default function WorksheetPage() {
    */
   const rows = useInfiniteQuery({
     queryKey: ['claim-items', claimId, status],
-    initialPageParam: 0,
     /**
      * REFETCH WHILE PRICING IS RUNNING.
      *
@@ -328,14 +327,34 @@ export default function WorksheetPage() {
      */
     refetchInterval: () => (pricingRef.current ? 10_000 : false),
     refetchIntervalInBackground: false,
-    queryFn: ({ pageParam }) =>
-      api.get<ClaimItemListResponse>(
-        `/v1/claim_items?claim_id=${encodeURIComponent(claimId)}&limit=${PAGE_SIZE}&offset=${pageParam}` +
-          (status ? `&status=${status}` : ''),
-      ),
+    /**
+     * LINE 0001 FIRST, then walk toward the newest -- like a spreadsheet.
+     *
+     * The route returns NEWEST FIRST and has no order parameter, so offset 0
+     * is the END of the worksheet. Fetching it first drew lines 393-492 and
+     * then inserted every older page ABOVE the reader: on a 492-line claim the
+     * top line stepped 0393 -> 0293 -> 0193 -> 0093 -> 0001 over ~5 s after a
+     * reload. Nothing else behaves like that; Excel opens at A1.
+     *
+     * So the first page is the TAIL of the list (the oldest rows): one tiny
+     * `limit=1` probe reads `count`, then the last `PAGE_SIZE` rows are fetched.
+     * Each further page steps back toward offset 0, i.e. toward newer lines,
+     * which render BELOW what is already on screen. Nothing ever lands above
+     * the reader, and the scroll-near-the-bottom fetch now means what it says.
+     */
+    queryFn: async ({ pageParam }) => {
+      const url = (offset: number, limit: number) =>
+        `/v1/claim_items?claim_id=${encodeURIComponent(claimId)}&limit=${limit}&offset=${offset}` +
+        (status ? `&status=${status}` : '')
+      if (pageParam) return api.get<ClaimItemListResponse>(url(pageParam.offset, pageParam.limit))
+      const probe = await api.get<ClaimItemListResponse>(url(0, 1))
+      return api.get<ClaimItemListResponse>(url(Math.max(0, probe.count - PAGE_SIZE), PAGE_SIZE))
+    },
+    initialPageParam: null as { offset: number; limit: number } | null,
     getNextPageParam: (last) => {
-      const next = last.offset + last.items.length
-      return next < last.count ? next : undefined
+      if (last.offset <= 0) return undefined
+      const offset = Math.max(0, last.offset - PAGE_SIZE)
+      return { offset, limit: last.offset - offset }
     },
     /**
      * The PUBLIC sample rides out a backend wobble; a real claim does not.
@@ -695,7 +714,13 @@ export default function WorksheetPage() {
    * a row's number can never depend on scroll position or on which filter is
    * active. See lib/rows.ts.
    */
-  const items = useMemo(() => numberRows(rows.data?.pages.flatMap((p) => p.items) ?? []), [rows.data])
+  // De-duplicated by id: pages are offsets into a newest-first list, so a line
+  // added mid-walk shifts the next page by one and repeats a row we hold.
+  const items = useMemo(() => {
+    const byId = new Map<number, ClaimItem>()
+    for (const page of rows.data?.pages ?? []) for (const it of page.items) byId.set(it.id, it)
+    return numberRows([...byId.values()])
+  }, [rows.data])
 
 
 
@@ -896,11 +921,11 @@ export default function WorksheetPage() {
    * which only loaded on scrolling DOWN -- and an adjuster looking for line 1
    * scrolls up, where there is nothing to trigger.
    *
-   * Infinite scroll assumes the first page is the start of the list. Here it is
-   * the end of it, so the assumption is simply wrong on this screen. Until the
-   * route takes an order parameter, the honest fix is to stop pretending the
-   * grid is paged: fetch the rest immediately, in the background, so the top
-   * fills in on its own.
+   * Infinite scroll assumes the first page is the start of the list. The
+   * query above now makes that true -- it fetches the oldest page first and
+   * walks toward the newest (2026-11-22) -- and the rest is still pulled
+   * immediately in the background so the whole claim is in hand for search,
+   * filters and totals. New pages only ever append BELOW the reader.
    *
    * The scroll trigger below stays as the backstop for very long claims, where
    * these fetches are still arriving while someone is already reading.
