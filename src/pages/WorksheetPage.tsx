@@ -869,9 +869,10 @@ export default function WorksheetPage() {
    * rendered: the window follows the scroll position, so the row is drawn
    * because we scrolled there, not the other way round.
    *
-   * Waits for the LAST page, because an index into a half-loaded list points at
-   * the wrong row -- this grid's first page is the newest 100 (the API is
-   * newest-first), so until everything is in, index 0 is not line 1.
+   * Waits for EVERY page, because an index into a half-loaded list points at
+   * the wrong row. Still true since 5939b3d made the client fetch the oldest
+   * page first: the grid now opens on line 0001, but a partially loaded list
+   * is still short at the END, so an index near the bottom lands nowhere.
    */
   const [params] = useSearchParams()
   const wantedItem = Number(params.get('item')) || null
@@ -1740,13 +1741,20 @@ export default function WorksheetPage() {
               {/*
                 * ⛔ DO NOT STATE A TOTAL WE DO NOT HAVE YET.
                 *
-                * THE API IS NEWEST-FIRST, so page one of a 263-line claim is
-                * lines 0164-0263 -- the TAIL rendered at the top of the grid.
-                * For the second it takes the rest to arrive, the footer read
-                * "Showing 100 of 100 items · All changes saved": a confident,
-                * wrong total under a confident, wrong first row. The owner
-                * read it as every age resetting to 1, because the rows he was
-                * looking at were not the rows he expected to be looking at.
+                * The API is newest-first, and the client USED to render its
+                * first response straight away -- so a 263-line claim opened on
+                * lines 0164-0263, the tail at the top of the grid, and the
+                * footer read "Showing 100 of 100 items · All changes saved":
+                * a confident wrong total under a confident wrong first row.
+                * The owner read it as every age resetting to 1, because the
+                * rows he was looking at were not the rows he expected.
+                *
+                * 5939b3d fixed the ordering (the client now asks for the
+                * oldest page first, so the grid opens on 0001). This guard
+                * stays, because the TOTAL is still unknown until the last
+                * page lands: the count is right now but incomplete, and
+                * saying "100 of 100" about a 263-line claim was never only an
+                * ordering problem.
                 *
                 * `isFetchingNextPage` alone did not cover it -- there is a gap
                 * between one page settling and the next being requested, and
