@@ -200,6 +200,14 @@ export default function ImportPage() {
           <section className="k-intake-section">
             <div
               className={`k-dropzone${over ? ' k-dropzone--over' : ''}`}
+              // The whole zone opens the picker, like Add receipts: the shared
+              // .k-dropzone style shows a pointer and a hover state, so a click
+              // that did nothing would be a dead end. The input lives inside
+              // the zone, so its own click must not re-trigger this.
+              onClick={(e) => {
+                if (e.target === fileRef.current || doParse.isPending) return
+                fileRef.current?.click()
+              }}
               onDragOver={(e) => {
                 if (doParse.isPending) return
                 e.preventDefault()
@@ -243,7 +251,7 @@ export default function ImportPage() {
                     e.target.value = ''
                   }}
                 />
-                <div style={{ marginTop: 22 }}>
+                <div style={{ marginTop: 22 }} onClick={(e) => e.stopPropagation()}>
                   <button
                     type="button"
                     className="k-btn"

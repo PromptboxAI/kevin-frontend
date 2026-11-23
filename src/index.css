@@ -1900,7 +1900,11 @@ button.k-avatar-menu-item {
    and the whole zone clickable, with a drag state that says what letting go
    does. */
 .k-dropzone { cursor: pointer; transition: border-color 0.15s, background-color 0.15s; }
-.k-dropzone:hover { border-color: var(--k-fg-4); }
+/* Hover reads as "this is clickable": navy dashed edge, a light navy wash and a
+   navy ring on the icon. Owner, 2026-11-23: the old fg-4 border change was too
+   faint to notice. Drag-over stays the stronger state (solid edge, filled icon). */
+.k-dropzone:hover { border-color: var(--k-accent); background: var(--k-accent-soft); }
+.k-dropzone:hover .k-dropzone-icon { border-color: var(--k-accent); box-shadow: 0 0 0 4px var(--k-accent-soft); }
 .k-dropzone:focus-visible { outline: 2px solid var(--k-accent); outline-offset: 3px; }
 .k-dropzone.k-dropzone--over { border-color: var(--k-accent); border-style: solid; background: var(--k-accent-soft); }
 .k-dropzone .k-dropzone-inner { padding: 40px 24px 36px; }
