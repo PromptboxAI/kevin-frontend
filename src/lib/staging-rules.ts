@@ -120,6 +120,20 @@ export type StagingSessionFull = {
    * running too long", which is precisely the question a reload is asked.
    */
   clustering_started_at?: string | null
+  /**
+   * GROUPING PROGRESS (backend 2026-11-23). All null for the first seconds of
+   * a clustering job and in every status other than `clustering`.
+   *
+   * `clustering_percent` (0–99) is the bar: it blends photo look-ups and batch
+   * sorting, and never reaches 100 -- the stage ends when status is `review`.
+   * The photo pair is null on a job that started before that deploy; the
+   * percent then follows batches alone.
+   */
+  clustering_percent?: number | null
+  clustering_photos_done?: number | null
+  clustering_photos_total?: number | null
+  clustering_done?: number | null
+  clustering_total?: number | null
   groups: StagingGroup[] | null
   tally: StagingTally | null
   ungrouped_photos: StagingPhoto[]
@@ -276,4 +290,64 @@ export function orderGroups<T extends Pick<StagingGroup, 'photos'>>(groups: T[])
     if (at !== bt) return at - bt
     return ai - bi
   })
+}
+
+/** At or below this, a DROP in the grouping percent is a retried job, not noise. */
+export const GROUPING_RETRY_FLOOR = 5
+
+/**
+ * The grouping bar's next value, from the last one shown and this poll's.
+ *
+ * Server numbers only -- nothing here eases toward 100. Three rules:
+ *   - null means "not reported on this poll": keep what is showing.
+ *   - the bar never goes backwards within a job...
+ *   - ...except on a retry, which restarts the job near 0%. That resets
+ *     quietly; it is correct behaviour, not an error.
+ *
+ * When `clustering_percent` is absent but the batch counts are present, the
+ * batch fraction stands in -- still the server's own count.
+ */
+export function nextGroupingPercent(
+  prev: number | null,
+  s: Pick<
+    StagingSessionFull,
+    'clustering_percent' | 'clustering_done' | 'clustering_total'
+  >,
+): number | null {
+  let reported: number | null = null
+  if (typeof s.clustering_percent === 'number' && Number.isFinite(s.clustering_percent)) {
+    reported = s.clustering_percent
+  } else if (
+    typeof s.clustering_done === 'number' &&
+    typeof s.clustering_total === 'number' &&
+    s.clustering_total > 0
+  ) {
+    reported = (s.clustering_done / s.clustering_total) * 100
+  }
+  if (reported == null) return prev
+  const pct = Math.min(99, Math.max(0, Math.round(reported)))
+  if (prev == null || pct >= prev) return pct
+  return pct <= GROUPING_RETRY_FLOOR ? pct : prev
+}
+
+/**
+ * "42% · looked at 120 of 231 photos · sorted 4 of 18 batches".
+ * Each count appears only when the server sent both halves of it.
+ */
+export function groupingDetail(
+  pct: number,
+  s: Pick<
+    StagingSessionFull,
+    'clustering_photos_done' | 'clustering_photos_total' | 'clustering_done' | 'clustering_total'
+  >,
+  fmt: (n: number) => string = String,
+): string {
+  const parts = [`${pct}%`]
+  if (typeof s.clustering_photos_done === 'number' && typeof s.clustering_photos_total === 'number')
+    parts.push(`looked at ${fmt(s.clustering_photos_done)} of ${fmt(s.clustering_photos_total)} photos`)
+  if (typeof s.clustering_done === 'number' && typeof s.clustering_total === 'number')
+    parts.push(
+      `sorted ${fmt(s.clustering_done)} of ${fmt(s.clustering_total)} ${s.clustering_total === 1 ? 'batch' : 'batches'}`,
+    )
+  return parts.join(' · ')
 }

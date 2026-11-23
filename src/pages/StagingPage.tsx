@@ -29,6 +29,7 @@ import {
   ungroup,
 } from '../lib/staging'
 import type { GroupKind, StagingGroup, StagingPhoto, StagingSessionFull } from '../lib/staging'
+import { groupingDetail, nextGroupingPercent } from '../lib/staging-rules'
 import { useThumb } from '../lib/thumbnails'
 import type { ClaimSummary } from '../lib/types'
 import type { ProcessingRun } from './ProcessingPage'
@@ -252,6 +253,20 @@ export default function StagingPage() {
     if (typeof reported === 'number' && Number.isFinite(reported)) setExtracted(reported)
   }, [sessionId, data?.photos_extracted])
   const readDone = Math.min(Math.max(0, extracted), data?.photo_count ?? 0)
+  /**
+   * Grouping's own progress, from the server (backend 2026-11-23). Held in
+   * state for the same reason as `extracted`: a null poll keeps the last
+   * value, the bar never steps back except on a retry, and a new session
+   * starts from nothing. `nextGroupingPercent` carries those rules.
+   */
+  const lastGroupSessionRef = useRef<number | null>(null)
+  const [groupPct, setGroupPct] = useState<number | null>(null)
+  useEffect(() => {
+    if (!data) return
+    const fresh = lastGroupSessionRef.current !== sessionId
+    lastGroupSessionRef.current = sessionId
+    setGroupPct((prev) => nextGroupingPercent(fresh ? null : prev, data))
+  }, [sessionId, data?.clustering_percent, data?.clustering_done, data?.clustering_total])
   /*
    * ELAPSED TIME, because it is the only number on this panel that honestly
    * moves while the server reports nothing. The ref holds the moment reading
@@ -1117,8 +1132,8 @@ export default function StagingPage() {
           * One status line could not say where the work was, and two of them
           * contradicted each other. Three rows say it plainly -- and each bar
           * claims only what the server actually reports: reading has a real
-          * fraction (`photos_extracted`), grouping is ONE server pass with no
-          * per-photo progress so it is indeterminate, and identifying has not
+          * fraction (`photos_extracted`), grouping draws `clustering_percent`
+          * (indeterminate until the job reports one), and identifying has not
           * started because the adjuster has not pressed the button.
           *
           * A phase's clock is its own, which is what the owner asked for after
@@ -1153,10 +1168,12 @@ export default function StagingPage() {
                     : groupingStalled
                       ? 'Longer than a grouping pass usually takes. If it was interrupted it is re-queued automatically — nothing for you to do, and nothing has been lost.'
                       : groupingActive
-                        ? 'By capture time. No per-photo progress to report — it is one pass.'
+                        ? groupPct != null
+                          ? groupingDetail(groupPct, data ?? {}, fmtInt)
+                          : 'By capture time. Progress shows once the pass has started counting.'
                         : 'Starts once every photo has been read.'
                 }
-                frac={null}
+                frac={groupingActive && groupPct != null ? groupPct / 100 : null}
               />
               <PhaseRow
                 label="Identifying and pricing"
