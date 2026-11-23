@@ -493,6 +493,45 @@ export default function WorksheetPage() {
   }
 
   /** Merge a partial row into the cached pages without a network call. */
+  /**
+   * The same splice across MANY rows, in one pass over each cache.
+   *
+   * Filing a selection into a room used to call `refresh()`, which
+   * invalidates the paged grid AND the flat list the other four screens read
+   * — on a 492-line claim that is about ten requests, and the owner watched
+   * "Kitchen" take over ten seconds to appear on rows the server had already
+   * updated.
+   *
+   * ⛔ SAFE HERE, AND ONLY HERE, because filing touches no server-owned
+   * money. `assign-room` writes `room_id` and `room_area` and nothing else:
+   * no price, no tax, no depreciation. We know both values before the call
+   * returns, so there is nothing to wait for and nothing to guess. An edit
+   * that moves money still re-reads — see the override path, which does not
+   * use this.
+   */
+  const patchRowsInCache = (ids: readonly number[], patch: Partial<ClaimItem>) => {
+    const want = new Set(ids)
+    queryClient.setQueryData<InfiniteData<ClaimItemListResponse>>(
+      ['claim-items', claimId, status],
+      (prev) =>
+        prev && {
+          ...prev,
+          pages: prev.pages.map((page) => ({
+            ...page,
+            items: page.items.map((row) => (want.has(row.id) ? { ...row, ...patch } : row)),
+          })),
+        },
+    )
+    queryClient.setQueryData<ClaimItemListResponse>(
+      ['claim-items-flat', claimId],
+      (prev) =>
+        prev && {
+          ...prev,
+          items: prev.items.map((row) => (want.has(row.id) ? { ...row, ...patch } : row)),
+        },
+    )
+  }
+
   const patchRowInCache = (id: number, patch: Partial<ClaimItem>) => {
     queryClient.setQueryData<InfiniteData<ClaimItemListResponse>>(
       ['claim-items', claimId, status],
@@ -713,8 +752,16 @@ export default function WorksheetPage() {
     onSuccess: ({ plan, name }) => {
       setSelected(new Set())
       setNotice(assignSummary(plan, name))
+      /* The room LIST changes (its counts), so that one is re-read. The rows
+         are spliced rather than refetched: see patchRowsInCache for why that
+         is safe on this edit and not on a priced one. */
       void queryClient.invalidateQueries({ queryKey: ['rooms', claimId] })
-      refresh()
+      patchRowsInCache(plan.itemIds, {
+        room_id: plan.roomId,
+        /* Unassigning leaves the TEXT alone, server-side and here: taking a
+           line out of a room does not erase what someone typed. */
+        ...(plan.roomId === null ? {} : { room_area: name }),
+      })
     },
     onError: (error) =>
       setNotice(
