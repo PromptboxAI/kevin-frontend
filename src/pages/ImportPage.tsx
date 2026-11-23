@@ -35,7 +35,7 @@ import type { BulkRow, MappableField } from '../lib/import-rules'
  * parse -> map -> preview -> import, and THE FIRST THREE CREATE NOTHING.
  */
 
-const STEPS = ['Upload', 'Map columns', 'Review', 'Import'] as const
+const STEPS = ['Choose the file', 'Map the columns', 'Preview', 'Import'] as const
 type Step = 0 | 1 | 2 | 3
 
 const FIELD_LABEL: Record<MappableField, string> = {
@@ -61,6 +61,7 @@ export default function ImportPage() {
   const [preview, setPreview] = useState<PreviewResponse | null>(null)
   const [price, setPrice] = useState(true)
   const [notice, setNotice] = useState<string | null>(null)
+  const [over, setOver] = useState(false)
   const [progress, setProgress] = useState<{ done: number; total: number; created: number } | null>(
     null,
   )
@@ -168,11 +169,20 @@ export default function ImportPage() {
         </div>
 
         <div className="k-wi-steps">
-          {STEPS.map((label, i) => (
-            <div key={label} className="k-wi-step-n" data-on={i <= step ? 'true' : undefined}>
-              {i + 1}. {label}
-            </div>
-          ))}
+          {STEPS.map((label, i) => {
+            // Lifted from design/components/written-import.jsx (WI_Step): the
+            // pill is .k-wi-step; .k-wi-step-n is only the 19px number badge.
+            const finished = i < step || (i === 3 && step === 3 && doImport.isSuccess)
+            const state = finished ? 'done' : i === step ? 'on' : 'off'
+            return (
+              <div key={label} className={`k-wi-step k-wi-step--${state}`}>
+                <span className="k-wi-step-n">
+                  {state === 'done' ? <Icon d={I.check} size={11} /> : i + 1}
+                </span>
+                <span>{label}</span>
+              </div>
+            )
+          })}
         </div>
 
         {notice ? (
@@ -188,7 +198,23 @@ export default function ImportPage() {
         {/* ── 1 · Upload. Server-side parse; no browser parser, ever. ── */}
         {step === 0 ? (
           <section className="k-intake-section">
-            <div className="k-dropzone">
+            <div
+              className={`k-dropzone${over ? ' k-dropzone--over' : ''}`}
+              onDragOver={(e) => {
+                if (doParse.isPending) return
+                e.preventDefault()
+                if (!over) setOver(true)
+              }}
+              onDragLeave={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOver(false)
+              }}
+              onDrop={(e) => {
+                e.preventDefault()
+                setOver(false)
+                const f = e.dataTransfer.files?.[0]
+                if (f && !doParse.isPending) doParse.mutate(f)
+              }}
+            >
               <div className="k-dropzone-inner">
                 <div className="k-dropzone-icon">
                   <Icon d={I.file} size={26} />
