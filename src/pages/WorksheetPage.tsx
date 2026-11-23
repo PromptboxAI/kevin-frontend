@@ -540,7 +540,7 @@ export default function WorksheetPage() {
       markPending(id, null)
       setNotice(error instanceof Error ? error.message : 'That edit was rejected.')
     },
-    onSuccess: (data, { id }) => {
+    onSuccess: (data, { id, body }) => {
       markPending(id, null)
       /**
        * ONE round trip. `applied` carries the stored fields (class, rate,
@@ -551,6 +551,39 @@ export default function WorksheetPage() {
        */
       patchRowInCache(id, { ...data.applied, ...moneyFrom(data) })
       applyTotals(data.claim_totals)
+
+      /*
+       * ⛔ EXCEPT `special_limits`, ON A CLASS CHANGE.
+       *
+       * The amber coverage-cap tint is a property of the CLASS, derived
+       * server-side (Jewelry, Firearms, Fine Arts, Furs, collectible coins).
+       * `applied` does not carry it, and a splice only writes the keys it is
+       * given -- so reclassifying a row OUT of Jewelry left the stale `true`
+       * in the cache and the row stayed amber with a sporting-goods class on
+       * it. Reported on claim 68, line 0794: FORZA tackle rings read as
+       * jewellery, reclassified, still shaded.
+       *
+       * The flag is NOT recomputed here. Rule 20: the frontend never derives
+       * `special_limits` from a category -- that is exactly the bug that
+       * shaded a reclassified collectible belt on item 9553. The class
+       * changed, so the flag is UNKNOWN, and the only honest source is the
+       * server. One extra GET on a class change, which is not a hot path.
+       */
+      if ('category' in body) {
+        void api
+          .get<ClaimItem>(`/v1/claim_items/${id}`)
+          .then((fresh) =>
+            patchRowInCache(id, {
+              special_limits: fresh.special_limits,
+              category: fresh.category,
+              manual_reason: fresh.manual_reason,
+            }),
+          )
+          .catch(() => {
+            /* The splice above still stands; the tint corrects on the next
+               full read rather than being guessed at here. */
+          })
+      }
     },
   })
 
