@@ -532,6 +532,40 @@ export default function WorksheetPage() {
     )
   }
 
+  /**
+   * Take rows OUT of both caches.
+   *
+   * Exact rather than optimistic, because of rule 22b: a delete leaves a GAP
+   * in the line numbers and never renumbers what is left — an export already
+   * sent to a carrier cites those numbers. So there is nothing to recompute
+   * and nothing to guess; the rows that remain are the rows that remained.
+   *
+   * `count` is the claim total carried on every page, so it moves on all of
+   * them — the lesson from the Add-item splice, which bumped one page and
+   * made the footer report a mismatch against page zero.
+   */
+  const dropRowsFromCache = (ids: readonly number[]) => {
+    const gone = new Set(ids)
+    queryClient.setQueryData<InfiniteData<ClaimItemListResponse>>(
+      ['claim-items', claimId, status],
+      (prev) => {
+        if (!prev) return prev
+        let removed = 0
+        const pages = prev.pages.map((page) => {
+          const kept = page.items.filter((row) => !gone.has(row.id))
+          removed += page.items.length - kept.length
+          return { ...page, items: kept }
+        })
+        return { ...prev, pages: pages.map((page) => ({ ...page, count: page.count - removed })) }
+      },
+    )
+    queryClient.setQueryData<ClaimItemListResponse>(['claim-items-flat', claimId], (prev) => {
+      if (!prev) return prev
+      const kept = prev.items.filter((row) => !gone.has(row.id))
+      return { ...prev, items: kept, count: prev.count - (prev.items.length - kept.length) }
+    })
+  }
+
   const patchRowInCache = (id: number, patch: Partial<ClaimItem>) => {
     queryClient.setQueryData<InfiniteData<ClaimItemListResponse>>(
       ['claim-items', claimId, status],
@@ -826,15 +860,24 @@ export default function WorksheetPage() {
   })
 
   const removeRows = useMutation({
-    mutationFn: (ids: number[]) => deleteItems(ids),
-    onSuccess: (result) => {
+    mutationFn: async (ids: number[]) => ({ result: await deleteItems(ids), ids }),
+    onSuccess: ({ result, ids }) => {
       setSelected(new Set())
       // No photo is ever deleted -- say so rather than leaving them to guess.
       setNotice(
         `Deleted ${result.deleted} row${result.deleted === 1 ? '' : 's'}` +
           (result.photos_detached ? ` · ${result.photos_detached} photos kept` : ''),
       )
-      refresh()
+      /*
+       * The rows go from the cache; only the CLAIM is re-read, for its
+       * totals, which are the server's. Deleting three rows used to
+       * invalidate both full-claim caches — twenty-two sequential page
+       * fetches on a 1,068-line claim, and the owner watched three rows take
+       * fifteen seconds to disappear.
+       */
+      dropRowsFromCache(ids)
+      void queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
+      void queryClient.invalidateQueries({ queryKey: ['rooms', claimId] })
     },
     onError: (error) =>
       setNotice(error instanceof Error ? error.message : 'Delete failed.'),
