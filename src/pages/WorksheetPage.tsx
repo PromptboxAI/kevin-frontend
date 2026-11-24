@@ -671,7 +671,36 @@ export default function WorksheetPage() {
          server-side (backend 60e6ca9: the text and the room are one thing).
          Without this re-read "File in room…" kept the old list until a reload,
          so a room the adjuster had just typed was missing from it. */
-      if ('room_area' in body) void queryClient.invalidateQueries({ queryKey: ['rooms', claimId] })
+      if ('room_area' in body) {
+        void queryClient.invalidateQueries({ queryKey: ['rooms', claimId] })
+        /*
+         * ⛔ AND THE ROW'S OWN `room_id`, WHICH THE SERVER JUST SET.
+         *
+         * Since 2026-11-23 `room_area` and `room_id` are one thing: writing
+         * the text finds the claim's room by name — trimmed, spaces
+         * collapsed, case-insensitive — or creates it, sets `room_id`, and
+         * rewrites the text to the room's stored casing ("kitchen " →
+         * "Kitchen"). Blank text clears the id.
+         *
+         * So the row changed in ways this splice cannot know. Refreshing the
+         * rooms LIST fixed the dropdown and the counts, but the row itself
+         * kept `room_id: null` in cache, so filtering by that room still
+         * hid it. Same shape as the `special_limits` tint: a server-derived
+         * field that `applied` does not carry.
+         *
+         * Re-read rather than computed — the contract says in as many words
+         * to read `room_area` back from the server and not keep our own
+         * copy, because the casing it stores may not be the casing typed.
+         */
+        void api
+          .get<ClaimItem>(`/v1/claim_items/${id}`)
+          .then((fresh) =>
+            patchRowInCache(id, { room_id: fresh.room_id, room_area: fresh.room_area }),
+          )
+          .catch(() => {
+            /* The write landed; the row corrects on the next full read. */
+          })
+      }
     },
     onError: (error) =>
       setNotice(error instanceof Error ? error.message : 'That edit was rejected.'),
