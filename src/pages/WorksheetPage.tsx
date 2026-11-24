@@ -664,9 +664,14 @@ export default function WorksheetPage() {
   const editLine = useMutation({
     mutationFn: ({ id, body }: { id: number; body: Record<string, string | null> }) =>
       editDisplayLine(id, body),
-    onSuccess: (result, { id }) => {
+    onSuccess: (result, { id, body }) => {
       patchRowInCache(id, { ...(result.applied as Partial<ClaimItem>), ...moneyFrom(result) })
       applyTotals(result.claim_totals)
+      /* Typing a Room/Area the claim has no room for CREATES that room
+         server-side (backend 60e6ca9: the text and the room are one thing).
+         Without this re-read "File in room…" kept the old list until a reload,
+         so a room the adjuster had just typed was missing from it. */
+      if ('room_area' in body) void queryClient.invalidateQueries({ queryKey: ['rooms', claimId] })
     },
     onError: (error) =>
       setNotice(error instanceof Error ? error.message : 'That edit was rejected.'),

@@ -55,6 +55,8 @@ export default function ProposalsPanel({
     // An accepted proposal becomes a line item, so the worksheet is stale too.
     void queryClient.invalidateQueries({ queryKey: ['claim-items', claimId] })
     void queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
+    // Its Room/Area can create a room server-side; keep "File in room…" current.
+    void queryClient.invalidateQueries({ queryKey: ['rooms', claimId] })
   }
 
   const fail = (label: string) => (error: unknown) => {

@@ -206,6 +206,9 @@ export default function ItemDrawer({
     void queryClient.invalidateQueries({ queryKey: ['claim-item', rowId] })
     void queryClient.invalidateQueries({ queryKey: ['claim-items'] })
     void queryClient.invalidateQueries({ queryKey: ['claim'] })
+    // A Room/Area typed here can create a room server-side; keep "File in
+    // room…" current (prefix match: every claim's room list).
+    void queryClient.invalidateQueries({ queryKey: ['rooms'] })
   }
 
   /**
