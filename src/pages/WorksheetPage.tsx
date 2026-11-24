@@ -654,7 +654,49 @@ export default function WorksheetPage() {
     onSuccess: async (created) => {
       const id = created.item_ids?.[0]
       if (id !== undefined) setNewRowId(id)
-      await queryClient.invalidateQueries({ queryKey: ['claim-items', claimId] })
+      /*
+       * ⛔ READ ONE ROW, NOT THE WHOLE CLAIM.
+       *
+       * This used to AWAIT a full invalidation of the paged grid before the
+       * new line appeared — on a 492-line claim that is five sequential page
+       * fetches, and the owner waited about ten seconds to type into a blank
+       * row the server had already created.
+       *
+       * The create returns only an id, so the row itself still has to come
+       * from somewhere; one GET is the cheapest honest source and it keeps
+       * the server as the author of `line_no`, which the client must never
+       * invent (rule 22b: numbers are never reused and never renumbered).
+       *
+       * Appended to the LAST page because a new line takes the highest
+       * number. Both caches, so the Export tab's counts include it — that
+       * one was not even invalidated here before.
+       */
+      if (id !== undefined) {
+        try {
+          const row = await api.get<ClaimItem>(`/v1/claim_items/${id}`)
+          queryClient.setQueryData<InfiniteData<ClaimItemListResponse>>(
+            ['claim-items', claimId, status],
+            (prev) =>
+              prev && {
+                ...prev,
+                pages: prev.pages.map((page, i) =>
+                  i === prev.pages.length - 1
+                    ? { ...page, items: [...page.items, row], count: page.count + 1 }
+                    : page,
+                ),
+              },
+          )
+          queryClient.setQueryData<ClaimItemListResponse>(
+            ['claim-items-flat', claimId],
+            (prev) => prev && { ...prev, items: [...prev.items, row], count: prev.count + 1 },
+          )
+        } catch {
+          /* The row exists on the server either way; fall back to a re-read
+             rather than leaving the grid without it. */
+          await queryClient.invalidateQueries({ queryKey: ['claim-items', claimId] })
+          void queryClient.invalidateQueries({ queryKey: ['claim-items-flat', claimId] })
+        }
+      }
       void queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
       if (id === undefined) return
       // Rows sort by id, so the new line is last: scroll it in and focus its
