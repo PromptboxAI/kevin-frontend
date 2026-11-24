@@ -674,16 +674,26 @@ export default function WorksheetPage() {
       if (id !== undefined) {
         try {
           const row = await api.get<ClaimItem>(`/v1/claim_items/${id}`)
+          /*
+           * ⛔ `count` IS THE CLAIM TOTAL, REPEATED ON EVERY PAGE — not the
+           * length of the page carrying it. Bumping it on the last page only
+           * left the pages disagreeing, and `total` reads page ZERO, so the
+           * footer immediately said "count mismatch: API reports 1,067, grid
+           * holds 1,068" on a claim where nothing was wrong but this splice.
+           *
+           * The ROW goes on the last page (it has the highest line number);
+           * the COUNT moves on all of them.
+           */
           queryClient.setQueryData<InfiniteData<ClaimItemListResponse>>(
             ['claim-items', claimId, status],
             (prev) =>
               prev && {
                 ...prev,
-                pages: prev.pages.map((page, i) =>
-                  i === prev.pages.length - 1
-                    ? { ...page, items: [...page.items, row], count: page.count + 1 }
-                    : page,
-                ),
+                pages: prev.pages.map((page, i) => ({
+                  ...page,
+                  count: page.count + 1,
+                  items: i === prev.pages.length - 1 ? [...page.items, row] : page.items,
+                })),
               },
           )
           queryClient.setQueryData<ClaimItemListResponse>(
