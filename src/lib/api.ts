@@ -270,6 +270,69 @@ export type ExportOptions = {
    * .xlsx never carries one either way.
    */
   letterhead?: boolean
+  /**
+   * Line order (backend bd981ec). `line` (the server default) = worksheet
+   * order 0001, 0002, …; `room` = grouped by room. Each line prints its own
+   * number either way, so the client never renumbers. Sent only for `room`.
+   */
+  sort?: ExportSort
+}
+
+export type ExportSort = 'line' | 'room'
+
+/**
+ * A background export (POST /v1/claims/{id}/export/jobs, backend bd981ec).
+ * Every PDF with photos goes this way: one document at any photo count, built
+ * off the request so it cannot outrun the gateway (the old synchronous route
+ * refused past 500 photos).
+ */
+export type ExportJobStatus = 'queued' | 'building' | 'done' | 'failed' | 'expired'
+export type ExportJob = {
+  job_id: string
+  status: ExportJobStatus
+  photos_total: number | null
+  photos_done: number | null
+  filename: string | null
+  size_bytes: number | null
+  error_code: string | null
+  error: string | null
+  created_at: string
+  finished_at: string | null
+  expires_at: string | null
+  /** Signed, ~1 hour, minted fresh on every GET. Null until done; null once expired. */
+  download_url: string | null
+  download_url_expires_at: string | null
+  format?: 'pdf' | 'xlsx'
+  contents?: PdfContents
+  preview?: boolean
+}
+
+export const EXPORT_JOB_TERMINAL: ExportJobStatus[] = ['done', 'failed', 'expired']
+
+/** Strict body server-side: an unknown field is a 422, so send only what it declares. */
+export function startExportJob(
+  claimId: string,
+  body: {
+    format: 'pdf'
+    contents: PdfContents
+    photos_per_page: PhotosPerPage
+    letterhead: boolean
+    sort: ExportSort
+    preview: boolean
+  },
+): Promise<ExportJob> {
+  return api.post<ExportJob>(`/v1/claims/${encodeURIComponent(claimId)}/export/jobs`, { json: body })
+}
+
+export function getExportJob(claimId: string, jobId: string): Promise<ExportJob> {
+  return api.get<ExportJob>(
+    `/v1/claims/${encodeURIComponent(claimId)}/export/jobs/${encodeURIComponent(jobId)}`,
+  )
+}
+
+/** The 10 newest, so a reload can pick up a build that is still running. */
+export function listExportJobs(claimId: string): Promise<{ jobs: ExportJob[] }> {
+  return api.get<{ jobs: ExportJob[] }>(`/v1/claims/${encodeURIComponent(claimId)}/export/jobs`)
 }
 
 /** What the server says it actually built, from the response headers. */
@@ -299,6 +362,7 @@ export async function downloadExport(
     qs.set('photos_per_page', String(options.photosPerPage ?? 2))
   }
   if (format === 'pdf' && options.letterhead === false) qs.set('letterhead', 'false')
+  if (options.sort === 'room') qs.set('sort', 'room')
   const headers = await downloadBinary(
     `/v1/claims/${encodeURIComponent(claimId)}/export?${qs.toString()}`,
     `${claimId}-inventory.${format}`,
@@ -401,6 +465,7 @@ export async function printExport(
     }
     if (options.preview) qs.set('preview', 'true')
     if (options.letterhead === false) qs.set('letterhead', 'false')
+    if (options.sort === 'room') qs.set('sort', 'room')
     ;({ blob, headers } = await fetchBinary(
       `/v1/claims/${encodeURIComponent(claimId)}/export?${qs.toString()}`,
     ))

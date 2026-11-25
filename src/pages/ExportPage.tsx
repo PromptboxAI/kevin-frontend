@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
@@ -10,9 +10,15 @@ import { I, Icon } from '../components/Icon'
 import {
   ApiError,
   api,
+  EXPORT_JOB_TERMINAL,
   downloadExport,
+  getExportJob,
+  listExportJobs,
   printExport,
   retryUnlessMissing,
+  startExportJob,
+  type ExportJob,
+  type ExportSort,
   type PdfContents,
   type PhotosPerPage,
 } from '../lib/api'
@@ -114,10 +120,60 @@ export default function ExportPage() {
    * remember to flip back.
    */
   const [letterhead, setLetterhead] = useState(true)
+  /**
+   * Worksheet order unless the adjuster asks otherwise (owner, 2026-11-24:
+   * room grouping is an option, never automatic). Per export, like the
+   * letterhead. Each line keeps its own number in both orders.
+   */
+  const [sort, setSort] = useState<ExportSort>('line')
+  /** The background build in progress or just finished, if any. */
+  const [jobId, setJobId] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   /** A successful export that still needs saying -- e.g. no photos linked. */
   const [info, setInfo] = useState<string | null>(null)
+
+  /**
+   * BACKGROUND EXPORTS (backend bd981ec). Every PDF with photos is built as a
+   * job: one document at any photo count, which the old synchronous route
+   * refused past 500. On arrival, pick up the newest job that is still
+   * building or ready, so a reload or a trip to the worksheet loses nothing.
+   */
+  const recentJobs = useQuery({
+    queryKey: ['export-jobs', claimId],
+    queryFn: () => listExportJobs(claimId),
+    enabled: !!claimId,
+    staleTime: Infinity,
+  })
+  const activeJobId =
+    jobId ??
+    recentJobs.data?.jobs.find(
+      (r) => r.status === 'queued' || r.status === 'building' || r.status === 'done',
+    )?.job_id ??
+    null
+
+  const job = useQuery({
+    queryKey: ['export-job', claimId, activeJobId],
+    queryFn: () => getExportJob(claimId, activeJobId as string),
+    enabled: !!activeJobId,
+    // Every ~3 s while it builds. Once done, re-read before the signed link's
+    // hour runs out: the server mints a fresh one on every GET.
+    refetchInterval: (q) => {
+      const s = q.state.data?.status
+      if (!s || !EXPORT_JOB_TERMINAL.includes(s)) return 3000
+      return s === 'done' ? 45 * 60_000 : false
+    },
+  })
+  const j: ExportJob | undefined = job.data
+  const building = !!j && (j.status === 'queued' || j.status === 'building')
+
+  /* A real (non-preview) export stamps the claim when it finishes. */
+  const finishedReal = j?.status === 'done' && !j.preview
+  useEffect(() => {
+    if (!finishedReal) return
+    void queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
+    void queryClient.invalidateQueries({ queryKey: ['claims'] })
+  }, [finishedReal, claimId, queryClient])
 
   const items = useMemo(() => itemsPage.data?.items ?? [], [itemsPage.data])
   const check = useMemo(() => validate(items), [items])
@@ -142,7 +198,37 @@ export default function ExportPage() {
   const pdfOptions = () => ({
     ...(wantsPhotos ? { contents: pdfContents, photosPerPage: perPage } : {}),
     ...(hasFirm && !letterhead ? { letterhead: false } : {}),
+    sort,
   })
+
+  /** Photos (with or without the inventory) always build in the background. */
+  const startJob = async (isPreview: boolean) => {
+    setBusy(true)
+    setError(null)
+    setInfo(null)
+    try {
+      const started = await startExportJob(claimId, {
+        format: 'pdf',
+        contents: pdfContents,
+        photos_per_page: perPage,
+        letterhead: !(hasFirm && !letterhead),
+        sort,
+        preview: isPreview,
+      })
+      queryClient.setQueryData(['export-job', claimId, started.job_id], started)
+      setJobId(started.job_id)
+    } catch (err) {
+      setError(
+        err instanceof ApiError && err.status === 503
+          ? 'The export service is busy. Try again in a minute.'
+          : err instanceof ApiError
+            ? `Could not start the export — HTTP ${err.status}.${err.requestId ? ` Reference ${err.requestId}.` : ''}`
+            : 'Could not start the export.',
+      )
+    } finally {
+      setBusy(false)
+    }
+  }
 
   /**
    * The same document, opened in the browser's PDF viewer instead of saved --
@@ -159,6 +245,7 @@ export default function ExportPage() {
    * stamped" would warn on every successful preview.
    */
   const preview = async () => {
+    if (wantsPhotos) return startJob(true)
     setBusy(true)
     setError(null)
     setInfo(null)
@@ -176,32 +263,21 @@ export default function ExportPage() {
   }
 
   const run = async () => {
+    if (wantsPhotos) return startJob(false)
     setBusy(true)
     setError(null)
     setInfo(null)
     try {
-      const result = await downloadExport(claimId, format, pdfOptions())
+      // Inventory only (.xlsx, or a PDF without photos): small, so it is still
+      // the direct download. Photos never reach here -- see startJob.
+      await downloadExport(claimId, format, pdfOptions())
       void queryClient.invalidateQueries({ queryKey: ['claim', claimId] })
       void queryClient.invalidateQueries({ queryKey: ['claims'] })
-      // Verify against what the server built, never the query string: an
-      // unrecognised param is dropped silently and the PDF comes back without
-      // photos (FRONTEND.md "Photo packet").
-      if (wantsPhotos && result.contents && result.contents !== pdfContents) {
-        setError('The server sent the inventory without photos. Try again, or contact support.')
-      } else if (wantsPhotos && result.photos === 0) {
-        setInfo('No photos are linked to line items yet, so the PDF is the inventory alone.')
-      }
     } catch (err) {
       setError(
-        err instanceof ApiError && err.status === 413
-          ? 'This claim has more than 500 photos linked to items, too many for one PDF. Export the inventory alone, or contact support.'
-          : // Photos alone with nothing linked: the API refuses rather than
-            // hand back an empty PDF that looks finished.
-            err instanceof ApiError && err.status === 409 && pdfContents === 'photos'
-            ? 'No photos are linked to line items yet, so there is nothing for a photos PDF.'
-            : err instanceof ApiError
-            ? `The export failed — HTTP ${err.status}.${err.requestId ? ` Reference ${err.requestId}.` : ''}`
-            : 'The export failed.',
+        err instanceof ApiError
+          ? `The export failed — HTTP ${err.status}.${err.requestId ? ` Reference ${err.requestId}.` : ''}`
+          : 'The export failed.',
       )
     } finally {
       setBusy(false)
@@ -318,6 +394,20 @@ export default function ExportPage() {
               </div>
             </section>
 
+            <section className="k-export-sec">
+              <div className="k-export-sec-h">Line order</div>
+              <Toggle
+                on={sort === 'room'}
+                onChange={(next) => setSort(next ? 'room' : 'line')}
+                label="Group lines by room"
+                sub={
+                  sort === 'room'
+                    ? 'Grouped by Room/Area. Each line keeps its worksheet number.'
+                    : 'Worksheet order: 0001, 0002, 0003…'
+                }
+              />
+            </section>
+
             {format === 'xlsx' ? (
               <p className="k-export-hint">
                 The worksheet only — every line, ready for the XactContents importer. For photos,
@@ -404,8 +494,9 @@ export default function ExportPage() {
                       ))}
                     </div>
                     <p className="k-export-hint">
-                      Each photo is captioned with its line #, description and room. A PDF with
-                      hundreds of photos takes up to a minute to build and is too large to email —
+                      Each photo is captioned with its line #, description and room. Every photo
+                      goes into one PDF, however many there are. It builds in the background — you
+                      can leave this page and come back — and a large one is too big to email, so
                       it downloads to your computer.
                     </p>
                   </section>
@@ -415,16 +506,21 @@ export default function ExportPage() {
           </div>
         </div>
 
-        <div className="k-export-foot">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+        {/* Wraps on a narrow screen so the build status and the buttons stack
+            instead of squeezing each other or scrolling the page sideways. */}
+        <div className="k-export-foot" style={{ flexWrap: 'wrap', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flexWrap: 'wrap' }}>
             {error ? (
               <span className="k-error">{error}</span>
+            ) : j ? (
+              <JobLine
+                job={j}
+                onRefresh={() => void job.refetch()}
+                onRetry={() => void startJob(!!j.preview)}
+                retryDisabled={busy}
+              />
             ) : info ? (
               <span style={{ fontSize: 12, color: 'var(--k-fg-2)' }}>{info}</span>
-            ) : busy && wantsPhotos ? (
-              <span style={{ fontSize: 12, color: 'var(--k-fg-3)' }}>
-                Building the PDF with photos — this can take up to a minute.
-              </span>
             ) : check.attention ? (
               /* Only when something IS flagged. It read "Flagged items are for
                  your review" directly above a panel saying "Nothing to flag",
@@ -445,7 +541,7 @@ export default function ExportPage() {
               <button
                 type="button"
                 className="k-btn k-btn--ghost"
-                disabled={busy || !c || c.status === 'processing'}
+                disabled={busy || building || !c || c.status === 'processing'}
                 title="Opens the PDF in a new tab — the same document the download saves, and nothing is recorded"
                 onClick={() => void preview()}
               >
@@ -455,11 +551,12 @@ export default function ExportPage() {
             <button
               type="button"
               className="k-btn"
-              disabled={busy || !c || c.status === 'processing'}
+              disabled={busy || building || !c || c.status === 'processing'}
               title={c?.status === 'processing' ? 'Still processing — some lines have no price yet' : undefined}
               onClick={() => void run()}
             >
-              <Icon d={I.download} size={12} /> {busy ? 'Preparing…' : exportLabel}
+              <Icon d={I.download} size={12} />{' '}
+              {busy ? 'Preparing…' : building ? 'Building…' : exportLabel}
             </button>
           </div>
         </div>
@@ -549,6 +646,124 @@ export default function ExportPage() {
   )
 }
 
+
+const JOB_ERROR: Record<string, string> = {
+  no_photos: 'No photos are linked to line items yet, so there is nothing for a photos PDF.',
+  worker_lost: 'The build stopped partway. Start the export again.',
+  queue_unavailable: 'The export service is busy. Try again in a minute.',
+  claim_not_found: 'This claim could not be found.',
+}
+
+function fmtBytes(n: number | null): string {
+  if (n == null) return ''
+  if (n >= 1024 * 1024) return `${(n / 1024 / 1024).toFixed(n >= 100 * 1024 * 1024 ? 0 : 1)} MB`
+  return `${Math.max(1, Math.round(n / 1024))} KB`
+}
+
+/**
+ * Where a background export stands: queued → building (photos done of
+ * total) → a link to the one finished PDF. The link is opened by the
+ * adjuster's own click, so no pop-up blocker is involved, and a link past its
+ * hour is re-minted by re-reading the job.
+ */
+function JobLine({
+  job,
+  onRefresh,
+  onRetry,
+  retryDisabled,
+}: {
+  job: ExportJob
+  onRefresh: () => void
+  onRetry: () => void
+  retryDisabled?: boolean
+}) {
+  const muted = { fontSize: 12, color: 'var(--k-fg-3)' } as const
+  // Wraps on a narrow screen: the text drops under the bar or button rather
+  // than pushing the page sideways.
+  const row = {
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: '6px 10px',
+    minWidth: 0,
+  } as const
+  if (job.status === 'queued' || job.status === 'building') {
+    const total = job.photos_total ?? 0
+    const done = job.photos_done ?? 0
+    const pct = total ? Math.round((done / total) * 100) : 0
+    return (
+      <div style={row}>
+        <div
+          className={`k-progress${job.status === 'queued' || !total ? ' k-progress--busy' : ''}`}
+          style={{ width: 160, flex: '0 0 auto' }}
+        >
+          <div className="k-progress-bar" style={{ width: `${pct}%` }} />
+        </div>
+        <span style={muted} aria-live="polite">
+          {job.status === 'queued' || !total
+            ? 'Starting the build…'
+            : `Building the PDF — ${fmtInt(done)} of ${fmtInt(total)} photos`}
+        </span>
+      </div>
+    )
+  }
+  if (job.status === 'done') {
+    const stale = !job.download_url
+    const what = job.preview ? 'Preview' : 'PDF'
+    return (
+      <div style={row}>
+        <span style={{ fontSize: 12, color: 'var(--k-fg-2)' }}>
+          {what} ready{job.size_bytes ? ` · ${fmtBytes(job.size_bytes)}` : ''}
+          {job.photos_total ? ` · ${fmtInt(job.photos_total)} photos` : ''}
+        </span>
+        {stale ? (
+          <button type="button" className="k-btn k-btn--sm" onClick={onRefresh}>
+            Refresh link
+          </button>
+        ) : (
+          <a
+            className="k-btn k-btn--sm"
+            href={job.download_url as string}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => {
+              // The page re-reads the job every 45 minutes, but a sleeping
+              // laptop can outlast the link's hour: re-mint rather than open a
+              // dead link.
+              const until = job.download_url_expires_at
+              if (until && Date.parse(until) <= Date.now()) {
+                e.preventDefault()
+                onRefresh()
+              }
+            }}
+          >
+            <Icon d={job.preview ? I.eye : I.download} size={12} />{' '}
+            {job.preview ? 'Open preview' : 'Download PDF'}
+          </a>
+        )}
+      </div>
+    )
+  }
+  if (job.status === 'expired') {
+    return <span style={muted}>That export was kept for 7 days and has expired. Export again.</span>
+  }
+  // `no_photos` will fail the same way every time, so it gets no retry.
+  const retryable = job.error_code !== 'no_photos' && job.error_code !== 'claim_not_found'
+  return (
+    <div style={row}>
+      <span className="k-error">
+        {(job.error_code && JOB_ERROR[job.error_code]) ||
+          job.error ||
+          'The PDF could not be built.'}
+      </span>
+      {retryable ? (
+        <button type="button" className="k-btn k-btn--sm" disabled={retryDisabled} onClick={onRetry}>
+          Try again
+        </button>
+      ) : null}
+    </div>
+  )
+}
 
 /** The design's `.k-toggle` checkbox row (export.jsx "Include" list). */
 function Toggle({
