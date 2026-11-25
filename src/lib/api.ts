@@ -411,10 +411,17 @@ export async function printExport(
   /*
    * A CLOCK IN THE WAITING TAB.
    *
-   * The server renders this, and a photo packet over a few hundred lines is
-   * minutes of work -- during which a static "Preparing the inventory PDF…"
-   * is indistinguishable from a tab that has died. Same complaint the staging
-   * screen earned: no movement reads as no progress.
+   * The server renders this, and on a long claim that is a wait -- during
+   * which a static "Preparing the inventory PDF…" is indistinguishable from
+   * a tab that has died. Same complaint the staging screen earned: no
+   * movement reads as no progress.
+   *
+   * ⛔ THIS IS NO LONGER THE PHOTO PATH. Since 0b6f3bc every export that
+   * includes photos goes through the background-job route, which has a real
+   * progress bar from `photos_done / photos_total`. What is left here is the
+   * worksheet-only PDF and the .xlsx -- still worth a clock on a thousand
+   * lines, but no longer the multi-minute case, which is why the copy below
+   * stopped mentioning photo packets.
    *
    * Everything here is best-effort. The tab is about:blank and same-origin so
    * it is writable, but the person can close it, navigate it, or the browser
@@ -432,7 +439,7 @@ export async function printExport(
       line.textContent = 'Preparing the inventory PDF…'
       const sub = tab.document.createElement('div')
       sub.style.cssText = 'margin-top:8px;font-size:12px;color:#888'
-      sub.textContent = 'A photo packet over a long inventory can take a few minutes.'
+      sub.textContent = 'A long inventory can take a moment to build.'
       const clock = tab.document.createElement('div')
       clock.style.cssText =
         'margin-top:14px;font:12px ui-monospace,SFMono-Regular,Menlo,monospace;color:#888'
