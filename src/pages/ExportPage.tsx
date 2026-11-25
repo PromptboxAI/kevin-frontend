@@ -396,16 +396,33 @@ export default function ExportPage() {
 
             <section className="k-export-sec">
               <div className="k-export-sec-h">Line order</div>
-              <Toggle
-                on={sort === 'room'}
-                onChange={(next) => setSort(next ? 'room' : 'line')}
-                label="Group lines by room"
-                sub={
-                  sort === 'room'
-                    ? 'Grouped by Room/Area. Each line keeps its worksheet number.'
-                    : 'Worksheet order: 0001, 0002, 0003…'
-                }
-              />
+              {/* Two named choices, like Photos per page. A checkbox read
+                  backwards: its label named the "on" state while its subtitle
+                  described the "off" one (owner, 2026-11-24). */}
+              <div className="k-segwrap" role="radiogroup" aria-label="Line order">
+                {(
+                  [
+                    ['line', 'Worksheet order'],
+                    ['room', 'Grouped by room'],
+                  ] as const
+                ).map(([id, label]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    role="radio"
+                    aria-checked={sort === id}
+                    className={`k-seg ${sort === id ? 'k-seg--on' : ''}`}
+                    onClick={() => setSort(id)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <p className="k-export-hint">
+                {sort === 'line'
+                  ? 'Lines print 0001, 0002, 0003… exactly as on the worksheet.'
+                  : 'Lines are grouped by Room/Area. Each keeps its worksheet number, so the numbers skip within a room.'}
+              </p>
             </section>
 
             {format === 'xlsx' ? (
