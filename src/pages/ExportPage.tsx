@@ -852,7 +852,19 @@ function ShareLinkControls({
       const minted = link ?? (await createExportLink(claimId, job.job_id))
       if (!link) onChanged()
       try {
-        await navigator.clipboard.writeText(minted.url)
+        /*
+         * RACED AGAINST A TIMEOUT. Measured on kevin.co 2026-11-27: after the
+         * mint's round trip, writeText neither resolved nor rejected -- it
+         * hung, and with it `busy`, which left every button on the row
+         * disabled (Turn off link included) until a reload. A promise that
+         * never settles is worse than one that fails, so after 1.5 s the
+         * link is shown selected to copy by hand.
+         */
+        const wrote = await Promise.race([
+          navigator.clipboard.writeText(minted.url).then(() => true),
+          new Promise<false>((resolve) => window.setTimeout(() => resolve(false), 1500)),
+        ])
+        if (!wrote) throw new Error('clipboard did not answer')
         setManualUrl(null)
         setCopied(true)
       } catch {
