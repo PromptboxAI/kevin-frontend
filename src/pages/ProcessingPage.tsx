@@ -8,7 +8,7 @@ import { ApiError, api } from '../lib/api'
 import { fmtInt, fmtUSD } from '../lib/format'
 import { fetchAllClaimItems } from '../lib/claim-items-all'
 import { useThumb } from '../lib/thumbnails'
-import type { ClaimPhoto } from '../lib/photo-rules'
+import { fetchAllClaimPhotos } from '../lib/photos'
 import type { ClaimItem, ClaimSummary, StatusCounts } from '../lib/types'
 
 /**
@@ -187,9 +187,7 @@ export default function ProcessingPage() {
   const photoIndex = useQuery({
     queryKey: ['claim-photo-index', claimId],
     queryFn: () =>
-      api.get<{ photos: ClaimPhoto[] }>(
-        `/v1/claims/${encodeURIComponent(claimId)}/photos?limit=500`,
-      ),
+      fetchAllClaimPhotos(claimId),
     enabled: !!claimId,
     staleTime: 60_000,
   })
