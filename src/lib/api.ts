@@ -305,6 +305,35 @@ export type ExportJob = {
   format?: 'pdf' | 'xlsx'
   contents?: PdfContents
   preview?: boolean
+  /** The live share link (backend 9729403), or null when off / file expired. */
+  share_link?: ExportLink | null
+}
+
+/**
+ * A share link to a finished, non-preview export (BACKEND-PROMPTS 29): one
+ * URL an adjuster pastes to the carrier's adjuster, no account needed. It
+ * lives exactly as long as the file (7 days) and each open re-signs the
+ * download. `downloads` counts opens, so a link previewer (Outlook safe
+ * links, a Slack unfurl) can add to it.
+ */
+export type ExportLink = {
+  url: string
+  expires_at: string
+  created_at: string
+  downloads: number
+}
+
+const linkPath = (claimId: string, jobId: string) =>
+  `/v1/claims/${encodeURIComponent(claimId)}/export/jobs/${encodeURIComponent(jobId)}/link`
+
+/** 201 the first time, then 200 with the SAME link: double-click safe. */
+export function createExportLink(claimId: string, jobId: string): Promise<ExportLink> {
+  return api.post<ExportLink>(linkPath(claimId, jobId))
+}
+
+/** 204. The old URL is dead for good; a later create issues a new one. */
+export function deleteExportLink(claimId: string, jobId: string): Promise<void> {
+  return api.delete<void>(linkPath(claimId, jobId))
 }
 
 export const EXPORT_JOB_TERMINAL: ExportJobStatus[] = ['done', 'failed', 'expired']

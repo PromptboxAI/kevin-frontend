@@ -11,6 +11,8 @@ import {
   ApiError,
   api,
   EXPORT_JOB_TERMINAL,
+  createExportLink,
+  deleteExportLink,
   downloadExport,
   getExportJob,
   listExportJobs,
@@ -23,7 +25,7 @@ import {
   type PhotosPerPage,
 } from '../lib/api'
 import { matchesReview, reviewHref } from '../lib/review-filters'
-import { fmtInt, fmtPct, fmtUSD } from '../lib/format'
+import { fmtDate, fmtInt, fmtPct, fmtUSD } from '../lib/format'
 import { letterheadLines, formFrom } from '../lib/business-rules'
 import { fetchAllClaimItems } from '../lib/claim-items-all'
 import type { ClaimItem, ClaimSummary, MeResponse } from '../lib/types'
@@ -531,6 +533,7 @@ export default function ExportPage() {
               <span className="k-error">{error}</span>
             ) : j ? (
               <JobLine
+                claimId={claimId}
                 job={j}
                 onRefresh={() => void job.refetch()}
                 onRetry={() => void startJob(!!j.preview)}
@@ -684,11 +687,13 @@ function fmtBytes(n: number | null): string {
  * hour is re-minted by re-reading the job.
  */
 function JobLine({
+  claimId,
   job,
   onRefresh,
   onRetry,
   retryDisabled,
 }: {
+  claimId: string
   job: ExportJob
   onRefresh: () => void
   onRetry: () => void
@@ -758,6 +763,9 @@ function JobLine({
             {job.preview ? 'Open preview' : 'Download PDF'}
           </a>
         )}
+        {/* A preview is a look before it goes out, so it is never shared
+            (the server refuses it too). */}
+        {job.preview ? null : <ShareLinkControls claimId={claimId} job={job} onChanged={onRefresh} />}
       </div>
     )
   }
@@ -779,6 +787,121 @@ function JobLine({
         </button>
       ) : null}
     </div>
+  )
+}
+
+/**
+ * Share a finished PDF with the carrier's adjuster (BACKEND-PROMPTS 29).
+ *
+ * A 70-230 MB photo packet is far past an email attachment, and the job's own
+ * download link is private and dies in an hour. The share link is one URL
+ * that works for anyone, without an account, until the file is deleted
+ * (7 days). One link per export: copying again returns the same URL.
+ *
+ * The clipboard write happens after a network round trip, by which time some
+ * browsers no longer count it as part of the click. If it is refused, the URL
+ * is shown selected so it can be copied by hand -- never lost.
+ */
+function ShareLinkControls({
+  claimId,
+  job,
+  onChanged,
+}: {
+  claimId: string
+  job: ExportJob
+  onChanged: () => void
+}) {
+  const [busy, setBusy] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [manualUrl, setManualUrl] = useState<string | null>(null)
+  const [err, setErr] = useState<string | null>(null)
+  const link = job.share_link ?? null
+
+  const copy = async () => {
+    setBusy(true)
+    setErr(null)
+    setCopied(false)
+    try {
+      const minted = link ?? (await createExportLink(claimId, job.job_id))
+      if (!link) onChanged()
+      try {
+        await navigator.clipboard.writeText(minted.url)
+        setManualUrl(null)
+        setCopied(true)
+      } catch {
+        setManualUrl(minted.url)
+      }
+    } catch (e) {
+      const code =
+        e instanceof ApiError && e.status === 409 && typeof e.detail === 'object' && e.detail
+          ? (e.detail as { code?: string }).code
+          : undefined
+      setErr(
+        code === 'expired'
+          ? 'This export has expired, so it can no longer be shared. Export again.'
+          : code === 'not_ready'
+            ? 'The PDF is not finished yet.'
+            : 'Could not make a share link. Try again.',
+      )
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const turnOff = async () => {
+    if (
+      !window.confirm(
+        'Turn off this share link? Anyone who already has it will no longer be able to download the PDF. You can make a new link afterwards.',
+      )
+    )
+      return
+    setBusy(true)
+    setErr(null)
+    try {
+      await deleteExportLink(claimId, job.job_id)
+      setCopied(false)
+      setManualUrl(null)
+      onChanged()
+    } catch {
+      setErr('Could not turn the link off. Try again.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const muted = { fontSize: 12, color: 'var(--k-fg-3)' } as const
+  return (
+    <>
+      <button type="button" className="k-btn k-btn--sm k-btn--ghost" disabled={busy} onClick={() => void copy()}>
+        <Icon d={I.link} size={12} /> {link ? 'Copy share link' : busy ? 'Making link…' : 'Copy share link'}
+      </button>
+      {link ? (
+        <>
+          <span style={muted}>
+            {copied ? 'Link copied · ' : 'Link on · '}
+            {fmtInt(link.downloads)} {link.downloads === 1 ? 'open' : 'opens'} · anyone with it can
+            download until {fmtDate(link.expires_at)}
+          </span>
+          <button type="button" className="k-link" disabled={busy} onClick={() => void turnOff()}>
+            Turn off link
+          </button>
+        </>
+      ) : copied ? (
+        <span style={muted}>Link copied</span>
+      ) : null}
+      {manualUrl ? (
+        <input
+          className="k-insp-input"
+          readOnly
+          value={manualUrl}
+          aria-label="Share link — copy it with Ctrl+C"
+          style={{ width: 320, maxWidth: '100%' }}
+          ref={(el) => el?.select()}
+          onFocus={(e) => e.currentTarget.select()}
+        />
+      ) : null}
+      {err ? <span className="k-error">{err}</span> : null}
+    </>
   )
 }
 
