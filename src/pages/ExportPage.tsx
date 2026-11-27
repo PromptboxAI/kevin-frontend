@@ -398,33 +398,60 @@ export default function ExportPage() {
 
             <section className="k-export-sec">
               <div className="k-export-sec-h">Line order</div>
-              {/* Two named choices, like Photos per page. A checkbox read
-                  backwards: its label named the "on" state while its subtitle
-                  described the "off" one (owner, 2026-11-24). */}
-              <div className="k-segwrap" role="radiogroup" aria-label="Line order">
+              {/* Radio buttons, from the design's export screen (.k-radio,
+                  export.jsx "Delivery"): a filled dot says "pick one".
+                  Owner, 2026-11-27: a checkbox read backwards, and the
+                  segmented control didn't look selectable. Worksheet order
+                  is the expected behaviour and needs no caption; the grouped
+                  order explains itself, since its numbers skip and that could
+                  read as a fault. */}
+              <div
+                role="radiogroup"
+                aria-label="Line order"
+                style={{ display: 'flex', flexDirection: 'column', gap: 4 }}
+              >
                 {(
                   [
-                    ['line', 'Worksheet order'],
-                    ['room', 'Grouped by room'],
+                    ['line', 'Worksheet order', null],
+                    [
+                      'room',
+                      'Grouped by room',
+                      'Each line keeps its worksheet number, so the numbers skip within a room.',
+                    ],
                   ] as const
-                ).map(([id, label]) => (
-                  <button
-                    key={id}
-                    type="button"
-                    role="radio"
-                    aria-checked={sort === id}
-                    className={`k-seg ${sort === id ? 'k-seg--on' : ''}`}
-                    onClick={() => setSort(id)}
-                  >
-                    {label}
-                  </button>
+                ).map(([id, label, sub]) => (
+                  <label key={id} className="k-radio">
+                    <input
+                      type="radio"
+                      name="export-line-order"
+                      value={id}
+                      checked={sort === id}
+                      onChange={() => setSort(id)}
+                      style={{
+                        position: 'absolute',
+                        width: 1,
+                        height: 1,
+                        margin: -1,
+                        padding: 0,
+                        overflow: 'hidden',
+                        clipPath: 'inset(50%)',
+                        border: 0,
+                      }}
+                    />
+                    <span className={`k-radio-dot ${sort === id ? 'k-radio-dot--on' : ''}`} />
+                    <span style={{ flex: 1 }}>
+                      <span style={{ display: 'block', fontSize: 12.5, color: 'var(--k-fg)' }}>
+                        {label}
+                      </span>
+                      {sub ? (
+                        <span style={{ display: 'block', fontSize: 11, color: 'var(--k-fg-4)' }}>
+                          {sub}
+                        </span>
+                      ) : null}
+                    </span>
+                  </label>
                 ))}
               </div>
-              <p className="k-export-hint">
-                {sort === 'line'
-                  ? 'Lines print 0001, 0002, 0003… exactly as on the worksheet.'
-                  : 'Lines are grouped by Room/Area. Each keeps its worksheet number, so the numbers skip within a room.'}
-              </p>
             </section>
 
             {format === 'xlsx' ? (
